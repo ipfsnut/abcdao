@@ -2,9 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
-import { createBullBoard } from '@bull-board/api';
-import { BullAdapter } from '@bull-board/api/bullAdapter.js';
-import { ExpressAdapter } from '@bull-board/express';
 
 // Load environment variables
 dotenv.config();
@@ -48,23 +45,23 @@ app.use('/api/webhooks', webhookRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/rewards', rewardRoutes);
 
-// Queue monitoring (for development)
-if (process.env.NODE_ENV === 'development') {
-  const { rewardQueue, castQueue } = await setupQueues();
-  
-  const serverAdapter = new ExpressAdapter();
-  serverAdapter.setBasePath('/admin/queues');
-  
-  createBullBoard({
-    queues: [
-      new BullAdapter(rewardQueue),
-      new BullAdapter(castQueue)
-    ],
-    serverAdapter
-  });
-  
-  app.use('/admin/queues', serverAdapter.getRouter());
-}
+// Queue monitoring (for development) - commented out for now
+// if (process.env.NODE_ENV === 'development') {
+//   const { rewardQueue, castQueue } = await setupQueues();
+//   
+//   const serverAdapter = new ExpressAdapter();
+//   serverAdapter.setBasePath('/admin/queues');
+//   
+//   createBullBoard({
+//     queues: [
+//       new BullAdapter(rewardQueue),
+//       new BullAdapter(castQueue)
+//     ],
+//     serverAdapter
+//   });
+//   
+//   app.use('/admin/queues', serverAdapter.getRouter());
+// }
 
 // Error handling middleware
 app.use((err, req, res, next) => {
