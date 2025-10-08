@@ -3,7 +3,6 @@ builder = "nixpacks"
 buildCommand = "npm ci --force"
 
 [deploy]
-preDeployCommand = ["cd packages/backend && npm run db:migrate"]
 startCommand = "cd packages/backend && npm start"
 healthcheckPath = "/health"
 healthcheckTimeout = 300

@@ -254,7 +254,7 @@ CREATE TABLE daily_stats (
 - Strong Farcaster community engagemen
 
 ### Long-term Goals
-- Become the default way FC developers showcase work
+- Become the default way FC developers showcase workwe
 - Sustainable reward economics
 - Integration with major Farcaster projects
 - Expansion beyond commit tracking
