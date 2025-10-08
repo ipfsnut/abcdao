@@ -1,9 +1,11 @@
-import { getPool } from '../src/services/database.js';
+import { initializeDatabase, getPool } from '../src/services/database.js';
 
 async function runMigrations() {
   console.log('🗄️  Running database migrations...');
   
   try {
+    // Initialize database connection first
+    await initializeDatabase();
     const pool = getPool();
     
     // Create users table
