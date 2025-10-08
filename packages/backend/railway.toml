@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "rm -rf node_modules && npm install"
+buildCommand = "npm ci --force"
 
 [deploy]
 startCommand = "npm start"
