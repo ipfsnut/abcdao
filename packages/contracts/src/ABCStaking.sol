@@ -106,7 +106,26 @@ contract ABCStaking is ReentrancyGuard, Ownable {
         return accumulated - userStake.rewardDebt;
     }
     
-    function getVotingPower(address _user) external view returns (uint256) {
+    function getStakedAmount(address _user) external view returns (uint256) {
         return stakes[_user].amount;
+    }
+    
+    function isEligibleForRewards(address _user) external view returns (bool) {
+        return stakes[_user].amount >= 1_000_000 * 1e18; // 1M ABC minimum
+    }
+    
+    function getStakeInfo(address _user) external view returns (
+        uint256 amount,
+        uint256 lastStakeTime,
+        uint256 totalEthEarned,
+        uint256 pendingEth
+    ) {
+        StakeInfo memory userStake = stakes[_user];
+        return (
+            userStake.amount,
+            userStake.lastStakeTime,
+            userStake.totalEthEarned,
+            pendingRewards(_user)
+        );
     }
 }

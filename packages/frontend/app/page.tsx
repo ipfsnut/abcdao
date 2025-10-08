@@ -8,16 +8,19 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'stake' | 'vote' | 'proposals'>('stake');
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
+    <div className="min-h-screen bg-black text-green-400 font-mono">
       {/* Header */}
-      <header className="border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <header className="border-b border-green-900/30 bg-black/90 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
-                ABC DAO
+              <h1 className="text-3xl font-bold matrix-glow">
+                {'>'} ABC_DAO.exe
               </h1>
-              <p className="text-sm text-gray-400">Community Grants for Farcaster Builders</p>
+              <p className="text-sm text-green-600 mt-1 font-mono">
+                {/* Ship code. Earn rewards. Build the future. */}
+                Ship code. Earn rewards. Build the future.
+              </p>
             </div>
             <div className="flex gap-4 items-center">
               <FarcasterAuth />
@@ -28,24 +31,24 @@ export default function Home() {
       </header>
 
       {/* Stats Bar */}
-      <div className="bg-gray-900/50 border-b border-gray-800">
+      <div className="bg-black/80 border-b border-green-900/30 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-gray-800/50 rounded-lg p-4">
-              <p className="text-gray-400 text-sm">Treasury Balance</p>
-              <p className="text-2xl font-bold">0 $ABC</p>
+            <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
+              <p className="text-green-600 text-sm font-mono">Treasury_Balance</p>
+              <p className="text-2xl font-bold text-green-400 matrix-glow">0 $ABC</p>
             </div>
-            <div className="bg-gray-800/50 rounded-lg p-4">
-              <p className="text-gray-400 text-sm">Total Staked</p>
-              <p className="text-2xl font-bold">0 $ABC</p>
+            <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
+              <p className="text-green-600 text-sm font-mono">Total_Staked</p>
+              <p className="text-2xl font-bold text-green-400 matrix-glow">0 $ABC</p>
             </div>
-            <div className="bg-gray-800/50 rounded-lg p-4">
-              <p className="text-gray-400 text-sm">ETH Rewards Pool</p>
-              <p className="text-2xl font-bold">0 ETH</p>
+            <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
+              <p className="text-green-600 text-sm font-mono">ETH_Rewards</p>
+              <p className="text-2xl font-bold text-green-400 matrix-glow">0 ETH</p>
             </div>
-            <div className="bg-gray-800/50 rounded-lg p-4">
-              <p className="text-gray-400 text-sm">Active Proposals</p>
-              <p className="text-2xl font-bold">0</p>
+            <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
+              <p className="text-green-600 text-sm font-mono">Active_Devs</p>
+              <p className="text-2xl font-bold text-green-400 matrix-glow">0</p>
             </div>
           </div>
         </div>
@@ -53,36 +56,36 @@ export default function Home() {
 
       {/* Tab Navigation */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        <div className="flex space-x-1 bg-gray-900/50 p-1 rounded-lg w-fit">
+        <div className="flex space-x-1 bg-green-950/10 border border-green-900/30 p-1 rounded-lg w-fit font-mono">
           <button
             onClick={() => setActiveTab('stake')}
-            className={`px-6 py-2 rounded-md font-medium transition-colors ${
+            className={`px-6 py-2 rounded-md font-medium transition-all duration-300 ${
               activeTab === 'stake' 
-                ? 'bg-purple-600 text-white' 
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
+                : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
             }`}
           >
-            Stake
+            ./stake
           </button>
           <button
             onClick={() => setActiveTab('vote')}
-            className={`px-6 py-2 rounded-md font-medium transition-colors ${
+            className={`px-6 py-2 rounded-md font-medium transition-all duration-300 ${
               activeTab === 'vote' 
-                ? 'bg-purple-600 text-white' 
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
+                : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
             }`}
           >
-            Vote
+            ./rewards
           </button>
           <button
             onClick={() => setActiveTab('proposals')}
-            className={`px-6 py-2 rounded-md font-medium transition-colors ${
+            className={`px-6 py-2 rounded-md font-medium transition-all duration-300 ${
               activeTab === 'proposals' 
-                ? 'bg-purple-600 text-white' 
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
+                : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
             }`}
           >
-            Create Proposal
+            ./link_github
           </button>
         </div>
 
@@ -102,26 +105,32 @@ function StakePanel() {
   const [isStaking, setIsStaking] = useState(true);
 
   return (
-    <div className="bg-gray-900/50 rounded-xl p-6 max-w-2xl">
-      <h2 className="text-xl font-bold mb-4">Stake $ABC</h2>
+    <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 max-w-2xl backdrop-blur-sm">
+      <h2 className="text-xl font-bold mb-4 text-green-400 matrix-glow font-mono">
+        {isStaking ? '> stake_ABC()' : '> unstake_ABC()'}
+      </h2>
       
       <div className="space-y-4">
         <div className="flex gap-2">
           <button
             onClick={() => setIsStaking(true)}
-            className={`px-4 py-2 rounded-lg font-medium ${
-              isStaking ? 'bg-purple-600' : 'bg-gray-800'
+            className={`px-4 py-2 rounded-lg font-medium font-mono transition-all duration-300 ${
+              isStaking 
+                ? 'bg-green-900/50 text-green-400 border border-green-700/50 matrix-glow' 
+                : 'bg-green-950/20 text-green-600 border border-green-900/30 hover:text-green-400 hover:border-green-700/50'
             }`}
           >
-            Stake
+            STAKE
           </button>
           <button
             onClick={() => setIsStaking(false)}
-            className={`px-4 py-2 rounded-lg font-medium ${
-              !isStaking ? 'bg-purple-600' : 'bg-gray-800'
+            className={`px-4 py-2 rounded-lg font-medium font-mono transition-all duration-300 ${
+              !isStaking 
+                ? 'bg-green-900/50 text-green-400 border border-green-700/50 matrix-glow' 
+                : 'bg-green-950/20 text-green-600 border border-green-900/30 hover:text-green-400 hover:border-green-700/50'
             }`}
           >
-            Unstake
+            UNSTAKE
           </button>
         </div>
 

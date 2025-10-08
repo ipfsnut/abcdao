@@ -1,0 +1,446 @@
+# ABC DAO Complete Shipping Recipe
+# Every single step needed to launch the developer rewards system - in order
+
+## PHASE 1: INFRASTRUCTURE SETUP
+
+### Railway Project Setup
+[ ] 1.1 Create Railway account at railway.app
+[ ] 1.2 Connect GitHub repo to Railway
+[ ] 1.3 Create new project from connected repo
+[ ] 1.4 Add PostgreSQL service to project
+[ ] 1.5 Add Redis service to project
+[ ] 1.6 Configure custom domain (api.abc.epicdylan.com)
+[ ] 1.7 Test Railway deployment with basic backend
+
+### Environment Variables Setup
+[ ] 1.8 Generate JWT_SECRET (random 64-char string)
+[ ] 1.9 Set DATABASE_URL from Railway PostgreSQL
+[ ] 1.10 Set REDIS_URL from Railway Redis
+[ ] 1.11 Set NODE_ENV=production
+[ ] 1.12 Set PORT=3001
+[ ] 1.13 Set FRONTEND_URL=https://abc.epicdylan.com
+
+### Domain & SSL Setup
+[ ] 1.14 Configure DNS for api.abc.epicdylan.com
+[ ] 1.15 Verify SSL certificate is working
+[ ] 1.16 Test basic health check endpoint
+
+## PHASE 2: FARCASTER BOT SETUP
+
+### Create @abcbot Account
+[ ] 2.1 Create new Farcaster account @abcbot
+[ ] 2.2 Set profile picture and bio
+[ ] 2.3 Follow key developers in Farcaster ecosystem
+[ ] 2.4 Make initial introduction cast
+
+### Neynar API Configuration
+[ ] 2.5 Sign up for Neynar developer account
+[ ] 2.6 Create new project in Neynar dashboard
+[ ] 2.7 Generate API key for production
+[ ] 2.8 Create managed signer for @abcbot
+[ ] 2.9 Set NEYNAR_API_KEY in Railway
+[ ] 2.10 Set NEYNAR_SIGNER_UUID in Railway
+[ ] 2.11 Test basic cast posting with Neynar SDK
+
+### Bot Wallet Setup
+[ ] 2.12 Generate new wallet for bot (BOT_WALLET_PRIVATE_KEY)
+[ ] 2.13 Fund wallet with ETH for gas fees (0.1 ETH)
+[ ] 2.14 Set BOT_WALLET_PRIVATE_KEY in Railway (encrypted)
+[ ] 2.15 Set BOT_WALLET_ADDRESS in Railway
+[ ] 2.16 Test wallet connection to Base mainnet
+
+## PHASE 3: GITHUB INTEGRATION
+
+### GitHub App Creation
+[ ] 3.1 Go to GitHub Settings > Developer settings > GitHub Apps
+[ ] 3.2 Click "New GitHub App"
+[ ] 3.3 Set name: "ABC DAO Developer Rewards"
+[ ] 3.4 Set homepage: https://abc.epicdylan.com
+[ ] 3.5 Set webhook URL: https://api.abc.epicdylan.com/api/webhooks/github
+[ ] 3.6 Generate webhook secret (save securely)
+[ ] 3.7 Set permissions: Read access to repositories, metadata
+[ ] 3.8 Enable webhook events: Push, Repository
+[ ] 3.9 Set "Where can this GitHub App be installed?" to "Any account"
+[ ] 3.10 Create the app and note App ID
+
+### GitHub OAuth Setup
+[ ] 3.11 In same GitHub App, go to OAuth settings
+[ ] 3.12 Set Authorization callback URL: https://api.abc.epicdylan.com/api/auth/github/callback
+[ ] 3.13 Generate client secret
+[ ] 3.14 Set GITHUB_CLIENT_ID in Railway
+[ ] 3.15 Set GITHUB_CLIENT_SECRET in Railway (encrypted)
+[ ] 3.16 Set GITHUB_WEBHOOK_SECRET in Railway (encrypted)
+
+### Test GitHub Integration
+[ ] 3.17 Install GitHub App on a test repository
+[ ] 3.18 Test OAuth flow with test Farcaster account
+[ ] 3.19 Make test commit and verify webhook received
+[ ] 3.20 Test webhook signature verification
+
+## PHASE 4: SMART CONTRACT DEPLOYMENT
+
+### Contract Preparation
+[ ] 4.1 Test ABCTreasury.sol on Base testnet
+[ ] 4.2 Test ABCStaking.sol on Base testnet
+[ ] 4.3 Verify contract interactions work correctly
+[ ] 4.4 Get Base mainnet RPC URL (Alchemy/Infura)
+[ ] 4.5 Set BASE_RPC_URL in Railway
+
+### Deploy ABCTreasury Contract
+[ ] 4.6 Deploy ABCTreasury.sol to Base mainnet
+[ ] 4.7 Verify contract on Basescan
+[ ] 4.8 Set TREASURY_CONTRACT_ADDRESS in Railway
+[ ] 4.9 Test treasury contract basic functions
+
+### Deploy ABCStaking Contract
+[ ] 4.10 Deploy ABCStaking.sol to Base mainnet (need ABC token address first)
+[ ] 4.11 Verify contract on Basescan
+[ ] 4.12 Set STAKING_CONTRACT_ADDRESS in Railway
+[ ] 4.13 Test staking contract basic functions
+
+### Security Verification (Self-Audit)
+[ ] 4.14 Verify contract ownership is correct
+[ ] 4.15 Test emergency functions work
+[ ] 4.16 Ensure no admin backdoors exist
+[ ] 4.17 Run static analysis tools (Slither, MythX free tier)
+[ ] 4.18 Manual code review of all contract functions
+[ ] 4.19 Test with small amounts first
+[ ] 4.20 Document contract addresses and ABIs
+
+## PHASE 5: TOKEN LAUNCH
+
+### Clanker v4 Deployment
+[ ] 5.1 Prepare $ABC token metadata (name, symbol, description)
+[ ] 5.2 Create token image/logo
+[ ] 5.3 Deploy $ABC via Clanker v4 system
+[ ] 5.4 Verify 80% fee routing to creator wallet works
+[ ] 5.5 Set ABC_TOKEN_ADDRESS in Railway
+[ ] 5.6 Test basic token transfers
+
+### Fee Routing Configuration
+[ ] 5.7 Configure creator wallet to send 50% to treasury contract
+[ ] 5.8 Test fee flow: Trading → Creator → Treasury
+[ ] 5.9 Verify treasury splits ETH to staking, ABC to bot wallet
+[ ] 5.10 Test end-to-end fee distribution
+
+### Initial Liquidity & Trading
+[ ] 5.11 Provide initial liquidity for $ABC
+[ ] 5.12 Test trading on Base DEX
+[ ] 5.13 Verify fees are generated and routed correctly
+[ ] 5.14 Monitor initial trading activity
+
+### Update Contract Dependencies
+[ ] 5.15 Update ABCStaking constructor with ABC token address
+[ ] 5.16 Redeploy ABCStaking if needed
+[ ] 5.17 Update ABCTreasury with correct addresses
+[ ] 5.18 Test all contract interactions
+
+## PHASE 6: BACKEND DEPLOYMENT
+
+### Code Deployment
+[ ] 6.1 Push final backend code to GitHub
+[ ] 6.2 Verify Railway auto-deployment works
+[ ] 6.3 Check all environment variables are set
+[ ] 6.4 Monitor Railway deployment logs
+
+### Database Setup
+[ ] 6.5 Verify database connection works
+[ ] 6.6 Check that migrations run automatically
+[ ] 6.7 Verify all tables created correctly
+[ ] 6.8 Test basic database queries
+
+### Queue System Setup
+[ ] 6.9 Verify Redis connection works
+[ ] 6.10 Test reward queue functionality
+[ ] 6.11 Test cast queue functionality
+[ ] 6.12 Access queue monitoring dashboard
+
+### API Testing
+[ ] 6.13 Test health check endpoint
+[ ] 6.14 Test GitHub OAuth endpoints
+[ ] 6.15 Test webhook endpoints
+[ ] 6.16 Test user status endpoints
+[ ] 6.17 Test reward statistics endpoints
+
+## PHASE 7: FRONTEND INTEGRATION
+
+### Contract Integration
+[ ] 7.1 Update frontend with real contract addresses
+[ ] 7.2 Test staking functionality with real ABC tokens
+[ ] 7.3 Test reward claiming functionality
+[ ] 7.4 Verify real-time balance updates
+
+### GitHub Linking UI
+[ ] 7.5 Add GitHub linking button to frontend
+[ ] 7.6 Implement OAuth redirect handling
+[ ] 7.7 Show linking status to users
+[ ] 7.8 Display user's GitHub username when linked
+
+### Real-time Data Integration
+[ ] 7.9 Connect to backend API for user stats
+[ ] 7.10 Show real commit history
+[ ] 7.11 Display real rewards earned
+[ ] 7.12 Show leaderboard data
+
+### Production Deployment
+[ ] 7.13 Build production frontend
+[ ] 7.14 Deploy to abc.epicdylan.com
+[ ] 7.15 Configure CORS for API calls
+[ ] 7.16 Test full frontend functionality
+
+## PHASE 8: BOT IMPLEMENTATION
+
+### Reward Distribution
+[ ] 8.1 Test bot wallet can send ABC tokens
+[ ] 8.2 Verify stake eligibility checking works
+[ ] 8.3 Test random reward amount generation
+[ ] 8.4 Verify daily limits are enforced
+[ ] 8.5 Test queue processing for rewards
+
+### Farcaster Posting
+[ ] 8.6 Test basic cast posting via Neynar
+[ ] 8.7 Verify cast templates render correctly
+[ ] 8.8 Test cast posting queue
+[ ] 8.9 Handle posting failures gracefully
+[ ] 8.10 Test cast URL storage in database
+
+### Bot Monitoring
+[ ] 8.11 Set up bot wallet balance monitoring
+[ ] 8.12 Configure low balance alerts
+[ ] 8.13 Monitor queue processing times
+[ ] 8.14 Set up error logging and alerting
+
+## PHASE 9: SECURITY & TESTING
+
+### End-to-End Testing
+[ ] 9.1 Test complete user journey: sign up → link GitHub → commit → earn reward
+[ ] 9.2 Test OAuth flow with multiple users
+[ ] 9.3 Test webhook processing with real commits
+[ ] 9.4 Test reward distribution and casting
+[ ] 9.5 Test error scenarios and edge cases
+
+### Security Verification (Practical Approach)
+[ ] 9.6 Verify webhook signature validation
+[ ] 9.7 Test rate limiting on API endpoints
+[ ] 9.8 Verify private keys are encrypted in Railway
+[ ] 9.9 Test SQL injection prevention with manual inputs
+[ ] 9.10 Verify CORS configuration
+[ ] 9.11 Run free security scanners (npm audit, Snyk)
+[ ] 9.12 Manual penetration testing of API endpoints
+[ ] 9.13 Code review for common vulnerabilities
+[ ] 9.14 Test with minimal funds initially
+
+### Load Testing
+[ ] 9.15 Test multiple simultaneous webhooks
+[ ] 9.16 Test queue processing under load
+[ ] 9.17 Test database performance
+[ ] 9.18 Monitor memory and CPU usage
+
+### Bot Security
+[ ] 9.19 Test bot wallet security measures
+[ ] 9.20 Verify reward limits cannot be bypassed
+[ ] 9.21 Test anti-gaming mechanisms
+[ ] 9.22 Verify cast content filtering
+
+## PHASE 10: LAUNCH PREPARATION
+
+### Documentation Updates
+[ ] 10.1 Update WHITEPAPER.md with final details
+[ ] 10.2 Update README.md with launch info
+[ ] 10.3 Create user guide for GitHub linking
+[ ] 10.4 Document API endpoints
+[ ] 10.5 Create troubleshooting guide
+
+### Monitoring Setup
+[ ] 10.6 Set up Railway monitoring and alerts
+[ ] 10.7 Configure database performance monitoring
+[ ] 10.8 Set up bot wallet balance alerts
+[ ] 10.9 Configure uptime monitoring
+[ ] 10.10 Set up error logging aggregation
+
+### Community Preparation
+[ ] 10.11 Prepare launch announcement cast
+[ ] 10.12 Create tutorial video/screenshots
+[ ] 10.13 Reach out to key Farcaster developers
+[ ] 10.14 Prepare FAQ document
+[ ] 10.15 Set up support processes
+
+### Rollback Planning
+[ ] 10.16 Document rollback procedures
+[ ] 10.17 Create emergency contact list
+[ ] 10.18 Prepare system pause mechanisms
+[ ] 10.19 Test contract emergency functions
+
+## PHASE 11: SOFT LAUNCH
+
+### Limited Beta Launch
+[ ] 11.1 Enable system for 5-10 close friends only
+[ ] 11.2 Monitor first real commits and rewards
+[ ] 11.3 Watch for any immediate issues
+[ ] 11.4 Collect initial user feedback
+[ ] 11.5 Test all flows with real users
+
+### Issue Resolution
+[ ] 11.6 Fix any bugs discovered in beta
+[ ] 11.7 Optimize slow API endpoints
+[ ] 11.8 Adjust reward amounts if needed
+[ ] 11.9 Fine-tune bot posting templates
+[ ] 11.10 Update documentation based on feedback
+
+### Performance Monitoring
+[ ] 11.11 Monitor system performance under real load
+[ ] 11.12 Check database query performance
+[ ] 11.13 Monitor queue processing times
+[ ] 11.14 Watch bot wallet balance usage
+[ ] 11.15 Track API response times
+
+## PHASE 12: PUBLIC LAUNCH
+
+### Launch Day Preparation
+[ ] 12.1 Verify all systems are healthy
+[ ] 12.2 Check bot wallet has sufficient ABC balance
+[ ] 12.3 Ensure monitoring is active
+[ ] 12.4 Prepare launch announcement
+[ ] 12.5 Have emergency contacts ready
+
+### Public Announcement
+[ ] 12.6 Post launch announcement on Farcaster
+[ ] 12.7 Share on relevant Farcaster channels
+[ ] 12.8 Post to Twitter/X if applicable
+[ ] 12.9 Update website with launch info
+[ ] 12.10 Notify key community members
+
+### Launch Day Monitoring
+[ ] 12.11 Monitor new user signups
+[ ] 12.12 Watch for system overload
+[ ] 12.13 Track commit volume and rewards
+[ ] 12.14 Monitor bot posting frequency
+[ ] 12.15 Watch for any error spikes
+
+### Community Management
+[ ] 12.16 Respond to user questions quickly
+[ ] 12.17 Help users with linking issues
+[ ] 12.18 Celebrate early adopters
+[ ] 12.19 Share interesting statistics
+[ ] 12.20 Plan first weekly leaderboard
+
+## PHASE 13: POST-LAUNCH OPTIMIZATION
+
+### Week 1 Tasks
+[ ] 13.1 Monitor user engagement metrics
+[ ] 13.2 Optimize slow database queries
+[ ] 13.3 Adjust reward amounts based on usage
+[ ] 13.4 Improve bot posting templates
+[ ] 13.5 Add requested features
+
+### Scaling Preparation
+[ ] 13.6 Monitor Railway usage and costs
+[ ] 13.7 Plan database scaling strategy
+[ ] 13.8 Consider CDN for frontend
+[ ] 13.9 Optimize queue processing
+[ ] 13.10 Plan for increased bot wallet funding
+
+### Community Building
+[ ] 13.11 Implement weekly leaderboards
+[ ] 13.12 Add milestone celebrations
+[ ] 13.13 Create developer success stories
+[ ] 13.14 Plan feature roadmap
+[ ] 13.15 Build partnerships with other projects
+
+## CRITICAL SUCCESS METRICS
+
+### Technical Metrics
+- 99%+ uptime for all services
+- <500ms API response times
+- <10 second webhook processing
+- 100% successful reward distributions
+- 0 critical security issues
+
+### Business Metrics
+- 25+ developers linked in first week
+- 100+ commits tracked in first week
+- 50,000+ ABC rewards distributed
+- 95%+ user satisfaction
+- Positive community sentiment
+
+### Bot Metrics
+- 100% successful cast posting
+- High engagement on bot posts
+- Growing follower count
+- Positive community feedback
+- 0 inappropriate content posted
+
+## EMERGENCY PROCEDURES
+
+### System Down
+1. Check Railway service status
+2. Review recent deployments
+3. Check database connectivity
+4. Verify queue processing
+5. Alert team and communicate status
+
+### Bot Issues
+1. Pause reward distribution
+2. Check bot wallet balance
+3. Verify Neynar API status
+4. Review recent casts
+5. Manual intervention if needed
+
+### Security Breach
+1. Pause all operations immediately
+2. Secure bot wallet funds
+3. Review audit logs
+4. Communicate with users
+5. Implement fixes before restart
+
+---
+
+# NOTES
+
+## Prerequisites
+- GitHub account with admin access
+- Farcaster account for testing
+- Base mainnet wallet with ETH
+- Domain name configured
+- Basic understanding of smart contracts
+
+## Execution Order
+- Follow phases 1-12 sequentially for full launch
+- Phase 13 is ongoing optimization after launch
+- Dependencies: Must complete infrastructure before contracts, contracts before backend, etc.
+
+## Budget Estimate
+- Railway: $20-30/month
+- Domain: $10-20/year
+- Gas fees: 0.1-0.2 ETH
+- Initial ABC liquidity: Variable
+- Bot wallet funding: 10K ABC tokens initially (scale up after testing)
+- Security tools: $0 (using free tiers)
+
+## Security Approach (No Formal Audit)
+Since traditional audits are expensive and time-consuming, we'll use:
+- Free static analysis tools (Slither, MythX free tier)
+- Manual code review and testing
+- Gradual rollout with small amounts initially
+- Community review (open source)
+- Bug bounty program (small rewards)
+- Conservative approach: test extensively before large deposits
+
+## Risk Mitigation Without Audits
+- Start with 10K ABC in bot wallet (not 100K+)
+- Limit individual rewards to max 1K ABC initially
+- Daily withdraw limits on treasury contract
+- Multi-sig for emergency functions
+- Pause mechanisms that can stop distributions
+- Regular monitoring and manual intervention capability
+- Clear communication to users about early-stage risks
+
+## Team Requirements
+- 1 developer (full-stack)
+- Access to deployment infrastructure
+- 2-4 hours daily during launch period
+- On-call availability during launch week
+
+---
+
+This checklist contains 200+ specific, actionable tasks needed to successfully launch ABC DAO. Each task should be completed in order within each phase, though some phases can run in parallel.

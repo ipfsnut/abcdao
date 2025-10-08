@@ -19,10 +19,11 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 - **Network**: Base Mainnet  
 - **Supply**: Fixed supply determined at launch
 
-### Revenue Distribution
-- Trading fees in $ETH → Distributed to stakers
-- Trading fees in $ABC → Distributed to developers in random batches as rewards for commits
-- All routing handled automatically on-chain
+### Clanker Fee Mechanics
+- Trading fees (in both $ETH and $ABC) → Creator wallet & Treasury contract
+- Fees accumulate from every trade on the DEX pool
+  - $ETH → Stakers earn passive income
+  - $ABC → Developer commit rewards
 
 ## 3. THE DEVELOPER GAME
 
@@ -36,9 +37,9 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 ### Staking Benefits
 - Unlock commit rewards (must be staked to earn)
 - Earn $ETH from trading fees
-- Governance participation rights
 - Higher stake = higher commit rewards
 - Build reputation on Farcaster
+- No governance - just ship and earn
 
 ## 4. COMMIT RECOGNITION SYSTEM
 
@@ -48,28 +49,31 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 - **Action**: Posts achievement casts and distributes rewards
 
 ### Recognition Flow
-1. Developer makes a commit to any public repo
+1. Registered Developer makes a commit to any public repo
 2. ABC Bot detects the commit via GitHub webhooks
-3. Bot verifies developer is staked
+3. Bot verifies developer has 1M or more $ABC staked
 4. Bot posts cast celebrating the commit
 5. $ABC rewards distributed automatically
 
 ### Reward Formula
-- Base reward per commit: Fixed amount of $ABC
-- Multiplier based on stake size (more stake = higher rewards)
-- Daily cap to prevent gaming
-- No complex scoring - every commit is valued equally
+- Simple: 1 commit = 1 reward
+- Random reward amounts (100 to 1,000,000 $ABC)
+- Must have minimum stake to qualify
+- Daily cap: 10 commits max per developer
+- All public repo commits count equally
 
-## 5. TREASURY & REWARDS POOL
+## 5. REWARD DISTRIBUTION
 
 ### Developer Rewards
-- Funded by 50% of $ABC trading fees
-- Automatically distributed for commits in random amounts of up to 1M $ABC per reward
-- No voting required - fully automated
-- Sustainable reward distribution
+- Funded by $ABC from trading fees (via creator wallet)
+- Random rewards between 100-10,000 $ABC per commit
+- Fully automated - no manual intervention
+- Sustainable through continuous fee generation
 
-### DAO Treasury
-- N/A (no emissions, no inflation)
+### Staker Rewards
+- All $ETH from trading fees distributed proportionally
+- Claim anytime from staking contract
+- Compounds with more stakers joining
 
 ## 6. FARCASTER INTEGRATION
 
@@ -93,16 +97,15 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 ## 7. TECHNICAL ARCHITECTURE
 
 ### Smart Contracts
-1. **Token Contract**: v4 Clanker $ABC token
-2. **Staking Contract**: Manages stakes and trading fee distribution
-3. **Rewards Contract**: Handles commit rewards and multipliers
-4. **Governance Contract**: Proposal and voting system
+1. **Token Contract**: v4 Clanker $ABC token (handles fee routing)
+2. **Staking Contract**: Manages stakes and $ETH distribution
+3. **Rewards Contract**: Handles commit rewards from creator wallet
 
 ### Backend Services
 1. **GitHub Webhook Service**: Receives commit events
 2. **Neynar Bot Service**: Posts to Farcaster
-3. **Rewards Oracle**: Validates commits and triggers rewards
-4. **Database**: Tracks GitHub-Farcaster account links
+3. **Account Linker**: Simple GitHub-Farcaster connection
+4. **Reward Distributor**: Sends $ABC from creator wallet
 
 ### Security Measures
 - Rate limiting on reward claims
@@ -112,37 +115,50 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 
 ## 8. LAUNCH STRATEGY
 
-### Phase 1: Contract Development
-- Deploy and test smart contracts on Base
+- Create @abcbot Farcaster account via Neynar
+- Register GitHub app for webhooks
+- Deploy backend services
+- Launch $ABC via v4 Clanker
+- 80% fee routing to creator wallet configured
+- Initial liquidity provided
+- Deploy staking contract
+- Enable GitHub-Farcaster linking at abc.epicdylan.com or via Farcaster miniapp
+- First commits start earning rewards
+- ABC Bot begins posting celebrations
+- Onboard active Farcaster developers
+- Weekly leaderboards
+- Viral growth through automated casts
 
-### Phase 2: Token Launch
-- Fair launch mechanics (no pre-mine)
+## 9. RISK MITIGATION
 
-### Phase 3: Platform Launch
-- Launch staking at abc.epicdylan.com and on Farcaster miniapp
+### Potential Risks & Solutions
 
-### Phase 4: Growth
-- Community marketing
-- Partnership development
+| Risk | Mitigation |
+|------|------------|
+| Commit spam | Daily cap of 10 commits per developer |
+| Multiple GitHub accounts | Farcaster account verification limits sybils |
+| Private repo gaming | Only public repositories count |
+| Low trading volume | Small rewards sustainable even with low fees |
+| Reward depletion | Random amounts (100-1M) prevent drain |
 
-## 9. WHY ABC SUCCEEDS
+## 10. WHY ABC SUCCEEDS
 
 ### Simplicity First
 - No complex tokenomics to understand
-- Clear value proposition
+- Clear value proposition: commit = reward
 - Easy participation
 
 ### Community Focused
 - Farcaster-native from day one
 - Supporting builders who matter
-- Democratic decision-making
+- No politics - just code and rewards
 
 ### Sustainable Model
-- Trading fees create dual rewards: ETH for stakers, ABC for devs who ship code
+- Clanker fees create dual rewards: ETH for stakers, ABC for developers
 - No reliance on emissions or inflation
 - Self-perpetuating ecosystem growth
 
-## 10. CONCLUSION
+## 11. CONCLUSION
 
 ABC DAO strips Web3 devrel to its essential elements: **ship code, earn rewards**. By focusing on the Farcaster community and maintaining radical simplicity, we create a sustainable funding mechanism for the builders who will define the future of decentralized social networks.
 
@@ -150,8 +166,8 @@ The best DAOs don't need complex mechanisms. They need clear purpose, aligned in
 
 ---
 
-**Stake & Vote**: [abc.epicdylan.com](https://abc.epicdylan.com)  
+**Stake & Ship**: [abc.epicdylan.com](https://abc.epicdylan.com)  
 **Network**: Base Mainnet  
 **Contract**: [Address TBA]  
 
-*Version 0.1 | October 2025*
+*Version 1.0 | October 2025

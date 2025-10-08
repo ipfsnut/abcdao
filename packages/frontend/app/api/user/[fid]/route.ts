@@ -3,10 +3,11 @@ import { getUser } from '@/lib/neynar';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { fid: string } }
+  { params }: { params: Promise<{ fid: string }> }
 ) {
   try {
-    const fid = parseInt(params.fid);
+    const { fid: fidParam } = await params;
+    const fid = parseInt(fidParam);
     const user = await getUser(fid);
     
     if (!user) {
@@ -16,12 +17,13 @@ export async function GET(
     return NextResponse.json({
       fid: user.fid,
       username: user.username,
-      displayName: user.displayName,
-      pfp: user.pfp,
-      followerCount: user.followerCount,
-      followingCount: user.followingCount,
+      displayName: user.display_name,
+      pfp: user.pfp_url,
+      followerCount: user.follower_count,
+      followingCount: user.following_count,
     });
-  } catch (error) {
+  } catch (err) {
+    console.error('API error:', err);
     return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 });
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 interface FarcasterUser {
@@ -12,7 +12,7 @@ interface FarcasterUser {
   };
 }
 
-export function FarcasterAuth() {
+function FarcasterAuthContent() {
   const [user, setUser] = useState<FarcasterUser | null>(null);
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
@@ -72,5 +72,13 @@ export function FarcasterAuth() {
     >
       Sign in with Farcaster
     </button>
+  );
+}
+
+export function FarcasterAuth() {
+  return (
+    <Suspense fallback={<div className="animate-pulse text-green-600">Loading...</div>}>
+      <FarcasterAuthContent />
+    </Suspense>
   );
 }
