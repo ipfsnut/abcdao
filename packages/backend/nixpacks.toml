@@ -2,10 +2,11 @@
 nixPkgs = ["nodejs_22", "npm-9_x"]
 
 [phases.install]
-cmds = ["npm clean-install"]
+cmds = ["rm -rf node_modules package-lock.json", "npm install"]
 
 [start]
 cmd = "npm start"
 
 [variables]
 NODE_ENV = "production"
+CACHE_BUST = "1"
