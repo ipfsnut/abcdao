@@ -85,18 +85,34 @@ app.use('*', (req, res) => {
 // Initialize services and start server
 async function startServer() {
   try {
-    // Initialize database connection
-    await initializeDatabase();
-    console.log('✅ Database connected');
+    // Try to initialize database connection (optional for health checks)
+    if (process.env.DATABASE_URL) {
+      try {
+        await initializeDatabase();
+        console.log('✅ Database connected');
+      } catch (dbError) {
+        console.warn('⚠️  Database connection failed, running without database:', dbError.message);
+      }
+    } else {
+      console.warn('⚠️  DATABASE_URL not set, running without database');
+    }
     
-    // Setup job queues
-    await setupQueues();
-    console.log('✅ Job queues initialized');
+    // Try to setup job queues (optional for health checks) 
+    if (process.env.REDIS_URL) {
+      try {
+        await setupQueues();
+        console.log('✅ Job queues initialized');
+      } catch (queueError) {
+        console.warn('⚠️  Queue setup failed, running without queues:', queueError.message);
+      }
+    } else {
+      console.warn('⚠️  REDIS_URL not set, running without queues');
+    }
     
     // Start server
     app.listen(PORT, () => {
       console.log(`🚀 ABC DAO Backend running on port ${PORT}`);
-      console.log(`📊 Queue admin: http://localhost:${PORT}/admin/queues`);
+      console.log(`📊 Health check: http://localhost:${PORT}/health`);
     });
     
   } catch (error) {

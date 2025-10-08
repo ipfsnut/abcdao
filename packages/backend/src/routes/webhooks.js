@@ -7,12 +7,16 @@ import { addRewardJob } from '../services/queue.js';
 const router = express.Router();
 
 // Initialize GitHub webhooks handler
-const webhooks = new Webhooks({
+const webhooks = process.env.GITHUB_WEBHOOK_SECRET ? new Webhooks({
   secret: process.env.GITHUB_WEBHOOK_SECRET
-});
+}) : null;
 
 // Middleware to verify GitHub webhook signature
 function verifyGitHubSignature(req, res, next) {
+  if (!webhooks) {
+    return res.status(503).json({ error: 'Webhooks not configured' });
+  }
+  
   const signature = req.get('X-Hub-Signature-256');
   const payload = JSON.stringify(req.body);
   
