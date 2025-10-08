@@ -1,127 +1,127 @@
 # ABC DAO WHITEPAPER
-## The Simplest Community Grants DAO
+## Ship Code, Earn Rewards - The Developer Game for Farcaster
 
 ---
 
 ## ABSTRACT
 
-ABC DAO represents a minimalist approach to decentralized governance and community funding. By combining straightforward tokenomics with democratic voting mechanisms, ABC creates a sustainable treasury that empowers the Farcaster community to support emerging developers and builders through grants.
+ABC DAO gamifies open-source development by rewarding developers who ship code with $ABC tokens and social recognition on Farcaster. By combining staking mechanics with automatic commit recognition, ABC creates a sustainable ecosystem where developers are incentivized to build in public while earning crypto rewards and growing their reputation.
 
 ## 1. INTRODUCTION
 
-The Web3 ecosystem thrives on innovation from independent developers and small teams. However, accessing funding remains a significant barrier. ABC DAO addresses this by creating a self-sustaining grant system powered by trading fees and governed by token holders.
+Building in public should be rewarded. ABC DAO transforms everyday coding into a game where developers earn $ABC tokens and Farcaster recognition simply by shipping code. No grant applications, no complex scoring - just stake your tokens and let your commits do the talking.
 
-Our philosophy: **Keep it simple.** No complex mechanics. No unnecessary features. Just stake, vote, and distribute grants to those who deserve them.
+Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets recognized. Every developer wins.
 
 ## 2. TOKENOMICS
 
-- **Token**: $ABC
+- **Token**: $ABC (v4 Clanker token)
 - **Network**: Base Mainnet  
-- **Supply**: [TBD - Fixed supply with no inflation]
+- **Supply**: Fixed supply determined at launch
 
-### Trading Fee Distribution
-- $ETH from trading fees → Distributed to stakers
-- $ABC from trading fees → DAO Treasury
-- Fees automatically routed to staking contract
-- No manual intervention required
+### Revenue Distribution
+- Trading fees in $ETH → Distributed to stakers
+- Trading fees in $ABC → Distributed to developers in random batches as rewards for commits
+- All routing handled automatically on-chain
 
-## 3. STAKING MECHANISM
+## 3. THE DEVELOPER GAME
 
-### How It Works
-1. Users purchase $ABC tokens
-2. Token holders stake $ABC at abc.epicdylan.com
-3. Staked tokens grant voting power (1 $ABC = 1 vote)
-4. Stakers can unstake at any time (subject to cooldown period)
+### How to Play
+1. Buy and stake $ABC tokens
+2. Connect your GitHub account to your Farcaster profile
+3. Ship code as you normally would
+4. Earn $ABC rewards for every commit
+5. Get automatic Farcaster casts celebrating your work
 
-### Benefits of Staking
+### Staking Benefits
+- Unlock commit rewards (must be staked to earn)
 - Earn $ETH from trading fees
 - Governance participation rights
-- Influence over grant distributions
-- Building the Farcaster ecosystem
-- Supporting emerging developers
+- Higher stake = higher commit rewards
+- Build reputation on Farcaster
 
-## 4. GOVERNANCE SYSTEM
+## 4. COMMIT RECOGNITION SYSTEM
 
-### Proposal Process
-1. Any staker can nominate grant recipients
-2. Nominations require minimum stake threshold
-3. Voting period: 7 days
-4. Simple majority wins (>50% of votes cast)
-5. Executed on-chain automatically
+### The ABC Bot
+- **Platform**: Farcaster account powered by Neynar API
+- **Function**: Monitors GitHub commits from registered developers
+- **Action**: Posts achievement casts and distributes rewards
 
-### Voting Power
-- Proportional to staked $ABC
-- No vote delegation (keep it simple)
-- No quadratic voting (1 token = 1 vote)
-- Votes are binding and executed programmatically
+### Recognition Flow
+1. Developer makes a commit to any public repo
+2. ABC Bot detects the commit via GitHub webhooks
+3. Bot verifies developer is staked
+4. Bot posts cast celebrating the commit
+5. $ABC rewards distributed automatically
 
-## 5. GRANT DISTRIBUTION
+### Reward Formula
+- Base reward per commit: Fixed amount of $ABC
+- Multiplier based on stake size (more stake = higher rewards)
+- Daily cap to prevent gaming
+- No complex scoring - every commit is valued equally
 
-### Target Recipients
-- Farcaster protocol developers
-- Frame builders and innovators
-- Infrastructure providers
-- Community tool creators
-- Educational content creators
-- Up-and-coming developers who demonstrate commitment
+## 5. TREASURY & REWARDS POOL
 
-### Grant Criteria
-- Clear value proposition for Farcaster ecosystem
-- Demonstrated track record or strong potential
-- Open-source contributions preferred
-- Community benefit over individual gain
+### Developer Rewards
+- Funded by 50% of $ABC trading fees
+- Automatically distributed for commits in random amounts of up to 1M $ABC per reward
+- No voting required - fully automated
+- Sustainable reward distribution
 
-### Distribution Mechanism
-- Grants paid in $ABC from treasury
-- Multiple grants can be approved per voting cycle
-- No grant size limits (community decides)
-- Transparent on-chain execution
+### DAO Treasury
+- N/A (no emissions, no inflation)
 
-## 6. TREASURY MANAGEMENT
+## 6. FARCASTER INTEGRATION
 
-### Revenue Sources
-- $ABC from trading fees accumulates in treasury
-- Only $ABC enters treasury (ETH goes to stakers)
+### ABC Bot Account
+- **Username**: @abcbot (to be created)
+- **Purpose**: Automated developer recognition
+- **Powered by**: Neynar API
+- **Hosting**: Dedicated service for webhook processing
 
-### Treasury Rules
-- No access except through governance votes
-- Grants paid out in $ABC
-- Cannot exceed distribution rate that depletes principal
-- Emergency pause function (requiring 75% supermajority)
-- Full transparency via on-chain verification
+### Cast Templates
+- "🚀 @username just shipped code! [commit message] → Earned X $ABC"
+- "🔥 @username is on fire! 5 commits today → Total earned: X $ABC"
+- "💎 New milestone: @username has shipped 100 commits with ABC!"
+
+### Social Features
+- Automatic follow of active developers
+- Recast notable achievements
+- Weekly leaderboard posts
+- Community celebration casts
 
 ## 7. TECHNICAL ARCHITECTURE
 
 ### Smart Contracts
-1. **Token Contract**: Standard ERC-20 for $ABC
-2. **Staking Contract**: Handles deposits, withdrawals, and fee collection
-3. **Governance Contract**: Manages proposals and voting
-4. **Treasury Contract**: Holds and distributes funds
+1. **Token Contract**: v4 Clanker $ABC token
+2. **Staking Contract**: Manages stakes and trading fee distribution
+3. **Rewards Contract**: Handles commit rewards and multipliers
+4. **Governance Contract**: Proposal and voting system
+
+### Backend Services
+1. **GitHub Webhook Service**: Receives commit events
+2. **Neynar Bot Service**: Posts to Farcaster
+3. **Rewards Oracle**: Validates commits and triggers rewards
+4. **Database**: Tracks GitHub-Farcaster account links
 
 ### Security Measures
-- Audited smart contracts
-- Time-locks on critical functions
-- Multi-sig for emergency controls
-- No admin keys for normal operations
+- Rate limiting on reward claims
+- Commit verification to prevent spoofing
+- Multi-sig for emergency functions
+- Regular security audits
 
 ## 8. LAUNCH STRATEGY
 
 ### Phase 1: Contract Development
 - Deploy and test smart contracts on Base
-- Security audit completion
 
 ### Phase 2: Token Launch
-- Fair launch mechanics (no pre-mine for team)
-- Initial liquidity provision
-- Trading activation
+- Fair launch mechanics (no pre-mine)
 
 ### Phase 3: Platform Launch
-- Launch staking at abc.epicdylan.com
-- Enable governance features
-- First grant proposals
+- Launch staking at abc.epicdylan.com and on Farcaster miniapp
 
 ### Phase 4: Growth
-- Increase liquidity depth
 - Community marketing
 - Partnership development
 
@@ -138,22 +138,13 @@ Our philosophy: **Keep it simple.** No complex mechanics. No unnecessary feature
 - Democratic decision-making
 
 ### Sustainable Model
-- Trading fees create dual rewards: ETH for stakers, ABC for grants
+- Trading fees create dual rewards: ETH for stakers, ABC for devs who ship code
 - No reliance on emissions or inflation
 - Self-perpetuating ecosystem growth
 
-## 10. RISKS AND MITIGATIONS
+## 10. CONCLUSION
 
-| Risk | Mitigation |
-|------|------------|
-| Low trading volume | Initial liquidity incentives, community engagement |
-| Governance attacks | Minimum stake requirements, time-locks |
-| Smart contract vulnerabilities | Professional audits, bug bounties |
-| Voter apathy | Simple process, clear communication, tangible impact |
-
-## 11. CONCLUSION
-
-ABC DAO strips Web3 governance to its essential elements: **stake, vote, distribute**. By focusing on the Farcaster community and maintaining radical simplicity, we create a sustainable funding mechanism for the builders who will define the future of decentralized social networks.
+ABC DAO strips Web3 devrel to its essential elements: **ship code, earn rewards**. By focusing on the Farcaster community and maintaining radical simplicity, we create a sustainable funding mechanism for the builders who will define the future of decentralized social networks.
 
 The best DAOs don't need complex mechanisms. They need clear purpose, aligned incentives, and committed communities. ABC DAO provides exactly that—nothing more, nothing less.
 
@@ -163,4 +154,4 @@ The best DAOs don't need complex mechanisms. They need clear purpose, aligned in
 **Network**: Base Mainnet  
 **Contract**: [Address TBA]  
 
-*Version 1.0 | January 2025*
+*Version 0.1 | October 2025*
