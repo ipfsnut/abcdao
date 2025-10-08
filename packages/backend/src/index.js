@@ -1,3 +1,5 @@
+console.log('Starting ABC DAO Backend process...');
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -110,10 +112,10 @@ async function startServer() {
       console.warn('⚠️  REDIS_URL not set, running without queues');
     }
     
-    // Start server
-    app.listen(PORT, () => {
+    // Start server - bind to 0.0.0.0 for Railway
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 ABC DAO Backend running on port ${PORT}`);
-      console.log(`📊 Health check: http://localhost:${PORT}/health`);
+      console.log(`📊 Health check: http://0.0.0.0:${PORT}/health`);
     });
     
   } catch (error) {
