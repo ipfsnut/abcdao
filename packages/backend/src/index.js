@@ -35,7 +35,8 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(),
-    service: 'abc-dao-backend'
+    service: 'abc-dao-backend',
+    version: '1.0.1'
   });
 });
 
