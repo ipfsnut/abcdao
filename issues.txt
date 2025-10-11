@@ -1,0 +1,91 @@
+ABC DAO - Open Issues & TODOs
+===============================
+
+## Smart Contract Issues
+
+### Treasury Funding Mechanism
+- [ ] Current: Manual `fundTreasury()` calls required
+- [ ] Need: Automatic routing of $ABC trading fees to treasury
+- [ ] Consider: How to capture trading fees from DEX (Uniswap hooks? Fee-on-transfer?)
+
+### Governance UX Issues
+- [ ] Proposal recipients: Support Farcaster usernames (@username) vs just addresses
+- [ ] Username resolution: How to convert @username to wallet address
+- [ ] Proposal validation: Verify recipient is real Farcaster user
+- [ ] Treasury balance visibility: Should be shown in frontend
+
+## Frontend Integration Issues
+
+### Farcaster Social Features
+- [ ] Proposal discovery: How users find grant candidates
+- [ ] Social proof: Show recipient's Farcaster profile/activity
+- [ ] Cross-posting: Should proposals also be casts with voting frames?
+- [ ] Notifications: Alert recipients when they receive grants
+
+### Web3 Integration
+- [ ] Contract addresses: Need to deploy and update .env.local
+- [ ] Alchemy setup: User needs to configure Base RPC
+- [ ] WalletConnect: Need project ID for RainbowKit
+- [ ] Real token: Will use Clanker to deploy $ABC, update contract address
+
+## Tokenomics Questions
+
+### Trading Fee Capture
+- [ ] How exactly do we capture $ABC and $ETH from trading?
+- [ ] DEX integration: Uniswap v3 hooks vs fee-on-transfer token
+- [ ] Fee splitting: Automatic 50/50 ETH to stakers, ABC to treasury
+
+### Token Distribution
+- [ ] Initial supply and distribution plan
+- [ ] How much goes to treasury vs initial liquidity
+- [ ] Fair launch mechanics (no pre-mine mentioned in whitepaper)
+
+## Deployment Checklist
+
+### Contracts
+- [ ] Deploy on Base Mainnet
+- [ ] Verify contracts on Basescan
+- [ ] Set up multisig for emergency functions
+- [ ] Initialize treasury with initial $ABC allocation
+
+### Frontend
+- [ ] Deploy to abc.epicdylan.com via Cloudflare Pages
+- [ ] Configure production environment variables
+- [ ] Set up Farcaster mini-app integration
+- [ ] Test end-to-end user flows
+
+### Integration
+- [ ] Create $ABC token via Clanker
+- [ ] Set up DEX liquidity (Uniswap v3 on Base)
+- [ ] Configure fee capture mechanism
+- [ ] Register as Farcaster mini-app
+
+## Future Enhancements
+
+### Social Features
+- [ ] Grant recipient showcase/portfolio
+- [ ] Community discussions for proposals
+- [ ] Reputation system for builders
+- [ ] Integration with other Farcaster tools
+
+### Governance Improvements
+- [ ] Proposal templates for common grant types
+- [ ] Multi-sig proposals for large amounts
+- [ ] Proposal amendments/updates
+- [ ] Voting delegation (if demand exists)
+
+## Immediate Next Steps
+
+1. Finish testing governance contract
+2. Commit current code to GitHub
+3. Deploy test contracts to Base testnet
+4. Create $ABC token via Clanker
+5. Build basic frontend integration
+6. Design trading fee capture mechanism
+
+## Notes
+
+- Keep it simple: Don't over-engineer the initial version
+- Farcaster-first: Prioritize Farcaster community integration
+- Manual launch: Start with manual processes, automate later
+- Community feedback: Get early user feedback before full automation

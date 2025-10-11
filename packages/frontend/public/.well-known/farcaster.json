@@ -1,0 +1,20 @@
+{
+  "accountAssociation": {
+    "header": "",
+    "payload": "",
+    "signature": ""
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "ABC DAO",
+    "iconUrl": "https://abc.epicdylan.com/icon.png",
+    "homeUrl": "https://abc.epicdylan.com/",
+    "imageUrl": "https://abc.epicdylan.com/og-image.png",
+    "description": "Ship code, earn rewards. Stake $ABC, link GitHub, earn crypto for every commit.",
+    "buttonTitle": "Start Earning",
+    "splashImageUrl": "https://abc.epicdylan.com/splash.png",
+    "splashBackgroundColor": "#000000",
+    "splashTextColor": "#00ff00",
+    "webhookUrl": "https://api.abc.epicdylan.com/api/webhooks/farcaster"
+  }
+}
