@@ -26,6 +26,10 @@ packages/contracts/.env
 .env.development.local
 .env.test.local
 
+# GitHub App private key
+*.pem
+github-app-private-key.pem
+
 # IDE
 .vscode/
 .idea/
