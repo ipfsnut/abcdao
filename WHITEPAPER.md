@@ -1,5 +1,5 @@
 # ABC DAO WHITEPAPER
-## Ship Code, Earn Rewards - The Developer Game for Farcaster
+## Ship Code, Earn Rewards - The Live Action Developer Game for Farcaster
 
 ---
 
