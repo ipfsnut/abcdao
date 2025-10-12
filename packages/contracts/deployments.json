@@ -1,0 +1,12 @@
+{
+  "base": {
+    "EMARK_TOKEN": "0xf87F3ebbF8CaCF321C2a4027bb66Df639a6f4B07",
+    "EMARK_STAKING_V1": "0x6e31Be158CB2641EDaca8e98a3C036bE1C8c5E1D",
+    "EMARK_STAKING_V2": "0xCb5cF9061f80b64909E8106e3569f0b8D219941E"
+  },
+  "base-sepolia": {
+    "EMARK_TOKEN": "",
+    "EMARK_STAKING": ""
+  },
+  "notes": "Update EMARK_STAKING address after deployment"
+}

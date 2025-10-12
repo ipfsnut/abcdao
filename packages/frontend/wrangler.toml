@@ -1,0 +1,10 @@
+name = "abc-dao"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = ".next"
+
+[env.production]
+vars = { 
+  NEXT_PUBLIC_CHAIN_ID = "8453",
+  NEXT_PUBLIC_APP_URL = "https://abc.epicdylan.com",
+  NEXT_PUBLIC_BACKEND_URL = "https://api.abc.epicdylan.com"
+}

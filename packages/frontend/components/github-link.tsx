@@ -2,14 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { useFarcasterUser } from '@/contexts/farcaster-context';
+import { config, isInFrame, getCallbackUrl } from '@/lib/config';
 
 export function GitHubLinkPanel() {
   const { user: profile } = useFarcasterUser();
   const [isLinked, setIsLinked] = useState(false);
   const [githubUsername, setGithubUsername] = useState('');
   const [loading, setLoading] = useState(false);
+  const [inFrame, setInFrame] = useState(false);
 
   useEffect(() => {
+    // Detect if we're in a Farcaster frame or iframe
+    setInFrame(isInFrame());
+    
     // Check if user has already linked their GitHub
     if (profile?.fid) {
       checkGitHubLink(profile.fid);
@@ -18,7 +23,7 @@ export function GitHubLinkPanel() {
 
   const checkGitHubLink = async (fid: number) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/users/${fid}`);
+      const response = await fetch(`${config.backendUrl}/api/users/${fid}`);
       if (response.ok) {
         const data = await response.json();
         if (data.github_username) {
@@ -39,7 +44,7 @@ export function GitHubLinkPanel() {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/auth/github/authorize', {
+      const response = await fetch(`${config.backendUrl}/api/auth/github/authorize`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,18 +52,29 @@ export function GitHubLinkPanel() {
         body: JSON.stringify({
           farcasterFid: profile.fid,
           farcasterUsername: profile.username,
+          // Include callback URL for proper redirect after GitHub auth
+          callbackUrl: getCallbackUrl(),
         }),
       });
 
       if (response.ok) {
         const { authUrl } = await response.json();
-        window.location.href = authUrl;
+        
+        // Handle redirect differently for frames vs regular browser
+        if (inFrame) {
+          // In a frame, we need to open in a new window/tab
+          window.open(authUrl, '_blank');
+          alert('Complete GitHub authorization in the new tab, then refresh this page.');
+        } else {
+          // In regular browser, direct redirect is fine
+          window.location.href = authUrl;
+        }
       } else {
         alert('Failed to initialize GitHub authentication');
       }
     } catch (error) {
       console.error('Error linking GitHub:', error);
-      alert('Error connecting to backend');
+      alert('Error connecting to backend. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -66,39 +82,39 @@ export function GitHubLinkPanel() {
 
   if (!profile) {
     return (
-      <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 max-w-2xl backdrop-blur-sm">
-        <h2 className="text-xl font-bold mb-4 text-green-400 matrix-glow font-mono">
+      <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+        <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
           {'>'} link_github()
         </h2>
-        <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-8 text-center">
-          <p className="text-green-600 font-mono mb-4">// Authentication required</p>
-          <p className="text-green-400 font-mono">Please connect your Farcaster account to continue</p>
+        <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-4 sm:p-6 text-center">
+          <p className="text-green-600 font-mono mb-2 text-xs sm:text-sm">{"// Auth required"}</p>
+          <p className="text-green-400 font-mono text-sm sm:text-base">Connect Farcaster first</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 max-w-2xl backdrop-blur-sm">
-      <h2 className="text-xl font-bold mb-4 text-green-400 matrix-glow font-mono">
+    <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+      <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
         {'>'} link_github()
       </h2>
       
-      <div className="space-y-6">
+      <div className="space-y-4">
         {isLinked ? (
-          <div className="bg-green-950/20 border border-green-700/50 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-green-400 font-mono text-lg">✓ GitHub Linked</p>
-              <span className="text-green-600 font-mono">@{githubUsername}</span>
+          <div className="bg-green-950/20 border border-green-700/50 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-green-400 font-mono text-sm sm:text-base">✓ Linked</p>
+              <span className="text-green-600 font-mono text-xs sm:text-sm">@{githubUsername}</span>
             </div>
             
-            <div className="space-y-3 text-sm font-mono">
+            <div className="space-y-2 text-xs sm:text-sm font-mono">
               <div className="flex justify-between text-green-600">
                 <span>Status:</span>
                 <span className="text-green-400">ACTIVE</span>
               </div>
               <div className="flex justify-between text-green-600">
-                <span>Farcaster:</span>
+                <span>FC:</span>
                 <span className="text-green-400">@{profile.username}</span>
               </div>
               <div className="flex justify-between text-green-600">
@@ -107,37 +123,37 @@ export function GitHubLinkPanel() {
               </div>
             </div>
 
-            <div className="mt-6 p-4 bg-black/40 border border-green-900/30 rounded-lg">
-              <p className="text-green-600 font-mono text-sm mb-2">// Next steps:</p>
-              <ul className="space-y-1 text-green-400 font-mono text-sm">
-                <li>→ Push commits to earn $ABC</li>
-                <li>→ Create PRs for bonus rewards</li>
-                <li>→ Stake $ABC for ETH dividends</li>
+            <div className="mt-3 p-3 bg-black/40 border border-green-900/30 rounded-lg">
+              <p className="text-green-600 font-mono text-xs mb-2">{"// Next:"}</p>
+              <ul className="space-y-1 text-green-400 font-mono text-xs">
+                <li>→ Push commits = $ABC</li>
+                <li>→ Merge PRs = Bonus</li>
+                <li>→ Stake $ABC = ETH</li>
               </ul>
             </div>
           </div>
         ) : (
           <>
-            <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
-              <h3 className="font-mono text-green-400 mb-3">// How it works:</h3>
-              <ol className="space-y-2 text-green-600 font-mono text-sm">
-                <li>1. Link your GitHub account</li>
-                <li>2. Push commits to any public repo</li>
-                <li>3. Earn $ABC tokens automatically</li>
-                <li>4. Stake $ABC to earn ETH rewards</li>
+            <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3">
+              <h3 className="font-mono text-green-400 mb-2 text-sm">{"// How it works:"}</h3>
+              <ol className="space-y-1 text-green-600 font-mono text-xs">
+                <li>1. Link GitHub</li>
+                <li>2. Push commits</li>
+                <li>3. Earn $ABC</li>
+                <li>4. Stake for ETH</li>
               </ol>
             </div>
 
-            <div className="bg-black/60 border border-green-900/30 rounded-lg p-4">
-              <p className="text-green-600 font-mono text-sm mb-3">// Connected as:</p>
-              <div className="flex items-center gap-3">
+            <div className="bg-black/60 border border-green-900/30 rounded-lg p-3">
+              <p className="text-green-600 font-mono text-xs mb-2">{"// Connected:"}</p>
+              <div className="flex items-center gap-2">
                 <img 
                   src={profile.pfp?.url || `https://api.dicebear.com/7.x/identicon/svg?seed=${profile.fid}`} 
                   alt="Profile" 
-                  className="w-10 h-10 rounded-full border border-green-700/50"
+                  className="w-8 h-8 rounded-full border border-green-700/50"
                 />
                 <div>
-                  <p className="text-green-400 font-mono">@{profile.username}</p>
+                  <p className="text-green-400 font-mono text-sm">@{profile.username}</p>
                   <p className="text-green-600 font-mono text-xs">FID: {profile.fid}</p>
                 </div>
               </div>
@@ -146,16 +162,18 @@ export function GitHubLinkPanel() {
             <button
               onClick={linkGitHub}
               disabled={loading}
-              className="w-full bg-green-900/50 hover:bg-green-900/70 text-green-400 font-mono py-3 rounded-lg 
+              className="w-full bg-green-900/50 hover:bg-green-900/70 text-green-400 font-mono py-2.5 sm:py-3 rounded-lg 
                        border border-green-700/50 transition-all duration-300 hover:matrix-glow
-                       disabled:opacity-50 disabled:cursor-not-allowed"
+                       disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
             >
-              {loading ? '// Connecting...' : '$ git connect --github'}
+              {loading ? '// Connecting...' : '$ git connect'}
             </button>
 
             <div className="text-center">
               <p className="text-green-600 font-mono text-xs">
-                // This will redirect you to GitHub for authorization
+                {inFrame 
+                  ? "// Opens GitHub auth in new tab" 
+                  : "// Redirects to GitHub"}
               </p>
             </div>
           </>

@@ -4,10 +4,10 @@ import { http } from 'viem';
 
 export const config = getDefaultConfig({
   appName: 'ABC DAO',
-  projectId: 'YOUR_WALLETCONNECT_PROJECT_ID', // Get from https://cloud.walletconnect.com
+  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!,
   chains: [base],
   transports: {
-    [base.id]: http(`https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_KEY}`),
+    [base.id]: http(process.env.NEXT_PUBLIC_BASE_RPC_URL!),
   },
   ssr: true,
 });

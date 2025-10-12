@@ -1,19 +1,17 @@
 'use client';
 
 import { useEffect } from 'react';
-import { MiniAppSDK } from '@farcaster/miniapp-sdk';
+import { miniAppHost } from '@farcaster/miniapp-sdk';
 
 export function FarcasterMiniAppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Initialize Farcaster miniapp SDK
     try {
-      const sdk = new MiniAppSDK();
-      
       // Signal that the miniapp is ready (removes splash screen)
-      sdk.actions.ready();
+      miniAppHost.ready();
       
       // Store SDK instance globally for other components to use
-      (window as any).farcasterSDK = sdk;
+      (window as unknown as Record<string, unknown>).farcasterSDK = miniAppHost;
       
       console.log('✅ Farcaster miniapp SDK initialized');
     } catch (error) {
@@ -26,8 +24,8 @@ export function FarcasterMiniAppProvider({ children }: { children: React.ReactNo
 
 // Hook to use Farcaster SDK
 export function useFarcasterSDK() {
-  if (typeof window !== 'undefined' && (window as any).farcasterSDK) {
-    return (window as any).farcasterSDK as MiniAppSDK;
+  if (typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).farcasterSDK) {
+    return (window as unknown as Record<string, unknown>).farcasterSDK;
   }
   return null;
 }

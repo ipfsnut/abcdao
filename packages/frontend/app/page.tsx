@@ -2,67 +2,87 @@
 
 import { FarcasterAuth } from '@/components/farcaster-auth';
 import { GitHubLinkPanel } from '@/components/github-link';
-import { WhitepaperButton } from '@/components/whitepaper-modal';
+import { WhitepaperButton } from '@/components/whitepaper-button';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useState } from 'react';
+import { useStaking } from '@/hooks/useStaking';
+import { useUnbonding } from '@/hooks/useUnbonding';
+import { Toaster } from 'sonner';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'stake' | 'vote' | 'proposals'>('stake');
+  const stakingData = useStaking();
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
-      {/* Header */}
-      <header className="border-b border-green-900/30 bg-black/90 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold matrix-glow">
-                {'>'} ABC_DAO.exe
-              </h1>
-              <p className="text-sm text-green-600 mt-1 font-mono">
-                {/* Ship code. Earn rewards. Build the future. */}
-                Ship code. Earn rewards. Build the future.
-              </p>
+      {/* Mobile-First Header */}
+      <header className="border-b border-green-900/30 bg-black/90 backdrop-blur-sm sticky top-0 z-50">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between">
+            {/* Logo and Title - Compact on Mobile */}
+            <div className="flex items-center gap-2">
+              <img 
+                src="/abcdaologo.png" 
+                alt="ABC DAO Logo" 
+                className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
+              />
+              <div>
+                <h1 className="text-lg sm:text-2xl font-bold matrix-glow">
+                  {'>'} ABC_DAO
+                </h1>
+                <p className="hidden sm:block text-xs text-green-600 font-mono">
+                  Ship code. Earn rewards.
+                </p>
+              </div>
             </div>
-            <div className="flex gap-4 items-center">
+            
+            {/* Mobile-Optimized Actions */}
+            <div className="flex items-center gap-2">
               <WhitepaperButton />
-              <FarcasterAuth />
+              <div className="hidden sm:block">
+                <FarcasterAuth />
+              </div>
               <ConnectButton />
             </div>
           </div>
+          
+          {/* Mobile Tagline */}
+          <p className="sm:hidden text-xs text-green-600 mt-2 font-mono">
+            Ship code. Earn rewards. Build the future.
+          </p>
         </div>
       </header>
 
-      {/* Stats Bar */}
+      {/* Mobile-First Stats Bar - Horizontal Scroll on Mobile */}
       <div className="bg-black/80 border-b border-green-900/30 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
-              <p className="text-green-600 text-sm font-mono">Treasury_Balance</p>
-              <p className="text-2xl font-bold text-green-400 matrix-glow">0 $ABC</p>
+        <div className="px-4 py-3">
+          <div className="flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-visible sm:pb-0">
+            <div className="min-w-[140px] sm:min-w-0 bg-green-950/20 border border-green-900/50 rounded-lg p-3 matrix-button">
+              <p className="text-green-600 text-xs font-mono">Treasury</p>
+              <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">0 $ABC</p>
             </div>
-            <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
-              <p className="text-green-600 text-sm font-mono">Total_Staked</p>
-              <p className="text-2xl font-bold text-green-400 matrix-glow">0 $ABC</p>
+            <div className="min-w-[140px] sm:min-w-0 bg-green-950/20 border border-green-900/50 rounded-lg p-3 matrix-button">
+              <p className="text-green-600 text-xs font-mono">Total_Staked</p>
+              <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">{parseFloat(stakingData.totalStaked).toFixed(0)} $EMARK</p>
             </div>
-            <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
-              <p className="text-green-600 text-sm font-mono">ETH_Rewards</p>
-              <p className="text-2xl font-bold text-green-400 matrix-glow">0 ETH</p>
+            <div className="min-w-[140px] sm:min-w-0 bg-green-950/20 border border-green-900/50 rounded-lg p-3 matrix-button">
+              <p className="text-green-600 text-xs font-mono">ETH_Rewards</p>
+              <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">{parseFloat(stakingData.totalRewardsDistributed).toFixed(3)} ETH</p>
             </div>
-            <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
-              <p className="text-green-600 text-sm font-mono">Active_Devs</p>
-              <p className="text-2xl font-bold text-green-400 matrix-glow">0</p>
+            <div className="min-w-[140px] sm:min-w-0 bg-green-950/20 border border-green-900/50 rounded-lg p-3 matrix-button">
+              <p className="text-green-600 text-xs font-mono">Active_Devs</p>
+              <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">0</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        <div className="flex space-x-1 bg-green-950/10 border border-green-900/30 p-1 rounded-lg w-fit font-mono">
+      {/* Mobile-First Tab Navigation */}
+      <div className="px-4 mt-4">
+        <div className="flex bg-green-950/10 border border-green-900/30 p-1 rounded-lg font-mono overflow-x-auto">
           <button
             onClick={() => setActiveTab('stake')}
-            className={`px-6 py-2 rounded-md font-medium transition-all duration-300 ${
+            className={`px-3 py-2 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-sm sm:text-base ${
               activeTab === 'stake' 
                 ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                 : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
@@ -72,7 +92,7 @@ export default function Home() {
           </button>
           <button
             onClick={() => setActiveTab('vote')}
-            className={`px-6 py-2 rounded-md font-medium transition-all duration-300 ${
+            className={`px-3 py-2 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-sm sm:text-base ${
               activeTab === 'vote' 
                 ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                 : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
@@ -82,42 +102,43 @@ export default function Home() {
           </button>
           <button
             onClick={() => setActiveTab('proposals')}
-            className={`px-6 py-2 rounded-md font-medium transition-all duration-300 ${
+            className={`px-3 py-2 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-sm sm:text-base ${
               activeTab === 'proposals' 
                 ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                 : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
             }`}
           >
-            ./link_github
+            ./github
           </button>
         </div>
 
-        {/* Tab Content */}
-        <div className="mt-8">
-          {activeTab === 'stake' && <StakePanel />}
+        {/* Mobile-Optimized Tab Content */}
+        <div className="mt-4">
+          {activeTab === 'stake' && <StakePanel stakingData={stakingData} />}
           {activeTab === 'vote' && <VotePanel />}
           {activeTab === 'proposals' && <GitHubLinkPanel />}
         </div>
       </div>
+      <Toaster position="bottom-right" />
     </div>
   );
 }
 
-function StakePanel() {
+function StakePanel({ stakingData }: { stakingData: ReturnType<typeof useStaking> }) {
   const [amount, setAmount] = useState('');
   const [isStaking, setIsStaking] = useState(true);
 
   return (
-    <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 max-w-2xl backdrop-blur-sm">
-      <h2 className="text-xl font-bold mb-4 text-green-400 matrix-glow font-mono">
-        {isStaking ? '> stake_ABC()' : '> unstake_ABC()'}
+    <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+      <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
+        {isStaking ? '> stake_EMARK()' : '> unstake_EMARK()'}
       </h2>
       
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         <div className="flex gap-2">
           <button
             onClick={() => setIsStaking(true)}
-            className={`px-4 py-2 rounded-lg font-medium font-mono transition-all duration-300 ${
+            className={`flex-1 px-3 py-2 sm:px-4 rounded-lg font-medium font-mono transition-all duration-300 text-sm sm:text-base ${
               isStaking 
                 ? 'bg-green-900/50 text-green-400 border border-green-700/50 matrix-glow' 
                 : 'bg-green-950/20 text-green-600 border border-green-900/30 hover:text-green-400 hover:border-green-700/50'
@@ -127,7 +148,7 @@ function StakePanel() {
           </button>
           <button
             onClick={() => setIsStaking(false)}
-            className={`px-4 py-2 rounded-lg font-medium font-mono transition-all duration-300 ${
+            className={`flex-1 px-3 py-2 sm:px-4 rounded-lg font-medium font-mono transition-all duration-300 text-sm sm:text-base ${
               !isStaking 
                 ? 'bg-green-900/50 text-green-400 border border-green-700/50 matrix-glow' 
                 : 'bg-green-950/20 text-green-600 border border-green-900/30 hover:text-green-400 hover:border-green-700/50'
@@ -138,7 +159,7 @@ function StakePanel() {
         </div>
 
         <div>
-          <label className="block text-sm text-gray-400 mb-2">
+          <label className="block text-xs sm:text-sm text-green-600 mb-2 font-mono">
             Amount
           </label>
           <div className="flex gap-2">
@@ -147,44 +168,65 @@ function StakePanel() {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.0"
-              className="flex-1 bg-gray-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-600"
+              className="flex-1 bg-black border border-green-900/50 rounded-lg px-3 py-2 text-green-400 font-mono text-sm sm:text-base
+                         focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600
+                         placeholder:text-green-800"
             />
-            <button className="bg-gray-800 px-4 py-2 rounded-lg hover:bg-gray-700">
+            <button 
+              onClick={() => setAmount(isStaking ? stakingData.tokenBalance : stakingData.stakedAmount)}
+              className="bg-green-950/20 border border-green-900/50 hover:border-green-700/50 
+                               text-green-400 hover:text-green-300 px-3 sm:px-4 py-2 rounded-lg font-mono 
+                               transition-all duration-300 matrix-button text-sm sm:text-base">
               MAX
             </button>
           </div>
-          <p className="text-sm text-gray-400 mt-2">
-            Balance: 0 $ABC
+          <p className="text-xs sm:text-sm text-green-600 mt-2 font-mono">
+            Balance: {parseFloat(stakingData.tokenBalance).toFixed(2)} $EMARK
           </p>
         </div>
 
-        <button className="w-full bg-purple-600 hover:bg-purple-700 py-3 rounded-lg font-medium transition-colors">
-          {isStaking ? 'Stake $ABC' : 'Unstake $ABC'}
+        <button 
+          onClick={() => isStaking ? stakingData.handleStake(amount) : stakingData.handleUnstake(amount)}
+          disabled={stakingData.isStakeLoading || stakingData.isUnstakeLoading || stakingData.isApproveLoading}
+          className="w-full bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 
+                           text-green-400 hover:text-green-300 py-2.5 sm:py-3 rounded-lg font-mono font-medium 
+                           transition-all duration-300 matrix-button matrix-glow disabled:opacity-50 text-sm sm:text-base">
+{stakingData.isApproveLoading ? 'APPROVING...' : 
+           stakingData.isStakeLoading ? 'STAKING...' : 
+           stakingData.isUnstakeLoading ? 'UNSTAKING...' :
+           stakingData.isApproving ? 'APPROVAL PENDING...' :
+           isStaking && stakingData.needsApproval(amount) ? `${'>'} APPROVE $EMARK` :
+           isStaking ? `${'>'} STAKE $EMARK` : `${'>'} UNSTAKE $EMARK`}
         </button>
 
-        <div className="bg-gray-800/50 rounded-lg p-4">
-          <h3 className="font-semibold mb-2">Your Position</h3>
-          <div className="space-y-2 text-sm">
+        <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3 sm:p-4">
+          <h3 className="font-semibold mb-2 text-green-400 font-mono text-sm sm:text-base">{'>'} Your Position</h3>
+          <div className="space-y-2 text-xs sm:text-sm font-mono">
             <div className="flex justify-between">
-              <span className="text-gray-400">Staked Amount</span>
-              <span>0 $ABC</span>
+              <span className="text-green-600">Staked</span>
+              <span className="text-green-400">{parseFloat(stakingData.stakedAmount).toFixed(2)} $EMARK</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-400">Total ETH Earned</span>
-              <span>0 ETH</span>
+              <span className="text-green-600">ETH Earned</span>
+              <span className="text-green-400">{parseFloat(stakingData.totalEarned).toFixed(4)} ETH</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-400">Pending ETH</span>
-              <span className="text-green-400">0 ETH</span>
+              <span className="text-green-600">Pending</span>
+              <span className="text-green-300 matrix-glow">{parseFloat(stakingData.pendingRewards).toFixed(4)} ETH</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-400">Voting Power</span>
-              <span>0%</span>
+              <span className="text-green-600">Vote Power</span>
+              <span className="text-green-400">0%</span>
             </div>
           </div>
           
-          <button className="w-full bg-green-600 hover:bg-green-700 py-2 rounded-lg font-medium transition-colors mt-4">
-            Claim ETH Rewards (0 ETH)
+          <button 
+            onClick={stakingData.handleClaimRewards}
+            disabled={stakingData.isClaimLoading || parseFloat(stakingData.pendingRewards) === 0}
+            className="w-full bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 
+                             text-green-400 hover:text-green-300 py-2 rounded-lg font-mono font-medium 
+                             transition-all duration-300 matrix-button mt-3 disabled:opacity-50 text-xs sm:text-sm">
+            {'>'} {stakingData.isClaimLoading ? 'CLAIMING...' : `CLAIM (${parseFloat(stakingData.pendingRewards).toFixed(3)} ETH)`}
           </button>
         </div>
       </div>
@@ -193,13 +235,138 @@ function StakePanel() {
 }
 
 function VotePanel() {
+  const stakingData = useStaking();
+
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">Active Proposals</h2>
+      <h2 className="text-lg sm:text-xl font-bold text-green-400 matrix-glow font-mono">{'>'} rewards_dashboard()</h2>
       
-      <div className="bg-gray-900/50 rounded-xl p-6">
-        <p className="text-gray-400">No active proposals at the moment.</p>
+      {/* Mobile-First ETH Staking Rewards */}
+      <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+        <h3 className="text-base sm:text-lg font-semibold mb-3 text-green-400 font-mono">{'>'} ETH_Rewards</h3>
+        
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-3">
+            <p className="text-green-600 text-xs font-mono">Total_Earned</p>
+            <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">{parseFloat(stakingData.totalEarned).toFixed(3)} ETH</p>
+          </div>
+          
+          <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-3">
+            <p className="text-green-600 text-xs font-mono">Pending</p>
+            <p className="text-lg sm:text-xl font-bold text-green-300 matrix-glow">{parseFloat(stakingData.pendingRewards).toFixed(3)} ETH</p>
+          </div>
+        </div>
+
+        <button 
+          onClick={stakingData.handleClaimRewards}
+          disabled={stakingData.isClaimLoading || parseFloat(stakingData.pendingRewards) === 0}
+          className="w-full bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 
+                           text-green-400 hover:text-green-300 py-2.5 sm:py-3 rounded-lg font-mono font-medium 
+                           transition-all duration-300 matrix-button matrix-glow disabled:opacity-50 text-sm sm:text-base">
+          {'>'} {stakingData.isClaimLoading ? 'CLAIMING...' : 'CLAIM_ETH()'}
+        </button>
       </div>
+
+      {/* Mobile-First Developer Rewards */}
+      <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+        <h3 className="text-base sm:text-lg font-semibold mb-3 text-green-400 font-mono">{'>'} Dev_Rewards</h3>
+        
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3">
+          <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-2 sm:p-3">
+            <p className="text-green-600 text-xs font-mono">Commits</p>
+            <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">0</p>
+          </div>
+          
+          <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-2 sm:p-3">
+            <p className="text-green-600 text-xs font-mono">$ABC</p>
+            <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">0</p>
+          </div>
+          
+          <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-2 sm:p-3">
+            <p className="text-green-600 text-xs font-mono">Rank</p>
+            <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">--</p>
+          </div>
+        </div>
+
+        <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3">
+          <h4 className="font-semibold mb-2 text-green-400 font-mono text-sm">{'>'} Reward Rates</h4>
+          <div className="text-xs text-green-600 font-mono space-y-1">
+            <p className="text-green-500">• Commit = 10 $ABC</p>
+            <p className="text-green-500">• PR Merged = 50 $ABC</p>
+            <p className="text-green-500">• Issue Closed = 25 $ABC</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Unbonding Queue */}
+      <UnbondingPanel stakingData={stakingData} />
+    </div>
+  );
+}
+
+function UnbondingPanel({ stakingData }: { stakingData: ReturnType<typeof useStaking> }) {
+  const unbondingData = useUnbonding();
+
+  return (
+    <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+      <h3 className="text-base sm:text-lg font-semibold mb-3 text-green-400 font-mono">{'>'} Unbonding</h3>
+      
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-3">
+          <p className="text-green-600 text-xs font-mono">Unbonding</p>
+          <p className="text-lg sm:text-xl font-bold text-yellow-400 matrix-glow">{parseFloat(unbondingData.totalUnbonding).toFixed(1)}</p>
+        </div>
+        
+        <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-3">
+          <p className="text-green-600 text-xs font-mono">Withdrawable</p>
+          <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">{parseFloat(unbondingData.withdrawableAmount).toFixed(1)}</p>
+        </div>
+      </div>
+
+      {unbondingData.unbondingQueue.length > 0 ? (
+        <div className="space-y-2">
+          <h4 className="font-semibold text-green-400 font-mono text-sm">{'>'} Queue</h4>
+          {unbondingData.unbondingQueue.map((item, index) => {
+            const isReady = item.releaseTime <= Date.now() / 1000;
+            const timeLeft = item.releaseTime - Date.now() / 1000;
+            
+            return (
+              <div key={index} className="bg-green-950/10 border border-green-900/30 rounded-lg p-2.5">
+                <div className="flex justify-between items-center">
+                  <div className="font-mono text-xs sm:text-sm">
+                    <span className="text-green-400">{parseFloat(item.amount).toFixed(1)}</span>
+                    <span className="text-green-600 ml-2">
+                      {isReady ? 'Ready!' : `${Math.ceil(timeLeft / 3600)}h`}
+                    </span>
+                  </div>
+                  <div className={`px-2 py-0.5 rounded text-xs font-mono ${
+                    isReady 
+                      ? 'bg-green-900/50 text-green-400' 
+                      : 'bg-yellow-900/50 text-yellow-400'
+                  }`}>
+                    {isReady ? 'READY' : 'WAIT'}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3 text-center">
+          <p className="text-green-600 font-mono text-xs sm:text-sm">No tokens unbonding</p>
+        </div>
+      )}
+
+      {parseFloat(unbondingData.withdrawableAmount) > 0 && (
+        <button 
+          onClick={stakingData.handleCompleteUnstake}
+          disabled={stakingData.isUnstakeLoading}
+          className="w-full bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 
+                           text-green-400 hover:text-green-300 py-2.5 sm:py-3 rounded-lg font-mono font-medium 
+                           transition-all duration-300 matrix-button matrix-glow disabled:opacity-50 mt-3 text-sm sm:text-base">
+          {'>'} {stakingData.isUnstakeLoading ? 'WITHDRAWING...' : 'WITHDRAW()'}
+        </button>
+      )}
     </div>
   );
 }

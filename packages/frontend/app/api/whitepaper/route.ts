@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // Path to whitepaper in the root of the project (go up to abc-dao root)
+    // Path to whitepaper in the root of the project (go up from frontend to project root)
     const whitepaperPath = join(process.cwd(), '../../WHITEPAPER.md');
     const whitepaperContent = readFileSync(whitepaperPath, 'utf-8');
     
