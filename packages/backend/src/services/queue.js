@@ -108,7 +108,7 @@ async function processRewardJob(job) {
 }
 
 async function processCastJob(job) {
-  const { farcasterUsername, repository, commitMessage, rewardAmount, txHash } = job.data;
+  const { farcasterUsername, farcasterFid, repository, commitMessage, commitUrl, rewardAmount, txHash } = job.data;
   
   try {
     console.log(`📢 Posting cast for ${farcasterUsername}'s commit`);
@@ -116,12 +116,12 @@ async function processCastJob(job) {
     // Initialize Neynar client
     const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY);
     
-    // Create cast message with variety
-    const castText = generateCreativeCommitMessage(farcasterUsername, repository, commitMessage, rewardAmount);
+    // Create cast message with proper tagging and links
+    const castText = generateCommitAnnouncement(farcasterUsername, farcasterFid, repository, commitMessage, commitUrl, rewardAmount);
     
     // Post cast (using your bot account)
     const cast = await neynar.publishCast(
-      process.env.NEYNAR_SIGNER_UUID, // You'll need to create this
+      process.env.NEYNAR_SIGNER_UUID,
       castText
     );
     
@@ -143,95 +143,38 @@ async function processCastJob(job) {
   }
 }
 
-function generateCreativeCommitMessage(username, repository, commitMessage, rewardAmount) {
-  // Different message templates for variety
-  const templates = [
-    // Code shipping variations
-    {
-      intro: ["🚀", "⚡", "🔥", "💻", "🛠️", "✨"],
-      action: [
-        "dropped some fresh code!",
-        "pushed new commits!", 
-        "shipped something cool!",
-        "just committed changes!",
-        "added some magic to",
-        "leveled up",
-        "made improvements to",
-        "enhanced"
-      ]
-    },
-    // Achievement variations  
-    {
-      intro: ["🎯", "🏆", "💎", "🌟", "🎉"],
-      action: [
-        "scored another commit!",
-        "hit another milestone!",
-        "keeps building!",
-        "stays consistent!",
-        "never stops coding!"
-      ]
-    },
-    // Creative variations
-    {
-      intro: ["👨‍💻", "🧙‍♂️", "🥷", "🦾"],
-      action: [
-        "weaved some code magic!",
-        "crafted new features!",
-        "architected solutions!",
-        "engineered greatness!"
-      ]
-    }
-  ];
-
-  // Pick random template
-  const template = templates[Math.floor(Math.random() * templates.length)];
-  const intro = template.intro[Math.floor(Math.random() * template.intro.length)];
-  const action = template.action[Math.floor(Math.random() * template.action.length)];
-
-  // Determine repository context
+function generateCommitAnnouncement(username, fid, repository, commitMessage, commitUrl, rewardAmount) {
+  // Extract repo name
   const repoName = repository.split('/').pop() || repository;
-  const repoContext = Math.random() > 0.5 ? ` on ${repoName}` : '';
-
-  // Clean up commit message (remove common prefixes, truncate)
+  
+  // Clean up commit message - remove conventional commit prefixes and truncate
   let cleanMessage = commitMessage
-    .replace(/^(feat:|fix:|docs:|style:|refactor:|test:|chore:)\s*/i, '')
-    .replace(/^(add|update|fix|remove|delete|create|implement)\s+/i, '')
+    .replace(/^(feat|fix|docs|style|refactor|test|chore|build|ci|perf)(\(.+?\))?:\s*/i, '')
+    .split('\n')[0] // Take first line only
     .trim();
   
-  if (cleanMessage.length > 80) {
-    cleanMessage = cleanMessage.substring(0, 77) + '...';
+  if (cleanMessage.length > 100) {
+    cleanMessage = cleanMessage.substring(0, 97) + '...';
   }
 
-  // Reward amount formatting with variety
-  const rewardFormats = [
-    `${rewardAmount.toLocaleString()} $ABC`,
-    `${rewardAmount.toLocaleString()} $ABC tokens`, 
-    `${rewardAmount.toLocaleString()} ABC`,
-    `${(rewardAmount / 1000).toFixed(1)}K $ABC`
+  // Pick a random celebratory intro
+  const intros = [
+    '🚀 New commit!',
+    '⚡ Code shipped!',
+    '🔥 Fresh push!',
+    '💻 Update landed!',
+    '✨ Changes deployed!',
+    '🛠️ Build complete!'
   ];
-  const rewardText = rewardFormats[Math.floor(Math.random() * rewardFormats.length)];
+  const intro = intros[Math.floor(Math.random() * intros.length)];
 
-  // Motivational endings
-  const endings = [
-    "Keep shipping! 🚢",
-    "Always be coding! 💪", 
-    "LFG! 🚀",
-    "Building the future! 🔮",
-    "Code never sleeps! ⚡",
-    "Stack those commits! 📚",
-    "The grind continues! 🔥",
-    "Another day, another commit! ✊"
-  ];
-  const ending = endings[Math.floor(Math.random() * endings.length)];
-
-  // Build final message
-  let message = `${intro} @${username} ${action}${repoContext}\n\n`;
-  
-  if (cleanMessage && cleanMessage.length > 0) {
-    message += `"${cleanMessage}"\n\n`;
-  }
-  
-  message += `Earned ${rewardText} 💰\n\n${ending}\n\n#ABCDao #AlwaysBeCoding`;
+  // Build the message with proper tagging
+  let message = `${intro}\n\n`;
+  message += `@${username} just pushed to ${repoName}:\n\n`;
+  message += `"${cleanMessage}"\n\n`;
+  message += `💰 Earned: ${rewardAmount.toLocaleString()} $ABC\n\n`;
+  message += `🔗 ${commitUrl}\n\n`;
+  message += `#ABCDao #AlwaysBeCoding`;
 
   return message;
 }
