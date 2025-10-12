@@ -9,8 +9,8 @@ export default function WhitepaperPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load whitepaper content
-    fetch('/api/whitepaper')
+    // Load whitepaper content from static file
+    fetch('/whitepaper.md')
       .then(res => res.text())
       .then(content => {
         setWhitepaperContent(content);
