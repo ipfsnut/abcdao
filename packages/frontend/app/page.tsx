@@ -22,8 +22,8 @@ export default function Home() {
             {/* Logo and Title - Compact on Mobile */}
             <div className="flex items-center gap-2">
               <img 
-                src="/abcdaologo.png" 
-                alt="ABC DAO Logo" 
+                src="/abc-logo.png" 
+                alt="ABC Logo" 
                 className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
               />
               <div>
