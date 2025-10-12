@@ -54,18 +54,28 @@ async function processRewardJob(job) {
   try {
     console.log(`🏗️ Processing reward for commit ${commitHash} by ${farcasterUsername}`);
     
-    // Check if user is eligible (1M ABC staked)
-    const isEligible = await checkStakeEligibility(userId);
-    if (!isEligible) {
-      console.log(`❌ User ${farcasterUsername} not eligible (insufficient stake)`);
-      return;
-    }
-    
     // Generate random reward amount (100 - 10,000 ABC)
     const rewardAmount = Math.floor(Math.random() * 9901) + 100; // 100 to 10,000
     
-    // Send ABC tokens from bot wallet
-    const txHash = await sendABCReward(userId, rewardAmount);
+    let txHash = null;
+    
+    // Check if we're in development mode or tokens exist
+    const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.ABC_TOKEN_ADDRESS;
+    
+    if (isDevelopment) {
+      console.log(`🧪 Development mode: Simulating reward for ${farcasterUsername}`);
+      txHash = 'dev-tx-' + Date.now(); // Fake transaction hash
+    } else {
+      // Check if user is eligible (1M ABC staked)
+      const isEligible = await checkStakeEligibility(userId);
+      if (!isEligible) {
+        console.log(`❌ User ${farcasterUsername} not eligible (insufficient stake)`);
+        return;
+      }
+      
+      // Send ABC tokens from bot wallet
+      txHash = await sendABCReward(userId, rewardAmount);
+    }
     
     // Update commit record with reward amount
     const pool = getPool();
@@ -86,7 +96,7 @@ async function processRewardJob(job) {
         total_rewards = daily_stats.total_rewards + $3
     `, [userId, today, rewardAmount]);
     
-    console.log(`✅ Sent ${rewardAmount} ABC to ${farcasterUsername} (tx: ${txHash})`);
+    console.log(`✅ ${isDevelopment ? 'Simulated' : 'Sent'} ${rewardAmount} ABC to ${farcasterUsername} (tx: ${txHash})`);
     
     // Queue Farcaster cast
     await addCastJob({
@@ -96,7 +106,7 @@ async function processRewardJob(job) {
       commitMessage: commitMessage.slice(0, 100), // Truncate long messages
       commitUrl,
       rewardAmount,
-      txHash
+      txHash: isDevelopment ? null : txHash // Don't show fake tx hash in casts
     });
     
     return { success: true, rewardAmount, txHash };
