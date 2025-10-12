@@ -1,5 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --background: #000000;
@@ -10,18 +12,6 @@
   --matrix-black: #000000;
   --matrix-gray: #0a0a0a;
   --matrix-border: #00ff4120;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-matrix-green: var(--matrix-green);
-  --color-matrix-green-dim: var(--matrix-green-dim);
-  --color-matrix-green-dark: var(--matrix-green-dark);
-  --color-matrix-black: var(--matrix-black);
-  --color-matrix-gray: var(--matrix-gray);
-  --color-matrix-border: var(--matrix-border);
-  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
 }
 
 body {
