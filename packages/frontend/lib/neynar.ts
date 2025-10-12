@@ -1,14 +1,17 @@
 import { NeynarAPIClient } from '@neynar/nodejs-sdk';
 
-if (!process.env.NEYNAR_API_KEY) {
-  throw new Error('NEYNAR_API_KEY is not set in environment variables');
-}
-
-export const neynarClient = new NeynarAPIClient({
-  apiKey: process.env.NEYNAR_API_KEY || ''
-});
+// Only initialize client if API key is available (skip during build)
+export const neynarClient = process.env.NEYNAR_API_KEY 
+  ? new NeynarAPIClient({
+      apiKey: process.env.NEYNAR_API_KEY
+    })
+  : null;
 
 export async function getUser(fid: number) {
+  if (!neynarClient) {
+    throw new Error('NEYNAR_API_KEY is not set in environment variables');
+  }
+  
   try {
     const result = await neynarClient.fetchBulkUsers({ fids: [fid] });
     return result.users[0];
@@ -19,6 +22,10 @@ export async function getUser(fid: number) {
 }
 
 export async function verifyUser(messageBytes: string) {
+  if (!neynarClient) {
+    throw new Error('NEYNAR_API_KEY is not set in environment variables');
+  }
+  
   try {
     const result = await neynarClient.validateFrameAction({
       messageBytesInHex: messageBytes,
