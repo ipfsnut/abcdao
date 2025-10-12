@@ -49,6 +49,8 @@ router.post('/github', verifyGitHubSignature, async (req, res) => {
   try {
     if (event === 'push') {
       await handlePushEvent(payload);
+    } else if (event === 'pull_request') {
+      await handlePullRequestEvent(payload);
     }
     
     res.status(200).json({ status: 'received' });
@@ -142,21 +144,8 @@ async function processCommit(user, repository, commit) {
       commitUrl: commit.url
     });
     
-    // Announce on Farcaster if configured
-    if (farcasterService.isConfigured()) {
-      try {
-        const rewardAmount = 100; // Base reward for commits
-        await farcasterService.announcePRMerged(
-          user.github_username,
-          commit.message.split('\n')[0], // First line of commit message
-          commit.url,
-          rewardAmount
-        );
-      } catch (error) {
-        console.error('Failed to post to Farcaster:', error.message);
-        // Don't fail the webhook if Farcaster posting fails
-      }
-    }
+    // Note: Farcaster announcements are now handled by the queue system
+    // The cast will be posted after reward processing is complete
     
   } catch (error) {
     console.error('Error processing commit:', error);
@@ -190,6 +179,47 @@ if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
       res.status(500).json({ error: error.message });
     }
   });
+}
+
+async function handlePullRequestEvent(payload) {
+  const { action, pull_request } = payload;
+  
+  // Only process merged PRs
+  if (action !== 'closed' || !pull_request.merged) {
+    return;
+  }
+  
+  const pool = getPool();
+  
+  // Look up user by GitHub username
+  const userResult = await pool.query(
+    'SELECT * FROM users WHERE github_username = $1 AND verified_at IS NOT NULL',
+    [pull_request.user.login]
+  );
+  
+  if (userResult.rows.length === 0) {
+    console.log(`⚠️ PR merged by unregistered user: ${pull_request.user.login}`);
+    return;
+  }
+  
+  const user = userResult.rows[0];
+  
+  // Use Farcaster service for PR announcements (higher rewards)
+  if (farcasterService.isConfigured()) {
+    try {
+      const prReward = 500; // Higher reward for merged PRs
+      await farcasterService.announcePRMerged(
+        user.github_username,
+        pull_request.title,
+        pull_request.html_url,
+        prReward
+      );
+      
+      console.log(`✅ Announced PR merge for ${user.farcaster_username}`);
+    } catch (error) {
+      console.error('Failed to announce PR merge:', error.message);
+    }
+  }
 }
 
 export default router;
