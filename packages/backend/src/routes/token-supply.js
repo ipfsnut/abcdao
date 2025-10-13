@@ -130,7 +130,7 @@ router.get('/supply', async (req, res) => {
         percentage: (botWallet / TOTAL_SUPPLY) * 100,
         color: "#3b82f6",
         label: "Treasury Lock",
-        description: "Reserved for developer rewards",
+        description: "Protocol rewards pool",
         locked: true,
         circulating: false
       },
@@ -148,7 +148,7 @@ router.get('/supply', async (req, res) => {
         percentage: (DEV_LOCKUP / TOTAL_SUPPLY) * 100,
         color: "#eab308",
         label: "Development Lock",
-        description: "Team allocation with vesting schedule",
+        description: "Protocol allocation",
         locked: true,
         circulating: false
       }

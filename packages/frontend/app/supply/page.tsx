@@ -271,7 +271,7 @@ export default function SupplyPage() {
               </div>
               <div className="mt-4 p-3 bg-yellow-950/20 border border-yellow-900/30 rounded">
                 <p className="text-yellow-400 text-xs font-mono">
-                  💡 Note: Staked and bot wallet amounts use mock data until smart contract integration is complete
+                  💡 All data is live from blockchain contracts and updates in real-time
                 </p>
               </div>
             </div>
@@ -288,8 +288,8 @@ export default function SupplyPage() {
                     <li>• Total Supply: 100 Billion $ABC</li>
                     <li>• Circulating: Available for trading</li>
                     <li>• Staked: Earning ETH rewards</li>
-                    <li>• Treasury: Developer rewards pool</li>
-                    <li>• Development: Team allocation (5%)</li>
+                    <li>• Treasury: Protocol rewards pool</li>
+                    <li>• Development: Protocol allocation (5%)</li>
                     <li>• Clanker: Locked liquidity pool</li>
                   </ul>
                 </div>
