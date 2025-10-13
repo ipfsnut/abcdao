@@ -326,6 +326,37 @@ if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
   });
 
   // Admin endpoint to manually add user for testing
+  // Diagnostic endpoint to check schema
+  router.get('/db-schema', async (req, res) => {
+    try {
+      const pool = getPool();
+      
+      // Check commits table schema
+      const schemaQuery = `
+        SELECT column_name, data_type, is_nullable
+        FROM information_schema.columns 
+        WHERE table_name = 'commits' 
+        ORDER BY ordinal_position;
+      `;
+      
+      const result = await pool.query(schemaQuery);
+      
+      res.json({
+        status: 'success',
+        table: 'commits',
+        columns: result.rows,
+        message: 'Schema check completed'
+      });
+      
+    } catch (error) {
+      res.status(500).json({
+        error: 'Schema check failed',
+        details: error.message,
+        code: error.code
+      });
+    }
+  });
+
   router.post('/add-test-user', async (req, res) => {
     try {
       const pool = getPool();
