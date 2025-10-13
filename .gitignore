@@ -59,6 +59,17 @@ scripts/debug-*
 scripts/test-*
 scripts/check-*
 
+# Test files and development contracts
+test/*
+*.t.sol
+*Test.sol
+*Mock*.sol
+
+# Deployment and script files
+*.s.sol
+script/*
+Deploy*.sol
+
 # Deployment scripts (may contain sensitive info)
 scripts/deploy-*.sh
 scripts/update-addresses.js

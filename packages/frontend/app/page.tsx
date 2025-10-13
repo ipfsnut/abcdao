@@ -147,6 +147,16 @@ export default function Home() {
               >
                 ./join
               </button>
+              <button
+                onClick={() => setActiveTab('chat')}
+                className={`px-3 py-2 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-sm sm:text-base ${
+                  activeTab === 'chat' 
+                    ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
+                    : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+                }`}
+              >
+                ./chat
+              </button>
             </div>
 
             {/* Mobile-Optimized Tab Content */}
@@ -182,6 +192,32 @@ export default function Home() {
                 </div>
               )}
               {activeTab === 'proposals' && <GitHubLinkPanel />}
+              {activeTab === 'chat' && (
+                <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm text-center">
+                  <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
+                    {'>'} access_chat()
+                  </h2>
+                  <div className="bg-blue-950/20 border border-blue-900/30 rounded-lg p-4 mb-4">
+                    <p className="text-blue-400 font-mono text-sm mb-2">
+                      🔒 Token-Gated Chat
+                    </p>
+                    <p className="text-green-600 font-mono text-xs mb-4">
+                      Join the exclusive ABC community chat on Nounspace. $ABC token holders only.
+                    </p>
+                    <a
+                      href="https://www.nounspace.com/t/base/0x5c0872b790bb73e2b3a9778db6e7704095624b07/Profile"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block bg-green-900/50 hover:bg-green-800/60 text-green-400 font-mono px-4 py-2 rounded-lg border border-green-700/50 transition-all duration-300 matrix-button text-sm"
+                    >
+                      Enter Chat →
+                    </a>
+                  </div>
+                  <p className="text-green-600/70 font-mono text-xs">
+                    Hold $ABC tokens to verify access. Connect your wallet on Nounspace.
+                  </p>
+                </div>
+              )}
             </div>
           </>
         ) : (

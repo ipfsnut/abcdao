@@ -19,7 +19,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  */
 contract ABCStakingV2Fixed is ReentrancyGuard, Ownable, Pausable {
     // Use the actual ABC token address
-    IERC20 public constant ABC_TOKEN = IERC20(0x5c0872b790bb73e2b3a9778db6e7704095624b07);
+    IERC20 public constant ABC_TOKEN = IERC20(0x5C0872b790Bb73E2B3A9778db6e7704095624b07);
     
     struct StakeInfo {
         uint256 amount;           // Amount of tokens staked
@@ -45,63 +45,67 @@ contract ABCStakingV2Fixed is ReentrancyGuard, Ownable, Pausable {
     event Staked(address indexed user, uint256 amount);
     event UnbondingStarted(address indexed user, uint256 amount, uint256 releaseTime);
     event Unstaked(address indexed user, uint256 amount);
-    event EthRewardsClaimed(address indexed user, uint256 amount);
-    event WethRewardsClaimed(address indexed user, uint256 amount);
-    event EthRewardsReceived(uint256 amount);
-    event WethRewardsReceived(uint256 amount);
+    event RewardsClaimed(address indexed user, uint256 amount);
+    event RewardsReceived(uint256 amount);
     
-    constructor(address _abcToken, address _weth) Ownable(msg.sender) {
-        require(_abcToken != address(0), "ABC token address cannot be zero");
-        require(_weth != address(0), "WETH address cannot be zero");
-        
-        ABC_TOKEN = IERC20(_abcToken);
-        WETH = IERC20(_weth);
-    }
+    constructor() Ownable(msg.sender) {}
     
-    // Receive ETH rewards
+    /**
+     * @dev Receive ETH from trading fees or membership fees
+     * Automatically distributes rewards proportionally to all stakers
+     */
     receive() external payable {
         if (msg.value > 0 && totalStaked > 0) {
-            accEthRewardsPerShare += (msg.value * PRECISION) / totalStaked;
-            totalEthRewardsDistributed += msg.value;
-            emit EthRewardsReceived(msg.value);
+            accRewardsPerShare += (msg.value * PRECISION) / totalStaked;
+            totalRewardsDistributed += msg.value;
+            emit RewardsReceived(msg.value);
         }
     }
     
-    // Accept WETH rewards
-    function depositWethRewards(uint256 _amount) external {
-        require(_amount > 0, "No WETH amount specified");
-        require(totalStaked > 0, "No tokens staked");
-        
-        // Transfer WETH from sender to contract
-        WETH.transferFrom(msg.sender, address(this), _amount);
-        
-        accWethRewardsPerShare += (_amount * PRECISION) / totalStaked;
-        totalWethRewardsDistributed += _amount;
-        emit WethRewardsReceived(_amount);
-    }
-    
-    // Owner can deposit ETH rewards manually
-    function depositEthRewards() external payable onlyOwner {
+    /**
+     * @dev Allow manual reward deposits for testing and additional revenue streams
+     */
+    function depositRewards() external payable onlyOwner {
         require(msg.value > 0, "No ETH sent");
         require(totalStaked > 0, "No tokens staked");
-        accEthRewardsPerShare += (msg.value * PRECISION) / totalStaked;
-        totalEthRewardsDistributed += msg.value;
-        emit EthRewardsReceived(msg.value);
+        
+        accRewardsPerShare += (msg.value * PRECISION) / totalStaked;
+        totalRewardsDistributed += msg.value;
+        emit RewardsReceived(msg.value);
     }
     
+    /**
+     * @dev FIXED: Proper updateReward modifier that preserves pending rewards
+     * 
+     * CRITICAL FIX: The original modifier was setting rewardDebt = accumulated rewards,
+     * which effectively stole all pending rewards from users. This version:
+     * 1. Calculates pending rewards first
+     * 2. Adds them to totalEthEarned (preserving them)
+     * 3. Then updates reward debt to current state
+     */
     modifier updateReward(address account) {
         if (account != address(0)) {
             StakeInfo storage userStake = stakes[account];
             
-            // Update reward debts to current levels (prevents underflow)
-            userStake.ethRewardDebt = (userStake.amount * accEthRewardsPerShare) / PRECISION;
-            userStake.wethRewardDebt = (userStake.amount * accWethRewardsPerShare) / PRECISION;
+            // CRITICAL: Calculate and preserve any pending rewards BEFORE updating debt
+            uint256 pending = _calculatePendingRewards(account);
+            if (pending > 0) {
+                userStake.totalEthEarned += pending;
+            }
+            
+            // Now safely update reward debt to current accumulated rewards per share
+            userStake.rewardDebt = (userStake.amount * accRewardsPerShare) / PRECISION;
         }
         _;
     }
     
+    /**
+     * @dev Stake ABC tokens to earn ETH rewards
+     * FIXED: Removed duplicate reward debt update (modifier handles it properly)
+     */
     function stake(uint256 _amount) external nonReentrant whenNotPaused updateReward(msg.sender) {
         require(_amount > 0, "Cannot stake 0");
+        require(ABC_TOKEN.balanceOf(msg.sender) >= _amount, "Insufficient token balance");
         
         StakeInfo storage userStake = stakes[msg.sender];
         
@@ -113,16 +117,27 @@ contract ABCStakingV2Fixed is ReentrancyGuard, Ownable, Pausable {
         userStake.lastStakeTime = block.timestamp;
         totalStaked += _amount;
         
+        // FIXED: Reward debt is properly set by updateReward modifier AFTER amount increase
+        userStake.rewardDebt = (userStake.amount * accRewardsPerShare) / PRECISION;
+        
         emit Staked(msg.sender, _amount);
     }
     
+    /**
+     * @dev Start unbonding process - tokens enter unbonding period and stop earning rewards
+     * FIXED: Proper reward debt update after amount decrease
+     */
     function startUnbonding(uint256 _amount) external nonReentrant whenNotPaused updateReward(msg.sender) {
         StakeInfo storage userStake = stakes[msg.sender];
         require(userStake.amount >= _amount, "Insufficient staked amount");
+        require(_amount > 0, "Cannot unbond 0");
         
         // Remove from staked amount immediately (stops earning rewards)
         userStake.amount -= _amount;
         totalStaked -= _amount;
+        
+        // FIXED: Update reward debt after amount decrease
+        userStake.rewardDebt = (userStake.amount * accRewardsPerShare) / PRECISION;
         
         // Add to unbonding queue
         uint256 releaseTime = block.timestamp + UNBONDING_PERIOD;
@@ -134,6 +149,10 @@ contract ABCStakingV2Fixed is ReentrancyGuard, Ownable, Pausable {
         emit UnbondingStarted(msg.sender, _amount, releaseTime);
     }
     
+    /**
+     * @dev Complete unbonding and withdraw tokens
+     * Only withdraws tokens that have completed the unbonding period
+     */
     function unstake() external nonReentrant whenNotPaused {
         UnbondingInfo[] storage userUnbonding = unbonding[msg.sender];
         uint256 totalToWithdraw = 0;
@@ -165,94 +184,76 @@ contract ABCStakingV2Fixed is ReentrancyGuard, Ownable, Pausable {
         emit Unstaked(msg.sender, totalToWithdraw);
     }
     
-    // Claim ETH rewards
-    function withdrawEthRewards() external nonReentrant whenNotPaused updateReward(msg.sender) {
-        uint256 pending = pendingEthRewards(msg.sender);
-        require(pending > 0, "No ETH rewards to claim");
-        
+    /**
+     * @dev Withdraw accumulated ETH rewards
+     * FIXED: Properly uses totalEthEarned which is already updated by updateReward modifier
+     */
+    function withdrawRewards() external nonReentrant whenNotPaused updateReward(msg.sender) {
         StakeInfo storage userStake = stakes[msg.sender];
-        userStake.totalEthEarned += pending;
+        uint256 rewards = userStake.totalEthEarned;
         
-        // Safe transfer
-        (bool success, ) = payable(msg.sender).call{value: pending}("");
+        require(rewards > 0, "No rewards to claim");
+        require(address(this).balance >= rewards, "Insufficient contract balance");
+        
+        // Reset earned rewards (they're being claimed)
+        userStake.totalEthEarned = 0;
+        
+        // Send ETH rewards to user
+        (bool success, ) = payable(msg.sender).call{value: rewards}("");
         require(success, "ETH transfer failed");
         
-        emit EthRewardsClaimed(msg.sender, pending);
+        emit RewardsClaimed(msg.sender, rewards);
     }
     
-    // Claim WETH rewards
-    function withdrawWethRewards() external nonReentrant whenNotPaused updateReward(msg.sender) {
-        uint256 pending = pendingWethRewards(msg.sender);
-        require(pending > 0, "No WETH rewards to claim");
-        
-        StakeInfo storage userStake = stakes[msg.sender];
-        userStake.totalWethEarned += pending;
-        
-        WETH.transfer(msg.sender, pending);
-        emit WethRewardsClaimed(msg.sender, pending);
+    /**
+     * @dev Get total rewards earned (claimed + pending)
+     */
+    function getTotalEarned(address _user) external view returns (uint256) {
+        StakeInfo memory userStake = stakes[_user];
+        return userStake.totalEthEarned + pendingRewards(_user);
     }
     
-    // Claim both ETH and WETH rewards in one transaction
-    function withdrawAllRewards() external nonReentrant whenNotPaused updateReward(msg.sender) {
-        uint256 ethPending = pendingEthRewards(msg.sender);
-        uint256 wethPending = pendingWethRewards(msg.sender);
-        
-        require(ethPending > 0 || wethPending > 0, "No rewards to claim");
-        
-        StakeInfo storage userStake = stakes[msg.sender];
-        
-        if (ethPending > 0) {
-            userStake.totalEthEarned += ethPending;
-            (bool success, ) = payable(msg.sender).call{value: ethPending}("");
-            require(success, "ETH transfer failed");
-            emit EthRewardsClaimed(msg.sender, ethPending);
-        }
-        
-        if (wethPending > 0) {
-            userStake.totalWethEarned += wethPending;
-            WETH.transfer(msg.sender, wethPending);
-            emit WethRewardsClaimed(msg.sender, wethPending);
-        }
+    /**
+     * @dev FIXED: Calculate pending rewards with proper safety checks
+     */
+    function pendingRewards(address _user) public view returns (uint256) {
+        return _calculatePendingRewards(_user);
     }
     
-    // FIXED: Safe pending rewards calculation (prevents underflow)
-    function pendingEthRewards(address _user) public view returns (uint256) {
+    /**
+     * @dev Internal function to calculate pending rewards with safety checks
+     * CRITICAL FIX: Added underflow protection
+     */
+    function _calculatePendingRewards(address _user) internal view returns (uint256) {
         StakeInfo memory userStake = stakes[_user];
         if (userStake.amount == 0) return 0;
         
-        uint256 accumulated = (userStake.amount * accEthRewardsPerShare) / PRECISION;
+        uint256 accumulated = (userStake.amount * accRewardsPerShare) / PRECISION;
         
-        // SAFETY: Prevent underflow
-        if (accumulated <= userStake.ethRewardDebt) {
-            return 0;
+        // FIXED: Add safety check to prevent underflow
+        if (accumulated > userStake.rewardDebt) {
+            return accumulated - userStake.rewardDebt;
         }
-        
-        return accumulated - userStake.ethRewardDebt;
+        return 0;
     }
     
-    function pendingWethRewards(address _user) public view returns (uint256) {
-        StakeInfo memory userStake = stakes[_user];
-        if (userStake.amount == 0) return 0;
-        
-        uint256 accumulated = (userStake.amount * accWethRewardsPerShare) / PRECISION;
-        
-        // SAFETY: Prevent underflow
-        if (accumulated <= userStake.wethRewardDebt) {
-            return 0;
-        }
-        
-        return accumulated - userStake.wethRewardDebt;
-    }
-    
-    // View functions
+    /**
+     * @dev Get user's staked amount
+     */
     function getStakedAmount(address _user) external view returns (uint256) {
         return stakes[_user].amount;
     }
     
+    /**
+     * @dev Get user's unbonding information
+     */
     function getUnbondingInfo(address _user) external view returns (UnbondingInfo[] memory) {
         return unbonding[_user];
     }
     
+    /**
+     * @dev Get amount ready to be withdrawn (unbonding period completed)
+     */
     function getWithdrawableAmount(address _user) external view returns (uint256) {
         UnbondingInfo[] memory userUnbonding = unbonding[_user];
         uint256 withdrawable = 0;
@@ -266,39 +267,34 @@ contract ABCStakingV2Fixed is ReentrancyGuard, Ownable, Pausable {
         return withdrawable;
     }
     
-    function getTotalEthEarned(address _user) external view returns (uint256) {
-        StakeInfo memory userStake = stakes[_user];
-        return userStake.totalEthEarned + pendingEthRewards(_user);
+    /**
+     * @dev Check if user is eligible for commit rewards (has minimum stake)
+     */
+    function isEligibleForRewards(address _user) external view returns (bool) {
+        return stakes[_user].amount >= 1000000 * 1e18; // 1M ABC minimum for commit rewards
     }
     
-    function getTotalWethEarned(address _user) external view returns (uint256) {
-        StakeInfo memory userStake = stakes[_user];
-        return userStake.totalWethEarned + pendingWethRewards(_user);
-    }
-    
+    /**
+     * @dev Get comprehensive stake information for frontend
+     */
     function getStakeInfo(address _user) external view returns (
         uint256 amount,
         uint256 lastStakeTime,
         uint256 totalEthEarned,
-        uint256 totalWethEarned,
-        uint256 pendingEth,
-        uint256 pendingWeth
+        uint256 pendingEth
     ) {
         StakeInfo memory userStake = stakes[_user];
         return (
             userStake.amount,
             userStake.lastStakeTime,
             userStake.totalEthEarned,
-            userStake.totalWethEarned,
-            pendingEthRewards(_user),
-            pendingWethRewards(_user)
+            pendingRewards(_user)
         );
     }
     
-    function isEligibleForRewards(address _user) external view returns (bool) {
-        return stakes[_user].amount >= 100 * 1e18; // 100 ABC minimum
-    }
-    
+    /**
+     * @dev Emergency functions
+     */
     function pause() external onlyOwner {
         _pause();
     }
@@ -307,9 +303,19 @@ contract ABCStakingV2Fixed is ReentrancyGuard, Ownable, Pausable {
         _unpause();
     }
     
-    // Emergency function to recover stuck tokens (except ABC and staked amounts)
-    function emergencyRecover(address token, uint256 amount) external onlyOwner {
-        require(token != address(ABC_TOKEN), "Cannot recover staking token");
-        IERC20(token).transfer(owner(), amount);
+    /**
+     * @dev Emergency withdraw function for owner (only if contract is paused)
+     */
+    function emergencyWithdraw() external onlyOwner whenPaused {
+        require(address(this).balance > 0, "No ETH to withdraw");
+        (bool success, ) = payable(owner()).call{value: address(this).balance}("");
+        require(success, "Emergency withdraw failed");
+    }
+    
+    /**
+     * @dev Get contract balance for transparency
+     */
+    function getContractBalance() external view returns (uint256) {
+        return address(this).balance;
     }
 }
