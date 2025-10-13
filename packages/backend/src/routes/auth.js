@@ -88,11 +88,78 @@ router.get('/github/callback', async (req, res) => {
     
     console.log(`✅ Linked GitHub ${githubUser.login} to Farcaster ${farcasterInfo.username}`);
     
-    // Use a simple redirect with success message in URL
+    // Use HTML response with JavaScript for better mobile/frame compatibility
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const redirectUrl = `${frontendUrl}?github_linked=true&username=${encodeURIComponent(githubUser.login)}`;
+    const successUrl = `${frontendUrl}?github_linked=true&username=${encodeURIComponent(githubUser.login)}`;
     
-    res.redirect(redirectUrl);
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>GitHub Linked Successfully</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          body { 
+            font-family: monospace;
+            background: #0a0a0a; 
+            color: #00ff41; 
+            padding: 2rem; 
+            text-align: center;
+            line-height: 1.6;
+          }
+          .success { 
+            background: #001100; 
+            border: 1px solid #00ff41; 
+            padding: 2rem; 
+            border-radius: 8px; 
+            margin: 2rem auto;
+            max-width: 500px;
+          }
+          .glow { text-shadow: 0 0 10px #00ff41; }
+          .username { color: #ffaa00; }
+        </style>
+      </head>
+      <body>
+        <div class="success">
+          <h1 class="glow">✅ GitHub Linked!</h1>
+          <p>GitHub <span class="username">@${githubUser.login}</span> linked to Farcaster <span class="username">@${farcasterInfo.username}</span></p>
+          <p>Redirecting back to ABC DAO...</p>
+        </div>
+        <script>
+          // Try multiple redirect methods for different contexts
+          setTimeout(() => {
+            try {
+              // For Farcaster frames
+              if (window.parent !== window) {
+                window.parent.postMessage({
+                  type: 'github_linked',
+                  username: '${githubUser.login}',
+                  success: true
+                }, '*');
+              }
+              
+              // Standard redirect
+              window.location.href = '${successUrl}';
+              
+              // Fallback: try to close the window
+              setTimeout(() => {
+                try {
+                  window.close();
+                } catch (e) {
+                  // Can't close, redirect again
+                  window.location.replace('${successUrl}');
+                }
+              }, 1000);
+            } catch (e) {
+              console.error('Redirect error:', e);
+              // Last resort: show manual link
+              document.body.innerHTML += '<p><a href="${successUrl}" style="color: #00ff41;">Click here to continue</a></p>';
+            }
+          }, 2000);
+        </script>
+      </body>
+      </html>
+    `);
     
   } catch (error) {
     console.error('GitHub OAuth error:', error);

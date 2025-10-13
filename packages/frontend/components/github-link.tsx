@@ -26,6 +26,18 @@ export function GitHubLinkPanel() {
       checkGitHubLink(profile.fid);
     }
     
+    // Listen for OAuth callback messages (from popup/iframe)
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'github_linked' && event.data.success) {
+        setIsLinked(true);
+        setGithubUsername(event.data.username);
+        setShowPayment(true);
+        console.log('✅ GitHub linked via postMessage:', event.data.username);
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    
     // Update linked status from membership hook
     if (membership.hasGithub) {
       setIsLinked(true);
@@ -33,6 +45,11 @@ export function GitHubLinkPanel() {
         setGithubUsername(membership.githubUsername);
       }
     }
+    
+    // Cleanup event listener
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
   }, [profile, membership.hasGithub, membership.githubUsername]);
 
   const checkGitHubLink = async (fid: number) => {
