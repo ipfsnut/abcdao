@@ -30,12 +30,12 @@ Stakers earn $ETH from two sources while developers earn $ABC for shipping code.
 ## 3. THE DEVELOPER GAME
 
 ### How to Play
-1. Purchase one-time developer membership (0.002 ETH)
-2. Buy and stake $ABC tokens
-3. Connect your GitHub account to your Farcaster profile
-4. Ship code as you normally would
-5. Earn $ABC rewards for every commit
-6. Get automatic Farcaster casts celebrating your work
+1. **Join ABC DAO**: Pay 0.002 ETH membership fee to bot wallet
+2. **Link GitHub**: Connect your GitHub account via Farcaster miniapp
+3. **Buy $ABC**: Purchase tokens on Base (Clanker v4 token)
+4. **Stake tokens**: Lock $ABC to unlock commit rewards
+5. **Ship code**: Code normally - all public commits count
+6. **Earn rewards**: Get $ABC for commits + ETH from staking
 
 ### Staking Benefits
 - Unlock commit rewards (must be staked to earn)
