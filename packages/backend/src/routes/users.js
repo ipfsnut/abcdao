@@ -48,17 +48,21 @@ router.get('/:fid/status', async (req, res) => {
   try {
     const pool = getPool();
     
-    // Get user info
+    // Get user info including membership status
     const userResult = await pool.query(`
       SELECT 
-        farcaster_fid,
-        farcaster_username,
-        github_username,
-        wallet_address,
-        verified_at,
-        created_at
-      FROM users 
-      WHERE farcaster_fid = $1
+        u.farcaster_fid,
+        u.farcaster_username,
+        u.github_username,
+        u.wallet_address,
+        u.verified_at,
+        u.created_at,
+        u.membership_status,
+        u.membership_paid_at,
+        u.membership_tx_hash,
+        u.membership_amount
+      FROM users u
+      WHERE u.farcaster_fid = $1
     `, [fid]);
     
     if (userResult.rows.length === 0) {
@@ -98,6 +102,9 @@ router.get('/:fid/status', async (req, res) => {
     
     res.json({
       linked: isLinked,
+      membership_tx_hash: user.membership_tx_hash,
+      membership_status: user.membership_status,
+      membership_paid_at: user.membership_paid_at,
       user: {
         farcaster_fid: user.farcaster_fid,
         farcaster_username: user.farcaster_username,
