@@ -217,7 +217,7 @@ export function GitHubLinkPanel() {
             </div>
             
             <p className="text-green-600/70 font-mono text-xs text-center mt-2">
-              Don't want to pay? Click ✕ to unlink and cancel
+              Don&apos;t want to pay? Click ✕ to unlink and cancel
             </p>
           </div>
         </div>
