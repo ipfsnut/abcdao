@@ -42,12 +42,10 @@ export default function Home() {
                 <p className="text-xs text-green-600 font-mono mb-2">
                   Ship code. Earn rewards.
                 </p>
-                {isConnected && (
-                  <div className="bg-green-950/20 border border-green-900/50 rounded-lg px-3 py-2 mb-2">
-                    <p className="text-green-600 text-xs font-mono">Your Balance</p>
-                    <p className="text-sm font-bold text-green-400 matrix-glow">{parseFloat(stakingData.tokenBalance).toFixed(2)} $ABC</p>
-                  </div>
-                )}
+                <div className="bg-green-950/20 border border-green-900/50 rounded-lg px-3 py-2 mb-2">
+                  <p className="text-green-600 text-xs font-mono text-center">Your Balance</p>
+                  <p className="text-sm font-bold text-green-400 matrix-glow text-center">{parseFloat(stakingData.tokenBalance).toFixed(2)} $ABC</p>
+                </div>
                 <WhitepaperButton />
               </div>
             </>

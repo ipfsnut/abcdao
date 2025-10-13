@@ -44,7 +44,7 @@ async function runMigrations() {
     
     if (exists1.rows.length === 0) {
       await client.query(`
-        CREATE TABLE users (
+        CREATE TABLE IF NOT EXISTS users (
           id SERIAL PRIMARY KEY,
           farcaster_fid INTEGER UNIQUE NOT NULL,
           farcaster_username VARCHAR(255) NOT NULL,
@@ -68,7 +68,7 @@ async function runMigrations() {
     
     if (exists2.rows.length === 0) {
       await client.query(`
-        CREATE TABLE commits (
+        CREATE TABLE IF NOT EXISTS commits (
           id SERIAL PRIMARY KEY,
           user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
           commit_hash VARCHAR(40) UNIQUE NOT NULL,
@@ -92,7 +92,7 @@ async function runMigrations() {
     
     if (exists3.rows.length === 0) {
       await client.query(`
-        CREATE TABLE daily_stats (
+        CREATE TABLE IF NOT EXISTS daily_stats (
           user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
           date DATE NOT NULL,
           commit_count INTEGER DEFAULT 0,

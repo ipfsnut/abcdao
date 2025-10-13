@@ -216,10 +216,15 @@ async function processRewardDirectly(commitData) {
     try {
       await pool.query(`
         INSERT INTO daily_stats (user_id, date, commit_count, total_rewards)
-        VALUES ($1, $2, 1, $3::text)
+        VALUES ($1, $2, 1, $3)
+        ON CONFLICT (user_id, date) 
+        DO UPDATE SET 
+          commit_count = daily_stats.commit_count + 1,
+          total_rewards = daily_stats.total_rewards + EXCLUDED.total_rewards
       `, [userId, today, rewardAmount]);
     } catch (error) {
-      console.log('⚠️ Daily stats insert failed (probably already exists):', error.message);
+      console.log('⚠️ Daily stats update failed:', error.message);
+      throw error;
     }
     
     console.log(`✅ Awarded ${rewardAmount} ABC to ${farcasterUsername}`);
@@ -266,7 +271,7 @@ async function postCommitCast(castData) {
       .split('\n')[0]
       .trim();
     
-    const castText = `🚀 New commit!\n\n@${farcasterUsername} just pushed to ${repoName}:\n\n"${cleanMessage}"\n\n💰 Earned: ${rewardAmount} $ABC\n\n#ABCDao #AlwaysBeCoding`;
+    const castText = `🚀 New commit!\n\n@${farcasterUsername} just pushed to ${repoName}:\n\n"${cleanMessage}"\n\n💰 Earned: ${rewardAmount.toLocaleString()} $ABC\n\n📱 Want rewards? Add our miniapp:\nfarcaster.xyz/miniapps/S1edg9PycxZP/abcdao\n\n#ABCDao #AlwaysBeCoding`;
     
     // Post cast
     const cast = await neynar.publishCast(

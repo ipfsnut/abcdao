@@ -84,7 +84,7 @@ async function createBotAccount() {
         deadline: deadline,
         fname: username,
         metadata: {
-          bio: "ABC DAO Bot - Rewarding builders for their contributions 🚀",
+          bio: "ABC DAO Bot 🤖 Ship code, earn $ABC!\n\n💰 $ABC: 0x5c0872b790bb73e2b3a9778db6e7704095624b07\n📱 Add miniapp: farcaster.xyz/miniapps/S1edg9PycxZP/abcdao\n\n#AlwaysBeCoding",
           display_name: "ABC Bot",
           pfp_url: "https://i.imgur.com/3kFzKxm.png" // You can change this
         }
