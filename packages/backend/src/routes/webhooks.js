@@ -46,6 +46,12 @@ router.post('/github', verifyGitHubSignature, async (req, res) => {
   const event = req.get('X-GitHub-Event');
   const payload = req.body;
   
+  console.log('🔍 WEBHOOK DEBUG:');
+  console.log('Event:', event);
+  console.log('Repository:', payload?.repository?.full_name);
+  console.log('Pusher:', payload?.pusher?.name);
+  console.log('Commits:', payload?.commits?.length);
+  
   try {
     if (event === 'push') {
       await handlePushEvent(payload);
@@ -53,11 +59,16 @@ router.post('/github', verifyGitHubSignature, async (req, res) => {
       await handlePullRequestEvent(payload);
     }
     
+    console.log('✅ Webhook processed successfully');
     res.status(200).json({ status: 'received' });
     
   } catch (error) {
-    console.error('Webhook processing error:', error);
-    res.status(500).json({ error: 'Webhook processing failed' });
+    console.error('❌ Webhook processing error:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Webhook processing failed',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
@@ -84,7 +95,7 @@ async function handlePushEvent(payload) {
   
   // Look up user by GitHub username
   const userResult = await pool.query(
-    'SELECT * FROM users WHERE github_username = $1 AND verified_at IS NOT NULL',
+    'SELECT * FROM users WHERE github_username = $1 AND "verified-at" IS NOT NULL',
     [githubUsername]
   );
   
@@ -183,8 +194,8 @@ async function processRewardDirectly(commitData) {
   try {
     console.log(`🏗️ Processing reward directly for commit ${commitHash} by ${farcasterUsername}`);
     
-    // Generate reward amount (10 ABC for now)
-    const rewardAmount = 10;
+    // Generate random reward amount (50,000 - 1,000,000 ABC)
+    const rewardAmount = Math.floor(Math.random() * 950000) + 50000; // 50k to 1M ABC
     
     // Update commit record with reward amount
     const pool = getPool();
@@ -346,7 +357,7 @@ async function handlePullRequestEvent(payload) {
   
   // Look up user by GitHub username
   const userResult = await pool.query(
-    'SELECT * FROM users WHERE github_username = $1 AND verified_at IS NOT NULL',
+    'SELECT * FROM users WHERE github_username = $1 AND "verified-at" IS NOT NULL',
     [pull_request.user.login]
   );
   

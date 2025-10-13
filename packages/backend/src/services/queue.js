@@ -54,8 +54,8 @@ async function processRewardJob(job) {
   try {
     console.log(`🏗️ Processing reward for commit ${commitHash} by ${farcasterUsername}`);
     
-    // Generate random reward amount (100 - 10,000 ABC)
-    const rewardAmount = Math.floor(Math.random() * 9901) + 100; // 100 to 10,000
+    // Generate random reward amount (50,000 - 1,000,000 ABC)
+    const rewardAmount = Math.floor(Math.random() * 950000) + 50000; // 50k to 1M ABC
     
     let txHash = null;
     
