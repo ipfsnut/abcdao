@@ -5,6 +5,7 @@ import { FarcasterAuth } from '@/components/farcaster-auth';
 import { GitHubLinkPanel } from '@/components/github-link';
 import { WhitepaperButton } from '@/components/whitepaper-button';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useAccount } from 'wagmi';
 import { useFarcaster } from '@/components/farcaster-miniapp';
 import { useState } from 'react';
 import { useStaking } from '@/hooks/useStaking';
@@ -14,6 +15,7 @@ import { Toaster } from 'sonner';
 
 export default function Home() {
   const { isInMiniApp } = useFarcaster();
+  const { isConnected } = useAccount();
   const [activeTab, setActiveTab] = useState<'stake' | 'rewards' | 'proposals' | 'chat' | 'swap'>('stake');
   const stakingData = useStaking();
   const treasuryData = useTreasury();
@@ -40,6 +42,12 @@ export default function Home() {
                 <p className="text-xs text-green-600 font-mono mb-2">
                   Ship code. Earn rewards.
                 </p>
+                {isConnected && (
+                  <div className="bg-green-950/20 border border-green-900/50 rounded-lg px-3 py-2 mb-2">
+                    <p className="text-green-600 text-xs font-mono">Your Balance</p>
+                    <p className="text-sm font-bold text-green-400 matrix-glow">{parseFloat(stakingData.tokenBalance).toFixed(2)} $ABC</p>
+                  </div>
+                )}
                 <WhitepaperButton />
               </div>
             </>
