@@ -6,6 +6,7 @@ import { GitHubLinkPanel } from '@/components/github-link';
 import { WhitepaperButton } from '@/components/whitepaper-button';
 import { SwapWidget } from '@/components/swap-widget';
 import { ClaimRewardsPanel } from '@/components/claim-rewards';
+import { TokenSupplyMini } from '@/components/token-supply-chart';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import Link from 'next/link';
@@ -99,7 +100,7 @@ export default function Home() {
       {/* Mobile-First Stats Bar - Horizontal Scroll on Mobile */}
       <div className="bg-black/80 border-b border-green-900/30 backdrop-blur-sm">
         <div className="px-4 py-3">
-          <div className="flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-visible sm:pb-0">
+          <div className="flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 lg:grid-cols-5 sm:overflow-visible sm:pb-0">
             <div className="min-w-[140px] sm:min-w-0 bg-green-950/20 border border-green-900/50 rounded-lg p-3 matrix-button">
               <p className="text-green-600 text-xs font-mono">Treasury</p>
               <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">{parseFloat(treasuryData.treasuryBalance).toFixed(0)} $ABC</p>
@@ -116,6 +117,7 @@ export default function Home() {
               <p className="text-green-600 text-xs font-mono">Active_Devs</p>
               <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">{stats.activeDevelopers}</p>
             </Link>
+            <TokenSupplyMini />
           </div>
         </div>
       </div>

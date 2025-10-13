@@ -16,6 +16,7 @@ import rewardRoutes from './routes/rewards.js';
 import adminRoutes from './routes/admin.js';
 import batchRoutes from './routes/batch.js';
 import testGithubRoutes from './routes/test-github.js';
+import tokenSupplyRoutes from './routes/token-supply.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
@@ -84,6 +85,7 @@ app.use('/api/rewards', rewardRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/batch', batchRoutes);
 app.use('/api/test', testGithubRoutes);
+app.use('/api/stats', tokenSupplyRoutes);
 
 // Custom cast endpoint (requires admin key for security)
 app.post('/api/cast/custom', async (req, res) => {
