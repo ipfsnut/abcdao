@@ -262,6 +262,26 @@ async function runMigrations() {
       console.log('✅ Migration: Added processed_casts table');
     }
 
+    // Migration 7: Fix users table schema (add missing columns for OAuth)
+    const migration7 = 'fix_users_table_oauth_columns';
+    const exists7 = await client.query('SELECT * FROM migrations WHERE name = $1', [migration7]);
+    
+    if (exists7.rows.length === 0) {
+      // Add missing columns for OAuth flow
+      await client.query(`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS github_id INTEGER UNIQUE,
+        ADD COLUMN IF NOT EXISTS access_token TEXT,
+        ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()
+      `);
+
+      // Add indexes for new columns
+      await client.query('CREATE INDEX IF NOT EXISTS idx_users_github_id ON users(github_id)');
+
+      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration7]);
+      console.log('✅ Migration: Added missing OAuth columns to users table');
+    }
+
     
   } catch (error) {
     console.error('❌ Migration failed:', error);
