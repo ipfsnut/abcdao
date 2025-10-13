@@ -56,7 +56,7 @@ export function ClaimRewardsPanel() {
     }
   }, [claimSuccess, refetchClaimable, refetchRewardInfo]);
 
-  const hasClaimableRewards = claimableAmount && claimableAmount > 0n;
+  const hasClaimableRewards = claimableAmount && claimableAmount > BigInt(0);
   const claimableInEther = claimableAmount ? formatEther(claimableAmount) : '0';
   
   const rewardInfoParsed = rewardInfo ? {
