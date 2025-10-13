@@ -24,11 +24,39 @@ import { setupQueues } from './services/queue.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Security middleware
-app.use(helmet());
+// Security middleware - configure helmet to allow OAuth redirects
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP for OAuth redirects
+  crossOriginEmbedderPolicy: false
+}));
+
+// CORS configuration
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:3000',
+  'https://warpcast.com',
+  'https://client.warpcast.com',
+  'https://abcdao.vercel.app'
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // Allow localhost and Railway subdomains for development
+    if (origin.includes('localhost') || origin.includes('railway.app')) {
+      return callback(null, true);
+    }
+    
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 // Body parsing middleware
