@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { useStaking } from '@/hooks/useStaking';
 import { useUnbonding } from '@/hooks/useUnbonding';
 import { useTreasury } from '@/hooks/useTreasury';
+import { useStats } from '@/hooks/useStats';
 import { Toaster } from 'sonner';
 
 export default function Home() {
@@ -19,6 +20,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'stake' | 'rewards' | 'proposals' | 'chat' | 'swap'>('stake');
   const stakingData = useStaking();
   const treasuryData = useTreasury();
+  const { stats } = useStats();
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
@@ -107,7 +109,7 @@ export default function Home() {
             </div>
             <div className="min-w-[140px] sm:min-w-0 bg-green-950/20 border border-green-900/50 rounded-lg p-3 matrix-button">
               <p className="text-green-600 text-xs font-mono">Active_Devs</p>
-              <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">0</p>
+              <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">{stats.activeDevelopers}</p>
             </div>
           </div>
         </div>

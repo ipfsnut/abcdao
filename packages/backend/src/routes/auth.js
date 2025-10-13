@@ -93,9 +93,10 @@ router.post('/github/authorize', async (req, res) => {
       { expiresIn: '1h' }
     );
     
+    const backendUrl = process.env.BACKEND_URL || 'https://abcdao-production.up.railway.app';
     const authUrl = `https://github.com/login/oauth/authorize?` +
       `client_id=${process.env.GITHUB_CLIENT_ID}&` +
-      `redirect_uri=${encodeURIComponent(process.env.FRONTEND_URL + '/api/auth/github/callback')}&` +
+      `redirect_uri=${encodeURIComponent(backendUrl + '/api/auth/github/callback')}&` +
       `scope=user:email&` +
       `state=${state}`;
     

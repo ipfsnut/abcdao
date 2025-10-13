@@ -3,6 +3,44 @@ import { getPool } from '../services/database.js';
 
 const router = express.Router();
 
+// Get global stats
+router.get('/stats', async (req, res) => {
+  try {
+    const pool = getPool();
+    
+    // Count active developers (users with GitHub linked and verified)
+    const activeDevsResult = await pool.query(`
+      SELECT COUNT(*) as count 
+      FROM users 
+      WHERE github_username IS NOT NULL 
+      AND "verified-at" IS NOT NULL
+    `);
+    
+    // Get total commits count
+    const totalCommitsResult = await pool.query(`
+      SELECT COUNT(*) as count 
+      FROM commits
+    `);
+    
+    // Get total rewards distributed
+    const totalRewardsResult = await pool.query(`
+      SELECT COALESCE(SUM(reward_amount), 0) as total
+      FROM commits 
+      WHERE reward_amount IS NOT NULL
+    `);
+    
+    res.json({
+      activeDevelopers: parseInt(activeDevsResult.rows[0].count),
+      totalCommits: parseInt(totalCommitsResult.rows[0].count),
+      totalRewards: parseFloat(totalRewardsResult.rows[0].total)
+    });
+    
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
 // Get user's link status and stats
 router.get('/:fid/status', async (req, res) => {
   const { fid } = req.params;
