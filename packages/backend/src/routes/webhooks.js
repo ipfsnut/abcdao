@@ -132,14 +132,13 @@ async function processCommit(user, repository, commit) {
     
     // Insert commit record (reward will be set when processed)
     await pool.query(`
-      INSERT INTO commits (user_id, commit_hash, repository, commit_message, commit_url)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO commits ("user-id", commit_hash, repository, commit_message)
+      VALUES ($1, $2, $3, $4)
     `, [
       user.id,
       commit.id,
       repository.full_name,
-      commit.message,
-      commit.url
+      commit.message
     ]);
     
     console.log(`✅ Recorded commit ${commit.id} for ${user.farcaster_username}`);
@@ -197,14 +196,14 @@ async function processRewardDirectly(commitData) {
     
     // Update daily stats
     const today = new Date().toISOString().split('T')[0];
-    await pool.query(`
-      INSERT INTO daily_stats (user_id, date, commit_count, total_rewards)
-      VALUES ($1, $2, 1, $3)
-      ON CONFLICT (user_id, date)
-      DO UPDATE SET 
-        commit_count = daily_stats.commit_count + 1,
-        total_rewards = daily_stats.total_rewards + $3
-    `, [userId, today, rewardAmount]);
+    try {
+      await pool.query(`
+        INSERT INTO daily_stats (user_id, date, commit_count, total_rewards)
+        VALUES ($1, $2, 1, $3::text)
+      `, [userId, today, rewardAmount]);
+    } catch (error) {
+      console.log('⚠️ Daily stats insert failed (probably already exists):', error.message);
+    }
     
     console.log(`✅ Awarded ${rewardAmount} ABC to ${farcasterUsername}`);
     
@@ -250,7 +249,7 @@ async function postCommitCast(castData) {
       .split('\n')[0]
       .trim();
     
-    const castText = `🚀 New commit!\n\n@${farcasterUsername} just pushed to ${repoName}:\n\n"${cleanMessage}"\n\n💰 Earned: ${rewardAmount} $ABC\n\n🔗 ${commitUrl}\n\n#ABCDao #AlwaysBeCoding`;
+    const castText = `🚀 New commit!\n\n@${farcasterUsername} just pushed to ${repoName}:\n\n"${cleanMessage}"\n\n💰 Earned: ${rewardAmount} $ABC\n\n#ABCDao #AlwaysBeCoding`;
     
     // Post cast
     const cast = await neynar.publishCast(

@@ -49,6 +49,19 @@ yarn-error.log*
 
 # Launch configuration (contains sensitive addresses)
 launchtodo.txt
+TODO.txt
+
+# Development scripts and tools
+*check-commits*
+*debug-webhook*
+scripts/webhooks.js
+scripts/debug-*
+scripts/test-*
+scripts/check-*
+
+# Deployment scripts (may contain sensitive info)
+scripts/deploy-*.sh
+scripts/update-addresses.js
 
 # Documentation and notes files
 ABC_ADDRESS_LOCATIONS.md

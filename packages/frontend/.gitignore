@@ -39,3 +39,25 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# development scripts and tools
+*check-commits*
+*debug-webhook*
+webhooks.js
+*.local
+*.test
+debug-*
+test-*
+
+# deployment and configuration scripts
+deploy-*.sh
+update-addresses.js
+
+# logs and temporary files
+*.log
+*.tmp
+*.cache
+
+# development and testing files
+launchtodo.txt
+TODO.txt

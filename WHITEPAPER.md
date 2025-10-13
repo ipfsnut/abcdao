@@ -102,27 +102,32 @@ Stakers earn $ETH from two sources while developers earn $ABC for shipping code.
 
 ### Smart Contracts
 1. **Token Contract**: v4 Clanker $ABC token (deployed via Clanker)
-2. **Staking Contract**: Manages stakes and $ETH distribution (receives ETH directly from creator wallet)
+2. **Staking Contract**: Manages stakes and $ETH distribution 
    - Built using OpenZeppelin v5.2 security patterns
    - Based on battle-tested Synthetix StakingRewards architecture
    - 7-day cooldown period for unstaking
    - Emergency pause functionality for security
-3. **Membership Contract**: One-time developer access (0.002 ETH payment)
-   - Simple ETH-only payments
-   - Automatic forwarding to staking contract
-   - Lifetime membership model
-   - Revenue enhances staker rewards
+
+### Membership System
+**Payment Method**: Direct wallet transfer (no smart contract needed)
+- **Fee**: 0.002 ETH one-time payment
+- **Bot Wallet**: `0x475579e65E140B11bc4656dD4b05e0CADc8366eB`
+- **Process**: Pay bot wallet → Submit transaction hash → Backend verification
+- **Benefits**: Lifetime membership + GitHub commit rewards eligibility
+- **Revenue Flow**: ETH to staking contract for rewards distribution
 
 ### Backend Services
 1. **GitHub Webhook Service**: Receives commit events
 2. **Neynar Bot Service**: Posts to Farcaster via @abcbot
-3. **Account Linker**: GitHub-Farcaster connection
-4. **Reward Distributor**: Sends $ABC from bot wallet
-5. **ETH Forwarder**: Weekly transfer of accumulated ETH to staking contract
+3. **Account Linker**: GitHub-Farcaster connection via miniapp
+4. **Membership Processor**: Verifies 0.002 ETH payments to bot wallet
+5. **Reward Distributor**: Sends $ABC from bot wallet for commits
+6. **ETH Forwarder**: Weekly transfer of membership fees to staking contract
 
 ### Security Measures
 - **Smart Contract Security**: OpenZeppelin v5.2 libraries (ReentrancyGuard, Pausable, Ownable)
 - **Architecture**: Synthetix-inspired reward calculation (audited by Trail of Bits 2025)
+- **Payment Verification**: On-chain transaction validation for membership fees
 - **Rate limiting** on reward claims
 - **Commit verification** to prevent spoofing
 - **Emergency controls**: Pause functionality for critical situations
