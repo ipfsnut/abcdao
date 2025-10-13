@@ -17,6 +17,7 @@ export default function WhitepaperPage() {
         // Get addresses from environment variables with fallbacks
         const abcTokenAddress = process.env.NEXT_PUBLIC_ABC_TOKEN_ADDRESS || CONTRACTS.ABC_TOKEN?.address;
         const stakingAddress = process.env.NEXT_PUBLIC_STAKING_CONTRACT_ADDRESS || CONTRACTS.ABC_STAKING?.address;
+        const botWalletAddress = process.env.NEXT_PUBLIC_BOT_WALLET_ADDRESS;
         
         // Replace static addresses with dynamic ones
         let updatedContent = content;
@@ -30,6 +31,12 @@ export default function WhitepaperPage() {
           updatedContent = updatedContent.replace(
             /\*\*Staking\*\*: \(`[^`]+`\)/g,
             `**Staking**: (\`${stakingAddress}\`)`
+          );
+        }
+        if (botWalletAddress) {
+          updatedContent = updatedContent.replace(
+            /- \*\*Bot Wallet\*\*: `[^`]+`/g,
+            `- **Bot Wallet**: \`${botWalletAddress}\``
           );
         }
         

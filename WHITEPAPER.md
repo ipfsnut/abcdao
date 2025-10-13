@@ -17,7 +17,7 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 
 - **Token**: $ABC (v4 Clanker token)
 - **Network**: Base Mainnet  
-- **Supply**: Fixed supply determined at launch
+- **Supply**: 100,000,000,000 $ABC (100B total supply)
 
 ### Revenue Streams for Stakers
 - **Trading fees**: $ETH from Clanker trading → Staking contract → Distributed to stakers
@@ -55,7 +55,7 @@ Stakers earn $ETH from two sources while developers earn $ABC for shipping code.
 ### Recognition Flow
 1. Registered Developer makes a commit to any public repo
 2. ABC Bot detects the commit via GitHub webhooks
-3. Bot verifies developer has 1M or more $ABC staked
+3. Bot verifies developer has minimum $ABC staked (requirement may vary)
 4. Bot posts cast celebrating the commit
 5. $ABC rewards distributed automatically
 
@@ -111,7 +111,7 @@ Stakers earn $ETH from two sources while developers earn $ABC for shipping code.
 ### Membership System
 **Payment Method**: Direct wallet transfer (no smart contract needed)
 - **Fee**: 0.002 ETH one-time payment
-- **Bot Wallet**: `0x475579e65E140B11bc4656dD4b05e0CADc8366eB`
+- **Bot Wallet**: `0x0000000000000000000000000000000000000000`
 - **Process**: Pay bot wallet → Submit transaction hash → Backend verification
 - **Benefits**: Lifetime membership + GitHub commit rewards eligibility
 - **Revenue Flow**: ETH to staking contract for rewards distribution
@@ -145,6 +145,7 @@ The best DAOs don't need complex mechanisms. They need clear purpose, aligned in
 
 **Stake & Ship**: [abc.epicdylan.com](https://abc.epicdylan.com)  
 **Network**: Base Mainnet  
-**Contract**: [Address TBA]  
+**Token**: $ABC (`0x0000000000000000000000000000000000000000`)  
+**Staking**: (`0x0000000000000000000000000000000000000000`)  
 
 *Version 1.0 | October 2025
