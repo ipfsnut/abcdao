@@ -190,6 +190,55 @@ async function runMigrations() {
       await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration5]);
       console.log('✅ Migration: Added membership system');
     }
+
+    // Migration 6: Fix column names (hyphens to underscores)
+    const migration6 = 'fix_column_names_hyphens_to_underscores';
+    const exists6 = await client.query('SELECT * FROM migrations WHERE name = $1', [migration6]);
+    
+    if (exists6.rows.length === 0) {
+      console.log('🔧 Fixing column names: hyphens → underscores...');
+      
+      try {
+        // Check if old columns exist and rename them
+        const checkColumns = await client.query(`
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = 'users' 
+          AND column_name IN ('verified-at', 'created-at', 'farcaster-fid')
+        `);
+        
+        for (const row of checkColumns.rows) {
+          const oldName = row.column_name;
+          const newName = oldName.replace(/-/g, '_');
+          
+          console.log(`  Renaming ${oldName} → ${newName}`);
+          await client.query(`ALTER TABLE users RENAME COLUMN "${oldName}" TO ${newName}`);
+        }
+        
+        // Also check commits table
+        const checkCommitsColumns = await client.query(`
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = 'commits' 
+          AND column_name LIKE '%-%'
+        `);
+        
+        for (const row of checkCommitsColumns.rows) {
+          const oldName = row.column_name;
+          const newName = oldName.replace(/-/g, '_');
+          
+          console.log(`  Renaming commits.${oldName} → ${newName}`);
+          await client.query(`ALTER TABLE commits RENAME COLUMN "${oldName}" TO ${newName}`);
+        }
+        
+        console.log('✅ Column names fixed');
+      } catch (error) {
+        console.log('ℹ️ Column rename skipped (probably already correct):', error.message);
+      }
+      
+      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration6]);
+      console.log('✅ Migration: Fixed column names');
+    }
     
   } catch (error) {
     console.error('❌ Migration failed:', error);
