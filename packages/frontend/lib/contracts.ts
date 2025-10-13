@@ -9,9 +9,9 @@ export const CONTRACTS = {
     name: 'ABC'
   },
   
-  // ABC Staking V2 contract (deployed!)
+  // ABC Staking V2 Fixed contract (deployed with reward debt fixes!)
   ABC_STAKING: {
-    address: '0xCb5cF9061f80b64909E8106e3569f0b8D219941E' as `0x${string}`,
+    address: '0x577822396162022654D5bDc9CB58018cB53e7017' as `0x${string}`,
     abi: [
       {
         "type": "function",
