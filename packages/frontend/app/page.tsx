@@ -13,7 +13,7 @@ import { Toaster } from 'sonner';
 
 export default function Home() {
   const { isInMiniApp } = useFarcaster();
-  const [activeTab, setActiveTab] = useState<'stake' | 'vote' | 'proposals'>('stake');
+  const [activeTab, setActiveTab] = useState<'stake' | 'vote' | 'proposals' | 'chat' | 'swap'>('stake');
   const stakingData = useStaking();
 
   return (
@@ -225,8 +225,8 @@ export default function Home() {
                         
                         <button
                           onClick={() => {
-                            if (typeof window !== 'undefined' && (window as any).fc) {
-                              (window as any).fc.actions.swapToken({
+                            if (typeof window !== 'undefined' && (window as unknown as { fc?: { actions: { swapToken: (params: { tokenAddress: string; chainId: number; symbol: string }) => void } } }).fc) {
+                              (window as unknown as { fc: { actions: { swapToken: (params: { tokenAddress: string; chainId: number; symbol: string }) => void } } }).fc.actions.swapToken({
                                 tokenAddress: '0x5c0872b790bb73e2b3a9778db6e7704095624b07',
                                 chainId: 8453, // Base
                                 symbol: 'ABC'
@@ -241,8 +241,8 @@ export default function Home() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => {
-                              if (typeof window !== 'undefined' && (window as any).fc) {
-                                (window as any).fc.actions.viewToken({
+                              if (typeof window !== 'undefined' && (window as unknown as { fc?: { actions: { viewToken: (params: { tokenAddress: string; chainId: number }) => void } } }).fc) {
+                                (window as unknown as { fc: { actions: { viewToken: (params: { tokenAddress: string; chainId: number }) => void } } }).fc.actions.viewToken({
                                   tokenAddress: '0x5c0872b790bb73e2b3a9778db6e7704095624b07',
                                   chainId: 8453
                                 });
