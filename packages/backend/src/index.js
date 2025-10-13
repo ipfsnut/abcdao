@@ -20,6 +20,7 @@ import testGithubRoutes from './routes/test-github.js';
 // Import services
 import { initializeDatabase } from './services/database.js';
 import { setupQueues } from './services/queue.js';
+import { RewardDebtCron } from './jobs/reward-debt-cron.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -168,6 +169,22 @@ async function startServer() {
       console.warn('⚠️  REDIS_URL not set, running without queues');
     }
     
+    // Start reward debt processing cron job
+    if (process.env.ABC_REWARDS_CONTRACT_ADDRESS && process.env.BOT_WALLET_PRIVATE_KEY) {
+      try {
+        const rewardCron = new RewardDebtCron();
+        rewardCron.start();
+        console.log('✅ Reward debt cron job started');
+        
+        // Store reference for graceful shutdown
+        global.rewardCron = rewardCron;
+      } catch (cronError) {
+        console.warn('⚠️  Reward cron setup failed:', cronError.message);
+      }
+    } else {
+      console.warn('⚠️  Reward contract or bot wallet not configured, skipping cron job');
+    }
+    
     // Start server - bind to 0.0.0.0 for Railway
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 ABC DAO Backend running on port ${PORT}`);
@@ -183,6 +200,12 @@ async function startServer() {
 // Handle graceful shutdown
 process.on('SIGINT', () => {
   console.log('👋 Shutting down gracefully...');
+  
+  // Stop reward cron job
+  if (global.rewardCron) {
+    global.rewardCron.stop();
+  }
+  
   process.exit(0);
 });
 

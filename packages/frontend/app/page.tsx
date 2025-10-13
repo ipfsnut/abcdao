@@ -14,11 +14,13 @@ import { useStaking } from '@/hooks/useStaking';
 import { useUnbonding } from '@/hooks/useUnbonding';
 import { useTreasury } from '@/hooks/useTreasury';
 import { useStats } from '@/hooks/useStats';
+import { useMembership } from '@/hooks/useMembership';
 import { Toaster } from 'sonner';
 
 export default function Home() {
   const { isInMiniApp } = useFarcaster();
   const { isConnected } = useAccount();
+  const membership = useMembership();
   const [activeTab, setActiveTab] = useState<'stake' | 'rewards' | 'proposals' | 'chat' | 'swap'>('stake');
   const stakingData = useStaking();
   const treasuryData = useTreasury();
@@ -134,26 +136,33 @@ export default function Home() {
               >
                 ./stake
               </button>
-              <button
-                onClick={() => setActiveTab('rewards')}
-                className={`px-3 py-2 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-sm sm:text-base ${
-                  activeTab === 'rewards' 
-                    ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
-                    : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
-                }`}
-              >
-                ./rewards
-              </button>
-              <button
-                onClick={() => setActiveTab('proposals')}
-                className={`px-3 py-2 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-sm sm:text-base ${
-                  activeTab === 'proposals' 
-                    ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
-                    : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
-                }`}
-              >
-                ./join
-              </button>
+              {/* Show rewards tab only for members */}
+              {membership.isMember && (
+                <button
+                  onClick={() => setActiveTab('rewards')}
+                  className={`px-3 py-2 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-sm sm:text-base ${
+                    activeTab === 'rewards' 
+                      ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
+                      : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+                  }`}
+                >
+                  ./rewards
+                </button>
+              )}
+              
+              {/* Show join tab only for non-members */}
+              {!membership.isMember && (
+                <button
+                  onClick={() => setActiveTab('proposals')}
+                  className={`px-3 py-2 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-sm sm:text-base ${
+                    activeTab === 'proposals' 
+                      ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
+                      : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+                  }`}
+                >
+                  ./join
+                </button>
+              )}
               <button
                 onClick={() => setActiveTab('chat')}
                 className={`px-3 py-2 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-sm sm:text-base ${
@@ -179,8 +188,8 @@ export default function Home() {
             {/* Mobile-Optimized Tab Content */}
             <div className="mt-4">
               {activeTab === 'stake' && <StakePanel stakingData={stakingData} />}
-              {activeTab === 'rewards' && <ClaimRewardsPanel />}
-              {activeTab === 'proposals' && <GitHubLinkPanel />}
+              {activeTab === 'rewards' && membership.isMember && <ClaimRewardsPanel />}
+              {activeTab === 'proposals' && !membership.isMember && <GitHubLinkPanel />}
               {activeTab === 'chat' && (
                 <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm text-center">
                   <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
