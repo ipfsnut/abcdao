@@ -9,8 +9,7 @@ import { useFarcaster } from '@/components/farcaster-miniapp';
 import { config } from '@/lib/config';
 
 // Bot's wallet address for receiving membership payments
-// TODO: Replace with your actual bot wallet address before deployment
-const BOT_WALLET_ADDRESS = '0x1234567890abcdef1234567890abcdef12345678' as `0x${string}`;
+const BOT_WALLET_ADDRESS = '0x475579e65E140B11bc4656dD4b05e0CADc8366eB' as `0x${string}`;
 const MEMBERSHIP_FEE = '0.002'; // ETH
 
 interface MembershipPaymentPanelProps {

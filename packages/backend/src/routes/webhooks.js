@@ -144,23 +144,136 @@ async function processCommit(user, repository, commit) {
     
     console.log(`✅ Recorded commit ${commit.id} for ${user.farcaster_username}`);
     
-    // Add to reward processing queue
-    await addRewardJob({
-      userId: user.id,
-      commitHash: commit.id,
-      farcasterUsername: user.farcaster_username,
-      farcasterFid: user.farcaster_fid,
-      repository: repository.full_name,
-      commitMessage: commit.message,
-      commitUrl: commit.url
-    });
-    
-    // Note: Farcaster announcements are now handled by the queue system
-    // The cast will be posted after reward processing is complete
+    // Try queue system, fall back to direct processing if Redis unavailable
+    try {
+      await addRewardJob({
+        userId: user.id,
+        commitHash: commit.id,
+        farcasterUsername: user.farcaster_username,
+        farcasterFid: user.farcaster_fid,
+        repository: repository.full_name,
+        commitMessage: commit.message,
+        commitUrl: commit.url
+      });
+      console.log(`✅ Added commit ${commit.id} to reward queue`);
+    } catch (queueError) {
+      console.log(`⚠️ Queue unavailable, processing directly:`, queueError.message);
+      
+      // Process reward directly without queue
+      await processRewardDirectly({
+        userId: user.id,
+        commitHash: commit.id,
+        farcasterUsername: user.farcaster_username,
+        farcasterFid: user.farcaster_fid,
+        repository: repository.full_name,
+        commitMessage: commit.message,
+        commitUrl: commit.url
+      });
+    }
     
   } catch (error) {
     console.error('Error processing commit:', error);
     throw error;
+  }
+}
+
+// Direct reward processing when queue is unavailable
+async function processRewardDirectly(commitData) {
+  const { userId, commitHash, farcasterUsername, farcasterFid, repository, commitMessage, commitUrl } = commitData;
+  
+  try {
+    console.log(`🏗️ Processing reward directly for commit ${commitHash} by ${farcasterUsername}`);
+    
+    // Generate reward amount (10 ABC for now)
+    const rewardAmount = 10;
+    
+    // Update commit record with reward amount
+    const pool = getPool();
+    await pool.query(`
+      UPDATE commits 
+      SET reward_amount = $1, processed_at = NOW()
+      WHERE commit_hash = $2
+    `, [rewardAmount, commitHash]);
+    
+    // Update daily stats
+    const today = new Date().toISOString().split('T')[0];
+    await pool.query(`
+      INSERT INTO daily_stats (user_id, date, commit_count, total_rewards)
+      VALUES ($1, $2, 1, $3)
+      ON CONFLICT (user_id, date)
+      DO UPDATE SET 
+        commit_count = daily_stats.commit_count + 1,
+        total_rewards = daily_stats.total_rewards + $3
+    `, [userId, today, rewardAmount]);
+    
+    console.log(`✅ Awarded ${rewardAmount} ABC to ${farcasterUsername}`);
+    
+    // Post Farcaster cast directly
+    await postCommitCast({
+      farcasterUsername,
+      farcasterFid,
+      repository,
+      commitMessage: commitMessage.slice(0, 100),
+      commitUrl,
+      rewardAmount,
+      commitHash
+    });
+    
+    return { success: true, rewardAmount };
+    
+  } catch (error) {
+    console.error(`❌ Direct reward processing failed for ${commitHash}:`, error);
+    throw error;
+  }
+}
+
+// Direct Farcaster posting when queue is unavailable
+async function postCommitCast(castData) {
+  const { farcasterUsername, farcasterFid, repository, commitMessage, commitUrl, rewardAmount, commitHash } = castData;
+  
+  try {
+    console.log(`📢 Posting cast directly for ${farcasterUsername}'s commit`);
+    
+    if (!process.env.NEYNAR_API_KEY || !process.env.NEYNAR_SIGNER_UUID) {
+      console.log(`⚠️ Farcaster credentials not configured, skipping cast`);
+      return;
+    }
+    
+    // Initialize Neynar client
+    const { NeynarAPIClient } = await import('@neynar/nodejs-sdk');
+    const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY);
+    
+    // Create cast message
+    const repoName = repository.split('/').pop() || repository;
+    const cleanMessage = commitMessage
+      .replace(/^(feat|fix|docs|style|refactor|test|chore|build|ci|perf)(\(.+?\))?:\s*/i, '')
+      .split('\n')[0]
+      .trim();
+    
+    const castText = `🚀 New commit!\n\n@${farcasterUsername} just pushed to ${repoName}:\n\n"${cleanMessage}"\n\n💰 Earned: ${rewardAmount} $ABC\n\n🔗 ${commitUrl}\n\n#ABCDao #AlwaysBeCoding`;
+    
+    // Post cast
+    const cast = await neynar.publishCast(
+      process.env.NEYNAR_SIGNER_UUID,
+      castText
+    );
+    
+    // Update commit record with cast URL
+    const pool = getPool();
+    await pool.query(`
+      UPDATE commits 
+      SET cast_url = $1
+      WHERE commit_hash = $2
+    `, [cast.cast.hash, commitHash]);
+    
+    console.log(`✅ Posted cast: ${cast.cast.hash}`);
+    
+    return { success: true, castHash: cast.cast.hash };
+    
+  } catch (error) {
+    console.error(`❌ Cast posting failed:`, error.message);
+    // Don't throw - cast failure shouldn't break reward processing
+    return { success: false, error: error.message };
   }
 }
 

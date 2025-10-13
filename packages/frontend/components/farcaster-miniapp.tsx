@@ -49,7 +49,9 @@ export function FarcasterMiniAppProvider({ children }: { children: React.ReactNo
           
           // Try to request user data from miniapp SDK
           try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if (miniAppHost && typeof (miniAppHost as any).getUserData === 'function') {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const userData = await (miniAppHost as any).getUserData();
               if (userData) {
                 context = userData;
