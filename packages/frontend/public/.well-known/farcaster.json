@@ -1,14 +1,11 @@
 {
-  "accountAssociation": {
-    "header": "eyJmaWQiOjg1NzMsInR5cGUiOiJhdXRoIiwia2V5IjoiMHgxOEE4NWFkMzQxYjJENkEyYmQ2N2ZiYjEwNEI0ODI3QjkyMmEyQTNjIn0",
-    "payload": "eyJkb21haW4iOiJhYmMuZXBpY2R5bGFuLmNvbSJ9",
-    "signature": "dbZAa+fajovRDQfz8YC90VxlSumkJWqBlxmk0vXCHN9YHTzHKsNxpNtGHjMpFjv/W8SZgCNf74sJf+mRqT5q+Bs="
-  },
-  "miniapp": {
+  "frame": {
+    "name": ">ABC_DAO",
     "version": "1",
-    "name": "ABC DAO",
-    "iconUrl": "https://abc.epicdylan.com/abc-icon-1024.png",
+    "iconUrl": "https://abc.epicdylan.com/abc-logo.png",
     "homeUrl": "https://abc.epicdylan.com",
+    "imageUrl": "https://abc.epicdylan.com/image.png",
+    "buttonTitle": "Open",
     "splashImageUrl": "https://abc.epicdylan.com/abc-splash-200.png",
     "splashBackgroundColor": "#000000",
     "webhookUrl": "https://abcdao-production.up.railway.app/api/webhooks/github",
@@ -17,7 +14,7 @@
     "primaryCategory": "social",
     "tags": [
       "social",
-      "dev", 
+      "dev",
       "community",
       "crypto",
       "dao"
@@ -25,10 +22,16 @@
     "tagline": "Always. Be. Coding.",
     "heroImageUrl": "https://abc.epicdylan.com/abc-logo.png",
     "screenshotUrls": [
-      "https://abc.epicdylan.com/abc-logo.png"
+      "https://abc.epicdylan.com/abc-icon-1024.png"
     ],
     "ogImageUrl": "https://abc.epicdylan.com/abc-logo.png",
     "ogTitle": "Always. Be. Coding.",
-    "ogDescription": "Always. Be. Coding."
+    "ogDescription": "Always. Be. Coding.",
+    "castShareUrl": "https://abc.epicdylan.com"
+  },
+  "accountAssociation": {
+    "header": "eyJmaWQiOjg1NzMsInR5cGUiOiJhdXRoIiwia2V5IjoiMHgxOEE4NWFkMzQxYjJENkEyYmQ2N2ZiYjEwNEI0ODI3QjkyMmEyQTNjIn0",
+    "payload": "eyJkb21haW4iOiJhYmMuZXBpY2R5bGFuLmNvbSJ9",
+    "signature": "dbZAa+fajovRDQfz8YC90VxlSumkJWqBlxmk0vXCHN9YHTzHKsNxpNtGHjMpFjv/W8SZgCNf74sJf+mRqT5q+Bs="
   }
 }
