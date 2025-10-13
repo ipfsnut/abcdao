@@ -150,33 +150,100 @@ export function TokenSupplyChart({
               key={segment.key}
               d={segment.pathData}
               fill={segment.data.color}
-              opacity={segment.isHovered ? 0.8 : 0.6}
-              stroke="rgba(0, 0, 0, 0.1)"
-              strokeWidth="1"
+              opacity={segment.isHovered ? 0.9 : 0.7}
+              stroke={segment.isHovered ? "#10b981" : "rgba(0, 0, 0, 0.2)"}
+              strokeWidth={segment.isHovered ? "2" : "1"}
               className={interactive ? "transition-all duration-200 cursor-pointer" : ""}
+              style={{
+                filter: segment.isHovered ? "brightness(1.1) drop-shadow(0 0 8px rgba(16, 185, 129, 0.4))" : "none"
+              }}
               onMouseEnter={interactive ? () => setHoveredSegment(segment.key) : undefined}
               onMouseLeave={interactive ? () => setHoveredSegment(null) : undefined}
             />
           ))}
+          
+          {/* Percentage Labels */}
+          {size >= 400 && segments.map((segment) => {
+            // Calculate label position at the middle of the segment
+            const startAngle = (segment.data.percentage === 0) ? 0 : 
+              segments.slice(0, segments.indexOf(segment))
+                .reduce((acc, s) => acc + s.data.percentage, 0);
+            const midAngle = startAngle + (segment.data.percentage / 2);
+            const midRad = ((midAngle / 100) * 360 - 90) * (Math.PI / 180);
+            
+            // Position label outside the chart
+            const labelRadius = radius + 25;
+            const labelX = center + labelRadius * Math.cos(midRad);
+            const labelY = center + labelRadius * Math.sin(midRad);
+            
+            // Only show labels for segments > 5%
+            if (segment.data.percentage < 5) return null;
+            
+            return (
+              <g key={`label-${segment.key}`} className="transform rotate-90">
+                <text
+                  x={labelX}
+                  y={labelY}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  className="fill-green-400 text-xs font-mono font-bold"
+                  style={{
+                    filter: "drop-shadow(0 0 2px rgba(0, 0, 0, 0.8))"
+                  }}
+                >
+                  {segment.data.percentage.toFixed(1)}%
+                </text>
+                <text
+                  x={labelX}
+                  y={labelY + 12}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  className="fill-green-600 text-xs font-mono"
+                  style={{
+                    filter: "drop-shadow(0 0 2px rgba(0, 0, 0, 0.8))"
+                  }}
+                >
+                  {segment.data.label}
+                </text>
+              </g>
+            );
+          })}
         </svg>
 
         {/* Center text */}
         {showCenter && (
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <p className="text-green-400 font-mono font-bold text-lg matrix-glow">
-              100B
-            </p>
-            <p className="text-green-600 font-mono text-xs">
-              $ABC
-            </p>
-            {hoveredSegment && supplyData.breakdown[hoveredSegment] && (
-              <div className="mt-1 text-center">
-                <p className="text-green-400 font-mono text-xs">
+            {hoveredSegment && supplyData.breakdown[hoveredSegment] ? (
+              <div className="text-center">
+                <p className="text-green-400 font-mono text-lg font-bold matrix-glow">
                   {supplyData.breakdown[hoveredSegment].label}
                 </p>
-                <p className="text-green-300 font-mono text-xs font-bold">
+                <p className="text-green-300 font-mono text-2xl font-bold">
                   {formatSupply(supplyData.breakdown[hoveredSegment].amount)}
                 </p>
+                <p className="text-green-600 font-mono text-sm">
+                  {supplyData.breakdown[hoveredSegment].percentage.toFixed(1)}% of supply
+                </p>
+                <p className="text-green-500 font-mono text-xs mt-1 max-w-32 truncate">
+                  {supplyData.breakdown[hoveredSegment].description}
+                </p>
+              </div>
+            ) : (
+              <div className="text-center">
+                <p className="text-green-400 font-mono font-bold text-3xl matrix-glow">
+                  100B
+                </p>
+                <p className="text-green-600 font-mono text-lg">
+                  $ABC
+                </p>
+                <p className="text-green-500 font-mono text-sm mt-1">
+                  Total Supply
+                </p>
+                {interactive && (
+                  <p className="text-green-600 font-mono text-xs mt-2 opacity-70">
+                    Hover segments for details
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -206,7 +273,10 @@ export function TokenSupplyChart({
 // Compact version for stats bar
 export function TokenSupplyMini() {
   return (
-    <div className="min-w-[140px] sm:min-w-0 bg-green-950/20 border border-green-900/50 rounded-lg p-3 matrix-button">
+    <a 
+      href="/supply"
+      className="min-w-[140px] sm:min-w-0 bg-green-950/20 border border-green-900/50 rounded-lg p-3 matrix-button hover:bg-green-900/30 hover:border-green-700/50 transition-all duration-300 block"
+    >
       <p className="text-green-600 text-xs font-mono">Token_Supply</p>
       <div className="flex items-center gap-2 mt-1">
         <TokenSupplyChart size={32} showCenter={false} />
@@ -215,6 +285,6 @@ export function TokenSupplyMini() {
           <p className="text-green-600 font-mono text-xs">$ABC</p>
         </div>
       </div>
-    </div>
+    </a>
   );
 }

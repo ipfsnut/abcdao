@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { getPool } from '../services/database.js';
 import { addRewardJob } from '../services/queue.js';
 import farcasterService from '../services/farcaster.js';
+import commitTagParser from '../services/commit-tags.js';
 
 // Ensure dotenv is loaded
 dotenv.config();
@@ -137,6 +138,33 @@ async function processCommit(user, repository, commit) {
   try {
     console.log('🔍 Processing commit:', commit.id);
     const pool = getPool();
+    
+    // Parse commit message for tags
+    const commitParsed = commitTagParser.parseCommitMessage(commit.message);
+    console.log('📝 Commit tags:', {
+      tags: commitParsed.tags,
+      shouldCast: commitParsed.shouldCast,
+      shouldReward: commitParsed.shouldReward,
+      isPrivate: commitParsed.isPrivate,
+      devStatusChange: commitParsed.devStatusChange,
+      priority: commitParsed.priority
+    });
+    
+    // Handle dev status changes first
+    if (commitParsed.devStatusChange) {
+      const isActive = commitParsed.devStatusChange === 'enable';
+      await pool.query(
+        'UPDATE users SET is_active = $1, updated_at = NOW() WHERE id = $2',
+        [isActive, user.id]
+      );
+      console.log(`🔄 Updated dev status for ${user.farcaster_username}: ${isActive ? 'enabled' : 'disabled'}`);
+      
+      // Cast about status change if not silent
+      if (commitParsed.shouldCast) {
+        await postDevStatusChangeCast(user, isActive, commitParsed.cleanedMessage);
+      }
+    }
+    
     // Check if commit already processed
     const existingCommit = await pool.query(
       'SELECT id FROM commits WHERE commit_hash = $1',
@@ -145,6 +173,27 @@ async function processCommit(user, repository, commit) {
     
     if (existingCommit.rows.length > 0) {
       console.log(`⚠️ Commit ${commit.id} already processed`);
+      return;
+    }
+    
+    // Skip reward processing if #norew tag
+    if (!commitParsed.shouldReward) {
+      console.log(`⏭️ Skipping rewards for commit ${commit.id} (tagged #norew)`);
+      
+      // Still record the commit but without reward
+      await pool.query(`
+        INSERT INTO commits (user_id, commit_hash, repository, commit_message, tags, priority, is_private)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `, [
+        user.id,
+        commit.id,
+        repository.full_name,
+        commitParsed.cleanedMessage,
+        commitParsed.tags,
+        commitParsed.priority,
+        commitParsed.isPrivate
+      ]);
+      
       return;
     }
     
@@ -163,31 +212,37 @@ async function processCommit(user, repository, commit) {
       // Get user notification settings
       const userSettings = user.notification_settings;
       
-      // Still post a cast but indicate daily limit reached
-      await postCommitCast({
-        farcasterUsername: user.farcaster_username,
-        farcasterFid: user.farcaster_fid,
-        repository: repository.full_name,
-        commitMessage: commit.message.slice(0, 100),
-        commitUrl: `${repository.html_url}/commit/${commit.id}`,
-        rewardAmount: null, // This will trigger "MAX DAILY REWARDS REACHED" message
-        commitHash: commit.id,
-        dailyLimitReached: true,
-        userSettings
-      });
+      // Still post a cast but indicate daily limit reached (if not silent)
+      if (commitParsed.shouldCast) {
+        await postCommitCast({
+          farcasterUsername: user.farcaster_username,
+          farcasterFid: user.farcaster_fid,
+          repository: repository.full_name,
+          commitMessage: commitParsed.cleanedMessage.slice(0, 100),
+          commitUrl: `${repository.html_url}/commit/${commit.id}`,
+          rewardAmount: null, // This will trigger "MAX DAILY REWARDS REACHED" message
+          commitHash: commit.id,
+          dailyLimitReached: true,
+          userSettings,
+          commitTags: commitParsed
+        });
+      }
       
       return;
     }
     
-    // Insert commit record (reward will be set when processed)
+    // Insert commit record with tag information (reward will be set when processed)
     await pool.query(`
-      INSERT INTO commits (user_id, commit_hash, repository, commit_message)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO commits (user_id, commit_hash, repository, commit_message, tags, priority, is_private)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
     `, [
       user.id,
       commit.id,
       repository.full_name,
-      commit.message
+      commitParsed.cleanedMessage,
+      commitParsed.tags,
+      commitParsed.priority,
+      commitParsed.isPrivate
     ]);
     
     console.log(`✅ Recorded commit ${commit.id} for ${user.farcaster_username}`);
@@ -200,9 +255,10 @@ async function processCommit(user, repository, commit) {
       farcasterUsername: user.farcaster_username,
       farcasterFid: user.farcaster_fid,
       repository: repository.full_name,
-      commitMessage: commit.message,
+      commitMessage: commitParsed.cleanedMessage,
       commitUrl: commit.url,
-      userSettings: user.notification_settings
+      userSettings: user.notification_settings,
+      commitTags: commitParsed
     });
     
   } catch (error) {
@@ -213,14 +269,17 @@ async function processCommit(user, repository, commit) {
 
 // Direct reward processing when queue is unavailable
 async function processRewardDirectly(commitData) {
-  const { userId, commitHash, farcasterUsername, farcasterFid, repository, commitMessage, commitUrl, userSettings } = commitData;
+  const { userId, commitHash, farcasterUsername, farcasterFid, repository, commitMessage, commitUrl, userSettings, commitTags } = commitData;
   
   try {
     console.log(`🏗️ Processing reward directly for commit ${commitHash} by ${farcasterUsername}`);
     
-    // Generate weighted random reward amount
+    // Generate weighted random reward amount (with priority boost)
     const rand = Math.random();
     let rewardAmount;
+    
+    // Priority commits get better odds
+    const priorityMultiplier = commitTags?.priority === 'high' || commitTags?.priority === 'milestone' ? 1.5 : 1;
     
     if (rand < 0.95) {
       // 95% chance: 50k-60k ABC (baseline rewards)
@@ -231,6 +290,12 @@ async function processRewardDirectly(commitData) {
     } else {
       // 2.5% chance: 100k-999k ABC (rare big rewards)
       rewardAmount = Math.floor(Math.random() * 899000) + 100000; // 100k-999k
+    }
+    
+    // Apply priority multiplier
+    if (priorityMultiplier > 1) {
+      rewardAmount = Math.floor(rewardAmount * priorityMultiplier);
+      console.log(`⭐ Priority boost applied: ${priorityMultiplier}x`);
     }
     
     console.log(`🎲 Reward roll: ${(rand * 100).toFixed(1)}% → ${rewardAmount.toLocaleString()} $ABC`);
@@ -261,17 +326,22 @@ async function processRewardDirectly(commitData) {
     
     console.log(`✅ Awarded ${rewardAmount} ABC to ${farcasterUsername}`);
     
-    // Post Farcaster cast directly
-    await postCommitCast({
-      farcasterUsername,
-      farcasterFid,
-      repository,
-      commitMessage: commitMessage.slice(0, 100),
-      commitUrl,
-      rewardAmount,
-      commitHash,
-      userSettings
-    });
+    // Post Farcaster cast directly (unless silent)
+    if (commitTags?.shouldCast !== false) {
+      await postCommitCast({
+        farcasterUsername,
+        farcasterFid,
+        repository,
+        commitMessage: commitMessage.slice(0, 100),
+        commitUrl,
+        rewardAmount,
+        commitHash,
+        userSettings,
+        commitTags
+      });
+    } else {
+      console.log(`🤐 Skipping cast for silent commit ${commitHash}`);
+    }
     
     return { success: true, rewardAmount };
     
@@ -283,7 +353,7 @@ async function processRewardDirectly(commitData) {
 
 // Direct Farcaster posting when queue is unavailable
 async function postCommitCast(castData) {
-  const { farcasterUsername, farcasterFid, repository, commitMessage, commitUrl, rewardAmount, commitHash, dailyLimitReached, userSettings } = castData;
+  const { farcasterUsername, farcasterFid, repository, commitMessage, commitUrl, rewardAmount, commitHash, dailyLimitReached, userSettings, commitTags } = castData;
   
   try {
     console.log(`📢 Posting cast directly for ${farcasterUsername}'s commit`);
@@ -340,9 +410,21 @@ async function postCommitCast(castData) {
       rewardText = settings.daily_limit_casts?.custom_message || '🔴 MAX DAILY REWARDS REACHED (10/10)';
     } else {
       rewardText = `💰 Earned: ${rewardAmount.toLocaleString()} $ABC`;
+      
+      // Add priority indicators
+      if (commitTags?.priority === 'high') {
+        rewardText += ' ⭐ (Priority)';
+      } else if (commitTags?.priority === 'milestone') {
+        rewardText += ' 🎯 (Milestone)';
+      } else if (commitTags?.priority === 'experimental') {
+        rewardText += ' 🧪 (Experiment)';
+      }
     }
     
-    const castText = `🚀 New commit!\n\n${usernameText} just pushed to ${repoText}:\n\n"${messageText}"\n\n${rewardText}\n\n🔗 ${commitUrl}\n\n📱 Want rewards? Add our miniapp:\nfarcaster.xyz/miniapps/S1edg9PycxZP/abcdao\n\n#ABCDAO #AlwaysBeCoding`;
+    // Add privacy indicator if commit is private
+    const privacyText = commitTags?.isPrivate ? ' 🔒' : '';
+    
+    const castText = `🚀 New commit!${privacyText}\n\n${usernameText} just pushed to ${repoText}:\n\n"${messageText}"\n\n${rewardText}\n\n🔗 ${commitUrl}\n\n📱 Want rewards? Add our miniapp:\nfarcaster.xyz/miniapps/S1edg9PycxZP/abcdao\n\n#ABCDAO #AlwaysBeCoding`;
     
     // Post cast
     const cast = await neynar.publishCast(
@@ -365,6 +447,39 @@ async function postCommitCast(castData) {
   } catch (error) {
     console.error(`❌ Cast posting failed:`, error.message);
     // Don't throw - cast failure shouldn't break reward processing
+    return { success: false, error: error.message };
+  }
+}
+
+// Post dev status change cast
+async function postDevStatusChangeCast(user, isActive, commitMessage) {
+  try {
+    console.log(`📢 Posting dev status change cast for ${user.farcaster_username}`);
+    
+    if (!process.env.NEYNAR_API_KEY || !process.env.NEYNAR_SIGNER_UUID) {
+      console.log(`⚠️ Farcaster credentials not configured, skipping cast`);
+      return;
+    }
+    
+    const { NeynarAPIClient } = await import('@neynar/nodejs-sdk');
+    const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY);
+    
+    const statusText = isActive ? 'back online' : 'taking a break';
+    const statusEmoji = isActive ? '🟢' : '🟡';
+    const actionText = isActive ? 'Ready to ship code!' : 'See you soon!';
+    
+    const castText = `${statusEmoji} Dev Status Update\n\n@${user.farcaster_username} is ${statusText}\n\n"${commitMessage}"\n\n${actionText}\n\n#ABCDAO #AlwaysBeCoding`;
+    
+    const cast = await neynar.publishCast(
+      process.env.NEYNAR_SIGNER_UUID,
+      castText
+    );
+    
+    console.log(`✅ Posted dev status cast: ${cast.cast.hash}`);
+    return { success: true, castHash: cast.cast.hash };
+    
+  } catch (error) {
+    console.error(`❌ Dev status cast failed:`, error.message);
     return { success: false, error: error.message };
   }
 }
