@@ -6,6 +6,7 @@ import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { CONTRACTS } from '@/lib/contracts';
 import { config } from '@/lib/config';
 import { formatEther } from 'viem';
+import { CommitTagsDocs } from './commit-tags-docs';
 
 interface RewardSummary {
   totalPending: number;
@@ -312,6 +313,11 @@ export function ClaimRewardsPanel() {
             </p>
           </div>
         )}
+
+        {/* Commit Tags Documentation */}
+        <div className="mt-6">
+          <CommitTagsDocs />
+        </div>
       </div>
     </div>
   );

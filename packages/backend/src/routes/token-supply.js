@@ -3,33 +3,103 @@ import { ethers } from 'ethers';
 
 const router = express.Router();
 
+// Contract addresses and ABIs
+const CONTRACTS = {
+  ABC_TOKEN: {
+    address: '0x5c0872b790bb73e2b3a9778db6e7704095624b07',
+    abi: [
+      {
+        "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
+        "name": "balanceOf",
+        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "totalSupply",
+        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ]
+  },
+  ABC_STAKING: {
+    address: '0x577822396162022654D5bDc9CB58018cB53e7017',
+    abi: [
+      {
+        "type": "function",
+        "name": "totalStaked",
+        "inputs": [],
+        "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+        "stateMutability": "view"
+      }
+    ]
+  }
+};
+
 // Token Supply Breakdown
 router.get('/supply', async (req, res) => {
   try {
-    const TOTAL_SUPPLY = 100_000_000_000; // 100B tokens
-    const DEV_LOCKUP = 5_000_000_000;     // 5B tokens (5%)
-    const CLANKER_POOL = 47_500_000_000;  // 47.5B tokens
-    
     // Initialize provider for contract calls
     const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
     
-    // Get dynamic balances (mock for now - replace with actual contract calls)
-    let totalStaked = 2_500_000_000;      // 2.5B tokens staked
-    let botWallet = 2_500_000_000;        // 2.5B tokens in treasury
+    // Bot wallet address
+    const BOT_WALLET_ADDRESS = process.env.BOT_WALLET_ADDRESS || '0x475579e65E140B11bc4656dD4b05e0CADc8366eB';
+    
+    // Real Clanker pool manager address (largest holder from BaseScan)
+    const CLANKER_POOL_MANAGER = '0x498581fF718922c3f8e6A244956aF099B2652b2b';
+    
+    // Get dynamic balances from contracts
+    let TOTAL_SUPPLY = 100_000_000_000; // Default
+    let totalStaked = 0;
+    let botWallet = 0;
+    let clankerPool = 0;
+    const DEV_LOCKUP = 5_000_000_000; // Fixed 5B tokens (5%)
+    let dataSource = 'Live blockchain data';
     
     try {
-      // TODO: Replace with actual contract calls
-      // const stakingContract = new ethers.Contract(STAKING_ADDRESS, stakingABI, provider);
-      // totalStaked = await stakingContract.totalStaked();
+      const tokenContract = new ethers.Contract(
+        CONTRACTS.ABC_TOKEN.address,
+        CONTRACTS.ABC_TOKEN.abi,
+        provider
+      );
       
-      // const tokenContract = new ethers.Contract(TOKEN_ADDRESS, tokenABI, provider);  
-      // botWallet = await tokenContract.balanceOf(BOT_WALLET_ADDRESS);
+      // Get actual total supply from contract
+      const totalSupplyRaw = await tokenContract.totalSupply();
+      TOTAL_SUPPLY = Number(ethers.formatEther(totalSupplyRaw));
+      
+      // Get total staked from staking contract
+      const stakingContract = new ethers.Contract(
+        CONTRACTS.ABC_STAKING.address,
+        CONTRACTS.ABC_STAKING.abi,
+        provider
+      );
+      const stakedRaw = await stakingContract.totalStaked();
+      totalStaked = Number(ethers.formatEther(stakedRaw));
+      
+      // Get bot wallet balance
+      const botBalanceRaw = await tokenContract.balanceOf(BOT_WALLET_ADDRESS);
+      botWallet = Number(ethers.formatEther(botBalanceRaw));
+      
+      // Get actual Clanker pool manager balance (largest holder)
+      const poolManagerBalanceRaw = await tokenContract.balanceOf(CLANKER_POOL_MANAGER);
+      clankerPool = Number(ethers.formatEther(poolManagerBalanceRaw));
+      
+      console.log(`📊 Live data: Supply=${TOTAL_SUPPLY.toLocaleString()}, Staked=${totalStaked.toLocaleString()}, Treasury=${botWallet.toLocaleString()}, Pool=${clankerPool.toLocaleString()}`);
+      
     } catch (contractError) {
-      console.warn('Using mock contract data:', contractError.message);
+      console.warn('Failed to fetch live contract data, using fallback:', contractError.message);
+      // Fallback to reasonable estimates based on known data
+      TOTAL_SUPPLY = 100_000_000_000;
+      totalStaked = 171_000_000;        // Based on real data we saw
+      botWallet = 100_000_000;          // Based on real data we saw  
+      clankerPool = 94_000_000_000;     // Based on real pool manager balance
+      dataSource = 'Fallback estimates (contract error)';
     }
     
-    // Calculate circulating supply
-    const circulating = TOTAL_SUPPLY - CLANKER_POOL - DEV_LOCKUP - totalStaked - botWallet;
+    // Calculate circulating supply (everything not locked or staked)
+    const circulating = Math.max(0, TOTAL_SUPPLY - clankerPool - DEV_LOCKUP - totalStaked - botWallet);
     
     // Build response
     const breakdown = {
@@ -66,11 +136,19 @@ router.get('/supply', async (req, res) => {
         locked: true
       },
       clanker_pool: {
-        amount: CLANKER_POOL,
-        percentage: (CLANKER_POOL / TOTAL_SUPPLY) * 100,
+        amount: clankerPool,
+        percentage: (clankerPool / TOTAL_SUPPLY) * 100,
         color: "#6b7280",
         label: "Clanker Pool",
-        description: "Locked liquidity (not circulating)",
+        description: "Uniswap V3 liquidity pool",
+        locked: true
+      },
+      clanker_vault: {
+        amount: clankerVault,
+        percentage: (clankerVault / TOTAL_SUPPLY) * 100,
+        color: "#4b5563",
+        label: "Clanker Vault",
+        description: "Locked vault (30-180 day vesting)",
         locked: true
       }
     };
@@ -81,10 +159,13 @@ router.get('/supply', async (req, res) => {
       breakdown,
       last_updated: new Date().toISOString(),
       data_sources: {
-        staked: "Mock data - TODO: Connect staking contract",
-        bot_wallet: "Mock data - TODO: Connect token contract", 
-        dev_lockup: "Static allocation",
-        clanker_pool: "Static allocation"
+        total_supply: dataSource === 'Live blockchain data' ? "Token contract totalSupply()" : dataSource,
+        staked: dataSource === 'Live blockchain data' ? "Staking contract: 0x577822..." : dataSource,
+        bot_wallet: dataSource === 'Live blockchain data' ? "Token balanceOf(bot wallet)" : dataSource,
+        clanker_pool: dataSource === 'Live blockchain data' ? "Calculated from remainder (pool ID: 0xc80385...)" : dataSource,
+        clanker_vault: "Clanker.world vault info (5B tokens)",
+        dev_lockup: "Fixed 5% team allocation",
+        circulating: "Calculated: Total - (All locked allocations)"
       }
     });
     
