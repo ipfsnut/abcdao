@@ -1,0 +1,87 @@
+{
+  "zen": "Testing daily limit",
+  "hook_id": 123456789,
+  "hook": {
+    "type": "Repository",
+    "id": 123456789,
+    "name": "web",
+    "active": true,
+    "events": ["push"],
+    "config": {
+      "content_type": "json",
+      "insecure_ssl": "0",
+      "url": "https://abcdao-production.up.railway.app/api/webhooks/github"
+    }
+  },
+  "repository": {
+    "id": 123456789,
+    "name": "abc-dao",
+    "full_name": "ipfsnut/abc-dao",
+    "owner": {
+      "login": "ipfsnut",
+      "id": 40326908,
+      "type": "User"
+    },
+    "private": false,
+    "html_url": "https://github.com/ipfsnut/abc-dao",
+    "description": "ABC DAO - Ship code, earn rewards",
+    "fork": false,
+    "default_branch": "main"
+  },
+  "pusher": {
+    "name": "ipfsnut",
+    "email": "test@example.com"
+  },
+  "sender": {
+    "login": "ipfsnut",
+    "id": 40326908,
+    "type": "User"
+  },
+  "ref": "refs/heads/main",
+  "before": "abc123def456",
+  "after": "def456ghi789",
+  "commits": [
+    {
+      "id": "def456ghi789test11thcommit",
+      "tree_id": "tree123",
+      "distinct": true,
+      "message": "Testing daily limit - this is the 11th commit today\n\nShould show MAX DAILY REWARDS REACHED instead of $ABC amount",
+      "timestamp": "2025-01-13T20:00:00Z",
+      "url": "https://github.com/ipfsnut/abc-dao/commit/def456ghi789test11thcommit",
+      "author": {
+        "name": "Dylan",
+        "email": "test@example.com",
+        "username": "ipfsnut"
+      },
+      "committer": {
+        "name": "Dylan",
+        "email": "test@example.com",
+        "username": "ipfsnut"
+      },
+      "added": ["test-file.js"],
+      "removed": [],
+      "modified": []
+    }
+  ],
+  "head_commit": {
+    "id": "def456ghi789test11thcommit",
+    "tree_id": "tree123",
+    "distinct": true,
+    "message": "Testing daily limit - this is the 11th commit today\n\nShould show MAX DAILY REWARDS REACHED instead of $ABC amount",
+    "timestamp": "2025-01-13T20:00:00Z",
+    "url": "https://github.com/ipfsnut/abc-dao/commit/def456ghi789test11thcommit",
+    "author": {
+      "name": "Dylan",
+      "email": "test@example.com",
+      "username": "ipfsnut"
+    },
+    "committer": {
+      "name": "Dylan", 
+      "email": "test@example.com",
+      "username": "ipfsnut"
+    },
+    "added": ["test-file.js"],
+    "removed": [],
+    "modified": []
+  }
+}

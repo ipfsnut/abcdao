@@ -8,6 +8,7 @@ import { SwapWidget } from '@/components/swap-widget';
 import { ClaimRewardsPanel } from '@/components/claim-rewards';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
+import Link from 'next/link';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { useState } from 'react';
 import { useStaking } from '@/hooks/useStaking';
@@ -111,10 +112,10 @@ export default function Home() {
               <p className="text-green-600 text-xs font-mono">ETH_Rewards</p>
               <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">{parseFloat(stakingData.totalRewardsDistributed).toFixed(3)} ETH</p>
             </div>
-            <div className="min-w-[140px] sm:min-w-0 bg-green-950/20 border border-green-900/50 rounded-lg p-3 matrix-button">
+            <Link href="/roster" className="min-w-[140px] sm:min-w-0 bg-green-950/20 border border-green-900/50 rounded-lg p-3 matrix-button hover:bg-green-900/30 hover:border-green-700/50 transition-all duration-300 block">
               <p className="text-green-600 text-xs font-mono">Active_Devs</p>
               <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">{stats.activeDevelopers}</p>
-            </div>
+            </Link>
           </div>
         </div>
       </div>
