@@ -77,24 +77,56 @@ export function GitHubLinkPanel() {
 
   // Handle successful payment
   useEffect(() => {
-    if (isPaymentSuccess && paymentTxHash) {
+    if (isPaymentSuccess && paymentTxHash && profile) {
       console.log('💰 Payment confirmed on-chain!', paymentTxHash);
-      console.log('🔄 Refreshing membership status...');
+      console.log('📡 Processing payment on backend...');
       
-      // Refresh membership status first
-      membership.refreshStatus();
-      
-      // Wait for membership status to update, then trigger GitHub linking
-      setTimeout(async () => {
-        console.log('🔗 Triggering GitHub OAuth...');
-        try {
-          await linkGitHub();
-        } catch (error) {
-          console.error('GitHub linking failed:', error);
-        }
-      }, 3000); // Give more time for backend to process payment
+      // Immediately process payment on backend
+      processPaymentOnBackend(paymentTxHash);
     }
-  }, [isPaymentSuccess, paymentTxHash]);
+  }, [isPaymentSuccess, paymentTxHash, profile]);
+
+  const processPaymentOnBackend = async (txHash: string) => {
+    if (!profile) return;
+
+    try {
+      const response = await fetch(`${config.backendUrl}/api/users/${profile.fid}/process-payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          txHash: txHash,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Payment processed successfully:', result);
+        
+        // Refresh membership status
+        await membership.refreshStatus();
+        
+        // Trigger GitHub linking after successful payment processing
+        setTimeout(async () => {
+          console.log('🔗 Triggering GitHub OAuth...');
+          try {
+            await linkGitHub();
+          } catch (error) {
+            console.error('GitHub linking failed:', error);
+          }
+        }, 1000); // Reduced delay since payment is already processed
+        
+      } else {
+        const error = await response.json();
+        console.error('❌ Payment processing failed:', error);
+        alert(`Payment processing failed: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('❌ Error processing payment:', error);
+      alert('Error processing payment. Please contact support.');
+    }
+  };
 
   const handlePayment = async () => {
     if (!isConnected || !profile) {
