@@ -77,30 +77,49 @@ export function GitHubLinkPanel() {
 
   // Handle successful payment
   useEffect(() => {
-    if (isPaymentSuccess) {
-      console.log('💰 Payment confirmed, refreshing membership and linking GitHub...');
+    if (isPaymentSuccess && paymentTxHash) {
+      console.log('💰 Payment confirmed on-chain!', paymentTxHash);
+      console.log('🔄 Refreshing membership status...');
+      
+      // Refresh membership status first
       membership.refreshStatus();
-      // Auto-trigger GitHub linking after payment confirmation
-      setTimeout(() => {
-        linkGitHub();
-      }, 2000);
+      
+      // Wait for membership status to update, then trigger GitHub linking
+      setTimeout(async () => {
+        console.log('🔗 Triggering GitHub OAuth...');
+        try {
+          await linkGitHub();
+        } catch (error) {
+          console.error('GitHub linking failed:', error);
+        }
+      }, 3000); // Give more time for backend to process payment
     }
-  }, [isPaymentSuccess]);
+  }, [isPaymentSuccess, paymentTxHash]);
 
   const handlePayment = async () => {
-    if (!isConnected || !profile) return;
+    if (!isConnected || !profile) {
+      console.error('Payment failed: Not connected or no profile');
+      return;
+    }
     
-    setLoading(true);
+    console.log('🚀 Initiating payment...', {
+      connected: isConnected,
+      profile: profile.username,
+      fid: profile.fid,
+      to: BOT_WALLET_ADDRESS,
+      value: MEMBERSHIP_FEE
+    });
+    
     try {
-      sendTransaction({
+      await sendTransaction({
         to: BOT_WALLET_ADDRESS,
         value: parseEther(MEMBERSHIP_FEE),
         data: `0x${Buffer.from(`ABC_DAO_MEMBERSHIP_FID:${profile.fid}`).toString('hex')}` as `0x${string}`,
       });
+      console.log('💸 Transaction sent successfully');
     } catch (error) {
-      console.error('Payment failed:', error);
-    } finally {
-      setLoading(false);
+      console.error('❌ Payment transaction failed:', error);
+      alert(`Payment failed: ${error.message || 'Unknown error'}`);
     }
   };
 

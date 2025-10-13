@@ -21,6 +21,7 @@ import testGithubRoutes from './routes/test-github.js';
 import { initializeDatabase } from './services/database.js';
 import { setupQueues } from './services/queue.js';
 import { RewardDebtCron } from './jobs/reward-debt-cron.js';
+import { PaymentMonitor } from './services/payment-monitor.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -184,6 +185,22 @@ async function startServer() {
     } else {
       console.warn('⚠️  Reward contract or bot wallet not configured, skipping cron job');
     }
+
+    // Start payment monitor
+    if (process.env.BOT_WALLET_ADDRESS) {
+      try {
+        const paymentMonitor = new PaymentMonitor();
+        await paymentMonitor.startMonitoring();
+        console.log('✅ Payment monitor started');
+        
+        // Store reference for graceful shutdown
+        global.paymentMonitor = paymentMonitor;
+      } catch (monitorError) {
+        console.warn('⚠️  Payment monitor setup failed:', monitorError.message);
+      }
+    } else {
+      console.warn('⚠️  Bot wallet address not configured, skipping payment monitor');
+    }
     
     // Start server - bind to 0.0.0.0 for Railway
     app.listen(PORT, '0.0.0.0', () => {
@@ -204,6 +221,11 @@ process.on('SIGINT', () => {
   // Stop reward cron job
   if (global.rewardCron) {
     global.rewardCron.stop();
+  }
+  
+  // Stop payment monitor
+  if (global.paymentMonitor) {
+    global.paymentMonitor.stopMonitoring();
   }
   
   process.exit(0);
