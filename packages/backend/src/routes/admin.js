@@ -120,4 +120,105 @@ router.post('/wallet/forward-eth', requireAuth, async (req, res) => {
   }
 });
 
+// Unwrap WETH and forward to staking contract
+router.post('/wallet/unwrap-weth', requireAuth, async (req, res) => {
+  try {
+    const { amount, forwardAmount } = req.body; // Optional params
+    
+    const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL);
+    const botWallet = new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY, provider);
+    
+    // Base mainnet WETH contract
+    const WETH_ADDRESS = '0x4200000000000000000000000000000000000006';
+    const wethContract = new ethers.Contract(
+      WETH_ADDRESS,
+      [
+        'function withdraw(uint256 wad) external',
+        'function balanceOf(address) external view returns (uint256)',
+        'function symbol() external view returns (string)'
+      ],
+      botWallet
+    );
+    
+    // Check WETH balance
+    const wethBalance = await wethContract.balanceOf(botWallet.address);
+    
+    if (wethBalance === 0n) {
+      return res.status(400).json({ 
+        error: 'No WETH balance to unwrap',
+        wethBalance: '0'
+      });
+    }
+    
+    // Determine amount to unwrap
+    let unwrapAmount;
+    if (amount) {
+      unwrapAmount = ethers.parseEther(amount);
+      if (unwrapAmount > wethBalance) {
+        return res.status(400).json({ 
+          error: 'Insufficient WETH balance',
+          requested: ethers.formatEther(unwrapAmount),
+          available: ethers.formatEther(wethBalance)
+        });
+      }
+    } else {
+      unwrapAmount = wethBalance; // Unwrap all WETH
+    }
+    
+    console.log(`🔄 Unwrapping ${ethers.formatEther(unwrapAmount)} WETH to ETH...`);
+    
+    // Unwrap WETH to ETH
+    const unwrapTx = await wethContract.withdraw(unwrapAmount);
+    await unwrapTx.wait();
+    
+    console.log(`✅ Unwrapped ${ethers.formatEther(unwrapAmount)} WETH. TX: ${unwrapTx.hash}`);
+    
+    // Just unwrap WETH - don't auto-forward for now
+    const ethBalance = await provider.getBalance(botWallet.address);
+    
+    res.json({
+      success: true,
+      unwrapTx: unwrapTx.hash,
+      unwrappedAmount: ethers.formatEther(unwrapAmount),
+      currentEthBalance: ethers.formatEther(ethBalance),
+      note: 'WETH unwrapped successfully. Use /wallet/forward-eth to manually send to staking when ready.'
+    });
+    
+  } catch (error) {
+    console.error('❌ WETH unwrap error:', error);
+    res.status(500).json({ 
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// Check WETH balance
+router.get('/wallet/weth-balance', requireAuth, async (req, res) => {
+  try {
+    const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL);
+    const botWallet = new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY, provider);
+    
+    // Base mainnet WETH contract
+    const WETH_ADDRESS = '0x4200000000000000000000000000000000000006';
+    const wethContract = new ethers.Contract(
+      WETH_ADDRESS,
+      ['function balanceOf(address) external view returns (uint256)'],
+      provider
+    );
+    
+    const wethBalance = await wethContract.balanceOf(botWallet.address);
+    
+    res.json({
+      address: botWallet.address,
+      wethBalance: ethers.formatEther(wethBalance),
+      wethContract: WETH_ADDRESS
+    });
+    
+  } catch (error) {
+    console.error('WETH balance check error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
