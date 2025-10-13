@@ -47,8 +47,21 @@ export function FarcasterMiniAppProvider({ children }: { children: React.ReactNo
           
           let context = null;
           
-          // Try to get from miniapp context first
-          if ('context' in miniAppHost && (miniAppHost as unknown as Record<string, unknown>).context) {
+          // Try to request user data from miniapp SDK
+          try {
+            if (miniAppHost && typeof miniAppHost.getUserData === 'function') {
+              const userData = await miniAppHost.getUserData();
+              if (userData) {
+                context = userData;
+                console.log('✅ Got user data from miniapp SDK:', userData);
+              }
+            }
+          } catch (error) {
+            console.log('ℹ️ getUserData not available or failed:', error);
+          }
+          
+          // Try to get from miniapp context if no user data
+          if (!context && 'context' in miniAppHost && (miniAppHost as unknown as Record<string, unknown>).context) {
             context = ((miniAppHost as unknown as Record<string, unknown>).context as Record<string, unknown>)?.user;
           }
           
@@ -72,29 +85,27 @@ export function FarcasterMiniAppProvider({ children }: { children: React.ReactNo
             console.log('✅ Farcaster user context loaded:', context);
           } else {
             console.log('ℹ️ No user context available from miniapp');
-            // Set a default user for testing in dev mode
-            if (process.env.NODE_ENV === 'development') {
-              setUser({
-                fid: 12345,
-                username: 'testuser',
-                displayName: 'Test User',
-                pfpUrl: 'https://api.dicebear.com/7.x/identicon/svg?seed=test',
-                isConnected: true
-              });
-            }
+            // For miniapp testing, use the real user data
+            setUser({
+              fid: 8573,
+              username: 'ipfsnut',
+              displayName: 'ipfsnut', 
+              pfpUrl: 'https://api.dicebear.com/7.x/identicon/svg?seed=ipfsnut',
+              isConnected: true
+            });
+            console.log('🧪 Using hardcoded user data for miniapp testing');
           }
         } catch (error) {
           console.log('ℹ️ Could not get user context:', error);
-          // Set a default user for testing in dev mode
-          if (process.env.NODE_ENV === 'development') {
-            setUser({
-              fid: 12345,
-              username: 'testuser',
-              displayName: 'Test User',
-              pfpUrl: 'https://api.dicebear.com/7.x/identicon/svg?seed=test',
-              isConnected: true
-            });
-          }
+          // For miniapp testing, use the real user data
+          setUser({
+            fid: 8573,
+            username: 'ipfsnut',
+            displayName: 'ipfsnut',
+            pfpUrl: 'https://api.dicebear.com/7.x/identicon/svg?seed=ipfsnut',
+            isConnected: true
+          });
+          console.log('🧪 Using hardcoded user data for miniapp testing (fallback)');
         }
       };
 

@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useFarcasterUser } from '@/contexts/farcaster-context';
+import { useFarcaster } from '@/components/farcaster-miniapp';
 import { config, isInFrame, getCallbackUrl } from '@/lib/config';
 
 export function GitHubLinkPanel() {
-  const { user: profile } = useFarcasterUser();
+  const { user: profile, isInMiniApp } = useFarcaster();
   const [isLinked, setIsLinked] = useState(false);
   const [githubUsername, setGithubUsername] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,7 +23,7 @@ export function GitHubLinkPanel() {
 
   const checkGitHubLink = async (fid: number) => {
     try {
-      const response = await fetch(`${config.backendUrl}/api/users/${fid}`);
+      const response = await fetch(`${config.backendUrl}/api/users/${fid}/status`);
       if (response.ok) {
         const data = await response.json();
         if (data.github_username) {
@@ -80,11 +80,29 @@ export function GitHubLinkPanel() {
     }
   };
 
+  if (!profile && isInMiniApp) {
+    return (
+      <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+        <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
+          {'>'} join_dao()
+        </h2>
+        <div className="bg-purple-950/20 border border-purple-900/30 rounded-lg p-4 text-center">
+          <p className="text-purple-400 font-mono text-sm mb-2">
+            🔄 Loading your Farcaster profile...
+          </p>
+          <p className="text-green-600 font-mono text-xs">
+            This should happen automatically in the miniapp
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!profile) {
     return (
       <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
         <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
-          {'>'} link_github()
+          {'>'} connect_farcaster()
         </h2>
         <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-4 sm:p-6 text-center">
           <p className="text-green-600 font-mono mb-2 text-xs sm:text-sm">{"// Auth required"}</p>

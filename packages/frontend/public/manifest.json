@@ -1,18 +1,32 @@
 {
+  "frame": {
+    "name": ">ABC_DAO",
+    "version": "1",
+    "iconUrl": "https://abc.epicdylan.com/abc-logo.png",
+    "homeUrl": "https://abc.epicdylan.com",
+    "imageUrl": "https://abc.epicdylan.com/abcdaologo.png",
+    "buttonTitle": "Launch >ABC_DAO",
+    "splashImageUrl": "https://abc.epicdylan.com/abc-logo.png",
+    "splashBackgroundColor": "#000000",
+    "subtitle": "Rewards & recognition for the devs",
+    "description": "Join as a member to be rewarded & talked about when you commit code.",
+    "primaryCategory": "social",
+    "tagline": "Always. Be. Coding.",
+    "ogTitle": "Always. Be. Coding.",
+    "ogDescription": "Join >ABC_DAO today.",
+    "ogImageUrl": "https://abc.epicdylan.com/abcdaologo.png",
+    "heroImageUrl": "https://abc.epicdylan.com/abc-logo.png",
+    "tags": [
+      "social",
+      "dev",
+      "community",
+      "rewards",
+      "dao"
+    ]
+  },
   "accountAssociation": {
     "header": "eyJmaWQiOjg1NzMsInR5cGUiOiJhdXRoIiwia2V5IjoiMHgxOEE4NWFkMzQxYjJENkEyYmQ2N2ZiYjEwNEI0ODI3QjkyMmEyQTNjIn0",
     "payload": "eyJkb21haW4iOiJhYmMuZXBpY2R5bGFuLmNvbSJ9",
     "signature": "dbZAa+fajovRDQfz8YC90VxlSumkJWqBlxmk0vXCHN9YHTzHKsNxpNtGHjMpFjv/W8SZgCNf74sJf+mRqT5q+Bs="
-  },
-  "miniApp": {
-    "name": "ABC DAO",
-    "description": "Ship code, earn rewards. Join the live action developer game for Farcaster.",
-    "icon": "https://abc.epicdylan.com/abc-logo.png",
-    "homeUrl": "https://abc.epicdylan.com",
-    "imageUrl": "https://abc.epicdylan.com/abcdaologo.png",
-    "buttonTitle": "Join ABC DAO",
-    "splashImageUrl": "https://abc.epicdylan.com/abcdaologo.png",
-    "splashBackgroundColor": "#000000",
-    "themeColor": "#10B981"
   }
 }
