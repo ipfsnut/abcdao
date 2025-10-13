@@ -13,7 +13,7 @@ import { Toaster } from 'sonner';
 
 export default function Home() {
   const { isInMiniApp } = useFarcaster();
-  const [activeTab, setActiveTab] = useState<'stake' | 'vote' | 'proposals' | 'chat' | 'swap'>('stake');
+  const [activeTab, setActiveTab] = useState<'stake' | 'rewards' | 'proposals' | 'chat' | 'swap'>('stake');
   const stakingData = useStaking();
 
   return (
@@ -128,9 +128,9 @@ export default function Home() {
                 ./stake
               </button>
               <button
-                onClick={() => setActiveTab('vote')}
+                onClick={() => setActiveTab('rewards')}
                 className={`px-3 py-2 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-sm sm:text-base ${
-                  activeTab === 'vote' 
+                  activeTab === 'rewards' 
                     ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                     : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
                 }`}
@@ -172,7 +172,7 @@ export default function Home() {
             {/* Mobile-Optimized Tab Content */}
             <div className="mt-4">
               {activeTab === 'stake' && <StakePanel stakingData={stakingData} />}
-              {activeTab === 'vote' && <VotePanel />}
+              {activeTab === 'rewards' && <VotePanel />}
               {activeTab === 'proposals' && <GitHubLinkPanel />}
               {activeTab === 'chat' && (
                 <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm text-center">
@@ -288,9 +288,9 @@ export default function Home() {
                 ./stake
               </button>
               <button
-                onClick={() => setActiveTab('vote')}
+                onClick={() => setActiveTab('rewards')}
                 className={`flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-sm sm:text-base ${
-                  activeTab === 'vote' 
+                  activeTab === 'rewards' 
                     ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                     : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
                 }`}
@@ -302,7 +302,7 @@ export default function Home() {
             {/* Web User Tab Content */}
             <div className="mt-6">
               {activeTab === 'stake' && <StakePanel stakingData={stakingData} />}
-              {activeTab === 'vote' && <VotePanel />}
+              {activeTab === 'rewards' && <VotePanel />}
             </div>
             
             {/* Whitepaper Link */}
