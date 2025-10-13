@@ -21,6 +21,7 @@ import testGithubRoutes from './routes/test-github.js';
 import { initializeDatabase } from './services/database.js';
 import { setupQueues } from './services/queue.js';
 import { RewardDebtCron } from './jobs/reward-debt-cron.js';
+import { NightlyLeaderboardJob } from './jobs/nightly-leaderboard-cron.js';
 import { PaymentMonitor } from './services/payment-monitor.js';
 
 const app = express();
@@ -201,6 +202,18 @@ async function startServer() {
       }
     } else {
       console.warn('⚠️  Reward contract or bot wallet not configured, skipping cron job');
+    }
+
+    // Start nightly leaderboard generation (always run)
+    try {
+      const leaderboardJob = new NightlyLeaderboardJob();
+      leaderboardJob.start();
+      console.log('✅ Nightly leaderboard job started (runs at 11:59 PM UTC)');
+      
+      // Store reference for graceful shutdown
+      global.leaderboardJob = leaderboardJob;
+    } catch (leaderboardError) {
+      console.warn('⚠️  Nightly leaderboard job setup failed:', leaderboardError.message);
     }
 
     // Start payment monitor

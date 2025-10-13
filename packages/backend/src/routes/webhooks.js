@@ -218,8 +218,22 @@ async function processRewardDirectly(commitData) {
   try {
     console.log(`🏗️ Processing reward directly for commit ${commitHash} by ${farcasterUsername}`);
     
-    // Generate random reward amount (50,000 - 1,000,000 ABC)
-    const rewardAmount = Math.floor(Math.random() * 950000) + 50000; // 50k to 1M ABC
+    // Generate weighted random reward amount
+    const rand = Math.random();
+    let rewardAmount;
+    
+    if (rand < 0.95) {
+      // 95% chance: 50k-60k ABC (baseline rewards)
+      rewardAmount = Math.floor(Math.random() * 10000) + 50000; // 50k-60k
+    } else if (rand < 0.975) {
+      // 2.5% chance: 60k-100k ABC (small bonus)
+      rewardAmount = Math.floor(Math.random() * 40000) + 60000; // 60k-100k
+    } else {
+      // 2.5% chance: 100k-999k ABC (rare big rewards)
+      rewardAmount = Math.floor(Math.random() * 899000) + 100000; // 100k-999k
+    }
+    
+    console.log(`🎲 Reward roll: ${(rand * 100).toFixed(1)}% → ${rewardAmount.toLocaleString()} $ABC`);
     
     // Update commit record with reward amount
     const pool = getPool();
