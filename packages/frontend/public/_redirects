@@ -1,2 +1,5 @@
 # Cloudflare Pages redirects for static export
+# Farcaster manifest redirect to hosted version
+/.well-known/farcaster.json https://api.farcaster.xyz/miniapps/hosted-manifest/0199dbae-b76f-de43-c4ad-5a49fc250ac6 307
+
 /*    /index.html   200

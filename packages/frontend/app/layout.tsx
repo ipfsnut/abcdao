@@ -30,13 +30,28 @@ export const metadata: Metadata = {
   },
   other: {
     "fc:miniapp": JSON.stringify({
-      version: "1",
-      name: "ABC DAO",
-      iconUrl: "https://abc.epicdylan.com/icon.png",
-      homeUrl: "https://abc.epicdylan.com/",
-      imageUrl: "https://abc.epicdylan.com/og-image.png",
-      description: "Ship code, earn rewards. Stake $ABC, link GitHub, earn crypto for every commit.",
-      buttonTitle: "Start Earning"
+      frame: {
+        name: "ABC_DAO",
+        version: "1",
+        iconUrl: "https://abc.epicdylan.com/abc-logo.png",
+        homeUrl: "https://abc.epicdylan.com",
+        imageUrl: "https://abc.epicdylan.com/image.png",
+        buttonTitle: "Open",
+        splashImageUrl: "https://abc.epicdylan.com/abc-splash-200.png",
+        splashBackgroundColor: "#000000",
+        webhookUrl: "https://abcdao-production.up.railway.app/api/webhooks/github",
+        subtitle: "Always. Be. Coding.",
+        description: "Ship code, earn rewards. Stake ABC, link GitHub, earn crypto for every commit.",
+        primaryCategory: "social",
+        tags: ["social", "dev", "community", "crypto", "dao"],
+        tagline: "Always. Be. Coding.",
+        heroImageUrl: "https://abc.epicdylan.com/abc-logo.png",
+        screenshotUrls: ["https://abc.epicdylan.com/abc-icon-1024.png"],
+        ogImageUrl: "https://abc.epicdylan.com/abc-logo.png",
+        ogTitle: "Always. Be. Coding.",
+        ogDescription: "Always. Be. Coding.",
+        castShareUrl: "https://abc.epicdylan.com"
+      }
     })
   }
 };

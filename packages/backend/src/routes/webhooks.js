@@ -65,57 +65,78 @@ router.post('/github', verifyGitHubSignature, async (req, res) => {
   } catch (error) {
     console.error('❌ Webhook processing error:', error);
     console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      name: error.name
+    });
     res.status(500).json({ 
       error: 'Webhook processing failed',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      errorCode: error.code,
+      errorName: error.name
     });
   }
 });
 
 async function handlePushEvent(payload) {
-  const { repository, pusher, commits } = payload;
+  try {
+    const { repository, pusher, commits } = payload;
+    
+    // Debug logging to see what GitHub sends
+    console.log('🔍 DEBUG: Webhook payload received:');
+    console.log('Repository:', repository?.name, repository?.full_name);
+    console.log('Pusher:', JSON.stringify(pusher, null, 2));
+    console.log('Commits:', commits?.length, 'commits');
+    
+    // Skip if no commits or if it's a private repo
+    if (!commits || commits.length === 0 || repository.private) {
+      console.log('⚠️ Skipping: No commits or private repo');
+      return;
+    }
+    
+    console.log('🔍 Attempting to get database pool...');
+    const pool = getPool();
+    console.log('✅ Database pool obtained');
   
-  // Debug logging to see what GitHub sends
-  console.log('🔍 DEBUG: Webhook payload received:');
-  console.log('Repository:', repository?.name, repository?.full_name);
-  console.log('Pusher:', JSON.stringify(pusher, null, 2));
-  console.log('Commits:', commits?.length, 'commits');
-  
-  // Skip if no commits or if it's a private repo
-  if (!commits || commits.length === 0 || repository.private) {
-    console.log('⚠️ Skipping: No commits or private repo');
-    return;
-  }
-  
-  const pool = getPool();
-  
-  // Try multiple fields for GitHub username
-  const githubUsername = pusher?.name || pusher?.login || pusher?.username;
-  console.log('🔍 Looking for user with GitHub username:', githubUsername);
-  
-  // Look up user by GitHub username
-  const userResult = await pool.query(
-    'SELECT * FROM users WHERE github_username = $1 AND verified_at IS NOT NULL',
-    [githubUsername]
-  );
-  
-  if (userResult.rows.length === 0) {
-    console.log(`⚠️ Push from unregistered user: ${githubUsername}`);
-    return;
-  }
-  
-  const user = userResult.rows[0];
-  
-  // Process each commit
-  for (const commit of commits) {
-    await processCommit(user, repository, commit);
+    // Try multiple fields for GitHub username
+    const githubUsername = pusher?.name || pusher?.login || pusher?.username;
+    console.log('🔍 Looking for user with GitHub username:', githubUsername);
+    
+    // Look up user by GitHub username
+    console.log('🔍 Querying database for user...');
+    const userResult = await pool.query(
+      'SELECT * FROM users WHERE github_username = $1 AND verified_at IS NOT NULL',
+      [githubUsername]
+    );
+    console.log('✅ User query completed, found:', userResult.rows.length, 'users');
+    
+    if (userResult.rows.length === 0) {
+      console.log(`⚠️ Push from unregistered user: ${githubUsername}`);
+      return;
+    }
+    
+    const user = userResult.rows[0];
+    console.log('✅ Found user:', user.farcaster_username);
+    
+    // Process each commit
+    console.log('🔍 Processing', commits.length, 'commits...');
+    for (const commit of commits) {
+      await processCommit(user, repository, commit);
+    }
+    console.log('✅ All commits processed');
+    
+  } catch (error) {
+    console.error('❌ Error in handlePushEvent:', error);
+    throw error; // Re-throw to be caught by main handler
   }
 }
 
 async function processCommit(user, repository, commit) {
-  const pool = getPool();
-  
   try {
+    console.log('🔍 Processing commit:', commit.id);
+    const pool = getPool();
     // Check if commit already processed
     const existingCommit = await pool.query(
       'SELECT id FROM commits WHERE commit_hash = $1',
@@ -154,32 +175,17 @@ async function processCommit(user, repository, commit) {
     
     console.log(`✅ Recorded commit ${commit.id} for ${user.farcaster_username}`);
     
-    // Try queue system, fall back to direct processing if Redis unavailable
-    try {
-      await addRewardJob({
-        userId: user.id,
-        commitHash: commit.id,
-        farcasterUsername: user.farcaster_username,
-        farcasterFid: user.farcaster_fid,
-        repository: repository.full_name,
-        commitMessage: commit.message,
-        commitUrl: commit.url
-      });
-      console.log(`✅ Added commit ${commit.id} to reward queue`);
-    } catch (queueError) {
-      console.log(`⚠️ Queue unavailable, processing directly:`, queueError.message);
-      
-      // Process reward directly without queue
-      await processRewardDirectly({
-        userId: user.id,
-        commitHash: commit.id,
-        farcasterUsername: user.farcaster_username,
-        farcasterFid: user.farcaster_fid,
-        repository: repository.full_name,
-        commitMessage: commit.message,
-        commitUrl: commit.url
-      });
-    }
+    // Always process directly for now (bypass queue issues)
+    console.log(`🔄 Processing commit ${commit.id} directly`);
+    await processRewardDirectly({
+      userId: user.id,
+      commitHash: commit.id,
+      farcasterUsername: user.farcaster_username,
+      farcasterFid: user.farcaster_fid,
+      repository: repository.full_name,
+      commitMessage: commit.message,
+      commitUrl: commit.url
+    });
     
   } catch (error) {
     console.error('Error processing commit:', error);
