@@ -140,15 +140,7 @@ router.get('/supply', async (req, res) => {
         percentage: (clankerPool / TOTAL_SUPPLY) * 100,
         color: "#6b7280",
         label: "Clanker Pool",
-        description: "Uniswap V3 liquidity pool",
-        locked: true
-      },
-      clanker_vault: {
-        amount: clankerVault,
-        percentage: (clankerVault / TOTAL_SUPPLY) * 100,
-        color: "#4b5563",
-        label: "Clanker Vault",
-        description: "Locked vault (30-180 day vesting)",
+        description: "Pool manager (largest holder)",
         locked: true
       }
     };
