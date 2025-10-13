@@ -125,27 +125,31 @@ export default function SupplyPage() {
         ) : supplyData ? (
           <>
             {/* Main Chart Section */}
-            <div className="grid lg:grid-cols-3 gap-8 mb-8">
+            <div className="grid lg:grid-cols-3 gap-4 lg:gap-8 mb-6 lg:mb-8">
               {/* Large Chart */}
-              <div className="lg:col-span-2 bg-black/40 border border-green-900/50 rounded-xl p-8 backdrop-blur-sm">
-                <h2 className="text-2xl font-bold mb-8 text-green-400 matrix-glow font-mono text-center">
+              <div className="lg:col-span-2 bg-black/40 border border-green-900/50 rounded-xl p-4 lg:p-8 backdrop-blur-sm">
+                <h2 className="text-xl lg:text-2xl font-bold mb-4 lg:mb-8 text-green-400 matrix-glow font-mono text-center">
                   {'>'} $ABC Token Distribution
                 </h2>
                 <div className="flex flex-col items-center">
-                  <TokenSupplyChart 
-                    size={450} 
-                    showCenter={true} 
-                    interactive={true}
-                  />
-                  <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-4 w-full max-w-md">
+                  <div className="w-full flex justify-center">
+                    <div className="w-full max-w-[300px] sm:max-w-[400px] lg:max-w-[450px]">
+                      <TokenSupplyChart 
+                        size={300} 
+                        showCenter={true} 
+                        interactive={true}
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4 lg:mt-6 grid grid-cols-2 sm:grid-cols-3 gap-2 lg:gap-3 w-full">
                     {Object.entries(supplyData.breakdown).map(([key, data]) => (
-                      <div key={key} className="flex items-center gap-2">
+                      <div key={key} className="flex items-center gap-1.5 lg:gap-2 min-w-0">
                         <div 
-                          className="w-4 h-4 rounded-sm flex-shrink-0" 
+                          className="w-3 h-3 lg:w-4 lg:h-4 rounded-sm flex-shrink-0" 
                           style={{ backgroundColor: data.color }}
                         />
-                        <div className="min-w-0">
-                          <p className="text-green-400 font-mono text-xs font-bold truncate">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-green-400 font-mono text-xs lg:text-sm font-bold truncate">
                             {data.label}
                           </p>
                           <p className="text-green-600 font-mono text-xs">
@@ -159,25 +163,25 @@ export default function SupplyPage() {
               </div>
 
               {/* Summary Stats */}
-              <div className="space-y-4">
-                <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 backdrop-blur-sm">
-                  <h3 className="text-lg font-bold mb-4 text-green-400 matrix-glow font-mono">
+              <div className="space-y-3 lg:space-y-4">
+                <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 lg:p-6 backdrop-blur-sm">
+                  <h3 className="text-lg font-bold mb-3 lg:mb-4 text-green-400 matrix-glow font-mono">
                     {'>'} Supply Overview
                   </h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
+                  <div className="space-y-2 lg:space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
                       <span className="text-green-600 text-sm">Total Supply</span>
-                      <span className="text-green-400 font-bold text-lg">
+                      <span className="text-green-400 font-bold text-base lg:text-lg">
                         {formatFullSupply(supplyData.total_supply)} $ABC
                       </span>
                     </div>
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
                       <span className="text-green-600 text-sm">Circulating Supply</span>
-                      <span className="text-green-400 font-bold text-lg">
+                      <span className="text-green-400 font-bold text-base lg:text-lg">
                         {formatFullSupply(supplyData.circulating_supply)} $ABC
                       </span>
                     </div>
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
                       <span className="text-green-600 text-sm">Circulating %</span>
                       <span className="text-green-300 font-bold">
                         {((supplyData.circulating_supply / supplyData.total_supply) * 100).toFixed(1)}%
@@ -206,37 +210,37 @@ export default function SupplyPage() {
             </div>
 
             {/* Detailed Breakdown */}
-            <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 backdrop-blur-sm mb-8">
-              <h3 className="text-xl font-bold mb-6 text-green-400 matrix-glow font-mono">
+            <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 lg:p-6 backdrop-blur-sm mb-6 lg:mb-8">
+              <h3 className="text-lg lg:text-xl font-bold mb-4 lg:mb-6 text-green-400 matrix-glow font-mono">
                 {'>'} Detailed Breakdown
               </h3>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
                 {Object.entries(supplyData.breakdown).map(([key, data]) => (
                   <div 
                     key={key}
-                    className="bg-green-950/10 border border-green-900/30 rounded-lg p-4"
+                    className="bg-green-950/10 border border-green-900/30 rounded-lg p-3 lg:p-4"
                   >
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-2 lg:gap-3 mb-2 lg:mb-3">
                       <div 
-                        className="w-4 h-4 rounded-sm" 
+                        className="w-3 h-3 lg:w-4 lg:h-4 rounded-sm flex-shrink-0" 
                         style={{ backgroundColor: data.color }}
                       />
-                      <h4 className="font-bold text-green-400">{data.label}</h4>
+                      <h4 className="font-bold text-green-400 text-sm lg:text-base min-w-0 truncate">{data.label}</h4>
                       {data.locked && (
-                        <span className="text-yellow-400 text-xs">🔒</span>
+                        <span className="text-yellow-400 text-xs flex-shrink-0">🔒</span>
                       )}
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1.5 lg:space-y-2">
                       <div>
-                        <p className="text-green-300 font-bold text-lg">
+                        <p className="text-green-300 font-bold text-base lg:text-lg">
                           {formatSupply(data.amount)}
                         </p>
-                        <p className="text-green-600 text-sm">
+                        <p className="text-green-600 text-xs lg:text-sm break-all">
                           {formatFullSupply(data.amount)} tokens
                         </p>
                       </div>
                       <div>
-                        <p className="text-green-400 font-mono text-lg font-bold">
+                        <p className="text-green-400 font-mono text-base lg:text-lg font-bold">
                           {data.percentage.toFixed(1)}%
                         </p>
                         <p className="text-green-600 text-xs">
@@ -277,23 +281,23 @@ export default function SupplyPage() {
             </div>
 
             {/* Technical Details */}
-            <div className="mt-8 bg-black/60 border border-green-900/30 rounded-xl p-6">
-              <h3 className="text-lg font-bold mb-4 text-green-400 matrix-glow font-mono">
+            <div className="mt-6 lg:mt-8 bg-black/60 border border-green-900/30 rounded-xl p-4 lg:p-6">
+              <h3 className="text-lg font-bold mb-3 lg:mb-4 text-green-400 matrix-glow font-mono">
                 {'>'} Technical Details
               </h3>
-              <div className="grid sm:grid-cols-2 gap-6 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6 text-sm">
                 <div>
                   <h4 className="text-green-400 font-bold mb-2">Token Allocation</h4>
                   <ul className="space-y-1 text-green-600">
                     <li>• Total Supply: 100 Billion $ABC</li>
-                    <li>• Circulating: Available for trading</li>
+                    <li>• Liquid: Held by users, freely tradeable</li>
                     <li>• Staked: Earning ETH rewards</li>
                     <li>• Treasury: Protocol rewards pool</li>
                     <li>• Development: Protocol allocation (5%)</li>
                     <li>• Clanker: Locked liquidity pool</li>
                   </ul>
                 </div>
-                <div>
+                <div className="mt-4 sm:mt-0">
                   <h4 className="text-green-400 font-bold mb-2">Data Updates</h4>
                   <ul className="space-y-1 text-green-600">
                     <li>• Refreshed on page load</li>

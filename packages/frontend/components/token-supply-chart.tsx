@@ -136,11 +136,11 @@ export function TokenSupplyChart({
   };
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative" style={{ width: size, height: size }}>
+    <div className="flex flex-col items-center w-full">
+      <div className="relative w-full aspect-square max-w-sm sm:max-w-md lg:max-w-lg">
         <svg 
-          width={size} 
-          height={size} 
+          width="100%" 
+          height="100%" 
           viewBox={`0 0 ${size} ${size}`}
           className="transform -rotate-90" // Rotate to start at top
         >
