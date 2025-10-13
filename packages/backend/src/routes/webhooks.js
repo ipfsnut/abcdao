@@ -64,21 +64,32 @@ router.post('/github', verifyGitHubSignature, async (req, res) => {
 async function handlePushEvent(payload) {
   const { repository, pusher, commits } = payload;
   
+  // Debug logging to see what GitHub sends
+  console.log('🔍 DEBUG: Webhook payload received:');
+  console.log('Repository:', repository?.name, repository?.full_name);
+  console.log('Pusher:', JSON.stringify(pusher, null, 2));
+  console.log('Commits:', commits?.length, 'commits');
+  
   // Skip if no commits or if it's a private repo
   if (!commits || commits.length === 0 || repository.private) {
+    console.log('⚠️ Skipping: No commits or private repo');
     return;
   }
   
   const pool = getPool();
   
+  // Try multiple fields for GitHub username
+  const githubUsername = pusher?.name || pusher?.login || pusher?.username;
+  console.log('🔍 Looking for user with GitHub username:', githubUsername);
+  
   // Look up user by GitHub username
   const userResult = await pool.query(
     'SELECT * FROM users WHERE github_username = $1 AND verified_at IS NOT NULL',
-    [pusher.name]
+    [githubUsername]
   );
   
   if (userResult.rows.length === 0) {
-    console.log(`⚠️ Push from unregistered user: ${pusher.name}`);
+    console.log(`⚠️ Push from unregistered user: ${githubUsername}`);
     return;
   }
   
