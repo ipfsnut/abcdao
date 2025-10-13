@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
 import { getPool } from './database.js';
+import { farcasterService } from './farcaster.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -185,7 +186,16 @@ class PaymentMonitor {
 
       console.log(`   ✅ Membership activated for @${user.farcaster_username}`);
       console.log(`   Transaction: ${txHash}`);
-      console.log(`   Amount: ${ethers.formatEther(amount)} ETH\n`);
+      console.log(`   Amount: ${ethers.formatEther(amount)} ETH`);
+
+      // Post welcome cast for new member
+      try {
+        await farcasterService.announceNewContributor(user.github_username || user.farcaster_username, user.farcaster_username);
+        console.log(`   🎉 Welcome cast posted for @${user.farcaster_username}`);
+      } catch (castError) {
+        console.error(`   ⚠️ Failed to post welcome cast:`, castError.message);
+      }
+      console.log('');
 
       return true;
 

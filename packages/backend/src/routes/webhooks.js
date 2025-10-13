@@ -158,7 +158,20 @@ async function processCommit(user, repository, commit) {
     const currentCount = dailyStats.rows[0]?.commit_count || 0;
     
     if (currentCount >= 10) {
-      console.log(`⚠️ Daily limit reached for user ${user.farcaster_username}`);
+      console.log(`⚠️ Daily limit reached for user ${user.farcaster_username} - posting limit reached cast`);
+      
+      // Still post a cast but indicate daily limit reached
+      await postCommitCast({
+        farcasterUsername: user.farcaster_username,
+        farcasterFid: user.farcaster_fid,
+        repository: repository.full_name,
+        commitMessage: commit.message.slice(0, 100),
+        commitUrl: `${repository.html_url}/commit/${commit.id}`,
+        rewardAmount: null, // This will trigger "MAX DAILY REWARDS REACHED" message
+        commitHash: commit.id,
+        dailyLimitReached: true
+      });
+      
       return;
     }
     
@@ -250,7 +263,7 @@ async function processRewardDirectly(commitData) {
 
 // Direct Farcaster posting when queue is unavailable
 async function postCommitCast(castData) {
-  const { farcasterUsername, farcasterFid, repository, commitMessage, commitUrl, rewardAmount, commitHash } = castData;
+  const { farcasterUsername, farcasterFid, repository, commitMessage, commitUrl, rewardAmount, commitHash, dailyLimitReached } = castData;
   
   try {
     console.log(`📢 Posting cast directly for ${farcasterUsername}'s commit`);
@@ -271,7 +284,12 @@ async function postCommitCast(castData) {
       .split('\n')[0]
       .trim();
     
-    const castText = `🚀 New commit!\n\n@${farcasterUsername} just pushed to ${repoName}:\n\n"${cleanMessage}"\n\n💰 Earned: ${rewardAmount.toLocaleString()} $ABC\n\n🔗 ${commitUrl}\n\n📱 Want rewards? Add our miniapp:\nfarcaster.xyz/miniapps/S1edg9PycxZP/abcdao\n\n#ABCDAO #AlwaysBeCoding`;
+    // Create cast message with daily limit handling
+    const rewardText = dailyLimitReached 
+      ? '🔴 MAX DAILY REWARDS REACHED (10/10)'
+      : `💰 Earned: ${rewardAmount.toLocaleString()} $ABC`;
+    
+    const castText = `🚀 New commit!\n\n@${farcasterUsername} just pushed to ${repoName}:\n\n"${cleanMessage}"\n\n${rewardText}\n\n🔗 ${commitUrl}\n\n📱 Want rewards? Add our miniapp:\nfarcaster.xyz/miniapps/S1edg9PycxZP/abcdao\n\n#ABCDAO #AlwaysBeCoding`;
     
     // Post cast
     const cast = await neynar.publishCast(
