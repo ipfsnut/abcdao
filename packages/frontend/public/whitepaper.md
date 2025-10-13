@@ -56,24 +56,26 @@ Stakers earn $ETH/$WETH (auto-converted to ETH) from two sources while developer
 ### Recognition Flow
 1. Registered Developer makes a commit to any public repo
 2. ABC Bot detects the commit via GitHub webhooks
-3. Bot verifies developer has minimum $ABC staked (requirement may vary)
-4. Bot posts cast celebrating the commit
-5. $ABC rewards distributed automatically
+3. Bot posts cast celebrating the commit (tags Farcaster username)
+4. $ABC rewards recorded in database for future claiming
+5. Daily batch processing prepares rewards for distribution
 
 ### Reward Formula
 - Simple: 1 commit = 1 reward
 - Random reward amounts (50,000 to 1,000,000 $ABC)
-- Must have minimum stake to qualify
+- Current phase: No staking requirement (all registered members eligible)
 - Daily cap: 10 commits max per developer
 - All public repo commits count equally
+- Future phase: Staking requirement for enhanced rewards
 
 ## 5. REWARD DISTRIBUTION
 
-### Developer Rewards
-- Funded by $ABC from trading fees
+### Developer Rewards (Current Phase)
 - Random rewards between 50,000-1,000,000 $ABC per commit
-- Fully automated - no manual intervention
-- Sustainable through continuous fee generation
+- Immediate cast announcements via @abc-bot with commit URLs
+- PostgreSQL tracking with job queue processing (Bull/Redis)
+- Real-time webhook processing with exponential backoff retry
+- Future implementation: Smart contract-based claimable rewards
 
 ### Staker Rewards
 - $ETH/$WETH from trading fees distributed to $ABC stakers (WETH auto-unwrapped)
@@ -84,15 +86,15 @@ Stakers earn $ETH/$WETH (auto-converted to ETH) from two sources while developer
 ## 6. FARCASTER INTEGRATION
 
 ### ABC Bot Account
-- **Username**: @abcbot
+- **Username**: @abc-bot
 - **Purpose**: Automated developer recognition
 - **Powered by**: Neynar API
-- **Status**: Integrated and tested
+- **Status**: Live and operational
 
 ### Cast Templates
-- "🚀 @username just shipped code! [commit message] → Earned X $ABC"
-- "🔥 @username is on fire! 5 commits today → Total earned: X $ABC"
-- "💎 New milestone: @username has shipped 100 commits with ABC!"
+- "🚀 @username just pushed to repo: 'commit message' → Earned X $ABC → 🔗 [commit URL] → #ABCDAO #AlwaysBeCoding"
+- Random intro variations: "⚡ Code shipped!", "🔥 Fresh push!", "💻 Update landed!"
+- Daily batch processing for efficient reward distribution
 
 ### Social Features
 - Automatic follow of active developers
@@ -119,13 +121,13 @@ Stakers earn $ETH/$WETH (auto-converted to ETH) from two sources while developer
 - **Revenue Flow**: ETH to staking contract for rewards distribution
 
 ### Backend Services
-1. **GitHub Webhook Service**: Receives commit events
-2. **Neynar Bot Service**: Posts to Farcaster via @abcbot
-3. **Account Linker**: GitHub-Farcaster connection via miniapp
-4. **Membership Processor**: Verifies 0.002 ETH payments to bot wallet
-5. **Reward Distributor**: Sends $ABC from bot wallet for commits
-6. **WETH Unwrapper**: Automatically converts WETH to ETH for reward distribution
-7. **ETH Forwarder**: Manual transfer of membership fees and unwrapped ETH to staking contract
+1. **GitHub Webhook Service**: Processes commit events with job queue system
+2. **Neynar Bot Service**: Automated posting via @abc-bot account
+3. **Account Linker**: Secure GitHub-Farcaster OAuth flow with JWT state tokens
+4. **Reward Database**: PostgreSQL with migrations and proper indexing
+5. **Job Queue System**: Bull/Redis for reliable commit and cast processing
+6. **Cast Processing**: Automated reward announcements with commit URLs
+7. **Future: Smart Contract Integration**: Claimable rewards system (pending)
 
 ### Security Measures
 - **Smart Contract Security**: OpenZeppelin v5.2 libraries (ReentrancyGuard, Pausable, Ownable)
