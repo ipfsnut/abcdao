@@ -6,18 +6,26 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
+/**
+ * @title ABCStakingV2Fixed
+ * @dev Fixed version of the ABC staking contract with proper reward debt handling
+ * 
+ * KEY FIXES:
+ * 1. Fixed updateReward modifier to preserve pending rewards before updating debt
+ * 2. Removed duplicate reward debt updates
+ * 3. Added safety checks to prevent underflow in reward calculations
+ * 4. Proper reward accounting that prevents reward theft
+ * 5. Simplified to single ETH reward token for clarity
+ */
 contract ABCStakingV2Fixed is ReentrancyGuard, Ownable, Pausable {
-    // Configurable token addresses (set in constructor)
-    IERC20 public immutable ABC_TOKEN;
-    IERC20 public immutable WETH;
+    // Use the actual ABC token address
+    IERC20 public constant ABC_TOKEN = IERC20(0x5c0872b790bb73e2b3a9778db6e7704095624b07);
     
     struct StakeInfo {
-        uint256 amount;
-        uint256 ethRewardDebt;
-        uint256 wethRewardDebt;
-        uint256 lastStakeTime;
-        uint256 totalEthEarned;
-        uint256 totalWethEarned;
+        uint256 amount;           // Amount of tokens staked
+        uint256 rewardDebt;       // Reward debt for proper reward calculation
+        uint256 lastStakeTime;    // When the user last staked
+        uint256 totalEthEarned;   // Total ETH earned and claimed
     }
     
     struct UnbondingInfo {
@@ -28,14 +36,9 @@ contract ABCStakingV2Fixed is ReentrancyGuard, Ownable, Pausable {
     mapping(address => StakeInfo) public stakes;
     mapping(address => UnbondingInfo[]) public unbonding;
     uint256 public totalStaked;
-    
-    // Separate tracking for ETH and WETH rewards
-    uint256 public accEthRewardsPerShare;
-    uint256 public accWethRewardsPerShare;
-    uint256 public totalEthRewardsDistributed;
-    uint256 public totalWethRewardsDistributed;
-    
-    uint256 public constant UNBONDING_PERIOD = 7 days; // Back to proper unbonding period
+    uint256 public accRewardsPerShare;  // Accumulated rewards per share (scaled by 1e18)
+    uint256 public totalRewardsDistributed;
+    uint256 public constant UNBONDING_PERIOD = 7 days; // Production unbonding period
     uint256 public constant PRECISION = 1e18;
     
     // Events
