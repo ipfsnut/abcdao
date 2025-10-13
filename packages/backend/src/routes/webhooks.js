@@ -6,6 +6,7 @@ import { getPool } from '../services/database.js';
 import { addRewardJob } from '../services/queue.js';
 import farcasterService from '../services/farcaster.js';
 import commitTagParser from '../services/commit-tags.js';
+import priorityLimits from '../services/priority-limits.js';
 
 // Ensure dotenv is loaded
 dotenv.config();
@@ -274,12 +275,34 @@ async function processRewardDirectly(commitData) {
   try {
     console.log(`🏗️ Processing reward directly for commit ${commitHash} by ${farcasterUsername}`);
     
+    // Check priority tag limits first
+    let finalPriority = commitTags?.priority || 'normal';
+    let priorityMultiplier = 1;
+    
+    if (commitTags?.priority === 'high' || commitTags?.priority === 'milestone') {
+      // Check if user has remaining priority uses this week
+      const priorityCheck = await priorityLimits.checkPriorityLimit(userId);
+      
+      if (priorityCheck.canUse) {
+        // User can use priority tag
+        priorityMultiplier = 1.5;
+        
+        // Record the usage
+        const tagType = commitTags.priority === 'milestone' ? 'milestone' : 'priority';
+        await priorityLimits.recordPriorityUsage(userId, commitHash, tagType);
+        
+        console.log(`⭐ Priority boost applied: ${priorityMultiplier}x (${priorityCheck.remaining - 1} remaining this week)`);
+      } else {
+        // User has exceeded weekly limit, downgrade to normal
+        finalPriority = 'normal';
+        priorityMultiplier = 1;
+        console.log(`⚠️ Priority tag limit exceeded for user ${farcasterUsername} (${priorityCheck.used}/${priorityCheck.limit} used this week)`);
+      }
+    }
+    
     // Generate weighted random reward amount (with priority boost)
     const rand = Math.random();
     let rewardAmount;
-    
-    // Priority commits get better odds
-    const priorityMultiplier = commitTags?.priority === 'high' || commitTags?.priority === 'milestone' ? 1.5 : 1;
     
     if (rand < 0.95) {
       // 95% chance: 50k-60k ABC (baseline rewards)
@@ -292,10 +315,9 @@ async function processRewardDirectly(commitData) {
       rewardAmount = Math.floor(Math.random() * 899000) + 100000; // 100k-999k
     }
     
-    // Apply priority multiplier
+    // Apply priority multiplier if allowed
     if (priorityMultiplier > 1) {
       rewardAmount = Math.floor(rewardAmount * priorityMultiplier);
-      console.log(`⭐ Priority boost applied: ${priorityMultiplier}x`);
     }
     
     console.log(`🎲 Reward roll: ${(rand * 100).toFixed(1)}% → ${rewardAmount.toLocaleString()} $ABC`);
@@ -337,7 +359,8 @@ async function processRewardDirectly(commitData) {
         rewardAmount,
         commitHash,
         userSettings,
-        commitTags
+        commitTags,
+        finalPriority
       });
     } else {
       console.log(`🤐 Skipping cast for silent commit ${commitHash}`);
@@ -353,7 +376,7 @@ async function processRewardDirectly(commitData) {
 
 // Direct Farcaster posting when queue is unavailable
 async function postCommitCast(castData) {
-  const { farcasterUsername, farcasterFid, repository, commitMessage, commitUrl, rewardAmount, commitHash, dailyLimitReached, userSettings, commitTags } = castData;
+  const { farcasterUsername, farcasterFid, repository, commitMessage, commitUrl, rewardAmount, commitHash, dailyLimitReached, userSettings, commitTags, finalPriority } = castData;
   
   try {
     console.log(`📢 Posting cast directly for ${farcasterUsername}'s commit`);
@@ -411,13 +434,18 @@ async function postCommitCast(castData) {
     } else {
       rewardText = `💰 Earned: ${rewardAmount.toLocaleString()} $ABC`;
       
-      // Add priority indicators
-      if (commitTags?.priority === 'high') {
+      // Add priority indicators (only if actually applied)
+      if (finalPriority === 'high') {
         rewardText += ' ⭐ (Priority)';
-      } else if (commitTags?.priority === 'milestone') {
+      } else if (finalPriority === 'milestone') {
         rewardText += ' 🎯 (Milestone)';
       } else if (commitTags?.priority === 'experimental') {
         rewardText += ' 🧪 (Experiment)';
+      }
+      
+      // Add limit exceeded indicator if priority was requested but denied
+      if ((commitTags?.priority === 'high' || commitTags?.priority === 'milestone') && finalPriority === 'normal') {
+        rewardText += ' ⚠️ (Priority limit reached)';
       }
     }
     

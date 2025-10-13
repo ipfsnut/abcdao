@@ -165,9 +165,9 @@ class CommitTagParser {
       devoff: 'Temporarily disable dev status',
       devon: 'Re-enable dev status', 
       norew: 'Skip reward generation',
-      priority: 'Mark as high priority commit',
+      priority: 'Mark as high priority commit (1.5x rewards, limit 5/week)',
       experiment: 'Mark as experimental work',
-      milestone: 'Mark as milestone achievement'
+      milestone: 'Mark as milestone achievement (1.5x rewards, limit 5/week)'
     };
   }
 

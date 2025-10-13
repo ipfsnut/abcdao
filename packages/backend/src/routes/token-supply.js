@@ -98,50 +98,59 @@ router.get('/supply', async (req, res) => {
       dataSource = 'Fallback estimates (contract error)';
     }
     
-    // Calculate circulating supply (everything not locked or staked)
-    const circulating = Math.max(0, TOTAL_SUPPLY - clankerPool - DEV_LOCKUP - totalStaked - botWallet);
+    // Calculate circulating supply (total supply minus pool tokens)
+    // Pool tokens are locked in DEX, everything else is circulating
+    const circulating = Math.max(0, TOTAL_SUPPLY - clankerPool);
     
-    // Build response
+    // Calculate liquid tokens (everything not locked)
+    const liquid = Math.max(0, TOTAL_SUPPLY - clankerPool - DEV_LOCKUP - botWallet - totalStaked);
+    
+    // Build response with correct categorization
     const breakdown = {
-      circulating: {
-        amount: circulating,
-        percentage: (circulating / TOTAL_SUPPLY) * 100,
+      liquid: {
+        amount: liquid,
+        percentage: (liquid / TOTAL_SUPPLY) * 100,
         color: "#22c55e",
-        label: "Circulating",
-        description: "Available for trading and transfers",
-        locked: false
-      },
-      staked: {
-        amount: totalStaked,
-        percentage: (totalStaked / TOTAL_SUPPLY) * 100,
-        color: "#3b82f6",
-        label: "Staked", 
-        description: "Earning ETH rewards in staking contract",
-        locked: true
-      },
-      bot_wallet: {
-        amount: botWallet,
-        percentage: (botWallet / TOTAL_SUPPLY) * 100,
-        color: "#8b5cf6",
-        label: "Treasury",
-        description: "Reserved for developer rewards",
-        locked: false
-      },
-      dev_lockup: {
-        amount: DEV_LOCKUP,
-        percentage: (DEV_LOCKUP / TOTAL_SUPPLY) * 100,
-        color: "#eab308",
-        label: "Development",
-        description: "Team allocation with vesting schedule",
-        locked: true
+        label: "Liquid",
+        description: "Held by users, freely tradeable",
+        locked: false,
+        circulating: true
       },
       clanker_pool: {
         amount: clankerPool,
         percentage: (clankerPool / TOTAL_SUPPLY) * 100,
         color: "#6b7280",
-        label: "Clanker Pool",
-        description: "Pool manager (largest holder)",
-        locked: true
+        label: "Clanker DEX Pool",
+        description: "Locked in DEX pool",
+        locked: true,
+        circulating: false
+      },
+      treasury: {
+        amount: botWallet,
+        percentage: (botWallet / TOTAL_SUPPLY) * 100,
+        color: "#3b82f6",
+        label: "Treasury Lock",
+        description: "Reserved for developer rewards",
+        locked: true,
+        circulating: false
+      },
+      staked: {
+        amount: totalStaked,
+        percentage: (totalStaked / TOTAL_SUPPLY) * 100,
+        color: "#8b5cf6",
+        label: "Staking Lock", 
+        description: "Locked in staking contract, earning ETH rewards",
+        locked: true,
+        circulating: false
+      },
+      dev_lockup: {
+        amount: DEV_LOCKUP,
+        percentage: (DEV_LOCKUP / TOTAL_SUPPLY) * 100,
+        color: "#eab308",
+        label: "Development Lock",
+        description: "Team allocation with vesting schedule",
+        locked: true,
+        circulating: false
       }
     };
     
@@ -153,10 +162,11 @@ router.get('/supply', async (req, res) => {
       data_sources: {
         total_supply: dataSource === 'Live blockchain data' ? "Token contract totalSupply()" : dataSource,
         staked: dataSource === 'Live blockchain data' ? "Staking contract: 0x577822..." : dataSource,
-        bot_wallet: dataSource === 'Live blockchain data' ? "Token balanceOf(bot wallet)" : dataSource,
+        treasury: dataSource === 'Live blockchain data' ? "Token balanceOf(treasury wallet)" : dataSource,
         clanker_pool: dataSource === 'Live blockchain data' ? "Token balanceOf(pool manager): 0x498581..." : dataSource,
         dev_lockup: "Fixed 5% team allocation",
-        circulating: "Calculated: Total - (All allocations)"
+        circulating_supply: "Calculated: Total - Clanker Pool",
+        liquid: "Calculated: Total - (Clanker Pool + Treasury + Staked + Development Locks)"
       }
     });
     

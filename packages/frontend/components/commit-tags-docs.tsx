@@ -133,7 +133,7 @@ export function CommitTagsDocs() {
             <div className="space-y-2 text-xs font-mono">
               <div className="flex items-center gap-2">
                 <span className="text-green-400">⭐</span>
-                <span className="text-purple-300">Priority commits get 1.5x reward multiplier (#priority, #milestone)</span>
+                <span className="text-purple-300">Priority commits get 1.5x reward multiplier (limit 5/week)</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-yellow-400">🔒</span>

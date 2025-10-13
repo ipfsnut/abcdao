@@ -1,5 +1,6 @@
 import express from 'express';
 import commitTagParser from '../services/commit-tags.js';
+import priorityLimits from '../services/priority-limits.js';
 
 const router = express.Router();
 
@@ -106,6 +107,46 @@ router.get('/dev-status/:farcaster_username', async (req, res) => {
     res.status(500).json({
       status: 'error',
       message: 'Failed to get dev status',
+      error: error.message
+    });
+  }
+});
+
+// Get user's priority tag usage limits
+router.get('/priority-limits/:farcaster_username', async (req, res) => {
+  try {
+    const { farcaster_username } = req.params;
+    const { getPool } = await import('../services/database.js');
+    const pool = getPool();
+    
+    // Get user ID from farcaster username
+    const userResult = await pool.query(
+      'SELECT id FROM users WHERE farcaster_username = $1 AND verified_at IS NOT NULL',
+      [farcaster_username]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found'
+      });
+    }
+    
+    const userId = userResult.rows[0].id;
+    
+    // Get priority tag usage stats
+    const stats = await priorityLimits.getUserPriorityStats(userId);
+    
+    res.json({
+      status: 'success',
+      user: farcaster_username,
+      limits: stats
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to get priority limits',
       error: error.message
     });
   }

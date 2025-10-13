@@ -11,9 +11,9 @@ Control your commit behavior with special hashtags! Add these tags to your commi
 | `#devoff` | Temporarily disable dev status | `taking a break for vacation #devoff` |
 | `#devon` | Re-enable dev status | `back from vacation, ready to code! #devon` |
 | `#norew` | Skip reward generation for this commit | `docs: fix typos #norew` |
-| `#priority` | Mark as high priority (1.5x reward multiplier) | `fix: critical security patch #priority` |
+| `#priority` | Mark as high priority (1.5x rewards, 5/week limit) | `fix: critical security patch #priority` |
 | `#experiment` | Mark as experimental work | `experiment: test new algorithm #experiment` |
-| `#milestone` | Mark as milestone achievement (1.5x reward multiplier) | `feat: v2.0 release! #milestone` |
+| `#milestone` | Mark as milestone achievement (1.5x rewards, 5/week limit) | `feat: v2.0 release! #milestone` |
 
 ## Usage Examples
 
@@ -56,8 +56,10 @@ git commit -m "docs: fix typo in README #norew"
 git commit -m "fix: critical security vulnerability #priority"
 git commit -m "feat: major feature launch #milestone"
 ```
-- ⭐ 1.5x reward multiplier
+- ⭐ 1.5x reward multiplier (when within weekly limit)
 - 🎯 Special priority indicators in casts
+- 📊 Limited to 5 priority/milestone tags per week
+- ⚠️ Excess usage shows "Priority limit reached" in cast
 
 ## Tag Combinations
 
@@ -100,6 +102,11 @@ curl -X POST https://abcdao-production.up.railway.app/api/commits/parse \
 ### Check Dev Status
 ```bash
 curl https://abcdao-production.up.railway.app/api/commits/dev-status/yourusername
+```
+
+### Check Priority Limits
+```bash
+curl https://abcdao-production.up.railway.app/api/commits/priority-limits/yourusername
 ```
 
 ## Database Schema
