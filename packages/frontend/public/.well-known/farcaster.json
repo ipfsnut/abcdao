@@ -1,4 +1,9 @@
 {
+  "accountAssociation": {
+    "header": "eyJmaWQiOjg1NzMsInR5cGUiOiJhdXRoIiwia2V5IjoiMHgxOEE4NWFkMzQxYjJENkEyYmQ2N2ZiYjEwNEI0ODI3QjkyMmEyQTNjIn0",
+    "payload": "eyJkb21haW4iOiJhYmMuZXBpY2R5bGFuLmNvbSJ9",
+    "signature": "dbZAa+fajovRDQfz8YC90VxlSumkJWqBlxmk0vXCHN9YHTzHKsNxpNtGHjMpFjv/W8SZgCNf74sJf+mRqT5q+Bs="
+  },
   "frame": {
     "name": ">ABC_DAO",
     "version": "1",
@@ -28,10 +33,5 @@
     "ogTitle": "Always. Be. Coding.",
     "ogDescription": "Always. Be. Coding.",
     "castShareUrl": "https://abc.epicdylan.com"
-  },
-  "accountAssociation": {
-    "header": "eyJmaWQiOjg1NzMsInR5cGUiOiJhdXRoIiwia2V5IjoiMHgxOEE4NWFkMzQxYjJENkEyYmQ2N2ZiYjEwNEI0ODI3QjkyMmEyQTNjIn0",
-    "payload": "eyJkb21haW4iOiJhYmMuZXBpY2R5bGFuLmNvbSJ9",
-    "signature": "dbZAa+fajovRDQfz8YC90VxlSumkJWqBlxmk0vXCHN9YHTzHKsNxpNtGHjMpFjv/W8SZgCNf74sJf+mRqT5q+Bs="
   }
 }
