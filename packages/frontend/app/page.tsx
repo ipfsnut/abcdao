@@ -40,11 +40,6 @@ export default function Home() {
                 </p>
                 <WhitepaperButton />
               </div>
-              
-              {/* Wallet Connection - Essential for Web3 */}
-              <div className="flex justify-center">
-                <ConnectButton />
-              </div>
             </>
           ) : (
             /* Web Header: Original Layout */
