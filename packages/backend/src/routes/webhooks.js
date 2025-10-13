@@ -107,7 +107,7 @@ async function handlePushEvent(payload) {
     // Look up user by GitHub username
     console.log('🔍 Querying database for user...');
     const userResult = await pool.query(
-      'SELECT * FROM users WHERE github_username = $1 AND "verified-at" IS NOT NULL',
+      'SELECT * FROM users WHERE github_username = $1 AND verified_at IS NOT NULL',
       [githubUsername]
     );
     console.log('✅ User query completed, found:', userResult.rows.length, 'users');
@@ -340,7 +340,7 @@ if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
         ) VALUES ($1, $2, $3, NOW())
         ON CONFLICT ("farcaster-fid") DO UPDATE SET
           github_username = EXCLUDED.github_username,
-          "verified-at" = NOW()
+          verified_at = NOW()
         RETURNING *
       `, [8573, 'ipfsnut', 'ipfsnut']);
       
@@ -368,7 +368,7 @@ async function handlePullRequestEvent(payload) {
   
   // Look up user by GitHub username
   const userResult = await pool.query(
-    'SELECT * FROM users WHERE github_username = $1 AND "verified-at" IS NOT NULL',
+    'SELECT * FROM users WHERE github_username = $1 AND verified_at IS NOT NULL',
     [pull_request.user.login]
   );
   
