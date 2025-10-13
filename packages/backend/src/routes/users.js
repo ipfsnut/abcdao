@@ -320,4 +320,179 @@ router.post('/:fid/process-payment', async (req, res) => {
   }
 });
 
+// Get user notification settings
+router.get('/:fid/settings', async (req, res) => {
+  const { fid } = req.params;
+  
+  try {
+    const pool = getPool();
+    
+    const userResult = await pool.query(`
+      SELECT notification_settings
+      FROM users 
+      WHERE farcaster_fid = $1
+    `, [fid]);
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json({
+      notification_settings: userResult.rows[0].notification_settings || {
+        commit_casts: { enabled: true, tag_me: true, include_repo_name: true, include_commit_message: true, max_message_length: 100 },
+        daily_limit_casts: { enabled: true, tag_me: true, custom_message: null },
+        welcome_casts: { enabled: true, tag_me: true, custom_message: null },
+        privacy: { show_github_username: true, show_real_name: false }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error getting user settings:', error);
+    res.status(500).json({ error: 'Failed to get user settings' });
+  }
+});
+
+// Update user notification settings
+router.put('/:fid/settings', async (req, res) => {
+  const { fid } = req.params;
+  const { notification_settings } = req.body;
+  
+  if (!notification_settings) {
+    return res.status(400).json({ error: 'notification_settings required' });
+  }
+  
+  try {
+    const pool = getPool();
+    
+    // Get current settings first
+    const currentResult = await pool.query(`
+      SELECT notification_settings
+      FROM users 
+      WHERE farcaster_fid = $1
+    `, [fid]);
+    
+    if (currentResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Merge with existing settings (only update provided fields)
+    const currentSettings = currentResult.rows[0].notification_settings || {};
+    const updatedSettings = {
+      commit_casts: { ...currentSettings.commit_casts, ...notification_settings.commit_casts },
+      daily_limit_casts: { ...currentSettings.daily_limit_casts, ...notification_settings.daily_limit_casts },
+      welcome_casts: { ...currentSettings.welcome_casts, ...notification_settings.welcome_casts },
+      privacy: { ...currentSettings.privacy, ...notification_settings.privacy }
+    };
+    
+    // Update in database
+    await pool.query(`
+      UPDATE users 
+      SET notification_settings = $1, updated_at = NOW()
+      WHERE farcaster_fid = $2
+    `, [JSON.stringify(updatedSettings), fid]);
+    
+    res.json({
+      success: true,
+      notification_settings: updatedSettings
+    });
+    
+  } catch (error) {
+    console.error('Error updating user settings:', error);
+    res.status(500).json({ error: 'Failed to update user settings' });
+  }
+});
+
+// Roster endpoint - get all active developers with pagination
+router.get('/roster', async (req, res) => {
+  const { 
+    page = 1, 
+    limit = 20, 
+    filter = 'all', // 'all', 'active', 'inactive'
+    sort = 'commits' // 'commits', 'rewards', 'joined'
+  } = req.query;
+  
+  try {
+    const pool = getPool();
+    const offset = (page - 1) * limit;
+    
+    let whereClause = 'WHERE u.github_username IS NOT NULL AND u.verified_at IS NOT NULL';
+    let orderByClause = 'ORDER BY total_commits DESC, u.created_at DESC';
+    
+    // Apply filters
+    if (filter === 'active') {
+      // Active = has commits in last 30 days
+      whereClause += ' AND u.last_commit_at >= NOW() - INTERVAL \'30 days\'';
+    } else if (filter === 'inactive') {
+      // Inactive = no commits in last 30 days OR no commits at all
+      whereClause += ' AND (u.last_commit_at IS NULL OR u.last_commit_at < NOW() - INTERVAL \'30 days\')';
+    }
+    
+    // Apply sorting
+    if (sort === 'rewards') {
+      orderByClause = 'ORDER BY total_rewards DESC, total_commits DESC, u.created_at DESC';
+    } else if (sort === 'joined') {
+      orderByClause = 'ORDER BY u.created_at DESC';
+    }
+    
+    // Get total count for pagination
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM users u
+      ${whereClause}
+    `;
+    const countResult = await pool.query(countQuery);
+    const totalCount = parseInt(countResult.rows[0].total);
+    
+    // Get roster data
+    const rosterQuery = `
+      SELECT 
+        u.id,
+        u.farcaster_username,
+        u.github_username,
+        u.created_at,
+        u.last_commit_at,
+        u.total_commits,
+        u.total_rewards_earned as total_rewards,
+        u.membership_status,
+        CASE 
+          WHEN u.last_commit_at >= NOW() - INTERVAL '30 days' THEN true
+          WHEN u.total_commits > 0 AND u.last_commit_at < NOW() - INTERVAL '30 days' THEN false
+          WHEN u.total_commits = 0 THEN false
+          ELSE false
+        END as is_active
+      FROM users u
+      ${whereClause}
+      ${orderByClause}
+      LIMIT $1 OFFSET $2
+    `;
+    
+    const rosterResult = await pool.query(rosterQuery, [limit, offset]);
+    
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalCount / limit);
+    const hasNextPage = page < totalPages;
+    const hasPreviousPage = page > 1;
+    
+    res.json({
+      developers: rosterResult.rows,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages,
+        totalCount,
+        hasNextPage,
+        hasPreviousPage,
+        limit: parseInt(limit)
+      },
+      filters: {
+        activeFilter: filter,
+        sortBy: sort
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching roster:', error);
+    res.status(500).json({ error: 'Failed to fetch roster data' });
+  }
+});
+
 export default router;

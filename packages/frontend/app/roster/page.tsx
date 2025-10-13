@@ -1,0 +1,336 @@
+'use client';
+
+import Link from 'next/link';
+import { useState, useCallback } from 'react';
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { useRoster, useRosterStats } from '@/hooks/useRoster';
+
+const DEVELOPERS_PER_PAGE = 8;
+
+export default function RosterPage() {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [sortBy, setSortBy] = useState<'commits' | 'rewards' | 'joined'>('commits');
+
+  // Fetch roster data with current filters
+  const { 
+    developers, 
+    pagination, 
+    loading, 
+    error 
+  } = useRoster({
+    page: currentPage,
+    limit: DEVELOPERS_PER_PAGE,
+    filter: activeFilter,
+    sort: sortBy,
+    autoRefresh: true,
+    refreshInterval: 30000 // Refresh every 30 seconds
+  });
+
+  // Fetch roster stats for the header
+  const { stats: rosterStats, loading: statsLoading } = useRosterStats();
+
+  // Handle page changes
+  const handlePageChange = useCallback((newPage: number) => {
+    setCurrentPage(newPage);
+  }, []);
+
+  // Handle filter changes - reset to page 1
+  const handleFilterChange = useCallback((newFilter: 'all' | 'active' | 'inactive') => {
+    setActiveFilter(newFilter);
+    setCurrentPage(1);
+  }, []);
+
+  // Handle sort changes - reset to page 1
+  const handleSortChange = useCallback((newSort: 'commits' | 'rewards' | 'joined') => {
+    setSortBy(newSort);
+    setCurrentPage(1);
+  }, []);
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-black text-green-400 font-mono">
+      {/* Header */}
+      <header className="border-b border-green-900/30 bg-black/90 backdrop-blur-sm sticky top-0 z-50">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link 
+                href="/"
+                className="text-green-400 hover:text-green-300 transition-colors duration-300"
+              >
+                <ChevronLeftIcon className="w-6 h-6" />
+              </Link>
+              <div className="flex items-center gap-2">
+                <img 
+                  src="/abc-logo.png" 
+                  alt="ABC Logo" 
+                  className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
+                />
+                <h1 className="text-lg sm:text-2xl font-bold matrix-glow">
+                  {'>'} ABC_DAO_Roster
+                </h1>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="px-4 py-6">
+        {/* Header Stats */}
+        <div className="mb-6 bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+          <h2 className="text-xl font-bold mb-4 text-green-400 matrix-glow font-mono">
+            {'>'} developer_registry.status()
+          </h2>
+          {statsLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-green-950/20 border border-green-900/50 rounded-lg p-3">
+                  <div className="animate-pulse">
+                    <div className="h-3 bg-green-800/30 rounded w-16 mb-2"></div>
+                    <div className="h-6 bg-green-800/30 rounded w-12"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-3">
+                <p className="text-green-600 text-xs font-mono">Total_Devs</p>
+                <p className="text-lg font-bold text-green-400 matrix-glow">{rosterStats.totalDevelopers}</p>
+              </div>
+              <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-3">
+                <p className="text-green-600 text-xs font-mono">Active</p>
+                <p className="text-lg font-bold text-green-400 matrix-glow">{rosterStats.activeDevelopers}</p>
+              </div>
+              <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-3">
+                <p className="text-green-600 text-xs font-mono">Total_Commits</p>
+                <p className="text-lg font-bold text-green-400 matrix-glow">{rosterStats.totalCommits}</p>
+              </div>
+              <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-3">
+                <p className="text-green-600 text-xs font-mono">Avg_Commits</p>
+                <p className="text-lg font-bold text-green-400 matrix-glow">{rosterStats.averageCommits}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Filter and Sort Controls */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+          {/* Filter Buttons */}
+          <div className="flex gap-2 bg-green-950/10 border border-green-900/30 p-1 rounded-lg font-mono w-fit">
+            <button
+              onClick={() => handleFilterChange('all')}
+              className={`px-4 py-2 rounded-md font-medium transition-all duration-300 text-sm ${
+                activeFilter === 'all'
+                  ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50'
+                  : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+              }`}
+            >
+              All ({rosterStats.totalDevelopers})
+            </button>
+            <button
+              onClick={() => handleFilterChange('active')}
+              className={`px-4 py-2 rounded-md font-medium transition-all duration-300 text-sm ${
+                activeFilter === 'active'
+                  ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50'
+                  : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+              }`}
+            >
+              Active ({rosterStats.activeDevelopers})
+            </button>
+            <button
+              onClick={() => handleFilterChange('inactive')}
+              className={`px-4 py-2 rounded-md font-medium transition-all duration-300 text-sm ${
+                activeFilter === 'inactive'
+                  ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50'
+                  : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+              }`}
+            >
+              Inactive ({rosterStats.inactiveDevelopers})
+            </button>
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="flex gap-2 bg-green-950/10 border border-green-900/30 p-1 rounded-lg font-mono w-fit">
+            <button
+              onClick={() => handleSortChange('commits')}
+              className={`px-4 py-2 rounded-md font-medium transition-all duration-300 text-sm ${
+                sortBy === 'commits'
+                  ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50'
+                  : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+              }`}
+            >
+              By Commits
+            </button>
+            <button
+              onClick={() => handleSortChange('rewards')}
+              className={`px-4 py-2 rounded-md font-medium transition-all duration-300 text-sm ${
+                sortBy === 'rewards'
+                  ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50'
+                  : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+              }`}
+            >
+              By Rewards
+            </button>
+            <button
+              onClick={() => handleSortChange('joined')}
+              className={`px-4 py-2 rounded-md font-medium transition-all duration-300 text-sm ${
+                sortBy === 'joined'
+                  ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50'
+                  : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+              }`}
+            >
+              By Join Date
+            </button>
+          </div>
+        </div>
+
+        {/* Developer List */}
+        <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm mb-6">
+          <h3 className="text-lg font-bold mb-4 text-green-400 matrix-glow font-mono">
+            {'>'} roster.list({activeFilter})
+          </h3>
+          
+          {error ? (
+            <div className="text-center py-12">
+              <div className="bg-red-950/20 border border-red-900/50 rounded-lg p-4 mb-4">
+                <p className="text-red-400 font-mono text-sm">Error: {error}</p>
+              </div>
+              <button 
+                onClick={() => window.location.reload()}
+                className="bg-green-900/50 hover:bg-green-800/60 text-green-400 font-mono px-4 py-2 rounded-lg border border-green-700/50 transition-all duration-300 matrix-button text-sm"
+              >
+                Retry
+              </button>
+            </div>
+          ) : loading ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-400 mb-4"></div>
+              <p className="text-green-600 font-mono">Loading developers...</p>
+            </div>
+          ) : developers.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-green-600 font-mono">No developers found for this filter.</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid gap-3">
+                {developers.map((dev) => (
+                  <div
+                    key={dev.id}
+                    className="bg-green-950/10 border border-green-900/30 rounded-lg p-4 hover:bg-green-950/20 hover:border-green-700/50 transition-all duration-300"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${
+                          dev.is_active ? 'bg-green-400 matrix-glow' : 'bg-gray-600'
+                        }`}></div>
+                        <div>
+                          <h4 className="font-semibold text-green-400 font-mono">
+                            @{dev.farcaster_username}
+                          </h4>
+                          <div className="flex items-center gap-2 text-xs text-green-600 font-mono">
+                            <span>GitHub: @{dev.github_username}</span>
+                            <span>•</span>
+                            <span>Joined {formatDate(dev.created_at)}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-green-400 matrix-glow font-mono">
+                          {dev.total_commits} commits
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-green-600 font-mono">
+                          <span>{dev.total_rewards.toFixed(2)} $ABC</span>
+                          <span>•</span>
+                          <span className={dev.is_active ? 'text-green-400' : 'text-gray-500'}>
+                            {dev.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {pagination && pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-green-900/30">
+                  <div className="text-sm text-green-600 font-mono">
+                    Showing {((pagination.currentPage - 1) * pagination.limit) + 1}-{Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+                      disabled={!pagination.hasPreviousPage}
+                      className="p-2 rounded-lg border border-green-900/50 text-green-400 hover:bg-green-950/20 hover:border-green-700/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                    >
+                      <ChevronLeftIcon className="w-4 h-4" />
+                    </button>
+                    <div className="flex gap-1">
+                      {Array.from({ length: Math.min(pagination.totalPages, 7) }, (_, i) => {
+                        let pageNumber;
+                        if (pagination.totalPages <= 7) {
+                          pageNumber = i + 1;
+                        } else if (pagination.currentPage <= 4) {
+                          pageNumber = i + 1;
+                        } else if (pagination.currentPage >= pagination.totalPages - 3) {
+                          pageNumber = pagination.totalPages - 6 + i;
+                        } else {
+                          pageNumber = pagination.currentPage - 3 + i;
+                        }
+                        
+                        return (
+                          <button
+                            key={pageNumber}
+                            onClick={() => handlePageChange(pageNumber)}
+                            className={`w-8 h-8 rounded-lg font-mono text-sm transition-all duration-300 ${
+                              currentPage === pageNumber
+                                ? 'bg-green-900/50 text-green-400 border border-green-700/50 matrix-glow'
+                                : 'border border-green-900/50 text-green-600 hover:bg-green-950/20 hover:border-green-700/50 hover:text-green-400'
+                            }`}
+                          >
+                            {pageNumber}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button
+                      onClick={() => handlePageChange(Math.min(currentPage + 1, pagination.totalPages))}
+                      disabled={!pagination.hasNextPage}
+                      className="p-2 rounded-lg border border-green-900/50 text-green-400 hover:bg-green-950/20 hover:border-green-700/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                    >
+                      <ChevronRightIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Info Panel */}
+        <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+          <h3 className="text-lg font-bold mb-3 text-green-400 matrix-glow font-mono">
+            {'>'} roster.info()
+          </h3>
+          <div className="text-green-600 font-mono text-sm space-y-2">
+            <p>• Developers are ranked by GitHub commit activity</p>
+            <p>• Active status based on commits in the last 30 days</p>
+            <p>• Join the DAO by linking your GitHub and making commits</p>
+            <p>• Earn $ABC tokens for each commit (50k-1M random rewards)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

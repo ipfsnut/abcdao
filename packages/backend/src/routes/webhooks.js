@@ -160,6 +160,9 @@ async function processCommit(user, repository, commit) {
     if (currentCount >= 10) {
       console.log(`⚠️ Daily limit reached for user ${user.farcaster_username} - posting limit reached cast`);
       
+      // Get user notification settings
+      const userSettings = user.notification_settings;
+      
       // Still post a cast but indicate daily limit reached
       await postCommitCast({
         farcasterUsername: user.farcaster_username,
@@ -169,7 +172,8 @@ async function processCommit(user, repository, commit) {
         commitUrl: `${repository.html_url}/commit/${commit.id}`,
         rewardAmount: null, // This will trigger "MAX DAILY REWARDS REACHED" message
         commitHash: commit.id,
-        dailyLimitReached: true
+        dailyLimitReached: true,
+        userSettings
       });
       
       return;
@@ -197,7 +201,8 @@ async function processCommit(user, repository, commit) {
       farcasterFid: user.farcaster_fid,
       repository: repository.full_name,
       commitMessage: commit.message,
-      commitUrl: commit.url
+      commitUrl: commit.url,
+      userSettings: user.notification_settings
     });
     
   } catch (error) {
@@ -208,7 +213,7 @@ async function processCommit(user, repository, commit) {
 
 // Direct reward processing when queue is unavailable
 async function processRewardDirectly(commitData) {
-  const { userId, commitHash, farcasterUsername, farcasterFid, repository, commitMessage, commitUrl } = commitData;
+  const { userId, commitHash, farcasterUsername, farcasterFid, repository, commitMessage, commitUrl, userSettings } = commitData;
   
   try {
     console.log(`🏗️ Processing reward directly for commit ${commitHash} by ${farcasterUsername}`);
@@ -250,7 +255,8 @@ async function processRewardDirectly(commitData) {
       commitMessage: commitMessage.slice(0, 100),
       commitUrl,
       rewardAmount,
-      commitHash
+      commitHash,
+      userSettings
     });
     
     return { success: true, rewardAmount };
@@ -263,7 +269,7 @@ async function processRewardDirectly(commitData) {
 
 // Direct Farcaster posting when queue is unavailable
 async function postCommitCast(castData) {
-  const { farcasterUsername, farcasterFid, repository, commitMessage, commitUrl, rewardAmount, commitHash, dailyLimitReached } = castData;
+  const { farcasterUsername, farcasterFid, repository, commitMessage, commitUrl, rewardAmount, commitHash, dailyLimitReached, userSettings } = castData;
   
   try {
     console.log(`📢 Posting cast directly for ${farcasterUsername}'s commit`);
@@ -284,12 +290,45 @@ async function postCommitCast(castData) {
       .split('\n')[0]
       .trim();
     
-    // Create cast message with daily limit handling
-    const rewardText = dailyLimitReached 
-      ? '🔴 MAX DAILY REWARDS REACHED (10/10)'
-      : `💰 Earned: ${rewardAmount.toLocaleString()} $ABC`;
+    // Apply user settings to cast content
+    const settings = userSettings || {
+      commit_casts: { enabled: true, tag_me: true, include_repo_name: true, include_commit_message: true, max_message_length: 100 },
+      daily_limit_casts: { enabled: true, tag_me: true, custom_message: null }
+    };
     
-    const castText = `🚀 New commit!\n\n@${farcasterUsername} just pushed to ${repoName}:\n\n"${cleanMessage}"\n\n${rewardText}\n\n🔗 ${commitUrl}\n\n📱 Want rewards? Add our miniapp:\nfarcaster.xyz/miniapps/S1edg9PycxZP/abcdao\n\n#ABCDAO #AlwaysBeCoding`;
+    // Check if user wants this type of cast
+    if (dailyLimitReached && !settings.daily_limit_casts?.enabled) {
+      console.log(`⏭️ User ${farcasterUsername} has daily limit casts disabled, skipping`);
+      return;
+    } else if (!dailyLimitReached && !settings.commit_casts?.enabled) {
+      console.log(`⏭️ User ${farcasterUsername} has commit casts disabled, skipping`);
+      return;
+    }
+    
+    // Create username mention based on settings
+    const usernameText = dailyLimitReached 
+      ? (settings.daily_limit_casts?.tag_me !== false ? `@${farcasterUsername}` : farcasterUsername)
+      : (settings.commit_casts?.tag_me !== false ? `@${farcasterUsername}` : farcasterUsername);
+    
+    // Create repo name based on settings
+    const repoText = (!dailyLimitReached && settings.commit_casts?.include_repo_name === false) 
+      ? 'their repo' : repoName;
+    
+    // Create commit message based on settings  
+    const maxLength = settings.commit_casts?.max_message_length || 100;
+    const messageText = (!dailyLimitReached && settings.commit_casts?.include_commit_message === false)
+      ? 'some awesome code'
+      : cleanMessage.substring(0, maxLength);
+    
+    // Create reward text with custom messages
+    let rewardText;
+    if (dailyLimitReached) {
+      rewardText = settings.daily_limit_casts?.custom_message || '🔴 MAX DAILY REWARDS REACHED (10/10)';
+    } else {
+      rewardText = `💰 Earned: ${rewardAmount.toLocaleString()} $ABC`;
+    }
+    
+    const castText = `🚀 New commit!\n\n${usernameText} just pushed to ${repoText}:\n\n"${messageText}"\n\n${rewardText}\n\n🔗 ${commitUrl}\n\n📱 Want rewards? Add our miniapp:\nfarcaster.xyz/miniapps/S1edg9PycxZP/abcdao\n\n#ABCDAO #AlwaysBeCoding`;
     
     // Post cast
     const cast = await neynar.publishCast(
