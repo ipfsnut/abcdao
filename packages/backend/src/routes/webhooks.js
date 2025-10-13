@@ -152,7 +152,7 @@ async function processCommit(user, repository, commit) {
     const today = new Date().toISOString().split('T')[0];
     const dailyStats = await pool.query(`
       SELECT commit_count FROM daily_stats 
-      WHERE "user-id" = $1 AND date = $2
+      WHERE user_id = $1 AND date = $2
     `, [user.id, today]);
     
     const currentCount = dailyStats.rows[0]?.commit_count || 0;
@@ -164,7 +164,7 @@ async function processCommit(user, repository, commit) {
     
     // Insert commit record (reward will be set when processed)
     await pool.query(`
-      INSERT INTO commits ("user-id", commit_hash, repository, commit_message)
+      INSERT INTO commits (user_id, commit_hash, repository, commit_message)
       VALUES ($1, $2, $3, $4)
     `, [
       user.id,
@@ -181,7 +181,7 @@ async function processCommit(user, repository, commit) {
       userId: user.id,
       commitHash: commit.id,
       farcasterUsername: user.farcaster_username,
-      farcasterFid: user['farcaster-fid'],
+      farcasterFid: user.farcaster_fid,
       repository: repository.full_name,
       commitMessage: commit.message,
       commitUrl: commit.url
@@ -215,9 +215,9 @@ async function processRewardDirectly(commitData) {
     const today = new Date().toISOString().split('T')[0];
     try {
       await pool.query(`
-        INSERT INTO daily_stats ("user-id", date, commit_count, total_rewards)
+        INSERT INTO daily_stats (user_id, date, commit_count, total_rewards)
         VALUES ($1, $2, 1, $3)
-        ON CONFLICT ("user-id", date) 
+        ON CONFLICT (user_id, date) 
         DO UPDATE SET 
           commit_count = daily_stats.commit_count + 1,
           total_rewards = daily_stats.total_rewards + EXCLUDED.total_rewards
@@ -333,12 +333,12 @@ if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
       // Insert test user (ipfsnut with FID 8573)
       const result = await pool.query(`
         INSERT INTO users (
-          "farcaster-fid", 
+          farcaster_fid, 
           farcaster_username, 
           github_username, 
           verified_at
         ) VALUES ($1, $2, $3, NOW())
-        ON CONFLICT ("farcaster-fid") DO UPDATE SET
+        ON CONFLICT (farcaster_fid) DO UPDATE SET
           github_username = EXCLUDED.github_username,
           verified_at = NOW()
         RETURNING *

@@ -13,7 +13,7 @@ router.get('/stats', async (req, res) => {
       SELECT COUNT(*) as count 
       FROM users 
       WHERE github_username IS NOT NULL 
-      AND "verified-at" IS NOT NULL
+      AND verified_at IS NOT NULL
     `);
     
     // Get total commits count
@@ -55,10 +55,10 @@ router.get('/:fid/status', async (req, res) => {
         farcaster_username,
         github_username,
         wallet_address,
-        "verified-at",
-        "created-at"
+        verified_at,
+        created_at
       FROM users 
-      WHERE "farcaster-fid" = $1
+      WHERE farcaster_fid = $1
     `, [fid]);
     
     if (userResult.rows.length === 0) {
@@ -70,7 +70,7 @@ router.get('/:fid/status', async (req, res) => {
     }
     
     const user = userResult.rows[0];
-    const isLinked = !!user.github_username && !!user['verified-at'];
+    const isLinked = !!user.github_username && !!user.verified_at;
     
     let stats = null;
     
@@ -83,8 +83,8 @@ router.get('/:fid/status', async (req, res) => {
           COUNT(CASE WHEN c.processed_at >= CURRENT_DATE THEN 1 END) as commits_today,
           COALESCE(SUM(CASE WHEN c.processed_at >= CURRENT_DATE THEN c.reward_amount ELSE 0 END), 0) as rewards_today
         FROM users u
-        LEFT JOIN commits c ON u.id = c."user-id"
-        WHERE u.\"farcaster-fid\" = $1
+        LEFT JOIN commits c ON u.id = c.user_id
+        WHERE u.farcaster_fid = $1
         GROUP BY u.id
       `, [fid]);
       
@@ -103,7 +103,7 @@ router.get('/:fid/status', async (req, res) => {
         farcaster_username: user.farcaster_username,
         github_username: user.github_username,
         has_wallet: !!user.wallet_address,
-        verified_at: user['verified-at']
+        verified_at: user.verified_at
       },
       stats
     });
@@ -133,8 +133,8 @@ router.get('/:fid/commits', async (req, res) => {
         c.processed_at,
         c.created_at
       FROM commits c
-      JOIN users u ON c.\"user-id\" = u.id
-      WHERE u.\"farcaster-fid\" = $1
+      JOIN users u ON c.user_id = u.id
+      WHERE u.farcaster_fid = $1
       ORDER BY c.created_at DESC
       LIMIT $2 OFFSET $3
     `, [fid, limit, offset]);
@@ -194,8 +194,8 @@ router.get('/leaderboard', async (req, res) => {
           COUNT(c.id) as commits,
           COALESCE(SUM(c.reward_amount), 0) as total_rewards
         FROM users u
-        LEFT JOIN commits c ON u.id = c."user-id" AND c.processed_at >= CURRENT_DATE
-        WHERE u."verified-at" IS NOT NULL
+        LEFT JOIN commits c ON u.id = c.user_id AND c.processed_at >= CURRENT_DATE
+        WHERE u.verified_at IS NOT NULL
         GROUP BY u.id, u.farcaster_username, u.github_username
         ORDER BY total_rewards DESC, commits DESC
         LIMIT $1
@@ -208,8 +208,8 @@ router.get('/leaderboard', async (req, res) => {
           COUNT(c.id) as commits,
           COALESCE(SUM(c.reward_amount), 0) as total_rewards
         FROM users u
-        LEFT JOIN commits c ON u.id = c."user-id" AND c.processed_at >= CURRENT_DATE - INTERVAL '7 days'
-        WHERE u."verified-at" IS NOT NULL
+        LEFT JOIN commits c ON u.id = c.user_id AND c.processed_at >= CURRENT_DATE - INTERVAL '7 days'
+        WHERE u.verified_at IS NOT NULL
         GROUP BY u.id, u.farcaster_username, u.github_username
         ORDER BY total_rewards DESC, commits DESC
         LIMIT $1
@@ -222,8 +222,8 @@ router.get('/leaderboard', async (req, res) => {
           COUNT(c.id) as commits,
           COALESCE(SUM(c.reward_amount), 0) as total_rewards
         FROM users u
-        LEFT JOIN commits c ON u.id = c."user-id"
-        WHERE u."verified-at" IS NOT NULL
+        LEFT JOIN commits c ON u.id = c.user_id
+        WHERE u.verified_at IS NOT NULL
         GROUP BY u.id, u.farcaster_username, u.github_username
         ORDER BY total_rewards DESC, commits DESC
         LIMIT $1

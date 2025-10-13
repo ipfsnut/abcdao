@@ -48,14 +48,14 @@ router.get('/github/callback', async (req, res) => {
     
     // Update or create user record
     await pool.query(`
-      INSERT INTO users ("farcaster-fid", farcaster_username, github_username, github_id, access_token, "verified-at")
+      INSERT INTO users (farcaster_fid, farcaster_username, github_username, github_id, access_token, verified_at)
       VALUES ($1, $2, $3, $4, $5, NOW())
-      ON CONFLICT ("farcaster-fid") 
+      ON CONFLICT (farcaster_fid) 
       DO UPDATE SET 
         github_username = $3,
         github_id = $4,
         access_token = $5,
-        "verified-at" = NOW(),
+        verified_at = NOW(),
         updated_at = NOW()
     `, [
       farcasterInfo.fid,
