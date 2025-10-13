@@ -54,15 +54,9 @@ export function FarcasterProvider({ children }: { children: React.ReactNode }) {
             setUser(userContext);
           } else {
             console.log('ℹ️ No user context available from SDK');
-            // Fallback for testing
-            setUser({
-              fid: 8573,
-              username: 'ipfsnut',
-              displayName: 'ipfsnut',
-              pfpUrl: 'https://api.dicebear.com/7.x/identicon/svg?seed=ipfsnut',
-              isConnected: true
-            });
-            console.log('🧪 Using fallback user data');
+            // Don't set a fake user - let it remain null
+            setUser(null);
+            setIsInMiniApp(false);
           }
           
           // Call ready when app is loaded
@@ -71,15 +65,9 @@ export function FarcasterProvider({ children }: { children: React.ReactNode }) {
           
         } catch (error) {
           console.log('ℹ️ SDK context error:', error);
-          // Fallback for testing
-          setUser({
-            fid: 8573,
-            username: 'ipfsnut',
-            displayName: 'ipfsnut',
-            pfpUrl: 'https://api.dicebear.com/7.x/identicon/svg?seed=ipfsnut',
-            isConnected: true
-          });
-          console.log('🧪 Using fallback user data due to error');
+          // Don't set a fake user - let it remain null
+          setUser(null);
+          setIsInMiniApp(false);
         }
       } catch (error) {
         console.log('Failed to initialize miniapp:', error);
