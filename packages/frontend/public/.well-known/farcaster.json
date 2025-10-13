@@ -10,7 +10,7 @@
     "splashBackgroundColor": "#000000",
     "webhookUrl": "https://abcdao-production.up.railway.app/api/webhooks/github",
     "subtitle": "Always. Be. Coding.",
-    "description": "Ship code, earn rewards. Stake $ABC, link GitHub, earn crypto for every commit.",
+    "description": "Ship code, earn rewards. Stake ABC, link GitHub, earn crypto for every commit.",
     "primaryCategory": "social",
     "tags": [
       "social",
