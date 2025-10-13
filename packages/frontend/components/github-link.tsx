@@ -242,20 +242,27 @@ export function GitHubLinkPanel() {
     );
   }
 
-  // Show payment panel if requested
-  if (showPayment || (isLinked && !membership.isMember)) {
+  // Show payment panel - PAYMENT MUST COME FIRST!
+  if (showPayment && !membership.isMember) {
     return (
       <div className="space-y-4">
         <button
           onClick={() => setShowPayment(false)}
           className="text-green-600 hover:text-green-400 font-mono text-sm transition-colors"
         >
-          {'<'} Back to GitHub
+          {'<'} Back
         </button>
         <MembershipPaymentPanel 
           onPaymentComplete={() => {
+            // After successful payment, auto-link GitHub
             setShowPayment(false);
             membership.refreshStatus();
+            setTimeout(() => {
+              if (!isLinked) {
+                console.log('Payment complete, initiating GitHub linking...');
+                linkGitHub();
+              }
+            }, 2000);
           }}
         />
       </div>
@@ -300,21 +307,15 @@ export function GitHubLinkPanel() {
               </ul>
             </div>
           </div>
-        ) : isLinked ? (
-          <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-4">
-            <p className="text-yellow-400 font-mono text-sm text-center">
-              GitHub linked - Pay membership to activate
-            </p>
-          </div>
         ) : (
           <>
             <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3">
-              <h3 className="font-mono text-green-400 mb-2 text-sm">{"// How it works:"}</h3>
+              <h3 className="font-mono text-green-400 mb-2 text-sm">{"// Join ABC DAO:"}</h3>
               <ol className="space-y-1 text-green-600 font-mono text-xs">
-                <li>1. Link GitHub</li>
-                <li>2. Push commits</li>
-                <li>3. Earn $ABC</li>
-                <li>4. Stake for ETH</li>
+                <li>1. Pay 0.002 ETH membership</li>
+                <li>2. Link your GitHub</li>
+                <li>3. Push commits to earn $ABC</li>
+                <li>4. Stake $ABC for ETH rewards</li>
               </ol>
             </div>
 
@@ -334,22 +335,19 @@ export function GitHubLinkPanel() {
             </div>
 
             <button
-              onClick={linkGitHub}
-              disabled={loading}
+              onClick={() => setShowPayment(true)}
               className="w-full bg-green-900/50 hover:bg-green-900/70 text-green-400 font-mono py-2.5 sm:py-3 rounded-lg 
-                       border border-green-700/50 transition-all duration-300 hover:matrix-glow
-                       disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                       border border-green-700/50 transition-all duration-300 hover:matrix-glow text-sm sm:text-base"
             >
-              {loading ? '// Connecting...' : '$ git connect'}
+              💰 Pay 0.002 ETH to Join
             </button>
-
-            <div className="text-center">
-              <p className="text-green-600 font-mono text-xs">
-                {inFrame 
-                  ? "// Opens GitHub auth in new tab" 
-                  : "// Redirects to GitHub"}
+            
+            <div className="text-center mt-2">
+              <p className="text-yellow-400 font-mono text-xs">
+                ⚠️ Payment required before GitHub linking
               </p>
             </div>
+
           </>
         )}
       </div>
