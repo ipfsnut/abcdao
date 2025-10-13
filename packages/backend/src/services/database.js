@@ -282,6 +282,36 @@ async function runMigrations() {
       console.log('✅ Migration: Added missing OAuth columns to users table');
     }
 
+    // Migration 8: Ensure unique constraint on farcaster_fid exists
+    const migration8 = 'ensure_farcaster_fid_unique_constraint';
+    const exists8 = await client.query('SELECT * FROM migrations WHERE name = $1', [migration8]);
+    
+    if (exists8.rows.length === 0) {
+      try {
+        // Check if constraint already exists
+        const constraintCheck = await client.query(`
+          SELECT constraint_name 
+          FROM information_schema.table_constraints 
+          WHERE table_name = 'users' 
+          AND constraint_type = 'UNIQUE' 
+          AND constraint_name LIKE '%farcaster_fid%'
+        `);
+        
+        if (constraintCheck.rows.length === 0) {
+          // Add unique constraint if it doesn't exist
+          await client.query('ALTER TABLE users ADD CONSTRAINT users_farcaster_fid_unique UNIQUE (farcaster_fid)');
+          console.log('✅ Added unique constraint on farcaster_fid');
+        } else {
+          console.log('ℹ️ Unique constraint on farcaster_fid already exists');
+        }
+      } catch (error) {
+        console.log('ℹ️ Unique constraint setup skipped (may already exist):', error.message);
+      }
+
+      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration8]);
+      console.log('✅ Migration: Ensured farcaster_fid unique constraint');
+    }
+
     
   } catch (error) {
     console.error('❌ Migration failed:', error);

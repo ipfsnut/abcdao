@@ -55,24 +55,36 @@ router.get('/github/callback', async (req, res) => {
 
     const pool = getPool();
     
-    // Update or create user record
-    await pool.query(`
-      INSERT INTO users (farcaster_fid, farcaster_username, github_username, github_id, access_token, verified_at)
-      VALUES ($1, $2, $3, $4, $5, NOW())
-      ON CONFLICT (farcaster_fid) 
-      DO UPDATE SET 
-        github_username = $3,
-        github_id = $4,
-        access_token = $5,
-        verified_at = NOW(),
-        updated_at = NOW()
-    `, [
-      farcasterInfo.fid,
-      farcasterInfo.username,
-      githubUser.login,
-      githubUser.id,
-      accessToken
-    ]);
+    // Check if user already exists
+    const existingUser = await pool.query(`
+      SELECT id FROM users WHERE farcaster_fid = $1
+    `, [farcasterInfo.fid]);
+    
+    if (existingUser.rows.length > 0) {
+      // Update existing user
+      await pool.query(`
+        UPDATE users 
+        SET github_username = $2, github_id = $3, access_token = $4, verified_at = NOW(), updated_at = NOW()
+        WHERE farcaster_fid = $1
+      `, [
+        farcasterInfo.fid,
+        githubUser.login,
+        githubUser.id,
+        accessToken
+      ]);
+    } else {
+      // Insert new user
+      await pool.query(`
+        INSERT INTO users (farcaster_fid, farcaster_username, github_username, github_id, access_token, verified_at)
+        VALUES ($1, $2, $3, $4, $5, NOW())
+      `, [
+        farcasterInfo.fid,
+        farcasterInfo.username,
+        githubUser.login,
+        githubUser.id,
+        accessToken
+      ]);
+    }
     
     console.log(`✅ Linked GitHub ${githubUser.login} to Farcaster ${farcasterInfo.username}`);
     
