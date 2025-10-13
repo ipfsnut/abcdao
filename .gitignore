@@ -46,3 +46,15 @@ coverage/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Launch configuration (contains sensitive addresses)
+launchtodo.txt
+
+# Documentation and notes files
+ABC_ADDRESS_LOCATIONS.md
+ABC_REQUIREMENTS_MAPPING.md
+DEPLOYMENT_SCRIPTS_README.md
+MIGRATION_TRACE.md
+STAKING_CONTRACT_FIXES.md
+STAKING_CONTRACT_TESTING.md
+TESTING_AND_DEPLOYMENT_WORKFLOW.md

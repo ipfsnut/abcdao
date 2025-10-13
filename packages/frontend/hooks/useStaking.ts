@@ -13,8 +13,8 @@ export function useStaking() {
   
   // Read staking info
   const { data: stakeInfo, refetch: refetchStakeInfo } = useReadContract({
-    address: CONTRACTS.EMARK_STAKING.address,
-    abi: CONTRACTS.EMARK_STAKING.abi,
+    address: CONTRACTS.ABC_STAKING.address,
+    abi: CONTRACTS.ABC_STAKING.abi,
     functionName: 'getStakeInfo',
     args: address ? [address] : undefined,
     query: {
@@ -28,7 +28,7 @@ export function useStaking() {
 
   // Read token balance
   const { data: tokenBalance, refetch: refetchBalance } = useReadContract({
-    address: CONTRACTS.EMARK_TOKEN.address,
+    address: CONTRACTS.ABC_TOKEN.address,
     abi: ERC20_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
@@ -43,10 +43,10 @@ export function useStaking() {
 
   // Read allowance
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
-    address: CONTRACTS.EMARK_TOKEN.address,
+    address: CONTRACTS.ABC_TOKEN.address,
     abi: ERC20_ABI,
     functionName: 'allowance',
-    args: address ? [address, CONTRACTS.EMARK_STAKING.address] : undefined,
+    args: address ? [address, CONTRACTS.ABC_STAKING.address] : undefined,
     query: {
       enabled: !!address,
       staleTime: 10_000, // 10 seconds
@@ -58,8 +58,8 @@ export function useStaking() {
 
   // Read total staked
   const { data: totalStaked } = useReadContract({
-    address: CONTRACTS.EMARK_STAKING.address,
-    abi: CONTRACTS.EMARK_STAKING.abi,
+    address: CONTRACTS.ABC_STAKING.address,
+    abi: CONTRACTS.ABC_STAKING.abi,
     functionName: 'totalStaked',
     query: {
       staleTime: 60_000, // 1 minute
@@ -71,8 +71,8 @@ export function useStaking() {
 
   // Read total rewards distributed
   const { data: totalRewardsDistributed } = useReadContract({
-    address: CONTRACTS.EMARK_STAKING.address,
-    abi: CONTRACTS.EMARK_STAKING.abi,
+    address: CONTRACTS.ABC_STAKING.address,
+    abi: CONTRACTS.ABC_STAKING.abi,
     functionName: 'totalRewardsDistributed',
     query: {
       staleTime: 60_000, // 1 minute
@@ -144,8 +144,8 @@ export function useStaking() {
           if (currentAllowance && currentAllowance >= amountWei) {
             console.log('✅ Sufficient allowance confirmed, proceeding to stake with amount:', amountWei.toString());
             stake({
-              address: CONTRACTS.EMARK_STAKING.address,
-              abi: CONTRACTS.EMARK_STAKING.abi,
+              address: CONTRACTS.ABC_STAKING.address,
+              abi: CONTRACTS.ABC_STAKING.abi,
               functionName: 'stake',
               args: [amountWei],
             });
@@ -198,13 +198,13 @@ export function useStaking() {
     if (!allowance || allowance < amountWei) {
       setIsApproving(true);
       setPendingStakeAmount(amount);
-      toast.info(`Approval needed for ${CONTRACTS.EMARK_STAKING.address}`);
+      toast.info(`Approval needed for ${CONTRACTS.ABC_STAKING.address}`);
       
       approve({
-        address: CONTRACTS.EMARK_TOKEN.address,
+        address: CONTRACTS.ABC_TOKEN.address,
         abi: ERC20_ABI,
         functionName: 'approve',
-        args: [CONTRACTS.EMARK_STAKING.address, amountWei],
+        args: [CONTRACTS.ABC_STAKING.address, amountWei],
       });
       return;
     }
@@ -212,8 +212,8 @@ export function useStaking() {
     console.log('✅ Sufficient allowance, proceeding to stake');
     // Stake tokens
     stake({
-      address: CONTRACTS.EMARK_STAKING.address,
-      abi: CONTRACTS.EMARK_STAKING.abi,
+      address: CONTRACTS.ABC_STAKING.address,
+      abi: CONTRACTS.ABC_STAKING.abi,
       functionName: 'stake',
       args: [amountWei],
     });
@@ -229,8 +229,8 @@ export function useStaking() {
 
     // V2 uses startUnbonding to begin the unbonding process
     unstake({
-      address: CONTRACTS.EMARK_STAKING.address,
-      abi: CONTRACTS.EMARK_STAKING.abi,
+      address: CONTRACTS.ABC_STAKING.address,
+      abi: CONTRACTS.ABC_STAKING.abi,
       functionName: 'startUnbonding',
       args: [amountWei],
     });
@@ -239,8 +239,8 @@ export function useStaking() {
   const handleCompleteUnstake = async () => {
     // V2 uses unstake() with no parameters to complete unbonding
     unstake({
-      address: CONTRACTS.EMARK_STAKING.address,
-      abi: CONTRACTS.EMARK_STAKING.abi,
+      address: CONTRACTS.ABC_STAKING.address,
+      abi: CONTRACTS.ABC_STAKING.abi,
       functionName: 'unstake',
       args: [],
     });
@@ -248,8 +248,8 @@ export function useStaking() {
 
   const handleClaimRewards = async () => {
     claimRewards({
-      address: CONTRACTS.EMARK_STAKING.address,
-      abi: CONTRACTS.EMARK_STAKING.abi,
+      address: CONTRACTS.ABC_STAKING.address,
+      abi: CONTRACTS.ABC_STAKING.abi,
       functionName: 'withdrawRewards',
     });
   };

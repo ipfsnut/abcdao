@@ -1,0 +1,53 @@
+{
+  "networks": {
+    "base": {
+      "chainId": 8453,
+      "name": "Base Mainnet",
+      "tokens": {
+        "ABC_TOKEN": {
+          "address": "0xf87F3ebbF8CaCF321C2a4027bb66Df639a6f4B07",
+          "symbol": "EMARK",
+          "name": "Evermark (Testing as ABC)",
+          "note": "Using EMARK for testing. Replace with real ABC address for production."
+        },
+        "WETH": {
+          "address": "0x4200000000000000000000000000000000000006",
+          "symbol": "WETH",
+          "name": "Wrapped Ether"
+        }
+      },
+      "contracts": {
+        "ABC_STAKING": ""
+      }
+    },
+    "base-sepolia": {
+      "chainId": 84532,
+      "name": "Base Sepolia Testnet",
+      "tokens": {
+        "ABC_TOKEN": {
+          "address": "",
+          "symbol": "ABC",
+          "name": "ABC Token",
+          "note": "Deploy test token for testnet"
+        },
+        "WETH": {
+          "address": "0x4200000000000000000000000000000000000006",
+          "symbol": "WETH",
+          "name": "Wrapped Ether"
+        }
+      }
+    }
+  },
+  "production": {
+    "ABC_TOKEN": {
+      "address": "TO_BE_UPDATED",
+      "symbol": "ABC",
+      "name": "ABC Token",
+      "note": "Real ABC token address - update this when ready for production"
+    }
+  },
+  "deployment": {
+    "mode": "testing",
+    "note": "Set to 'production' when ready to use real ABC token"
+  }
+}

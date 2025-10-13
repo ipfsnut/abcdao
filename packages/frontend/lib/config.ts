@@ -39,7 +39,7 @@ export const isInFrame = () => {
   
   try {
     return window.self !== window.top || window.location !== window.parent.location;
-  } catch (e) {
+  } catch {
     // If we can't access parent due to cross-origin, we're likely in a frame
     return true;
   }

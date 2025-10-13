@@ -1,16 +1,16 @@
 // Contract addresses and ABIs for the ABC DAO system
 
 export const CONTRACTS = {
-  // EMARK token for testing (already deployed)
-  EMARK_TOKEN: {
+  // ABC token for testing (already deployed)
+  ABC_TOKEN: {
     address: '0xf87F3ebbF8CaCF321C2a4027bb66Df639a6f4B07' as `0x${string}`,
     decimals: 18,
-    symbol: 'EMARK',
-    name: 'Evermark'
+    symbol: 'ABC',
+    name: 'ABC'
   },
   
-  // EMARK Staking V2 contract (deployed!)
-  EMARK_STAKING: {
+  // ABC Staking V2 contract (deployed!)
+  ABC_STAKING: {
     address: '0xCb5cF9061f80b64909E8106e3569f0b8D219941E' as `0x${string}`,
     abi: [
       {
@@ -147,5 +147,5 @@ export const ERC20_ABI = [
 
 // Helper to check if contracts are configured
 export const isContractsConfigured = () => {
-  return CONTRACTS.EMARK_STAKING.address.length > 0;
+  return CONTRACTS.ABC_STAKING.address.length > 0;
 };

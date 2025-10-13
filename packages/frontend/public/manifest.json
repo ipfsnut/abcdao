@@ -1,0 +1,18 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjg1NzMsInR5cGUiOiJhdXRoIiwia2V5IjoiMHgxOEE4NWFkMzQxYjJENkEyYmQ2N2ZiYjEwNEI0ODI3QjkyMmEyQTNjIn0",
+    "payload": "eyJkb21haW4iOiJhYmMuZXBpY2R5bGFuLmNvbSJ9",
+    "signature": "dbZAa+fajovRDQfz8YC90VxlSumkJWqBlxmk0vXCHN9YHTzHKsNxpNtGHjMpFjv/W8SZgCNf74sJf+mRqT5q+Bs="
+  },
+  "miniApp": {
+    "name": "ABC DAO",
+    "description": "Ship code, earn rewards. Join the live action developer game for Farcaster.",
+    "icon": "https://abc.epicdylan.com/abc-logo.png",
+    "homeUrl": "https://abc.epicdylan.com",
+    "imageUrl": "https://abc.epicdylan.com/abcdaologo.png",
+    "buttonTitle": "Join ABC DAO",
+    "splashImageUrl": "https://abc.epicdylan.com/abcdaologo.png",
+    "splashBackgroundColor": "#000000",
+    "themeColor": "#10B981"
+  }
+}

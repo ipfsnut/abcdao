@@ -83,6 +83,40 @@ body::after {
   background: rgba(0, 255, 65, 0.05);
 }
 
+/* Custom RainbowKit styling to match matrix theme */
+[data-rk] button[data-testid="rk-connect-button"] {
+  background: rgba(5, 46, 22, 0.3) !important;
+  border: 1px solid #166534 !important;
+  color: #10B981 !important;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace !important;
+  font-weight: 500 !important;
+  border-radius: 0.5rem !important;
+  transition: all 0.3s ease !important;
+  font-size: 0.875rem !important;
+  padding: 0.5rem 1rem !important;
+}
+
+[data-rk] button[data-testid="rk-connect-button"]:hover {
+  background: rgba(6, 78, 59, 0.3) !important;
+  border-color: #059669 !important;
+  color: #34D399 !important;
+  text-shadow: 0 0 5px #10B981 !important;
+}
+
+[data-rk] button[data-testid="rk-account-button"] {
+  background: rgba(5, 46, 22, 0.3) !important;
+  border: 1px solid #166534 !important;
+  color: #10B981 !important;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace !important;
+  border-radius: 0.5rem !important;
+  font-size: 0.875rem !important;
+}
+
+[data-rk] button[data-testid="rk-account-button"]:hover {
+  background: rgba(6, 78, 59, 0.3) !important;
+  border-color: #059669 !important;
+}
+
 .matrix-button:hover {
   background: rgba(0, 255, 65, 0.1);
   box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);

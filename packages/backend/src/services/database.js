@@ -119,6 +119,77 @@ async function runMigrations() {
       await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration4]);
       console.log('✅ Migration: Created indexes');
     }
+
+    // Migration 5: Add membership system
+    const migration5 = 'add_membership_system';
+    const exists5 = await client.query('SELECT * FROM migrations WHERE name = $1', [migration5]);
+    
+    if (exists5.rows.length === 0) {
+      // Add membership fields to users table
+      await client.query(`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS membership_status VARCHAR(20) DEFAULT 'free',
+        ADD COLUMN IF NOT EXISTS membership_paid_at TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS membership_tx_hash VARCHAR(66),
+        ADD COLUMN IF NOT EXISTS membership_amount DECIMAL(18,6),
+        ADD COLUMN IF NOT EXISTS total_commits INTEGER DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS total_rewards_earned DECIMAL(18,2) DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS last_commit_at TIMESTAMP
+      `);
+
+      // Create memberships table for detailed tracking
+      await client.query(`
+        CREATE TABLE memberships (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          payment_tx_hash VARCHAR(66) UNIQUE NOT NULL,
+          amount_eth DECIMAL(18,6) NOT NULL,
+          paid_at TIMESTAMP DEFAULT NOW(),
+          status VARCHAR(20) DEFAULT 'active',
+          payment_method VARCHAR(50) DEFAULT 'ethereum',
+          created_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
+
+      // Create oauth_states table for GitHub OAuth flow
+      await client.query(`
+        CREATE TABLE oauth_states (
+          id SERIAL PRIMARY KEY,
+          state_token VARCHAR(255) UNIQUE NOT NULL,
+          farcaster_fid INTEGER,
+          farcaster_username VARCHAR(255),
+          callback_url TEXT,
+          expires_at TIMESTAMP NOT NULL,
+          created_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
+
+      // Create payment_intents table for tracking payment flows
+      await client.query(`
+        CREATE TABLE payment_intents (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          amount_eth DECIMAL(18,6) NOT NULL,
+          bot_address VARCHAR(42) NOT NULL,
+          status VARCHAR(20) DEFAULT 'pending',
+          tx_hash VARCHAR(66) UNIQUE,
+          confirmed_at TIMESTAMP,
+          expires_at TIMESTAMP NOT NULL,
+          created_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
+
+      // Add indexes for membership system
+      await client.query('CREATE INDEX IF NOT EXISTS idx_users_membership_status ON users(membership_status)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_memberships_tx_hash ON memberships(payment_tx_hash)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_oauth_states_token ON oauth_states(state_token)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_oauth_states_expires ON oauth_states(expires_at)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_payment_intents_status ON payment_intents(status)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_payment_intents_tx_hash ON payment_intents(tx_hash)');
+
+      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration5]);
+      console.log('✅ Migration: Added membership system');
+    }
     
   } catch (error) {
     console.error('❌ Migration failed:', error);

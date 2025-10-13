@@ -26,33 +26,32 @@ export default function WhitepaperPage() {
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
       {/* Header */}
-      <header className="border-b border-green-900/30 bg-black/90 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <Link href="/">
-                <img 
-                  src="/abcdaologo.png" 
-                  alt="ABC DAO Logo" 
-                  className="w-16 h-16 object-contain cursor-pointer"
-                />
-              </Link>
-              <div>
-                <h1 className="text-3xl font-bold matrix-glow">
-                  {'>'} ABC_DAO_WHITEPAPER.md
-                </h1>
-                <p className="text-sm text-green-600 mt-1 font-mono">
-                  Technical documentation and roadmap
-                </p>
-              </div>
+      <header className="border-b border-green-900/30 bg-black/90 backdrop-blur-sm sticky top-0 z-50">
+        <div className="px-4 py-3">
+          {/* Logo left, Title centered */}
+          <div className="relative flex items-center justify-center mb-3">
+            <Link href="/" className="absolute left-0">
+              <img 
+                src="/abc-logo.png" 
+                alt="ABC Logo" 
+                className="w-10 h-10 sm:w-12 sm:h-12 object-contain cursor-pointer hover:opacity-80 transition-opacity"
+              />
+            </Link>
+            <div className="text-center">
+              <h1 className="text-2xl sm:text-4xl font-bold matrix-glow">
+                {'>'} ABC_DAO
+              </h1>
+              <p className="text-xs text-green-600 font-mono mt-1">
+                Whitepaper & Documentation
+              </p>
             </div>
             <Link 
               href="/"
-              className="bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 
-                         text-green-400 hover:text-green-300 px-4 py-2 rounded-lg font-mono text-sm 
+              className="absolute right-0 bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 
+                         text-green-400 hover:text-green-300 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-mono text-xs sm:text-sm 
                          transition-all duration-300 matrix-button"
             >
-              {'<'} Back to DAO
+              {'<'} Back
             </Link>
           </div>
         </div>

@@ -15,8 +15,8 @@ export function useUnbonding() {
 
   // Read unbonding info
   const { data: unbondingInfo } = useReadContract({
-    address: CONTRACTS.EMARK_STAKING.address,
-    abi: CONTRACTS.EMARK_STAKING.abi,
+    address: CONTRACTS.ABC_STAKING.address,
+    abi: CONTRACTS.ABC_STAKING.abi,
     functionName: 'getUnbondingInfo',
     args: address ? [address] : undefined,
     query: {
@@ -30,8 +30,8 @@ export function useUnbonding() {
 
   // Read withdrawable amount
   const { data: withdrawableAmount } = useReadContract({
-    address: CONTRACTS.EMARK_STAKING.address,
-    abi: CONTRACTS.EMARK_STAKING.abi,
+    address: CONTRACTS.ABC_STAKING.address,
+    abi: CONTRACTS.ABC_STAKING.abi,
     functionName: 'getWithdrawableAmount',
     args: address ? [address] : undefined,
     query: {
