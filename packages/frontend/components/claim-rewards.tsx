@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite, useWaitForTransaction } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { CONTRACTS } from '@/lib/contracts';
 import { formatEther, parseEther } from 'viem';
@@ -12,52 +12,43 @@ export function ClaimRewardsPanel() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Get user's claimable amount
-  const { data: claimableAmount, refetch: refetchClaimable } = useContractRead({
+  const { data: claimableAmount, refetch: refetchClaimable } = useReadContract({
     address: CONTRACTS.ABC_REWARDS.address,
     abi: CONTRACTS.ABC_REWARDS.abi,
     functionName: 'getClaimableAmount',
     args: address ? [address] : undefined,
-    enabled: !!address,
-    watch: true
+    query: { enabled: !!address }
   });
 
   // Get user's reward info
-  const { data: rewardInfo, refetch: refetchRewardInfo } = useContractRead({
+  const { data: rewardInfo, refetch: refetchRewardInfo } = useReadContract({
     address: CONTRACTS.ABC_REWARDS.address,
     abi: CONTRACTS.ABC_REWARDS.abi,
     functionName: 'getUserRewardInfo',
     args: address ? [address] : undefined,
-    enabled: !!address,
-    watch: true
+    query: { enabled: !!address }
   });
 
   // Get contract stats
-  const { data: contractStats } = useContractRead({
+  const { data: contractStats } = useReadContract({
     address: CONTRACTS.ABC_REWARDS.address,
     abi: CONTRACTS.ABC_REWARDS.abi,
-    functionName: 'getContractStats',
-    enabled: true,
-    watch: true
-  });
-
-  // Prepare claim transaction
-  const { config: claimConfig } = usePrepareContractWrite({
-    address: CONTRACTS.ABC_REWARDS.address,
-    abi: CONTRACTS.ABC_REWARDS.abi,
-    functionName: 'claimRewards',
-    enabled: !!address && claimableAmount && claimableAmount > 0n
+    functionName: 'getContractStats'
   });
 
   // Execute claim
-  const { write: claimRewards, data: claimTxData, isLoading: isClaimPending } = useContractWrite(claimConfig);
+  const { writeContract: claimRewards, data: claimTxData, isPending: isClaimPending } = useWriteContract();
 
   // Wait for claim transaction
-  const { isLoading: isClaiming, isSuccess: claimSuccess } = useWaitForTransaction({
-    hash: claimTxData?.hash,
-    onSuccess: () => {
-      setRefreshTrigger(prev => prev + 1);
-      refetchClaimable();
-      refetchRewardInfo();
+  const { isLoading: isClaiming, isSuccess: claimSuccess } = useWaitForTransactionReceipt({
+    hash: claimTxData,
+    query: {
+      enabled: !!claimTxData,
+      onSuccess: () => {
+        setRefreshTrigger(prev => prev + 1);
+        refetchClaimable();
+        refetchRewardInfo();
+      }
     }
   });
 
@@ -134,7 +125,11 @@ export function ClaimRewardsPanel() {
         {/* Claim Button */}
         {hasClaimableRewards ? (
           <button
-            onClick={() => claimRewards?.()}
+            onClick={() => claimRewards?.({
+              address: CONTRACTS.ABC_REWARDS.address,
+              abi: CONTRACTS.ABC_REWARDS.abi,
+              functionName: 'claimRewards'
+            })}
             disabled={!claimRewards || isClaimPending || isClaiming}
             className="w-full bg-green-900/50 hover:bg-green-900/70 text-green-400 font-mono py-2.5 sm:py-3 rounded-lg 
                      border border-green-700/50 transition-all duration-300 hover:matrix-glow
