@@ -117,7 +117,7 @@ export function CommitTagsDocs() {
               {tagDocs.examples.map((example, index) => (
                 <div key={index} className="bg-blue-950/20 border border-blue-800/30 rounded-lg p-3">
                   <code className="text-green-400 font-mono text-xs block mb-1">
-                    git commit -m "{example.commit}"
+                    git commit -m &quot;{example.commit}&quot;
                   </code>
                   <p className="text-blue-300 font-mono text-xs">
                     {example.description}
@@ -137,7 +137,7 @@ export function CommitTagsDocs() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-yellow-400">🔒</span>
-                <span className="text-purple-300">Private commits won't appear in leaderboards (#private)</span>
+                <span className="text-purple-300">Private commits won&apos;t appear in leaderboards (#private)</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-blue-400">🤐</span>
@@ -156,13 +156,13 @@ export function CommitTagsDocs() {
             <p className="text-green-300 font-mono text-xs mb-2">You can combine multiple tags:</p>
             <div className="space-y-2">
               <code className="block text-green-400 font-mono text-xs bg-green-950/20 px-2 py-1 rounded">
-                git commit -m "feat: secret feature #priority #private"
+                git commit -m &quot;feat: secret feature #priority #private&quot;
               </code>
               <code className="block text-green-400 font-mono text-xs bg-green-950/20 px-2 py-1 rounded">
-                git commit -m "docs: fix typos #silent #norew"
+                git commit -m &quot;docs: fix typos #silent #norew&quot;
               </code>
               <code className="block text-green-400 font-mono text-xs bg-green-950/20 px-2 py-1 rounded">
-                git commit -m "going offline #devoff #silent"
+                git commit -m &quot;going offline #devoff #silent&quot;
               </code>
             </div>
           </div>
