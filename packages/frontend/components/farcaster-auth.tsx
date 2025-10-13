@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useFarcasterUser } from '@/contexts/farcaster-context';
+import { useFarcaster } from '@/contexts/unified-farcaster-context';
 
 interface FarcasterUser {
   fid: number;
@@ -14,7 +14,7 @@ interface FarcasterUser {
 }
 
 function FarcasterAuthContent() {
-  const { user, setUser } = useFarcasterUser();
+  const { user, login, isLoading } = useFarcaster();
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
 
@@ -31,7 +31,15 @@ function FarcasterAuthContent() {
     try {
       const response = await fetch(`/api/user/${fid}`);
       const data = await response.json();
-      setUser(data);
+      if (data) {
+        const userData = {
+          fid: data.fid,
+          username: data.username,
+          displayName: data.displayName,
+          pfpUrl: data.pfp?.url || `https://api.dicebear.com/7.x/identicon/svg?seed=${data.username}`
+        };
+        login(userData);
+      }
     } catch (error) {
       console.error('Failed to fetch user:', error);
     } finally {
@@ -46,7 +54,7 @@ function FarcasterAuthContent() {
     window.location.href = authUrl;
   };
 
-  if (loading) {
+  if (loading || isLoading) {
     return <div className="animate-pulse">Loading...</div>;
   }
 
@@ -54,7 +62,7 @@ function FarcasterAuthContent() {
     return (
       <div className="flex items-center gap-3 bg-purple-900/20 rounded-lg px-4 py-2">
         <img 
-          src={user.pfp.url} 
+          src={user.pfpUrl} 
           alt={user.displayName}
           className="w-8 h-8 rounded-full"
         />

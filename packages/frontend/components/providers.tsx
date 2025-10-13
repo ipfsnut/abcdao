@@ -4,8 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import { config } from '@/lib/web3';
-import { FarcasterProvider } from '@/contexts/farcaster-context';
-import { FarcasterProvider as FarcasterMiniAppProvider } from './farcaster-miniapp';
+import { UnifiedFarcasterProvider } from '@/contexts/unified-farcaster-context';
 import '@rainbow-me/rainbowkit/styles.css';
 
 const queryClient = new QueryClient();
@@ -59,16 +58,14 @@ const customMatrixTheme = {
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <FarcasterMiniAppProvider>
+    <UnifiedFarcasterProvider>
       <WagmiProvider config={config}>
         <QueryClientProvider client={queryClient}>
           <RainbowKitProvider theme={customMatrixTheme}>
-            <FarcasterProvider>
-              {children}
-            </FarcasterProvider>
+            {children}
           </RainbowKitProvider>
         </QueryClientProvider>
       </WagmiProvider>
-    </FarcasterMiniAppProvider>
+    </UnifiedFarcasterProvider>
   );
 }

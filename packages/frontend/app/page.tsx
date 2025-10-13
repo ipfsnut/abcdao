@@ -6,7 +6,7 @@ import { GitHubLinkPanel } from '@/components/github-link';
 import { WhitepaperButton } from '@/components/whitepaper-button';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
-import { useFarcaster } from '@/components/farcaster-miniapp';
+import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { useState } from 'react';
 import { useStaking } from '@/hooks/useStaking';
 import { useUnbonding } from '@/hooks/useUnbonding';

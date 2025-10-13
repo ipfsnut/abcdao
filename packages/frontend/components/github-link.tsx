@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { useFarcaster } from '@/components/farcaster-miniapp';
+import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { config, isInFrame, getCallbackUrl } from '@/lib/config';
 import { useMembership } from '@/hooks/useMembership';
 import { MembershipPaymentPanel } from '@/components/membership-payment';

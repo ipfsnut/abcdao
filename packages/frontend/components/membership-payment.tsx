@@ -5,7 +5,7 @@ import { useAccount, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
 import { useSendTransaction } from 'wagmi';
 import { toast } from 'sonner';
-import { useFarcaster } from '@/components/farcaster-miniapp';
+import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { config } from '@/lib/config';
 
 // Bot's wallet address for receiving membership payments
