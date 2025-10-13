@@ -447,9 +447,9 @@ function VotePanel() {
         <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3">
           <h4 className="font-semibold mb-2 text-green-400 font-mono text-sm">{'>'} Reward Rates</h4>
           <div className="text-xs text-green-600 font-mono space-y-1">
-            <p className="text-green-500">• Commit = 10 $ABC</p>
-            <p className="text-green-500">• PR Merged = 50 $ABC</p>
-            <p className="text-green-500">• Issue Closed = 25 $ABC</p>
+            <p className="text-green-500">• Commit = 50k-1M $ABC (random)</p>
+            <p className="text-green-500">• PR Merged = Coming Soon™</p>
+            <p className="text-green-500">• Daily Limit = 10 commits</p>
           </div>
         </div>
       </div>

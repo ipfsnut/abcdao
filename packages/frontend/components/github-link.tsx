@@ -216,9 +216,9 @@ export function GitHubLinkPanel() {
             <div className="mt-3 p-3 bg-black/40 border border-green-900/30 rounded-lg">
               <p className="text-green-600 font-mono text-xs mb-2">{"// Active rewards:"}</p>
               <ul className="space-y-1 text-green-400 font-mono text-xs">
-                <li>→ Push commits = 10 $ABC</li>
-                <li>→ Merge PRs = 50 $ABC</li>
-                <li>→ Close issues = 25 $ABC</li>
+                <li>→ Push commits = 50k-1M $ABC (random)</li>
+                <li>→ PR merged = Coming Soon™</li>
+                <li>→ Daily limit = 10 commits max</li>
               </ul>
             </div>
           </div>

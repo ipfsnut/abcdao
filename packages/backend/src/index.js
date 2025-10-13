@@ -15,6 +15,7 @@ import userRoutes from './routes/users.js';
 import rewardRoutes from './routes/rewards.js';
 import adminRoutes from './routes/admin.js';
 import batchRoutes from './routes/batch.js';
+import testGithubRoutes from './routes/test-github.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
@@ -51,6 +52,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/rewards', rewardRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/batch', batchRoutes);
+app.use('/api/test', testGithubRoutes);
 
 // Test endpoint for Farcaster bot (development only)
 if (process.env.NODE_ENV === 'development') {
