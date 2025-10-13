@@ -48,7 +48,13 @@ export default function RosterPage() {
   }, []);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    if (!dateString) return 'Unknown';
+    const date = new Date(dateString);
+    // Check if date is valid and not epoch (1970-01-01)
+    if (isNaN(date.getTime()) || date.getFullYear() < 2020) {
+      return 'Recently';
+    }
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'

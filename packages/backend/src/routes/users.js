@@ -415,7 +415,8 @@ router.get('/roster', async (req, res) => {
     const pool = getPool();
     const offset = (page - 1) * limit;
     
-    let whereClause = 'WHERE u.github_username IS NOT NULL AND u.verified_at IS NOT NULL';
+    // For now, show any users with a GitHub username (remove verified_at requirement for testing)
+    let whereClause = 'WHERE u.github_username IS NOT NULL';
     let orderByClause = 'ORDER BY total_commits DESC, u.created_at DESC';
     
     // Apply filters
@@ -449,15 +450,15 @@ router.get('/roster', async (req, res) => {
         u.id,
         u.farcaster_username,
         u.github_username,
-        u.created_at,
+        COALESCE(u.created_at, NOW()) as created_at,
         u.last_commit_at,
-        u.total_commits,
+        COALESCE(u.total_commits, 0) as total_commits,
         COALESCE(u.total_rewards_earned, 0)::numeric as total_rewards,
         u.membership_status,
         CASE 
           WHEN u.last_commit_at >= NOW() - INTERVAL '30 days' THEN true
-          WHEN u.total_commits > 0 AND u.last_commit_at < NOW() - INTERVAL '30 days' THEN false
-          WHEN u.total_commits = 0 THEN false
+          WHEN COALESCE(u.total_commits, 0) > 0 AND u.last_commit_at < NOW() - INTERVAL '30 days' THEN false
+          WHEN COALESCE(u.total_commits, 0) = 0 THEN false
           ELSE false
         END as is_active
       FROM users u
