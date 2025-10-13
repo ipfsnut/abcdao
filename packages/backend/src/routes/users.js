@@ -250,4 +250,36 @@ router.get('/leaderboard', async (req, res) => {
   }
 });
 
+// Debug endpoint to check user's full record (temporary)
+router.get('/:fid/debug', async (req, res) => {
+  const { fid } = req.params;
+  
+  try {
+    const pool = getPool();
+    
+    // Get complete user record
+    const userResult = await pool.query(`
+      SELECT * FROM users WHERE farcaster_fid = $1
+    `, [fid]);
+    
+    if (userResult.rows.length === 0) {
+      return res.json({ error: 'User not found' });
+    }
+    
+    // Get membership records
+    const membershipResult = await pool.query(`
+      SELECT * FROM memberships WHERE user_id = $1
+    `, [userResult.rows[0].id]);
+    
+    res.json({
+      user_record: userResult.rows[0],
+      membership_records: membershipResult.rows
+    });
+    
+  } catch (error) {
+    console.error('Debug query error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

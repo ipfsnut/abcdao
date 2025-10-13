@@ -84,27 +84,44 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/batch', batchRoutes);
 app.use('/api/test', testGithubRoutes);
 
-// Test endpoint for Farcaster bot (development only)
-if (process.env.NODE_ENV === 'development') {
-  app.post('/api/test/farcaster', async (req, res) => {
-    try {
-      const { default: farcasterService } = await import('./services/farcaster.js');
-      if (!farcasterService.isConfigured()) {
-        return res.status(503).json({ error: 'Farcaster bot not configured' });
-      }
-      
-      const cast = await farcasterService.testPost();
-      res.json({ 
-        success: true, 
-        message: 'Test cast published!',
-        castHash: cast?.hash
-      });
-    } catch (error) {
-      console.error('Farcaster test error:', error);
-      res.status(500).json({ error: error.message });
+// Custom cast endpoint (requires admin key for security)
+app.post('/api/cast/custom', async (req, res) => {
+  try {
+    // Simple auth check
+    const authKey = req.headers['x-admin-key'];
+    if (authKey !== process.env.ADMIN_SECRET && req.body.adminKey !== process.env.ADMIN_SECRET) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
-  });
-}
+
+    const { message, customMessage } = req.body;
+    const castText = customMessage || message;
+    
+    if (!castText) {
+      return res.status(400).json({ error: 'Message required' });
+    }
+
+    // Use direct Neynar API instead of service
+    const { NeynarAPIClient } = await import('@neynar/nodejs-sdk');
+    
+    if (!process.env.NEYNAR_API_KEY || !process.env.NEYNAR_SIGNER_UUID) {
+      return res.status(503).json({ error: 'Farcaster credentials not configured' });
+    }
+    
+    const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY);
+    const cast = await neynar.publishCast(process.env.NEYNAR_SIGNER_UUID, castText);
+    
+    res.json({ 
+      success: true, 
+      message: 'Custom cast published!',
+      castHash: cast.cast.hash,
+      castUrl: `https://warpcast.com/${cast.cast.author.username}/${cast.cast.hash}`
+    });
+    
+  } catch (error) {
+    console.error('Custom cast error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Queue monitoring (for development) - commented out for now
 // if (process.env.NODE_ENV === 'development') {
