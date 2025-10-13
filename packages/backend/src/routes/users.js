@@ -452,7 +452,7 @@ router.get('/roster', async (req, res) => {
         u.created_at,
         u.last_commit_at,
         u.total_commits,
-        u.total_rewards_earned as total_rewards,
+        COALESCE(u.total_rewards_earned, 0)::numeric as total_rewards,
         u.membership_status,
         CASE 
           WHEN u.last_commit_at >= NOW() - INTERVAL '30 days' THEN true

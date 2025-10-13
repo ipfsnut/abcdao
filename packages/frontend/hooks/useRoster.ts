@@ -10,7 +10,7 @@ export interface Developer {
   created_at: string;
   last_commit_at: string | null;
   total_commits: number;
-  total_rewards: number;
+  total_rewards: string | number; // Can come as string from DB
   membership_status: string | null;
   is_active: boolean;
 }
@@ -143,7 +143,7 @@ export function useRoster(options: UseRosterOptions = {}) {
     const totalDevs = data.pagination.totalCount;
     const activeDevs = data.developers.filter(dev => dev.is_active).length;
     const totalCommits = data.developers.reduce((sum, dev) => sum + dev.total_commits, 0);
-    const totalRewards = data.developers.reduce((sum, dev) => sum + dev.total_rewards, 0);
+    const totalRewards = data.developers.reduce((sum, dev) => sum + (parseFloat(dev.total_rewards as string) || 0), 0);
 
     return {
       totalDevelopers: totalDevs,

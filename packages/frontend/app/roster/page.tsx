@@ -250,7 +250,7 @@ export default function RosterPage() {
                           {dev.total_commits} commits
                         </p>
                         <div className="flex items-center gap-2 text-xs text-green-600 font-mono">
-                          <span>{dev.total_rewards.toFixed(2)} $ABC</span>
+                          <span>{(parseFloat(String(dev.total_rewards)) || 0).toFixed(2)} $ABC</span>
                           <span>•</span>
                           <span className={dev.is_active ? 'text-green-400' : 'text-gray-500'}>
                             {dev.is_active ? 'Active' : 'Inactive'}
