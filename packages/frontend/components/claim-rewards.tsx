@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { CONTRACTS } from '@/lib/contracts';
-import { formatEther, parseEther } from 'viem';
+import { formatEther } from 'viem';
 
 export function ClaimRewardsPanel() {
   const { address } = useAccount();
@@ -43,14 +43,18 @@ export function ClaimRewardsPanel() {
   const { isLoading: isClaiming, isSuccess: claimSuccess } = useWaitForTransactionReceipt({
     hash: claimTxData,
     query: {
-      enabled: !!claimTxData,
-      onSuccess: () => {
-        setRefreshTrigger(prev => prev + 1);
-        refetchClaimable();
-        refetchRewardInfo();
-      }
+      enabled: !!claimTxData
     }
   });
+
+  // Handle success in useEffect
+  useEffect(() => {
+    if (claimSuccess) {
+      setRefreshTrigger(prev => prev + 1);
+      refetchClaimable();
+      refetchRewardInfo();
+    }
+  }, [claimSuccess, refetchClaimable, refetchRewardInfo]);
 
   const hasClaimableRewards = claimableAmount && claimableAmount > 0n;
   const claimableInEther = claimableAmount ? formatEther(claimableAmount) : '0';
