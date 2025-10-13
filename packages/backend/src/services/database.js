@@ -240,6 +240,28 @@ async function runMigrations() {
       console.log('✅ Migration: Added membership system');
     }
 
+    // Migration 6: Add processed_casts table for reward batching
+    const migration6 = 'add_processed_casts_table';
+    const exists6 = await client.query('SELECT * FROM migrations WHERE name = $1', [migration6]);
+    
+    if (exists6.rows.length === 0) {
+      // Create processed_casts table to track which bot casts have been processed
+      await client.query(`
+        CREATE TABLE processed_casts (
+          id SERIAL PRIMARY KEY,
+          cast_hash VARCHAR(255) UNIQUE NOT NULL,
+          processed_at TIMESTAMP DEFAULT NOW(),
+          created_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
+
+      // Add index for fast lookups
+      await client.query('CREATE INDEX IF NOT EXISTS idx_processed_casts_hash ON processed_casts(cast_hash)');
+
+      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration6]);
+      console.log('✅ Migration: Added processed_casts table');
+    }
+
     
   } catch (error) {
     console.error('❌ Migration failed:', error);

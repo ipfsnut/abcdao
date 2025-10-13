@@ -14,6 +14,7 @@ import webhookRoutes from './routes/webhooks.js';
 import userRoutes from './routes/users.js';
 import rewardRoutes from './routes/rewards.js';
 import adminRoutes from './routes/admin.js';
+import batchRoutes from './routes/batch.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
@@ -49,6 +50,7 @@ app.use('/api/webhooks', webhookRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/rewards', rewardRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/batch', batchRoutes);
 
 // Test endpoint for Farcaster bot (development only)
 if (process.env.NODE_ENV === 'development') {

@@ -4,6 +4,7 @@ import { ContractAddressesFooter } from '@/components/contract-addresses-footer'
 import { FarcasterAuth } from '@/components/farcaster-auth';
 import { GitHubLinkPanel } from '@/components/github-link';
 import { WhitepaperButton } from '@/components/whitepaper-button';
+import { SwapWidget } from '@/components/swap-widget';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
@@ -205,76 +206,7 @@ export default function Home() {
                   </p>
                 </div>
               )}
-              {activeTab === 'swap' && (
-                <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-                  <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono text-center">
-                    {'>'} swap_tokens()
-                  </h2>
-                  <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-4 mb-4">
-                    <p className="text-yellow-400 font-mono text-sm mb-2 text-center">
-                      💱 Trade $ABC
-                    </p>
-                    <p className="text-green-600 font-mono text-xs mb-4 text-center">
-                      Buy or sell $ABC tokens with native Farcaster wallet
-                    </p>
-                    
-                    {/* Native Farcaster Swap Widget */}
-                    <div className="bg-black/60 border border-green-900/30 rounded-lg p-4 min-h-[300px] flex flex-col items-center justify-center">
-                      <div className="w-full max-w-md text-center space-y-4">
-                        <div className="bg-green-950/30 border border-green-700/50 rounded-lg p-4">
-                          <p className="text-green-400 font-mono text-sm mb-2">$ABC Token</p>
-                          <p className="text-green-300 font-mono text-xs break-all bg-black/50 p-2 rounded">
-                            0x5c0872b790bb73e2b3a9778db6e7704095624b07
-                          </p>
-                        </div>
-                        
-                        <button
-                          onClick={() => {
-                            if (typeof window !== 'undefined' && (window as unknown as { fc?: { actions: { swapToken: (params: { tokenAddress: string; chainId: number; symbol: string }) => void } } }).fc) {
-                              (window as unknown as { fc: { actions: { swapToken: (params: { tokenAddress: string; chainId: number; symbol: string }) => void } } }).fc.actions.swapToken({
-                                tokenAddress: '0x5c0872b790bb73e2b3a9778db6e7704095624b07',
-                                chainId: 8453, // Base
-                                symbol: 'ABC'
-                              });
-                            }
-                          }}
-                          className="w-full bg-green-900/50 hover:bg-green-800/60 text-green-400 font-mono px-6 py-4 rounded-lg border border-green-700/50 transition-all duration-300 matrix-button text-base font-semibold"
-                        >
-                          💱 Swap for $ABC
-                        </button>
-                        
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              if (typeof window !== 'undefined' && (window as unknown as { fc?: { actions: { viewToken: (params: { tokenAddress: string; chainId: number }) => void } } }).fc) {
-                                (window as unknown as { fc: { actions: { viewToken: (params: { tokenAddress: string; chainId: number }) => void } } }).fc.actions.viewToken({
-                                  tokenAddress: '0x5c0872b790bb73e2b3a9778db6e7704095624b07',
-                                  chainId: 8453
-                                });
-                              }
-                            }}
-                            className="flex-1 bg-blue-900/50 hover:bg-blue-800/60 text-blue-300 font-mono px-4 py-2 rounded-lg border border-blue-700/50 transition-all duration-300 matrix-button text-sm"
-                          >
-                            👁️ View Token
-                          </button>
-                          
-                          <a
-                            href="https://www.geckoterminal.com/base/pools/0xc8038588bed93021fe8bffb0c9310da825a9a00faabab4a907f3b8328fa9f610"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 bg-purple-900/50 hover:bg-purple-800/60 text-purple-300 font-mono px-4 py-2 rounded-lg border border-purple-700/50 transition-all duration-300 matrix-button text-sm text-center"
-                          >
-                            📊 Charts
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-green-600/70 font-mono text-xs text-center">
-                    Native Farcaster wallet integration. One-click swaps.
-                  </p>
-                </div>
-              )}
+              {activeTab === 'swap' && <SwapWidget />}
             </div>
           </>
         ) : (
