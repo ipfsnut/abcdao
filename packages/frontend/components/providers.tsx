@@ -5,7 +5,7 @@ import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import { config } from '@/lib/web3';
 import { FarcasterProvider } from '@/contexts/farcaster-context';
-import { FarcasterMiniAppProvider } from './farcaster-miniapp';
+import { FarcasterProvider as FarcasterMiniAppProvider } from './farcaster-miniapp';
 import '@rainbow-me/rainbowkit/styles.css';
 
 const queryClient = new QueryClient();

@@ -20,6 +20,7 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 - **Supply**: 100,000,000,000 $ABC (100B total supply)
 
 ### Revenue Streams for Stakers
+
 - **Trading fees**: $ETH/$WETH from Clanker trading → Bot wallet → Auto-unwrapped → Staking contract → Distributed to stakers
 - **Membership fees**: 0.002 ETH developer memberships → Staking contract → Distributed to stakers
 - **Developer rewards**: $ABC from trading → Bot wallet → Fixed commit rewards (50,000-1,000,000 $ABC per commit)

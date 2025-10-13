@@ -365,6 +365,23 @@ function StakePanel({ stakingData }: { stakingData: ReturnType<typeof useStaking
           </button>
         </div>
 
+        {/* Important Notice for Unstaking */}
+        {!isStaking && (
+          <div className="bg-yellow-950/20 border border-yellow-900/50 rounded-lg p-3">
+            <div className="flex items-start gap-2">
+              <span className="text-yellow-400 text-lg">⚠️</span>
+              <div>
+                <p className="text-yellow-400 font-mono text-sm font-semibold mb-1">
+                  7-Day Unbonding Period
+                </p>
+                <p className="text-yellow-500 font-mono text-xs">
+                  Unstaking requires a 7-day unbonding period. Your tokens will stop earning rewards immediately but won't be withdrawable for 7 days.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div>
           <label className="block text-xs sm:text-sm text-green-600 mb-2 font-mono">
             Amount
@@ -400,10 +417,10 @@ function StakePanel({ stakingData }: { stakingData: ReturnType<typeof useStaking
                            transition-all duration-300 matrix-button matrix-glow disabled:opacity-50 text-sm sm:text-base">
           {stakingData.isApproveLoading ? 'APPROVING...' : 
            stakingData.isStakeLoading ? 'STAKING...' : 
-           stakingData.isUnstakeLoading ? 'UNSTAKING...' :
+           stakingData.isUnstakeLoading ? 'STARTING UNBONDING...' :
            stakingData.isApproving ? 'APPROVAL PENDING...' :
            isStaking && stakingData.needsApproval(amount) ? `${'>'} APPROVE $ABC` :
-           isStaking ? `${'>'} STAKE $ABC` : `${'>'} UNSTAKE $ABC`}
+           isStaking ? `${'>'} STAKE $ABC` : `${'>'} START 7-DAY UNBONDING`}
         </button>
 
         <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3 sm:p-4">
@@ -516,7 +533,7 @@ function UnbondingPanel({ stakingData }: { stakingData: ReturnType<typeof useSta
 
   return (
     <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-      <h3 className="text-base sm:text-lg font-semibold mb-3 text-green-400 font-mono">{'>'} Unbonding</h3>
+      <h3 className="text-base sm:text-lg font-semibold mb-3 text-green-400 font-mono">{'>'} Unbonding Queue (7-Day Period)</h3>
       
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-3">
@@ -561,6 +578,7 @@ function UnbondingPanel({ stakingData }: { stakingData: ReturnType<typeof useSta
       ) : (
         <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3 text-center">
           <p className="text-green-600 font-mono text-xs sm:text-sm">No tokens unbonding</p>
+          <p className="text-green-500 font-mono text-xs mt-1">Unstaked tokens enter a 7-day unbonding period</p>
         </div>
       )}
 
