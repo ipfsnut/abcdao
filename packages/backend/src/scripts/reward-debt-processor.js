@@ -27,26 +27,30 @@ class RewardDebtProcessor {
     
     const pool = getPool();
     
-    // Get all users with commits but check what's already on-chain
+    // Get all users with PENDING rewards (not yet sent to contract)
     const result = await pool.query(`
       SELECT 
+        u.id as user_id,
         u.farcaster_username,
         u.wallet_address,
+        COALESCE(SUM(CASE WHEN c.reward_status = 'pending' THEN c.reward_amount ELSE 0 END), 0) as pending_rewards,
         COALESCE(SUM(c.reward_amount), 0) as total_earned
       FROM users u
       LEFT JOIN commits c ON u.id = c.user_id
       WHERE u.wallet_address IS NOT NULL
         AND u.membership_status != 'free'
       GROUP BY u.id, u.farcaster_username, u.wallet_address
-      HAVING COALESCE(SUM(c.reward_amount), 0) > 0
-      ORDER BY total_earned DESC
+      HAVING COALESCE(SUM(CASE WHEN c.reward_status = 'pending' THEN c.reward_amount ELSE 0 END), 0) > 0
+      ORDER BY pending_rewards DESC
     `);
 
-    console.log(`📊 Found ${result.rows.length} users with earned rewards`);
+    console.log(`📊 Found ${result.rows.length} users with pending rewards`);
     
     return result.rows.map(user => ({
+      userId: user.user_id,
       username: user.farcaster_username,
       walletAddress: user.wallet_address,
+      pendingRewards: parseFloat(user.pending_rewards),
       totalEarned: parseFloat(user.total_earned)
     }));
   }
@@ -79,45 +83,109 @@ class RewardDebtProcessor {
   }
 
   /**
-   * Calculate reward debt (earned - already allocated)
+   * Calculate reward debt (pending rewards to be allocated)
    */
   async calculateRewardDebt() {
-    console.log('💰 Calculating reward debt...\n');
+    console.log('💰 Calculating pending rewards...\n');
     
     const users = await this.getUnclaimedRewards();
     if (users.length === 0) {
-      console.log('✅ No users with rewards found');
+      console.log('✅ No users with pending rewards found');
       return [];
     }
-
-    const wallets = users.map(u => u.walletAddress);
-    const onChainAllocations = await this.getOnChainAllocations(wallets);
     
     const rewardDebt = [];
     
-    console.log('📋 Reward Debt Analysis:');
-    console.log('=========================');
+    console.log('📋 Pending Rewards Analysis:');
+    console.log('============================');
     
     for (const user of users) {
-      const earned = user.totalEarned;
-      const allocated = onChainAllocations.get(user.walletAddress) || 0;
-      const debt = earned - allocated;
+      const pendingAmount = user.pendingRewards;
       
       console.log(`@${user.username}:`);
-      console.log(`  Earned: ${earned.toLocaleString()} $ABC`);
-      console.log(`  Allocated: ${allocated.toLocaleString()} $ABC`);
-      console.log(`  Debt: ${debt.toLocaleString()} $ABC\n`);
+      console.log(`  Pending: ${pendingAmount.toLocaleString()} $ABC`);
+      console.log(`  Total Earned: ${user.totalEarned.toLocaleString()} $ABC\n`);
       
-      if (debt > 0) {
+      if (pendingAmount > 0) {
         rewardDebt.push({
+          userId: user.userId,
           username: user.username,
           walletAddress: user.walletAddress,
-          debtAmount: debt
+          debtAmount: pendingAmount
         });
       }
     }
     
     return rewardDebt;
+  }
+
+  /**
+   * Mark pending rewards as claimable after successful contract allocation
+   */
+  async markRewardsAsClaimable(rewardDebt, contractTxHash) {
+    console.log('📝 Updating database with claimable status...');
+    
+    const pool = getPool();
+    
+    for (const user of rewardDebt) {
+      try {
+        // Update all pending rewards for this user to claimable
+        const updateResult = await pool.query(`
+          UPDATE commits 
+          SET 
+            reward_status = 'claimable',
+            contract_tx_hash = $1,
+            transferred_at = NOW()
+          WHERE user_id = $2 
+            AND reward_status = 'pending'
+            AND reward_amount IS NOT NULL
+        `, [contractTxHash, user.userId]);
+        
+        console.log(`  ✓ @${user.username}: ${updateResult.rowCount} rewards marked as claimable`);
+        
+      } catch (error) {
+        console.error(`  ❌ Failed to update rewards for @${user.username}:`, error.message);
+      }
+    }
+    
+    console.log('✅ Database updated successfully\n');
+  }
+
+  /**
+   * Announce reward transfer on Farcaster
+   */
+  async announceRewardTransfer(rewardDebt, totalDebt, contractTxHash) {
+    console.log('📢 Posting reward transfer announcement...');
+    
+    try {
+      if (!process.env.NEYNAR_API_KEY || !process.env.NEYNAR_SIGNER_UUID) {
+        console.log('⚠️ Farcaster credentials not configured, skipping announcement');
+        return;
+      }
+
+      // Initialize Neynar client
+      const { NeynarAPIClient } = await import('@neynar/nodejs-sdk');
+      const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY);
+
+      // Create announcement message
+      const userList = rewardDebt.slice(0, 5).map(r => `@${r.username}`).join(' ');
+      const moreUsers = rewardDebt.length > 5 ? ` +${rewardDebt.length - 5} more` : '';
+      
+      const castText = `💰 REWARD TRANSFER COMPLETE!\n\n${totalDebt.toLocaleString()} $ABC rewards now CLAIMABLE!\n\n🎯 ${rewardDebt.length} developers can now claim:\n${userList}${moreUsers}\n\n🔗 Transaction: basescan.org/tx/${contractTxHash}\n\n✅ Connect wallet at abc.epicdylan.com to claim your rewards!\n\n#ABCDAO #AlwaysBeCoding`;
+
+      // Post cast
+      const cast = await neynar.publishCast(
+        process.env.NEYNAR_SIGNER_UUID,
+        castText
+      );
+
+      console.log(`✅ Reward transfer announced: ${cast.cast.hash}`);
+      return cast.cast.hash;
+
+    } catch (error) {
+      console.error('❌ Failed to announce reward transfer:', error.message);
+      // Don't throw - announcement failure shouldn't break the process
+    }
   }
 
   /**
@@ -157,6 +225,12 @@ class RewardDebtProcessor {
       
       const receipt = await tx.wait();
       console.log(`✅ Confirmed in block ${receipt.blockNumber}\n`);
+      
+      // Mark pending rewards as claimable in database
+      await this.markRewardsAsClaimable(rewardDebt, tx.hash);
+      
+      // Announce the reward transfer on Farcaster
+      await this.announceRewardTransfer(rewardDebt, totalDebt, tx.hash);
       
       // Log results
       console.log('🎉 Reward Debt Processing Complete!');

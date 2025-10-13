@@ -129,4 +129,77 @@ router.get('/repositories', async (req, res) => {
   }
 });
 
+// Get user's rewards with PENDING/CLAIMABLE status
+router.get('/user/:fid', async (req, res) => {
+  const { fid } = req.params;
+  
+  try {
+    const pool = getPool();
+    
+    // Get user's rewards grouped by status
+    const rewardsResult = await pool.query(`
+      SELECT 
+        c.id,
+        c.commit_hash,
+        c.repository,
+        c.commit_message,
+        c.reward_amount,
+        c.reward_status,
+        c.cast_url,
+        c.processed_at,
+        c.created_at,
+        c.contract_tx_hash,
+        c.transferred_at
+      FROM commits c
+      JOIN users u ON c.user_id = u.id
+      WHERE u.farcaster_fid = $1 
+        AND c.reward_amount IS NOT NULL
+      ORDER BY c.created_at DESC
+    `, [fid]);
+    
+    // Group rewards by status
+    const pendingRewards = rewardsResult.rows.filter(r => r.reward_status === 'pending');
+    const claimableRewards = rewardsResult.rows.filter(r => r.reward_status === 'claimable');
+    
+    // Calculate totals
+    const pendingTotal = pendingRewards.reduce((sum, r) => sum + parseFloat(r.reward_amount), 0);
+    const claimableTotal = claimableRewards.reduce((sum, r) => sum + parseFloat(r.reward_amount), 0);
+    
+    res.json({
+      summary: {
+        totalPending: pendingTotal,
+        totalClaimable: claimableTotal,
+        pendingCount: pendingRewards.length,
+        claimableCount: claimableRewards.length
+      },
+      rewards: {
+        pending: pendingRewards.map(r => ({
+          id: r.id,
+          commitHash: r.commit_hash,
+          repository: r.repository,
+          message: r.commit_message,
+          amount: parseFloat(r.reward_amount),
+          processedAt: r.processed_at,
+          castUrl: r.cast_url
+        })),
+        claimable: claimableRewards.map(r => ({
+          id: r.id,
+          commitHash: r.commit_hash,
+          repository: r.repository,
+          message: r.commit_message,
+          amount: parseFloat(r.reward_amount),
+          processedAt: r.processed_at,
+          castUrl: r.cast_url,
+          contractTxHash: r.contract_tx_hash,
+          transferredAt: r.transferred_at
+        }))
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error getting user rewards:', error);
+    res.status(500).json({ error: 'Failed to get user rewards' });
+  }
+});
+
 export default router;

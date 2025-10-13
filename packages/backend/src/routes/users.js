@@ -282,4 +282,42 @@ router.get('/:fid/debug', async (req, res) => {
   }
 });
 
+// Manual payment processing endpoint (temporary)
+router.post('/:fid/process-payment', async (req, res) => {
+  const { fid } = req.params;
+  const { txHash } = req.body;
+  
+  if (!txHash) {
+    return res.status(400).json({ error: 'Transaction hash required' });
+  }
+  
+  try {
+    const { PaymentMonitor } = await import('../services/payment-monitor.js');
+    const monitor = new PaymentMonitor();
+    
+    // Get transaction details
+    const { ethers } = await import('ethers');
+    const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
+    const tx = await provider.getTransaction(txHash);
+    
+    if (!tx) {
+      return res.status(404).json({ error: 'Transaction not found' });
+    }
+    
+    // Process the payment transaction
+    const result = await monitor.processPaymentTransaction(tx);
+    
+    res.json({
+      success: true,
+      message: 'Payment processed manually',
+      transaction: txHash,
+      result: result
+    });
+    
+  } catch (error) {
+    console.error('Manual payment processing error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
