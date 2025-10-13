@@ -154,10 +154,9 @@ router.get('/supply', async (req, res) => {
         total_supply: dataSource === 'Live blockchain data' ? "Token contract totalSupply()" : dataSource,
         staked: dataSource === 'Live blockchain data' ? "Staking contract: 0x577822..." : dataSource,
         bot_wallet: dataSource === 'Live blockchain data' ? "Token balanceOf(bot wallet)" : dataSource,
-        clanker_pool: dataSource === 'Live blockchain data' ? "Calculated from remainder (pool ID: 0xc80385...)" : dataSource,
-        clanker_vault: "Clanker.world vault info (5B tokens)",
+        clanker_pool: dataSource === 'Live blockchain data' ? "Token balanceOf(pool manager): 0x498581..." : dataSource,
         dev_lockup: "Fixed 5% team allocation",
-        circulating: "Calculated: Total - (All locked allocations)"
+        circulating: "Calculated: Total - (All allocations)"
       }
     });
     
