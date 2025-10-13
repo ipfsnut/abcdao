@@ -1,14 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
+import { parseEther } from 'viem';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { config, isInFrame, getCallbackUrl } from '@/lib/config';
 import { useMembership } from '@/hooks/useMembership';
 import { MembershipPaymentPanel } from '@/components/membership-payment';
 
+// Bot's wallet address for membership payments
+const BOT_WALLET_ADDRESS = '0x475579e65E140B11bc4656dD4b05e0CADc8366eB' as `0x${string}`;
+const MEMBERSHIP_FEE = '0.002'; // ETH
+
 export function GitHubLinkPanel() {
   const { user: profile, isInMiniApp } = useFarcaster();
+  const { address, isConnected } = useAccount();
   const membership = useMembership();
   const [isLinked, setIsLinked] = useState(false);
   const [githubUsername, setGithubUsername] = useState('');
@@ -16,6 +22,23 @@ export function GitHubLinkPanel() {
   const [inFrame, setInFrame] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [unlinking, setUnlinking] = useState(false);
+
+  // Payment transaction hooks
+  const { 
+    sendTransaction, 
+    data: paymentTxHash,
+    isPending: isPaymentPending,
+    isError: isPaymentError 
+  } = useSendTransaction();
+
+  // Wait for payment confirmation
+  const { 
+    isLoading: isPaymentConfirming, 
+    isSuccess: isPaymentSuccess 
+  } = useWaitForTransactionReceipt({
+    hash: paymentTxHash,
+    query: { enabled: !!paymentTxHash }
+  });
 
   useEffect(() => {
     // Detect if we're in a Farcaster frame or iframe
@@ -51,6 +74,35 @@ export function GitHubLinkPanel() {
       window.removeEventListener('message', handleMessage);
     };
   }, [profile, membership.hasGithub, membership.githubUsername]);
+
+  // Handle successful payment
+  useEffect(() => {
+    if (isPaymentSuccess) {
+      console.log('💰 Payment confirmed, refreshing membership and linking GitHub...');
+      membership.refreshStatus();
+      // Auto-trigger GitHub linking after payment confirmation
+      setTimeout(() => {
+        linkGitHub();
+      }, 2000);
+    }
+  }, [isPaymentSuccess]);
+
+  const handlePayment = async () => {
+    if (!isConnected || !profile) return;
+    
+    setLoading(true);
+    try {
+      sendTransaction({
+        to: BOT_WALLET_ADDRESS,
+        value: parseEther(MEMBERSHIP_FEE),
+        data: `0x${Buffer.from(`ABC_DAO_MEMBERSHIP_FID:${profile.fid}`).toString('hex')}` as `0x${string}`,
+      });
+    } catch (error) {
+      console.error('Payment failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const checkGitHubLink = async (fid: number) => {
     try {
@@ -276,7 +328,7 @@ export function GitHubLinkPanel() {
       </h2>
       
       <div className="space-y-4">
-        {membership.isMember ? (
+        {membership.isMember && isLinked ? (
           <div className="bg-green-950/20 border border-green-700/50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-green-400 font-mono text-sm sm:text-base">✓ Active Member</p>
@@ -335,11 +387,21 @@ export function GitHubLinkPanel() {
             </div>
 
             <button
-              onClick={() => setShowPayment(true)}
+              onClick={handlePayment}
+              disabled={loading || isPaymentPending || isPaymentConfirming || !isConnected}
               className="w-full bg-green-900/50 hover:bg-green-900/70 text-green-400 font-mono py-2.5 sm:py-3 rounded-lg 
-                       border border-green-700/50 transition-all duration-300 hover:matrix-glow text-sm sm:text-base"
+                       border border-green-700/50 transition-all duration-300 hover:matrix-glow text-sm sm:text-base
+                       disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              💰 Pay 0.002 ETH to Join
+              {isPaymentConfirming 
+                ? '⏳ Confirming Payment...' 
+                : isPaymentPending 
+                ? '💸 Sending Payment...'
+                : loading 
+                ? '🔗 Linking GitHub...'
+                : !isConnected
+                ? '🔌 Connect Wallet First'
+                : '💰 Pay 0.002 ETH to Join'}
             </button>
             
             <div className="text-center mt-2">
