@@ -14,7 +14,7 @@ export const config = createConfig({
     farcasterMiniApp()
   ],
   ssr: true,
-}) as any; // Type assertion to maintain compatibility
+});
 
 // Fallback config for non-miniapp environments
 export const fallbackConfig = getDefaultConfig({

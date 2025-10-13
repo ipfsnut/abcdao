@@ -49,6 +49,8 @@ Required environment variables (see `.env.example`):
 3. Set environment variables in Railway dashboard
 4. Deploy automatically on git push
 
+**Note**: Database migrations run automatically on startup. The schema is defined in `src/services/database.js` and migrations are tracked in the `migrations` table.
+
 ## API Endpoints
 
 ### Authentication

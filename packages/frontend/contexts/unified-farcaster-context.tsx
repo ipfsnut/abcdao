@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { sdk } from '@farcaster/miniapp-sdk';
-import { useConnect, useAccount } from 'wagmi';
 
 interface FarcasterUser {
   fid: number;
@@ -38,9 +37,6 @@ export function UnifiedFarcasterProvider({ children }: { children: ReactNode }) 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Wagmi hooks for wallet connection
-  const { connect, connectors } = useConnect();
-  const { isConnected } = useAccount();
 
   // Initialize authentication state
   useEffect(() => {
@@ -97,15 +93,8 @@ export function UnifiedFarcasterProvider({ children }: { children: ReactNode }) 
         // Store in localStorage for consistency
         localStorage.setItem(STORAGE_KEY, JSON.stringify(miniAppUser));
         
-        // Auto-connect wallet in miniapp
-        if (!isConnected && connectors.length > 0) {
-          try {
-            console.log('🔗 Auto-connecting Farcaster wallet...');
-            connect({ connector: connectors[0] });
-          } catch (error) {
-            console.log('ℹ️ Auto-connect failed:', error);
-          }
-        }
+        // Note: Wallet auto-connection will be handled by the Farcaster miniapp connector
+        console.log('ℹ️ Wallet will auto-connect via Farcaster miniapp connector');
         
         // Call SDK ready
         await sdk.actions.ready();
