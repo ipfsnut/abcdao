@@ -375,7 +375,7 @@ function StakePanel({ stakingData }: { stakingData: ReturnType<typeof useStaking
                   7-Day Unbonding Period
                 </p>
                 <p className="text-yellow-500 font-mono text-xs">
-                  Unstaking requires a 7-day unbonding period. Your tokens will stop earning rewards immediately but won't be withdrawable for 7 days.
+                  Unstaking requires a 7-day unbonding period. Your tokens will stop earning rewards immediately but won&apos;t be withdrawable for 7 days.
                 </p>
               </div>
             </div>
