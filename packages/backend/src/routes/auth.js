@@ -44,6 +44,15 @@ router.get('/github/callback', async (req, res) => {
       return res.status(400).json({ error: 'Invalid state parameter' });
     }
     
+    console.log('🔍 Debug info:', {
+      hasGithubClientId: !!process.env.GITHUB_CLIENT_ID,
+      hasGithubClientSecret: !!process.env.GITHUB_CLIENT_SECRET,
+      hasJwtSecret: !!process.env.JWT_SECRET,
+      hasDatabaseUrl: !!process.env.DATABASE_URL,
+      farcasterInfo: farcasterInfo ? { fid: farcasterInfo.fid, username: farcasterInfo.username } : null,
+      githubUser: githubUser ? { login: githubUser.login, id: githubUser.id } : null
+    });
+
     const pool = getPool();
     
     // Update or create user record
@@ -75,7 +84,15 @@ router.get('/github/callback', async (req, res) => {
     
   } catch (error) {
     console.error('GitHub OAuth error:', error);
-    res.status(500).json({ error: 'OAuth failed' });
+    console.error('Error details:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    res.status(500).json({ 
+      error: 'OAuth failed',
+      ...(process.env.NODE_ENV === 'development' && { details: error.message })
+    });
   }
 });
 
@@ -107,6 +124,66 @@ router.post('/github/authorize', async (req, res) => {
   } catch (error) {
     console.error('GitHub auth URL generation error:', error);
     res.status(500).json({ error: 'Failed to generate auth URL' });
+  }
+});
+
+// Unlink GitHub account (allow users to cancel before payment)
+router.post('/github/unlink', async (req, res) => {
+  const { farcasterFid } = req.body;
+  
+  if (!farcasterFid) {
+    return res.status(400).json({ error: 'Missing Farcaster FID' });
+  }
+  
+  try {
+    const pool = getPool();
+    
+    // Check if user exists and is not yet a paying member
+    const userResult = await pool.query(`
+      SELECT farcaster_username, github_username, membership_status 
+      FROM users 
+      WHERE farcaster_fid = $1
+    `, [farcasterFid]);
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    // Only allow unlinking if they haven't paid for membership yet
+    if (user.membership_status && user.membership_status !== 'free') {
+      return res.status(400).json({ 
+        error: 'Cannot unlink GitHub after membership payment. Contact support if needed.' 
+      });
+    }
+    
+    // Clear GitHub data but keep the user record
+    await pool.query(`
+      UPDATE users 
+      SET 
+        github_username = NULL,
+        github_id = NULL,
+        access_token = NULL,
+        verified_at = NULL,
+        updated_at = NOW()
+      WHERE farcaster_fid = $1
+    `, [farcasterFid]);
+    
+    console.log(`🔗 Unlinked GitHub ${user.github_username} from Farcaster ${user.farcaster_username}`);
+    
+    res.json({ 
+      success: true, 
+      message: 'GitHub account unlinked successfully',
+      unlinked: {
+        farcaster_username: user.farcaster_username,
+        github_username: user.github_username
+      }
+    });
+    
+  } catch (error) {
+    console.error('GitHub unlink error:', error);
+    res.status(500).json({ error: 'Failed to unlink GitHub account' });
   }
 });
 

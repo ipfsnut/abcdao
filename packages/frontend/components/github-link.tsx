@@ -15,6 +15,7 @@ export function GitHubLinkPanel() {
   const [loading, setLoading] = useState(false);
   const [inFrame, setInFrame] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const [unlinking, setUnlinking] = useState(false);
 
   useEffect(() => {
     // Detect if we're in a Farcaster frame or iframe
@@ -93,6 +94,49 @@ export function GitHubLinkPanel() {
     }
   };
 
+  const unlinkGitHub = async () => {
+    if (!profile) return;
+    
+    const confirmed = confirm(
+      'Are you sure you want to unlink your GitHub account? You can always link it again later.'
+    );
+    
+    if (!confirmed) return;
+
+    setUnlinking(true);
+    try {
+      const response = await fetch(`${config.backendUrl}/api/auth/github/unlink`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          farcasterFid: profile.fid,
+        }),
+      });
+
+      if (response.ok) {
+        // Clear local state
+        setIsLinked(false);
+        setGithubUsername('');
+        setShowPayment(false);
+        
+        // Refresh membership status
+        membership.refreshStatus();
+        
+        alert('GitHub account unlinked successfully');
+      } else {
+        const error = await response.json();
+        alert(`Failed to unlink GitHub: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error unlinking GitHub:', error);
+      alert('Error connecting to backend. Please try again later.');
+    } finally {
+      setUnlinking(false);
+    }
+  };
+
   if (!profile && isInMiniApp) {
     return (
       <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
@@ -151,13 +195,30 @@ export function GitHubLinkPanel() {
               </div>
             </div>
 
-            <button
-              onClick={() => setShowPayment(true)}
-              className="w-full bg-green-900/50 hover:bg-green-900/70 text-green-400 font-mono py-2.5 rounded-lg 
-                       border border-green-700/50 transition-all duration-300 hover:matrix-glow mt-3"
-            >
-              {'>'} PROCEED TO PAYMENT
-            </button>
+            <div className="flex gap-3 mt-3">
+              <button
+                onClick={() => setShowPayment(true)}
+                className="flex-1 bg-green-900/50 hover:bg-green-900/70 text-green-400 font-mono py-2.5 rounded-lg 
+                         border border-green-700/50 transition-all duration-300 hover:matrix-glow"
+              >
+                {'>'} PROCEED TO PAYMENT
+              </button>
+              
+              <button
+                onClick={unlinkGitHub}
+                disabled={unlinking}
+                className="px-4 bg-red-900/50 hover:bg-red-900/70 text-red-400 font-mono py-2.5 rounded-lg 
+                         border border-red-700/50 transition-all duration-300 hover:shadow-red-400/20 hover:shadow-lg
+                         disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Cancel and unlink GitHub"
+              >
+                {unlinking ? '...' : '✕'}
+              </button>
+            </div>
+            
+            <p className="text-green-600/70 font-mono text-xs text-center mt-2">
+              Don't want to pay? Click ✕ to unlink and cancel
+            </p>
           </div>
         </div>
       </div>
