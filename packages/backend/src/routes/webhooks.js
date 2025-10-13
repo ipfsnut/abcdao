@@ -179,6 +179,36 @@ if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
       res.status(500).json({ error: error.message });
     }
   });
+
+  // Admin endpoint to manually add user for testing
+  router.post('/add-test-user', async (req, res) => {
+    try {
+      const pool = getPool();
+      
+      // Insert test user (ipfsnut with FID 8573)
+      const result = await pool.query(`
+        INSERT INTO users (
+          farcaster_fid, 
+          farcaster_username, 
+          github_username, 
+          verified_at
+        ) VALUES ($1, $2, $3, NOW())
+        ON CONFLICT (farcaster_fid) DO UPDATE SET
+          github_username = EXCLUDED.github_username,
+          verified_at = NOW()
+        RETURNING *
+      `, [8573, 'ipfsnut', 'ipfsnut']);
+      
+      res.json({ 
+        status: 'Test user added/updated', 
+        user: result.rows[0] 
+      });
+      
+    } catch (error) {
+      console.error('Add test user error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
 }
 
 async function handlePullRequestEvent(payload) {
