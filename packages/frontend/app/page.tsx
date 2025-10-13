@@ -9,12 +9,14 @@ import { useFarcaster } from '@/components/farcaster-miniapp';
 import { useState } from 'react';
 import { useStaking } from '@/hooks/useStaking';
 import { useUnbonding } from '@/hooks/useUnbonding';
+import { useTreasury } from '@/hooks/useTreasury';
 import { Toaster } from 'sonner';
 
 export default function Home() {
   const { isInMiniApp } = useFarcaster();
   const [activeTab, setActiveTab] = useState<'stake' | 'rewards' | 'proposals' | 'chat' | 'swap'>('stake');
   const stakingData = useStaking();
+  const treasuryData = useTreasury();
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
@@ -87,7 +89,7 @@ export default function Home() {
           <div className="flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-visible sm:pb-0">
             <div className="min-w-[140px] sm:min-w-0 bg-green-950/20 border border-green-900/50 rounded-lg p-3 matrix-button">
               <p className="text-green-600 text-xs font-mono">Treasury</p>
-              <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">0 $ABC</p>
+              <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">{parseFloat(treasuryData.treasuryBalance).toFixed(0)} $ABC</p>
             </div>
             <div className="min-w-[140px] sm:min-w-0 bg-green-950/20 border border-green-900/50 rounded-lg p-3 matrix-button">
               <p className="text-green-600 text-xs font-mono">Total_Staked</p>
