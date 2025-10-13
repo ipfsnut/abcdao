@@ -16,11 +16,20 @@ interface FarcasterUser {
 function FarcasterAuthContent() {
   const { user, login, isLoading } = useFarcaster();
   const [loading, setLoading] = useState(false);
+  const [isInFrame, setIsInFrame] = useState(false);
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Check if we're in a Farcaster mini-app context
+    // Check if we're in a Farcaster frame context
     const fid = searchParams.get('fid');
+    const inFrame = window !== window.top || 
+                    window.location !== window.parent.location ||
+                    !!fid ||
+                    navigator.userAgent.includes('farcaster') ||
+                    window.location.href.includes('frame');
+    
+    setIsInFrame(inFrame);
+    
     if (fid) {
       fetchUserData(parseInt(fid));
     }
@@ -54,10 +63,17 @@ function FarcasterAuthContent() {
     window.location.href = authUrl;
   };
 
-  if (loading || isLoading) {
-    return <div className="animate-pulse">Loading...</div>;
+  // In browser mode, don't show Farcaster auth at all
+  if (!isInFrame) {
+    return null;
   }
 
+  // In frame mode, show loading or user info (never a sign-in button)
+  if (loading || isLoading) {
+    return <div className="animate-pulse text-purple-400">Loading Farcaster user...</div>;
+  }
+
+  // In frame context, always show user info if available
   if (user) {
     return (
       <div className="flex items-center gap-3 bg-purple-900/20 rounded-lg px-4 py-2">
@@ -74,14 +90,8 @@ function FarcasterAuthContent() {
     );
   }
 
-  return (
-    <button
-      onClick={handleSignIn}
-      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-    >
-      Sign in with Farcaster
-    </button>
-  );
+  // If no user data yet in frame context, show nothing (user data should be automatically available)
+  return null;
 }
 
 export function FarcasterAuth() {
