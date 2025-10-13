@@ -158,6 +158,27 @@ export function ClaimRewardsPanel() {
           </div>
         ) : userRewards ? (
           <>
+            {/* Total Rewards Summary */}
+            <div className="bg-gradient-to-r from-blue-950/20 to-purple-950/20 border border-blue-700/50 rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-blue-400 font-mono text-sm font-bold">TOTAL REWARDS</h3>
+                <span className="text-blue-600 font-mono text-xs">
+                  {userRewards.summary.pendingCount + userRewards.summary.claimableCount} commits
+                </span>
+              </div>
+              <p className="text-blue-300 font-mono text-xl font-bold">
+                {(userRewards.summary.totalPending + userRewards.summary.totalClaimable).toLocaleString()} $ABC
+              </p>
+              <div className="flex justify-between text-xs font-mono mt-2">
+                <span className="text-yellow-400">
+                  {userRewards.summary.totalPending.toLocaleString()} pending
+                </span>
+                <span className="text-green-400">
+                  {userRewards.summary.totalClaimable.toLocaleString()} claimable
+                </span>
+              </div>
+            </div>
+
             {/* Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Pending Rewards */}
