@@ -1,9 +1,9 @@
 // Contract addresses and ABIs for the ABC DAO system
 
 export const CONTRACTS = {
-  // ABC token for testing (already deployed)
+  // ABC token (LIVE - deployed via Clanker)
   ABC_TOKEN: {
-    address: '0xf87F3ebbF8CaCF321C2a4027bb66Df639a6f4B07' as `0x${string}`,
+    address: '0x5c0872b790bb73e2b3a9778db6e7704095624b07' as `0x${string}`,
     decimals: 18,
     symbol: 'ABC',
     name: 'ABC'
