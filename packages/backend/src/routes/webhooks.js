@@ -271,7 +271,7 @@ async function postCommitCast(castData) {
       .split('\n')[0]
       .trim();
     
-    const castText = `🚀 New commit!\n\n@${farcasterUsername} just pushed to ${repoName}:\n\n"${cleanMessage}"\n\n💰 Earned: ${rewardAmount.toLocaleString()} $ABC\n\n📱 Want rewards? Add our miniapp:\nfarcaster.xyz/miniapps/S1edg9PycxZP/abcdao\n\n#ABCDao #AlwaysBeCoding`;
+    const castText = `🚀 New commit!\n\n@${farcasterUsername} just pushed to ${repoName}:\n\n"${cleanMessage}"\n\n💰 Earned: ${rewardAmount.toLocaleString()} $ABC\n\n🔗 ${commitUrl}\n\n📱 Want rewards? Add our miniapp:\nfarcaster.xyz/miniapps/S1edg9PycxZP/abcdao\n\n#ABCDAO #AlwaysBeCoding`;
     
     // Post cast
     const cast = await neynar.publishCast(

@@ -183,9 +183,10 @@ function generateCommitAnnouncement(username, fid, repository, commitMessage, co
   message += `@${username} just pushed to ${repoName}:\n\n`;
   message += `"${cleanMessage}"\n\n`;
   message += `💰 Earned: ${rewardAmount.toLocaleString()} $ABC\n\n`;
+  message += `🔗 ${commitUrl}\n\n`;
   message += `📱 Want rewards? Add our miniapp:\n`;
   message += `farcaster.xyz/miniapps/S1edg9PycxZP/abcdao\n\n`;
-  message += `#ABCDao #AlwaysBeCoding`;
+  message += `#ABCDAO #AlwaysBeCoding`;
 
   return message;
 }
