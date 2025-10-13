@@ -82,8 +82,7 @@ export function UnifiedFarcasterProvider({ children }: { children: ReactNode }) 
           fid: context.user.fid,
           username: context.user.username || '',
           displayName: context.user.displayName || context.user.username || '',
-          pfpUrl: context.user.pfpUrl || '',
-          bio: context.user.bio
+          pfpUrl: context.user.pfpUrl || ''
         };
 
         console.log('✅ Miniapp user authenticated:', miniAppUser);
