@@ -3,13 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useFarcaster } from '@/components/farcaster-miniapp';
 import { config, isInFrame, getCallbackUrl } from '@/lib/config';
+import { useMembership } from '@/hooks/useMembership';
+import { MembershipPaymentPanel } from '@/components/membership-payment';
 
 export function GitHubLinkPanel() {
   const { user: profile, isInMiniApp } = useFarcaster();
+  const membership = useMembership();
   const [isLinked, setIsLinked] = useState(false);
   const [githubUsername, setGithubUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const [inFrame, setInFrame] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
 
   useEffect(() => {
     // Detect if we're in a Farcaster frame or iframe
@@ -19,7 +23,15 @@ export function GitHubLinkPanel() {
     if (profile?.fid) {
       checkGitHubLink(profile.fid);
     }
-  }, [profile]);
+    
+    // Update linked status from membership hook
+    if (membership.hasGithub) {
+      setIsLinked(true);
+      if (membership.githubUsername) {
+        setGithubUsername(membership.githubUsername);
+      }
+    }
+  }, [profile, membership.hasGithub, membership.githubUsername]);
 
   const checkGitHubLink = async (fid: number) => {
     try {
@@ -112,6 +124,65 @@ export function GitHubLinkPanel() {
     );
   }
 
+  // Show membership payment if GitHub is linked but not yet a member
+  if (isLinked && !membership.isMember && !showPayment) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+          <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
+            {'>'} github_linked()
+          </h2>
+          
+          <div className="bg-green-950/20 border border-green-700/50 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-green-400 font-mono text-sm sm:text-base">✓ GitHub Linked</p>
+              <span className="text-green-600 font-mono text-xs sm:text-sm">@{githubUsername}</span>
+            </div>
+            
+            <div className="space-y-2 text-xs sm:text-sm font-mono">
+              <div className="flex justify-between text-green-600">
+                <span>Status:</span>
+                <span className="text-green-400">LINKED</span>
+              </div>
+              <div className="flex justify-between text-green-600">
+                <span>Next Step:</span>
+                <span className="text-yellow-400">Pay Membership</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowPayment(true)}
+              className="w-full bg-green-900/50 hover:bg-green-900/70 text-green-400 font-mono py-2.5 rounded-lg 
+                       border border-green-700/50 transition-all duration-300 hover:matrix-glow mt-3"
+            >
+              {'>'} PROCEED TO PAYMENT
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show payment panel if requested
+  if (showPayment || (isLinked && !membership.isMember)) {
+    return (
+      <div className="space-y-4">
+        <button
+          onClick={() => setShowPayment(false)}
+          className="text-green-600 hover:text-green-400 font-mono text-sm transition-colors"
+        >
+          {'<'} Back to GitHub
+        </button>
+        <MembershipPaymentPanel 
+          onPaymentComplete={() => {
+            setShowPayment(false);
+            membership.refreshStatus();
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
       <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
@@ -119,10 +190,10 @@ export function GitHubLinkPanel() {
       </h2>
       
       <div className="space-y-4">
-        {isLinked ? (
+        {membership.isMember ? (
           <div className="bg-green-950/20 border border-green-700/50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-green-400 font-mono text-sm sm:text-base">✓ Linked</p>
+              <p className="text-green-400 font-mono text-sm sm:text-base">✓ Active Member</p>
               <span className="text-green-600 font-mono text-xs sm:text-sm">@{githubUsername}</span>
             </div>
             
@@ -132,23 +203,29 @@ export function GitHubLinkPanel() {
                 <span className="text-green-400">ACTIVE</span>
               </div>
               <div className="flex justify-between text-green-600">
-                <span>FC:</span>
-                <span className="text-green-400">@{profile.username}</span>
+                <span>Commits:</span>
+                <span className="text-green-400">{membership.totalCommits || 0}</span>
               </div>
               <div className="flex justify-between text-green-600">
-                <span>FID:</span>
-                <span className="text-green-400">{profile.fid}</span>
+                <span>Earned:</span>
+                <span className="text-green-400">{membership.totalEarned || 0} $ABC</span>
               </div>
             </div>
 
             <div className="mt-3 p-3 bg-black/40 border border-green-900/30 rounded-lg">
-              <p className="text-green-600 font-mono text-xs mb-2">{"// Next:"}</p>
+              <p className="text-green-600 font-mono text-xs mb-2">{"// Active rewards:"}</p>
               <ul className="space-y-1 text-green-400 font-mono text-xs">
-                <li>→ Push commits = $ABC</li>
-                <li>→ Merge PRs = Bonus</li>
-                <li>→ Stake $ABC = ETH</li>
+                <li>→ Push commits = 10 $ABC</li>
+                <li>→ Merge PRs = 50 $ABC</li>
+                <li>→ Close issues = 25 $ABC</li>
               </ul>
             </div>
+          </div>
+        ) : isLinked ? (
+          <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-4">
+            <p className="text-yellow-400 font-mono text-sm text-center">
+              GitHub linked - Pay membership to activate
+            </p>
           </div>
         ) : (
           <>
@@ -166,7 +243,7 @@ export function GitHubLinkPanel() {
               <p className="text-green-600 font-mono text-xs mb-2">{"// Connected:"}</p>
               <div className="flex items-center gap-2">
                 <img 
-                  src={profile.pfp?.url || `https://api.dicebear.com/7.x/identicon/svg?seed=${profile.fid}`} 
+                  src={`https://api.dicebear.com/7.x/identicon/svg?seed=${profile.fid}`} 
                   alt="Profile" 
                   className="w-8 h-8 rounded-full border border-green-700/50"
                 />

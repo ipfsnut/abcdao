@@ -49,8 +49,8 @@ export function FarcasterMiniAppProvider({ children }: { children: React.ReactNo
           
           // Try to request user data from miniapp SDK
           try {
-            if (miniAppHost && typeof miniAppHost.getUserData === 'function') {
-              const userData = await miniAppHost.getUserData();
+            if (miniAppHost && typeof (miniAppHost as any).getUserData === 'function') {
+              const userData = await (miniAppHost as any).getUserData();
               if (userData) {
                 context = userData;
                 console.log('✅ Got user data from miniapp SDK:', userData);

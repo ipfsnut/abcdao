@@ -69,20 +69,20 @@ Stakers earn $ETH from two sources while developers earn $ABC for shipping code.
 ## 5. REWARD DISTRIBUTION
 
 ### Developer Rewards
-- Funded by $ABC from trading fees (via creator wallet)
+- Funded by $ABC from trading fees
 - Random rewards between 50,000-1,000,000 $ABC per commit
 - Fully automated - no manual intervention
 - Sustainable through continuous fee generation
 
 ### Staker Rewards
-- All $ETH from trading fees distributed proportionally
+- $ETH from trading fees distributed to $ABC stakers
 - Claim anytime from staking contract
 - Compounds with more stakers joining
 
 ## 6. FARCASTER INTEGRATION
 
 ### ABC Bot Account
-- **Username**: @abcbot ✅ CREATED
+- **Username**: @abcbot
 - **Purpose**: Automated developer recognition
 - **Powered by**: Neynar API
 - **Status**: Integrated and tested
@@ -128,52 +128,9 @@ Stakers earn $ETH from two sources while developers earn $ABC for shipping code.
 - **Emergency controls**: Pause functionality for critical situations
 - **Battle-tested patterns**: Following the "beaten path" for minimal security risk
 
-## 8. LAUNCH STRATEGY
 
-- Create @abcbot Farcaster account via Neynar
-- Register GitHub app for webhooks
-- Deploy backend services
-- Launch $ABC via v4 Clanker
-- 80% fee routing to creator wallet configured
-- Initial liquidity provided
-- Deploy staking contract
-- Enable GitHub-Farcaster linking at abc.epicdylan.com or via Farcaster miniapp
-- First commits start earning rewards
-- ABC Bot begins posting celebrations
-- Onboard active Farcaster developers
-- Weekly leaderboards
-- Viral growth through automated casts
 
-## 9. RISK MITIGATION
-
-### Potential Risks & Solutions
-
-| Risk | Mitigation |
-|------|------------|
-| Commit spam | Daily cap of 10 commits per developer |
-| Multiple GitHub accounts | Farcaster account verification limits sybils |
-| Private repo gaming | Only public repositories count |
-| Low trading volume | Small rewards sustainable even with low fees |
-| Reward depletion | Random amounts (100-1M) prevent drain |
-
-## 10. WHY ABC SUCCEEDS
-
-### Simplicity First
-- No complex tokenomics to understand
-- Clear value proposition: commit = reward
-- Easy participation
-
-### Community Focused
-- Farcaster-native from day one
-- Supporting builders who matter
-- No politics - just code and rewards
-
-### Sustainable Model
-- Clanker fees create dual rewards: ETH for stakers, ABC for developers
-- No reliance on emissions or inflation
-- Self-perpetuating ecosystem growth
-
-## 11. CONCLUSION
+## 8. CONCLUSION
 
 ABC DAO strips Web3 devrel to its essential elements: **ship code, earn rewards**. By focusing on the Farcaster community and maintaining radical simplicity, we create a sustainable funding mechanism for the builders who will define the future of decentralized social networks.
 
