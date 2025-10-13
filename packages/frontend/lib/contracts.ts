@@ -97,6 +97,51 @@ export const CONTRACTS = {
         "stateMutability": "view"
       }
     ] as const
+  },
+  
+  // ABC Rewards contract for claimable commit rewards
+  ABC_REWARDS: {
+    address: '0x6f0A63404C6C8CAb2e0f92bf112F4293F9f92E15' as `0x${string}`,
+    abi: [
+      {
+        "inputs": [{"name": "user", "type": "address"}],
+        "name": "getClaimableAmount",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [{"name": "user", "type": "address"}],
+        "name": "getUserRewardInfo",
+        "outputs": [
+          {"name": "totalAllocated", "type": "uint256"},
+          {"name": "totalClaimed", "type": "uint256"},
+          {"name": "claimable", "type": "uint256"},
+          {"name": "lastUpdated", "type": "uint256"}
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "claimRewards",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "getContractStats",
+        "outputs": [
+          {"name": "totalAllocated", "type": "uint256"},
+          {"name": "totalClaimed", "type": "uint256"},
+          {"name": "contractBalance", "type": "uint256"},
+          {"name": "batchCount", "type": "uint256"}
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ] as const
   }
 };
 

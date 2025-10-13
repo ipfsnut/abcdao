@@ -5,6 +5,7 @@ import { FarcasterAuth } from '@/components/farcaster-auth';
 import { GitHubLinkPanel } from '@/components/github-link';
 import { WhitepaperButton } from '@/components/whitepaper-button';
 import { SwapWidget } from '@/components/swap-widget';
+import { ClaimRewardsPanel } from '@/components/claim-rewards';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
@@ -178,7 +179,7 @@ export default function Home() {
             {/* Mobile-Optimized Tab Content */}
             <div className="mt-4">
               {activeTab === 'stake' && <StakePanel stakingData={stakingData} />}
-              {activeTab === 'rewards' && <VotePanel />}
+              {activeTab === 'rewards' && <ClaimRewardsPanel />}
               {activeTab === 'proposals' && <GitHubLinkPanel />}
               {activeTab === 'chat' && (
                 <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm text-center">
@@ -239,7 +240,7 @@ export default function Home() {
             {/* Web User Tab Content */}
             <div className="mt-6">
               {activeTab === 'stake' && <StakePanel stakingData={stakingData} />}
-              {activeTab === 'rewards' && <VotePanel />}
+              {activeTab === 'rewards' && <ClaimRewardsPanel />}
             </div>
             
             {/* Whitepaper Link */}

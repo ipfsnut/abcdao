@@ -66,10 +66,11 @@ export function ContractAddressesFooter() {
   // Get addresses from environment variables and contracts
   const abcTokenAddress = process.env.NEXT_PUBLIC_ABC_TOKEN_ADDRESS || CONTRACTS.ABC_TOKEN?.address;
   const stakingAddress = process.env.NEXT_PUBLIC_STAKING_CONTRACT_ADDRESS || CONTRACTS.ABC_STAKING?.address;
+  const rewardsAddress = process.env.NEXT_PUBLIC_REWARDS_CONTRACT_ADDRESS || CONTRACTS.ABC_REWARDS?.address;
   const governanceAddress = process.env.NEXT_PUBLIC_GOVERNANCE_CONTRACT_ADDRESS;
   
   // Only show if we have at least one address
-  if (!abcTokenAddress && !stakingAddress && !governanceAddress) {
+  if (!abcTokenAddress && !stakingAddress && !rewardsAddress && !governanceAddress) {
     return null;
   }
 
@@ -98,6 +99,13 @@ export function ContractAddressesFooter() {
               <ContractAddress
                 label="ABC Staking"
                 address={stakingAddress}
+              />
+            )}
+            
+            {rewardsAddress && (
+              <ContractAddress
+                label="ABC Rewards"
+                address={rewardsAddress}
               />
             )}
             

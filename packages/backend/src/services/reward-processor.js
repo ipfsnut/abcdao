@@ -1,10 +1,24 @@
 import { NeynarAPIClient } from '@neynar/nodejs-sdk';
+import { ethers } from 'ethers';
 import { getPool } from './database.js';
 
 class RewardProcessor {
   constructor() {
     this.neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY);
     this.botFid = process.env.NEYNAR_BOT_FID || '8573'; // Default to your FID for now
+    
+    // Initialize Web3 provider and contract
+    this.provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL);
+    this.botWallet = new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY, this.provider);
+    
+    // ABCRewards contract ABI (minimal)
+    this.rewardsContractABI = [
+      "function allocateRewardsBatch(address[] calldata users, uint256[] calldata amounts) external",
+      "function allocateReward(address user, uint256 amount) external",
+      "function getContractStats() external view returns (uint256, uint256, uint256, uint256)",
+      "function authorized(address) external view returns (bool)",
+      "function setAuthorized(address account, bool _authorized) external"
+    ];
   }
 
   /**
@@ -140,8 +154,104 @@ class RewardProcessor {
   }
 
   /**
-   * Process last 24 hours of reward casts and prepare for contract update
-   * @returns {Object} - Batch reward data ready for contract
+   * Get rewards contract instance
+   * @returns {ethers.Contract} - Rewards contract instance
+   */
+  getRewardsContract() {
+    if (!process.env.ABC_REWARDS_CONTRACT_ADDRESS) {
+      throw new Error('ABC_REWARDS_CONTRACT_ADDRESS not set in environment');
+    }
+    
+    return new ethers.Contract(
+      process.env.ABC_REWARDS_CONTRACT_ADDRESS,
+      this.rewardsContractABI,
+      this.botWallet
+    );
+  }
+
+  /**
+   * Allocate rewards to users via smart contract
+   * @param {Array} addresses - Array of wallet addresses
+   * @param {Array} amounts - Array of reward amounts (in ABC tokens, not wei)
+   * @returns {Object} - Transaction result
+   */
+  async allocateRewardsToContract(addresses, amounts) {
+    try {
+      const contract = this.getRewardsContract();
+      
+      // Convert amounts to wei (18 decimals)
+      const amountsInWei = amounts.map(amount => ethers.parseEther(amount.toString()));
+      
+      console.log(`🔄 Allocating rewards to contract...`);
+      console.log(`   - Recipients: ${addresses.length}`);
+      console.log(`   - Total ABC: ${amounts.reduce((sum, amount) => sum + amount, 0).toLocaleString()}`);
+      
+      // Estimate gas first
+      const gasEstimate = await contract.allocateRewardsBatch.estimateGas(addresses, amountsInWei);
+      console.log(`   - Estimated gas: ${gasEstimate.toString()}`);
+      
+      // Execute transaction
+      const tx = await contract.allocateRewardsBatch(addresses, amountsInWei, {
+        gasLimit: gasEstimate + BigInt(50000) // Add buffer
+      });
+      
+      console.log(`🚀 Transaction sent: ${tx.hash}`);
+      console.log('⏳ Waiting for confirmation...');
+      
+      const receipt = await tx.wait();
+      console.log(`✅ Transaction confirmed in block ${receipt.blockNumber}`);
+      
+      return {
+        txHash: tx.hash,
+        blockNumber: receipt.blockNumber,
+        gasUsed: receipt.gasUsed.toString(),
+        success: true
+      };
+      
+    } catch (error) {
+      console.error('❌ Smart contract allocation failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check if bot is authorized to allocate rewards
+   * @returns {boolean} - True if authorized
+   */
+  async isBotAuthorized() {
+    try {
+      const contract = this.getRewardsContract();
+      return await contract.authorized(this.botWallet.address);
+    } catch (error) {
+      console.error('Error checking authorization:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get contract stats
+   * @returns {Object} - Contract statistics
+   */
+  async getContractStats() {
+    try {
+      const contract = this.getRewardsContract();
+      const [totalAllocated, totalClaimed, contractBalance, batchCount] = await contract.getContractStats();
+      
+      return {
+        totalAllocated: ethers.formatEther(totalAllocated),
+        totalClaimed: ethers.formatEther(totalClaimed),
+        contractBalance: ethers.formatEther(contractBalance),
+        batchCount: batchCount.toString()
+      };
+    } catch (error) {
+      console.error('Error getting contract stats:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Process last 24 hours of reward casts and update smart contract
+   * @returns {Object} - Processing results including transaction info
    */
   async processDailyRewards() {
     try {
@@ -195,16 +305,35 @@ class RewardProcessor {
       
       const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
       
+      // 7. Update smart contract with batch rewards
+      let contractResult = null;
+      if (addresses.length > 0) {
+        console.log('🔄 Updating smart contract...');
+        
+        // Check if bot is authorized
+        const isAuthorized = await this.isBotAuthorized();
+        if (!isAuthorized) {
+          console.error('❌ Bot is not authorized to allocate rewards on contract');
+          throw new Error('Bot not authorized for contract operations');
+        }
+        
+        contractResult = await this.allocateRewardsToContract(addresses, amounts);
+      }
+      
       console.log(`✅ Daily reward processing complete:`);
       console.log(`   - ${addresses.length} unique recipients`);
-      console.log(`   - ${totalAmount.toLocaleString()} total $ABC to distribute`);
+      console.log(`   - ${totalAmount.toLocaleString()} total $ABC allocated`);
       console.log(`   - ${newCasts.length} casts processed`);
+      if (contractResult) {
+        console.log(`   - Contract updated: ${contractResult.txHash}`);
+      }
       
       return {
         addresses,
         amounts,
         totalProcessed: newCasts.length,
-        totalAmount
+        totalAmount,
+        contractTransaction: contractResult
       };
       
     } catch (error) {
