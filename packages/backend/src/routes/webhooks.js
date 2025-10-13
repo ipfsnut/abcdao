@@ -95,7 +95,7 @@ async function handlePushEvent(payload) {
   
   // Look up user by GitHub username
   const userResult = await pool.query(
-    'SELECT * FROM users WHERE github_username = $1 AND "verified-at" IS NOT NULL',
+    'SELECT * FROM users WHERE github_username = $1 AND verified_at IS NOT NULL',
     [githubUsername]
   );
   
@@ -143,7 +143,7 @@ async function processCommit(user, repository, commit) {
     
     // Insert commit record (reward will be set when processed)
     await pool.query(`
-      INSERT INTO commits ("user-id", commit_hash, repository, commit_message)
+      INSERT INTO commits (user_id, commit_hash, repository, commit_message)
       VALUES ($1, $2, $3, $4)
     `, [
       user.id,
@@ -357,7 +357,7 @@ async function handlePullRequestEvent(payload) {
   
   // Look up user by GitHub username
   const userResult = await pool.query(
-    'SELECT * FROM users WHERE github_username = $1 AND "verified-at" IS NOT NULL',
+    'SELECT * FROM users WHERE github_username = $1 AND verified_at IS NOT NULL',
     [pull_request.user.login]
   );
   
