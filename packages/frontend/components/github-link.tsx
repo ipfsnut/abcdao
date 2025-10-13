@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAccount } from 'wagmi';
 import { useFarcaster } from '@/components/farcaster-miniapp';
 import { config, isInFrame, getCallbackUrl } from '@/lib/config';
 import { useMembership } from '@/hooks/useMembership';

@@ -1,98 +1,153 @@
-# ABC DAO
-## Always. Be. Coding.
+# ABC DAO WHITEPAPER
+## Ship Code, Earn Rewards - The Live Action Developer Game for Farcaster
 
 ---
 
-## THE VALUE
+## ABSTRACT
 
-ABC DAO pays developers in ETH for shipping code. Join for 0.002 ETH, link your GitHub, and earn rewards automatically when you commit. No applications. No voting. Just code and get paid.
+ABC DAO gamifies open-source development by rewarding developers who ship code with $ABC tokens and social recognition on Farcaster. By combining staking mechanics with automatic commit recognition, ABC creates a sustainable ecosystem where developers are incentivized to build in public while earning crypto rewards and growing their reputation.
 
-**Simple mechanics**: Stake $ABC → Earn ETH from trading fees + membership fees. Commit code → Earn $ABC tokens + Farcaster recognition.
+## 1. INTRODUCTION
 
-## HOW IT WORKS
+Building in public should be rewarded. ABC DAO transforms everyday coding into a game where developers earn $ABC tokens and Farcaster recognition simply by shipping code. No grant applications, no complex scoring - just stake your tokens and let your commits do the talking.
 
-1. **Join the DAO** - Pay 0.002 ETH membership fee
-2. **Link GitHub** - Connect your repositories to your Farcaster account  
-3. **Stake $ABC** - Buy and stake tokens to unlock commit rewards
-4. **Ship code** - Every public commit earns $ABC tokens
-5. **Earn ETH** - Stakers split all trading fees and membership revenue
+Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets recognized. Every developer wins.
 
-The ABC Bot monitors your commits and posts celebrations on Farcaster while distributing rewards automatically.
+## 2. TOKENOMICS
 
-## ECONOMICS
+- **Token**: $ABC (v4 Clanker token)
+- **Network**: Base Mainnet  
+- **Supply**: 100,000,000,000 $ABC (100B total supply)
 
-**Token**: $ABC on Base (Clanker v4)  
-**Membership**: 0.002 ETH one-time fee  
-**Revenue Split**: 50% bot wallet, 50% deployer wallet  
+### Revenue Streams for Stakers
+- **Trading fees**: $ETH/$WETH from Clanker trading → Bot wallet → Auto-unwrapped → Staking contract → Distributed to stakers
+- **Membership fees**: 0.002 ETH developer memberships → Staking contract → Distributed to stakers
+- **Developer rewards**: $ABC from trading → Bot wallet → Fixed commit rewards (50,000-1,000,000 $ABC per commit)
 
-### Revenue Flows
-- **Trading fees** → 50% to stakers as ETH rewards
-- **Membership fees** → 100% to stakers as ETH rewards  
-- **Developer rewards** → $ABC from bot wallet reserves
+### Dual Reward System
+Stakers earn $ETH/$WETH (auto-converted to ETH) from two sources while developers earn $ABC for shipping code. The bot automatically unwraps any WETH received into ETH for seamless reward distribution.
 
-### Incentive Alignment
-Stakers fund the reward pool and earn ETH. Developers earn $ABC for commits. More activity = more trading = more rewards for everyone.
+## 3. THE DEVELOPER GAME
 
-## COMMIT REWARDS
+### How to Play
+1. **Join ABC DAO**: Pay 0.002 ETH membership fee to bot wallet
+2. **Link GitHub**: Connect your GitHub account via Farcaster miniapp
+3. **Buy $ABC**: Purchase tokens on Base (Clanker v4 token)
+4. **Stake tokens**: Lock $ABC to unlock commit rewards
+5. **Ship code**: Code normally - all public commits count
+6. **Earn rewards**: Get $ABC for commits + ETH from staking
 
-**Requirements**: Paid membership + $ABC staked  
-**Trigger**: Any public GitHub commit  
-**Reward**: 10 $ABC per commit (max 10/day)  
-**Recognition**: Automatic Farcaster cast by ABC Bot  
+### Staking Benefits
+- Unlock commit rewards (must be staked to earn)
+- **Earn $ETH from trading fees** (primary reward stream) - supports both ETH and WETH
+- **Earn $ETH from membership fees** (secondary reward stream)
+- Automatic WETH unwrapping for seamless reward distribution
+- Higher stake = higher commit rewards
+- Build reputation on Farcaster
+- No governance - just ship and earn
 
-### Reward Rules
-- Public repositories only
-- Must have active $ABC stake
-- Daily limit prevents spam
-- All programming languages count
-- No minimum commit size
+## 4. COMMIT RECOGNITION SYSTEM
 
-## TECHNICAL IMPLEMENTATION
+### The ABC Bot
+- **Platform**: Farcaster account powered by Neynar API
+- **Function**: Monitors GitHub commits from registered developers
+- **Action**: Posts achievement casts and distributes rewards
+
+### Recognition Flow
+1. Registered Developer makes a commit to any public repo
+2. ABC Bot detects the commit via GitHub webhooks
+3. Bot verifies developer has minimum $ABC staked (requirement may vary)
+4. Bot posts cast celebrating the commit
+5. $ABC rewards distributed automatically
+
+### Reward Formula
+- Simple: 1 commit = 1 reward
+- Random reward amounts (50,000 to 1,000,000 $ABC)
+- Must have minimum stake to qualify
+- Daily cap: 10 commits max per developer
+- All public repo commits count equally
+
+## 5. REWARD DISTRIBUTION
+
+### Developer Rewards
+- Funded by $ABC from trading fees
+- Random rewards between 50,000-1,000,000 $ABC per commit
+- Fully automated - no manual intervention
+- Sustainable through continuous fee generation
+
+### Staker Rewards
+- $ETH/$WETH from trading fees distributed to $ABC stakers (WETH auto-unwrapped)
+- Claim anytime from staking contract
+- Compounds with more stakers joining
+- Bot automatically processes WETH → ETH conversion for optimal claiming
+
+## 6. FARCASTER INTEGRATION
+
+### ABC Bot Account
+- **Username**: @abcbot
+- **Purpose**: Automated developer recognition
+- **Powered by**: Neynar API
+- **Status**: Integrated and tested
+
+### Cast Templates
+- "🚀 @username just shipped code! [commit message] → Earned X $ABC"
+- "🔥 @username is on fire! 5 commits today → Total earned: X $ABC"
+- "💎 New milestone: @username has shipped 100 commits with ABC!"
+
+### Social Features
+- Automatic follow of active developers
+- Recast notable achievements
+- Weekly leaderboard posts
+- Community celebration casts
+
+## 7. TECHNICAL ARCHITECTURE
 
 ### Smart Contracts
-- **$ABC Token**: Clanker v4 deployment on Base
-- **Staking Contract**: ETH distribution to $ABC stakers
-- **Revenue routing**: 50/50 split configured in token
+1. **Token Contract**: v4 Clanker $ABC token (deployed via Clanker)
+2. **Staking Contract**: Manages stakes and $ETH distribution 
+   - Built using OpenZeppelin v5.2 security patterns
+   - Based on battle-tested Synthetix StakingRewards architecture
+   - 7-day cooldown period for unstaking
+   - Emergency pause functionality for security
 
-### Infrastructure
-- **Frontend**: abc.epicdylan.com (Cloudflare + Next.js)
-- **Backend**: Railway (PostgreSQL + Redis)
-- **GitHub Integration**: Webhook-based commit detection
-- **Farcaster Bot**: Neynar API for automated posting
+### Membership System
+**Payment Method**: Direct wallet transfer (no smart contract needed)
+- **Fee**: 0.002 ETH one-time payment
+- **Bot Wallet**: `0x475579e65E140B11bc4656dD4b05e0CADc8366eB`
+- **Process**: Pay bot wallet → Submit transaction hash → Backend verification
+- **Benefits**: Lifetime membership + GitHub commit rewards eligibility
+- **Revenue Flow**: ETH to staking contract for rewards distribution
 
-### Data Flow
-1. **User joins** → Database record created → GitHub account linked
-2. **User commits** → GitHub webhook → Reward calculation → $ABC transfer
-3. **Bot posts** → Farcaster cast → Community recognition
-4. **Revenue flows** → ETH to staking contract → Distributed to stakers
+### Backend Services
+1. **GitHub Webhook Service**: Receives commit events
+2. **Neynar Bot Service**: Posts to Farcaster via @abcbot
+3. **Account Linker**: GitHub-Farcaster connection via miniapp
+4. **Membership Processor**: Verifies 0.002 ETH payments to bot wallet
+5. **Reward Distributor**: Sends $ABC from bot wallet for commits
+6. **WETH Unwrapper**: Automatically converts WETH to ETH for reward distribution
+7. **ETH Forwarder**: Manual transfer of membership fees and unwrapped ETH to staking contract
 
-## SECURITY & OPERATION
+### Security Measures
+- **Smart Contract Security**: OpenZeppelin v5.2 libraries (ReentrancyGuard, Pausable, Ownable)
+- **Architecture**: Synthetix-inspired reward calculation (audited by Trail of Bits 2025)
+- **Payment Verification**: On-chain transaction validation for membership fees
+- **Rate limiting** on reward claims
+- **Commit verification** to prevent spoofing
+- **Emergency controls**: Pause functionality for critical situations
+- **Battle-tested patterns**: Following the "beaten path" for minimal security risk
 
-### Contract Security
-- **Staking contract**: OpenZeppelin v5 libraries (ReentrancyGuard, Pausable)
-- **Architecture**: Based on Synthetix StakingRewards (battle-tested)
-- **Unbonding period**: 7 days to prevent flash-loan attacks
-- **Emergency controls**: Pause functionality for critical issues
+## 8. CONCLUSION
 
-### Operational Security
-- **GitHub webhook verification**: HMAC signature validation
-- **Rate limiting**: 10 commits max per user per day
-- **Sybil resistance**: One Farcaster account per GitHub account
-- **Public repos only**: Prevents private code gaming
+ABC DAO strips Web3 devrel to its essential elements: **ship code, earn rewards**. By focusing on the Farcaster community and maintaining radical simplicity, we create a sustainable funding mechanism for the builders who will define the future of decentralized social networks.
 
-### Economic Security
-- **Fixed rewards**: 10 $ABC per commit (no inflation)
-- **Revenue-backed**: ETH rewards funded by real activity
-- **Membership barrier**: 0.002 ETH prevents spam signups
-- **Sustainable model**: No reliance on external funding
-
-## ADDRESSES
-
-**Frontend**: [abc.epicdylan.com](https://abc.epicdylan.com)  
-**Network**: Base Mainnet  
-**Token**: $ABC (`0x5c0872b790bb73e2b3a9778db6e7704095624b07`)  
-**Staking**: (`0x577822396162022654D5bDc9CB58018cB53e7017`)
+The best DAOs don't need complex mechanisms. They need clear purpose, aligned incentives, and committed communities. ABC DAO provides exactly that—nothing more, nothing less.
 
 ---
 
-*Always. Be. Coding. • October 2025*
+**Stake & Ship**: [abc.epicdylan.com](https://abc.epicdylan.com)  
+**Network**: Base Mainnet  
+**Token**: $ABC (`0x5c0872b790bb73e2b3a9778db6e7704095624b07`)  
+**Staking**: (`0x577822396162022654D5bDc9CB58018cB53e7017`)  
+**Bot Wallet**: (`0x475579e65E140B11bc4656dD4b05e0CADc8366eB`) - Supports ETH & WETH
+
+*Version 1.0 | October 2025*

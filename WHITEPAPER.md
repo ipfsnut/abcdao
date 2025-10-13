@@ -20,12 +20,12 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 - **Supply**: 100,000,000,000 $ABC (100B total supply)
 
 ### Revenue Streams for Stakers
-- **Trading fees**: $ETH from Clanker trading → Staking contract → Distributed to stakers
+- **Trading fees**: $ETH/$WETH from Clanker trading → Bot wallet → Auto-unwrapped → Staking contract → Distributed to stakers
 - **Membership fees**: 0.002 ETH developer memberships → Staking contract → Distributed to stakers
-- **Developer rewards**: $ABC from trading → Bot wallet → Random commit rewards
+- **Developer rewards**: $ABC from trading → Bot wallet → Fixed commit rewards (50,000-1,000,000 $ABC per commit)
 
 ### Dual Reward System
-Stakers earn $ETH from two sources while developers earn $ABC for shipping code.
+Stakers earn $ETH/$WETH (auto-converted to ETH) from two sources while developers earn $ABC for shipping code. The bot automatically unwraps any WETH received into ETH for seamless reward distribution.
 
 ## 3. THE DEVELOPER GAME
 
@@ -39,8 +39,9 @@ Stakers earn $ETH from two sources while developers earn $ABC for shipping code.
 
 ### Staking Benefits
 - Unlock commit rewards (must be staked to earn)
-- **Earn $ETH from trading fees** (primary reward stream)
+- **Earn $ETH from trading fees** (primary reward stream) - supports both ETH and WETH
 - **Earn $ETH from membership fees** (secondary reward stream)
+- Automatic WETH unwrapping for seamless reward distribution
 - Higher stake = higher commit rewards
 - Build reputation on Farcaster
 - No governance - just ship and earn
@@ -75,9 +76,10 @@ Stakers earn $ETH from two sources while developers earn $ABC for shipping code.
 - Sustainable through continuous fee generation
 
 ### Staker Rewards
-- $ETH from trading fees distributed to $ABC stakers
+- $ETH/$WETH from trading fees distributed to $ABC stakers (WETH auto-unwrapped)
 - Claim anytime from staking contract
 - Compounds with more stakers joining
+- Bot automatically processes WETH → ETH conversion for optimal claiming
 
 ## 6. FARCASTER INTEGRATION
 
@@ -111,7 +113,7 @@ Stakers earn $ETH from two sources while developers earn $ABC for shipping code.
 ### Membership System
 **Payment Method**: Direct wallet transfer (no smart contract needed)
 - **Fee**: 0.002 ETH one-time payment
-- **Bot Wallet**: `0x0000000000000000000000000000000000000000`
+- **Bot Wallet**: `0x475579e65E140B11bc4656dD4b05e0CADc8366eB`
 - **Process**: Pay bot wallet → Submit transaction hash → Backend verification
 - **Benefits**: Lifetime membership + GitHub commit rewards eligibility
 - **Revenue Flow**: ETH to staking contract for rewards distribution
@@ -122,7 +124,8 @@ Stakers earn $ETH from two sources while developers earn $ABC for shipping code.
 3. **Account Linker**: GitHub-Farcaster connection via miniapp
 4. **Membership Processor**: Verifies 0.002 ETH payments to bot wallet
 5. **Reward Distributor**: Sends $ABC from bot wallet for commits
-6. **ETH Forwarder**: Weekly transfer of membership fees to staking contract
+6. **WETH Unwrapper**: Automatically converts WETH to ETH for reward distribution
+7. **ETH Forwarder**: Manual transfer of membership fees and unwrapped ETH to staking contract
 
 ### Security Measures
 - **Smart Contract Security**: OpenZeppelin v5.2 libraries (ReentrancyGuard, Pausable, Ownable)
@@ -145,7 +148,8 @@ The best DAOs don't need complex mechanisms. They need clear purpose, aligned in
 
 **Stake & Ship**: [abc.epicdylan.com](https://abc.epicdylan.com)  
 **Network**: Base Mainnet  
-**Token**: $ABC (`0x0000000000000000000000000000000000000000`)  
-**Staking**: (`0x0000000000000000000000000000000000000000`)  
+**Token**: $ABC (`0x5c0872b790bb73e2b3a9778db6e7704095624b07`)  
+**Staking**: (`0x577822396162022654D5bDc9CB58018cB53e7017`)  
+**Bot Wallet**: (`0x475579e65E140B11bc4656dD4b05e0CADc8366eB`) - Supports ETH & WETH  
 
 *Version 1.0 | October 2025
