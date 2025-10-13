@@ -119,7 +119,8 @@ export function GitHubLinkPanel() {
       console.log('💸 Transaction sent successfully');
     } catch (error) {
       console.error('❌ Payment transaction failed:', error);
-      alert(`Payment failed: ${error.message || 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Payment failed: ${errorMessage}`);
     }
   };
 
