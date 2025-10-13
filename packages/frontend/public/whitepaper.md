@@ -91,7 +91,7 @@ Stakers fund the reward pool and earn ETH. Developers earn $ABC for commits. Mor
 **Frontend**: [abc.epicdylan.com](https://abc.epicdylan.com)  
 **Network**: Base Mainnet  
 **Token**: $ABC (`0x5c0872b790bb73e2b3a9778db6e7704095624b07`)  
-**Staking**: (deployed after token launch)
+**Staking**: (`0x577822396162022654D5bDc9CB58018cB53e7017`)
 
 ---
 

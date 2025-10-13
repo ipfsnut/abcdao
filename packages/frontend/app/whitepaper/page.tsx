@@ -3,17 +3,37 @@
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import Link from 'next/link';
+import { CONTRACTS } from '@/lib/contracts';
 
 export default function WhitepaperPage() {
   const [whitepaperContent, setWhitepaperContent] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load whitepaper content from static file
+    // Load whitepaper content from static file and inject dynamic addresses
     fetch('/whitepaper.md')
       .then(res => res.text())
       .then(content => {
-        setWhitepaperContent(content);
+        // Get addresses from environment variables with fallbacks
+        const abcTokenAddress = process.env.NEXT_PUBLIC_ABC_TOKEN_ADDRESS || CONTRACTS.ABC_TOKEN?.address;
+        const stakingAddress = process.env.NEXT_PUBLIC_STAKING_CONTRACT_ADDRESS || CONTRACTS.ABC_STAKING?.address;
+        
+        // Replace static addresses with dynamic ones
+        let updatedContent = content;
+        if (abcTokenAddress) {
+          updatedContent = updatedContent.replace(
+            /\*\*Token\*\*: \$ABC \(`[^`]+`\)/g,
+            `**Token**: $ABC (\`${abcTokenAddress}\`)`
+          );
+        }
+        if (stakingAddress) {
+          updatedContent = updatedContent.replace(
+            /\*\*Staking\*\*: \(`[^`]+`\)/g,
+            `**Staking**: (\`${stakingAddress}\`)`
+          );
+        }
+        
+        setWhitepaperContent(updatedContent);
         setLoading(false);
       })
       .catch(err => {
