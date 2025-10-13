@@ -113,7 +113,7 @@ export default function Home() {
       {/* Conditional Content Based on Context */}
       <div className="px-4 mt-6">
         {isInMiniApp ? (
-          /* Miniapp Context: Show Full Functionality */
+          /* Farcaster Miniapp Context: Full DAO Functionality */
           <>
             {/* Mobile-First Tab Navigation */}
             <div className="flex bg-green-950/10 border border-green-900/30 p-1 rounded-lg font-mono overflow-x-auto">
@@ -171,36 +171,8 @@ export default function Home() {
 
             {/* Mobile-Optimized Tab Content */}
             <div className="mt-4">
-              {activeTab === 'stake' && (
-                <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm text-center">
-                  <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
-                    {'>'} stake_ABC()
-                  </h2>
-                  <div className="bg-purple-950/20 border border-purple-900/30 rounded-lg p-4">
-                    <p className="text-purple-400 font-mono text-sm mb-2">
-                      🚧 Coming Soon
-                    </p>
-                    <p className="text-green-600 font-mono text-xs">
-                      Staking will be available after $ABC token deployment
-                    </p>
-                  </div>
-                </div>
-              )}
-              {activeTab === 'vote' && (
-                <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm text-center">
-                  <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
-                    {'>'} rewards_dashboard()
-                  </h2>
-                  <div className="bg-purple-950/20 border border-purple-900/30 rounded-lg p-4">
-                    <p className="text-purple-400 font-mono text-sm mb-2">
-                      🚧 Coming Soon
-                    </p>
-                    <p className="text-green-600 font-mono text-xs">
-                      Rewards dashboard will be available after staking launch
-                    </p>
-                  </div>
-                </div>
-              )}
+              {activeTab === 'stake' && <StakePanel stakingData={stakingData} />}
+              {activeTab === 'vote' && <VotePanel />}
               {activeTab === 'proposals' && <GitHubLinkPanel />}
               {activeTab === 'chat' && (
                 <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm text-center">
@@ -301,36 +273,50 @@ export default function Home() {
             </div>
           </>
         ) : (
-          /* Regular Web Context: Show Whitepaper Button */
-          <div className="flex flex-col items-center justify-center space-y-6 py-12">
-            <div className="text-center space-y-4">
-              <h2 className="text-2xl sm:text-3xl font-bold text-green-400 matrix-glow font-mono">
-                Learn About ABC DAO
-              </h2>
-              <p className="text-green-600 font-mono text-base sm:text-lg max-w-2xl">
-                Discover how developers earn $ABC tokens and ETH rewards by shipping code
-              </p>
+          /* Web Browser Context: Staking and Rewards Only */
+          <>
+            {/* Web User Tab Navigation */}
+            <div className="flex bg-green-950/10 border border-green-900/30 p-1 rounded-lg font-mono max-w-md mx-auto">
+              <button
+                onClick={() => setActiveTab('stake')}
+                className={`flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-sm sm:text-base ${
+                  activeTab === 'stake' 
+                    ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
+                    : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+                }`}
+              >
+                ./stake
+              </button>
+              <button
+                onClick={() => setActiveTab('vote')}
+                className={`flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-sm sm:text-base ${
+                  activeTab === 'vote' 
+                    ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
+                    : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+                }`}
+              >
+                ./rewards
+              </button>
+            </div>
+
+            {/* Web User Tab Content */}
+            <div className="mt-6">
+              {activeTab === 'stake' && <StakePanel stakingData={stakingData} />}
+              {activeTab === 'vote' && <VotePanel />}
             </div>
             
-            <a
-              href="/whitepaper"
-              className="bg-green-900/50 hover:bg-green-900/70 border-2 border-green-700/50 hover:border-green-600 
-                       text-green-400 hover:text-green-300 px-12 py-6 rounded-xl font-mono font-bold text-xl sm:text-2xl
-                       transition-all duration-300 matrix-button matrix-glow hover:scale-105 hover:shadow-lg 
-                       hover:shadow-green-900/30 text-center"
-            >
-              📋 WHITEPAPER
-            </a>
-            
-            <div className="text-center space-y-2 mt-6">
-              <p className="text-green-600 font-mono text-sm">
-                {"// Full functionality available in Farcaster miniapp"}
-              </p>
-              <p className="text-green-700 font-mono text-xs">
-                Coming soon: Web interface for staking and rewards
-              </p>
+            {/* Whitepaper Link */}
+            <div className="text-center mt-8">
+              <a
+                href="/whitepaper"
+                className="inline-block bg-green-900/30 hover:bg-green-900/50 border border-green-700/50 hover:border-green-600 
+                         text-green-400 hover:text-green-300 px-6 py-3 rounded-lg font-mono
+                         transition-all duration-300 matrix-button text-sm"
+              >
+                📋 Read Whitepaper
+              </a>
             </div>
-          </div>
+          </>
         )}
       </div>
       
