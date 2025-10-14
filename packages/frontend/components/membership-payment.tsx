@@ -211,17 +211,17 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
           </div>
           
           <div className="space-y-3 text-xs sm:text-sm font-mono">
-            <div className="flex justify-between text-yellow-600">
-              <span>Status:</span>
-              <span className="text-yellow-400">PAYMENT CONFIRMED</span>
+            <div className="flex justify-between items-center text-yellow-600">
+              <span className="shrink-0">Status:</span>
+              <span className="text-yellow-400 text-right truncate ml-2">PAYMENT CONFIRMED</span>
             </div>
-            <div className="flex justify-between text-yellow-600">
-              <span>GitHub:</span>
-              <span className="text-red-400">⚠️ NOT LINKED</span>
+            <div className="flex justify-between items-center text-yellow-600">
+              <span className="shrink-0">GitHub:</span>
+              <span className="text-red-400 text-right truncate ml-2">⚠️ NOT LINKED</span>
             </div>
-            <div className="flex justify-between text-yellow-600">
-              <span>Fee Paid:</span>
-              <span className="text-green-400">0.002 ETH</span>
+            <div className="flex justify-between items-center text-yellow-600">
+              <span className="shrink-0">Fee Paid:</span>
+              <span className="text-green-400 text-right truncate ml-2">0.002 ETH</span>
             </div>
           </div>
 
@@ -267,17 +267,17 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
           </div>
           
           <div className="space-y-2 text-xs sm:text-sm font-mono">
-            <div className="flex justify-between text-green-600">
-              <span>Status:</span>
-              <span className="text-green-400">ACTIVE</span>
+            <div className="flex justify-between items-center text-green-600">
+              <span className="shrink-0">Status:</span>
+              <span className="text-green-400 text-right truncate ml-2">ACTIVE</span>
             </div>
-            <div className="flex justify-between text-green-600">
-              <span>GitHub:</span>
-              <span className="text-green-400">✓ Linked</span>
+            <div className="flex justify-between items-center text-green-600">
+              <span className="shrink-0">GitHub:</span>
+              <span className="text-green-400 text-right truncate ml-2">✓ Linked</span>
             </div>
-            <div className="flex justify-between text-green-600">
-              <span>Fee Paid:</span>
-              <span className="text-green-400">{MEMBERSHIP_FEE} ETH</span>
+            <div className="flex justify-between items-center text-green-600">
+              <span className="shrink-0">Fee Paid:</span>
+              <span className="text-green-400 text-right truncate ml-2">{MEMBERSHIP_FEE} ETH</span>
             </div>
           </div>
 

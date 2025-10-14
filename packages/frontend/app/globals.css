@@ -135,3 +135,66 @@ body::after {
   box-shadow: 0 0 0 2px rgba(0, 255, 65, 0.2);
   outline: none;
 }
+
+/* Responsive Typography Utilities */
+.text-responsive-xs {
+  font-size: 0.75rem; /* 12px */
+}
+
+@screen xs {
+  .text-responsive-xs {
+    font-size: 0.875rem; /* 14px */
+  }
+}
+
+.text-responsive-sm {
+  font-size: 0.875rem; /* 14px */
+}
+
+@screen xs {
+  .text-responsive-sm {
+    font-size: 1rem; /* 16px */
+  }
+}
+
+.text-responsive-base {
+  font-size: 1rem; /* 16px */
+}
+
+@screen xs {
+  .text-responsive-base {
+    font-size: 1.125rem; /* 18px */
+  }
+}
+
+.text-responsive-lg {
+  font-size: 1.125rem; /* 18px */
+}
+
+@screen xs {
+  .text-responsive-lg {
+    font-size: 1.25rem; /* 20px */
+  }
+}
+
+@screen sm {
+  .text-responsive-lg {
+    font-size: 1.5rem; /* 24px */
+  }
+}
+
+.text-responsive-xl {
+  font-size: 1.25rem; /* 20px */
+}
+
+@screen xs {
+  .text-responsive-xl {
+    font-size: 1.5rem; /* 24px */
+  }
+}
+
+@screen sm {
+  .text-responsive-xl {
+    font-size: 1.875rem; /* 30px */
+  }
+}

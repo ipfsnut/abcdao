@@ -1,20 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
-import { parseEther } from 'viem';
+import { useAccount } from 'wagmi';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { config, isInFrame, getCallbackUrl } from '@/lib/config';
 import { useMembership } from '@/hooks/useMembership';
 import { MembershipPaymentPanel } from '@/components/membership-payment';
 
-// Bot's wallet address for membership payments
-const BOT_WALLET_ADDRESS = '0x475579e65E140B11bc4656dD4b05e0CADc8366eB' as `0x${string}`;
-const MEMBERSHIP_FEE = '0.002'; // ETH
 
 export function GitHubLinkPanel() {
   const { user: profile, isInMiniApp } = useFarcaster();
-  const { address, isConnected } = useAccount();
+  const { isConnected } = useAccount();
   const membership = useMembership();
   const [isLinked, setIsLinked] = useState(false);
   const [githubUsername, setGithubUsername] = useState('');
@@ -22,23 +18,6 @@ export function GitHubLinkPanel() {
   const [inFrame, setInFrame] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [unlinking, setUnlinking] = useState(false);
-
-  // Payment transaction hooks
-  const { 
-    sendTransaction, 
-    data: paymentTxHash,
-    isPending: isPaymentPending,
-    isError: isPaymentError 
-  } = useSendTransaction();
-
-  // Wait for payment confirmation
-  const { 
-    isLoading: isPaymentConfirming, 
-    isSuccess: isPaymentSuccess 
-  } = useWaitForTransactionReceipt({
-    hash: paymentTxHash,
-    query: { enabled: !!paymentTxHash }
-  });
 
   useEffect(() => {
     // Detect if we're in a Farcaster frame or iframe
@@ -75,86 +54,7 @@ export function GitHubLinkPanel() {
     };
   }, [profile, membership.hasGithub, membership.githubUsername]);
 
-  // Handle successful payment
-  useEffect(() => {
-    if (isPaymentSuccess && paymentTxHash && profile) {
-      console.log('💰 Payment confirmed on-chain!', paymentTxHash);
-      console.log('📡 Processing payment on backend...');
-      
-      // Immediately process payment on backend
-      processPaymentOnBackend(paymentTxHash);
-    }
-  }, [isPaymentSuccess, paymentTxHash, profile]);
 
-  const processPaymentOnBackend = async (txHash: string) => {
-    if (!profile) return;
-
-    try {
-      const response = await fetch(`${config.backendUrl}/api/users/${profile.fid}/process-payment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          txHash: txHash,
-        }),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('✅ Payment processed successfully:', result);
-        
-        // Refresh membership status
-        await membership.refreshStatus();
-        
-        // Trigger GitHub linking after successful payment processing
-        setTimeout(async () => {
-          console.log('🔗 Triggering GitHub OAuth...');
-          try {
-            await linkGitHub();
-          } catch (error) {
-            console.error('GitHub linking failed:', error);
-          }
-        }, 1000); // Reduced delay since payment is already processed
-        
-      } else {
-        const error = await response.json();
-        console.error('❌ Payment processing failed:', error);
-        alert(`Payment processing failed: ${error.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('❌ Error processing payment:', error);
-      alert('Error processing payment. Please contact support.');
-    }
-  };
-
-  const handlePayment = async () => {
-    if (!isConnected || !profile) {
-      console.error('Payment failed: Not connected or no profile');
-      return;
-    }
-    
-    console.log('🚀 Initiating payment...', {
-      connected: isConnected,
-      profile: profile.username,
-      fid: profile.fid,
-      to: BOT_WALLET_ADDRESS,
-      value: MEMBERSHIP_FEE
-    });
-    
-    try {
-      await sendTransaction({
-        to: BOT_WALLET_ADDRESS,
-        value: parseEther(MEMBERSHIP_FEE),
-        data: `0x${Buffer.from(`ABC_DAO_MEMBERSHIP_FID:${profile.fid}`).toString('hex')}` as `0x${string}`,
-      });
-      console.log('💸 Transaction sent successfully');
-    } catch (error) {
-      console.error('❌ Payment transaction failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      alert(`Payment failed: ${errorMessage}`);
-    }
-  };
 
   const checkGitHubLink = async (fid: number) => {
     try {
@@ -290,83 +190,21 @@ export function GitHubLinkPanel() {
     );
   }
 
-  // Show membership payment if GitHub is linked but not yet a member
-  if (isLinked && !membership.isMember && !showPayment) {
-    return (
-      <div className="space-y-4">
-        <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-          <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
-            {'>'} github_linked()
-          </h2>
-          
-          <div className="bg-green-950/20 border border-green-700/50 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-green-400 font-mono text-sm sm:text-base">✓ GitHub Linked</p>
-              <span className="text-green-600 font-mono text-xs sm:text-sm">@{githubUsername}</span>
-            </div>
-            
-            <div className="space-y-2 text-xs sm:text-sm font-mono">
-              <div className="flex justify-between text-green-600">
-                <span>Status:</span>
-                <span className="text-green-400">LINKED</span>
-              </div>
-              <div className="flex justify-between text-green-600">
-                <span>Next Step:</span>
-                <span className="text-yellow-400">Pay Membership</span>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-3">
-              <button
-                onClick={() => setShowPayment(true)}
-                className="flex-1 bg-green-900/50 hover:bg-green-900/70 text-green-400 font-mono py-2.5 rounded-lg 
-                         border border-green-700/50 transition-all duration-300 hover:matrix-glow"
-              >
-                {'>'} PROCEED TO PAYMENT
-              </button>
-              
-              <button
-                onClick={unlinkGitHub}
-                disabled={unlinking}
-                className="px-4 bg-red-900/50 hover:bg-red-900/70 text-red-400 font-mono py-2.5 rounded-lg 
-                         border border-red-700/50 transition-all duration-300 hover:shadow-red-400/20 hover:shadow-lg
-                         disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Cancel and unlink GitHub"
-              >
-                {unlinking ? '...' : '✕'}
-              </button>
-            </div>
-            
-            <p className="text-green-600/70 font-mono text-xs text-center mt-2">
-              Don&apos;t want to pay? Click ✕ to unlink and cancel
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show payment panel - PAYMENT MUST COME FIRST!
+  // Show payment panel first (simplified flow)
   if (showPayment && !membership.isMember) {
     return (
       <div className="space-y-4">
         <button
           onClick={() => setShowPayment(false)}
-          className="text-green-600 hover:text-green-400 font-mono text-sm transition-colors"
+          className="text-green-600 hover:text-green-400 font-mono text-sm transition-colors min-h-[44px] px-3 py-2"
         >
           {'<'} Back
         </button>
         <MembershipPaymentPanel 
           onPaymentComplete={() => {
-            // After successful payment, auto-link GitHub
             setShowPayment(false);
             membership.refreshStatus();
-            setTimeout(() => {
-              if (!isLinked) {
-                console.log('Payment complete, initiating GitHub linking...');
-                linkGitHub();
-              }
-            }, 2000);
+            // GitHub linking will happen in main flow after payment
           }}
         />
       </div>
@@ -376,55 +214,79 @@ export function GitHubLinkPanel() {
   return (
     <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
       <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
-        {'>'} link_github()
+        {membership.isMember && isLinked ? '> member_dashboard()' : '> join_dao()'}
       </h2>
       
       <div className="space-y-4">
         {membership.isMember && isLinked ? (
+          // Active Member Dashboard
           <div className="bg-green-950/20 border border-green-700/50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-green-400 font-mono text-sm sm:text-base">✓ Active Member</p>
               <span className="text-green-600 font-mono text-xs sm:text-sm">@{githubUsername}</span>
             </div>
             
-            <div className="space-y-2 text-xs sm:text-sm font-mono">
-              <div className="flex justify-between text-green-600">
-                <span>Status:</span>
-                <span className="text-green-400">ACTIVE</span>
+            <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm font-mono">
+              <div className="bg-black/40 border border-green-900/30 rounded p-2">
+                <span className="text-green-600">Commits:</span>
+                <span className="text-green-400 ml-2">{membership.totalCommits || 0}</span>
               </div>
-              <div className="flex justify-between text-green-600">
-                <span>Commits:</span>
-                <span className="text-green-400">{membership.totalCommits || 0}</span>
-              </div>
-              <div className="flex justify-between text-green-600">
-                <span>Earned:</span>
-                <span className="text-green-400">{membership.totalEarned || 0} $ABC</span>
+              <div className="bg-black/40 border border-green-900/30 rounded p-2">
+                <span className="text-green-600">Earned:</span>
+                <span className="text-green-400 ml-2">{membership.totalEarned || 0} $ABC</span>
               </div>
             </div>
 
             <div className="mt-3 p-3 bg-black/40 border border-green-900/30 rounded-lg">
-              <p className="text-green-600 font-mono text-xs mb-2">{"// Active rewards:"}</p>
+              <p className="text-green-600 font-mono text-xs mb-2">{"// Reward rates:"}</p>
               <ul className="space-y-1 text-green-400 font-mono text-xs">
-                <li>→ Push commits = 50k-1M $ABC (random)</li>
-                <li>→ PR merged = Coming Soon™</li>
+                <li>→ Commit = 50k-1M $ABC (random)</li>
                 <li>→ Daily limit = 10 commits max</li>
               </ul>
             </div>
+            
+            <button
+              onClick={unlinkGitHub}
+              disabled={unlinking}
+              className="w-full mt-3 bg-red-900/30 hover:bg-red-900/50 text-red-400 font-mono py-2.5 rounded-lg 
+                       border border-red-700/50 transition-all duration-300 text-sm
+                       disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+            >
+              {unlinking ? '⏳ Unlinking...' : '🔗 Unlink GitHub'}
+            </button>
+          </div>
+        ) : membership.isMember && !isLinked ? (
+          // Member needs to link GitHub
+          <div className="space-y-4">
+            <div className="bg-blue-950/20 border border-blue-700/50 rounded-lg p-4">
+              <p className="text-blue-400 font-mono text-sm mb-2">✓ Membership Active</p>
+              <p className="text-green-600 font-mono text-xs">Now link your GitHub to start earning rewards</p>
+            </div>
+            
+            <button
+              onClick={linkGitHub}
+              disabled={loading}
+              className="w-full bg-green-900/50 hover:bg-green-900/70 text-green-400 font-mono py-3 rounded-lg 
+                       border border-green-700/50 transition-all duration-300 hover:matrix-glow text-sm sm:text-base
+                       disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px]"
+            >
+              {loading ? '🔗 Connecting to GitHub...' : '🔗 Link GitHub Account'}
+            </button>
           </div>
         ) : (
-          <>
+          // Non-member signup flow
+          <div className="space-y-4">
             <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3">
-              <h3 className="font-mono text-green-400 mb-2 text-sm">{"// Join ABC DAO:"}</h3>
+              <h3 className="font-mono text-green-400 mb-2 text-sm">{"// Simple steps:"}</h3>
               <ol className="space-y-1 text-green-600 font-mono text-xs">
-                <li>1. Pay 0.002 ETH membership</li>
-                <li>2. Link your GitHub</li>
-                <li>3. Push commits to earn $ABC</li>
-                <li>4. Stake $ABC for ETH rewards</li>
+                <li>1. Pay 0.002 ETH membership fee</li>
+                <li>2. Link GitHub automatically</li>
+                <li>3. Start earning $ABC for commits</li>
               </ol>
             </div>
 
             <div className="bg-black/60 border border-green-900/30 rounded-lg p-3">
-              <p className="text-green-600 font-mono text-xs mb-2">{"// Connected:"}</p>
+              <p className="text-green-600 font-mono text-xs mb-2">{"// Your profile:"}</p>
               <div className="flex items-center gap-2">
                 <img 
                   src={`https://api.dicebear.com/7.x/identicon/svg?seed=${profile.fid}`} 
@@ -439,30 +301,15 @@ export function GitHubLinkPanel() {
             </div>
 
             <button
-              onClick={handlePayment}
-              disabled={loading || isPaymentPending || isPaymentConfirming || !isConnected}
-              className="w-full bg-green-900/50 hover:bg-green-900/70 text-green-400 font-mono py-2.5 sm:py-3 rounded-lg 
+              onClick={() => setShowPayment(true)}
+              disabled={!isConnected}
+              className="w-full bg-green-900/50 hover:bg-green-900/70 text-green-400 font-mono py-3 rounded-lg 
                        border border-green-700/50 transition-all duration-300 hover:matrix-glow text-sm sm:text-base
-                       disabled:opacity-50 disabled:cursor-not-allowed"
+                       disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px]"
             >
-              {isPaymentConfirming 
-                ? '⏳ Confirming Payment...' 
-                : isPaymentPending 
-                ? '💸 Sending Payment...'
-                : loading 
-                ? '🔗 Linking GitHub...'
-                : !isConnected
-                ? '🔌 Connect Wallet First'
-                : '💰 Pay 0.002 ETH to Join'}
+              {!isConnected ? '🔌 Connect Wallet First' : '💰 Pay 0.002 ETH to Join'}
             </button>
-            
-            <div className="text-center mt-2">
-              <p className="text-yellow-400 font-mono text-xs">
-                ⚠️ Payment required before GitHub linking
-              </p>
-            </div>
-
-          </>
+          </div>
         )}
       </div>
     </div>

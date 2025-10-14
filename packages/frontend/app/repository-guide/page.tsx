@@ -403,15 +403,9 @@ git push origin main
               rel="noopener noreferrer"
               className="w-full bg-purple-900/50 hover:bg-purple-900/70 text-purple-400 border border-purple-700/50 px-4 py-3 rounded-lg font-mono transition-all duration-300 hover:matrix-glow flex items-center justify-center gap-2"
             >
-              <span>Contact for Partnership</span>
+              <span>Apply for Partnership</span>
               <span className="text-lg">→</span>
             </a>
-            
-            <div className="mt-3 p-3 bg-purple-950/20 border border-purple-800/50 rounded-lg">
-              <p className="text-purple-400 font-mono text-xs">
-                💰 Payment: Send 1M $ABC tokens to bot wallet
-              </p>
-            </div>
           </div>
         </div>
 
@@ -430,7 +424,7 @@ git push origin main
                     <span className="text-blue-600">Payload URL:</span>
                     <br />
                     <code className="text-blue-300">[Provided by ABC DAO team]</code>
-                  </div>
+fye                  </div>
                   <div>
                     <span className="text-blue-600">Content type:</span>
                     <br />

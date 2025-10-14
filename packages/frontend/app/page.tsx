@@ -14,20 +14,23 @@ import Link from 'next/link';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { useState } from 'react';
 import { useStaking } from '@/hooks/useStaking';
-import { useUnbonding } from '@/hooks/useUnbonding';
 import { useTreasury } from '@/hooks/useTreasury';
 import { useStats } from '@/hooks/useStats';
 import { useMembership } from '@/hooks/useMembership';
 import { Toaster } from 'sonner';
+import { StatsSkeleton, TabContentSkeleton, RewardsSkeleton } from '@/components/skeleton-loader';
 
 export default function Home() {
   const { isInMiniApp } = useFarcaster();
-  const { isConnected } = useAccount();
+  useAccount();
   const membership = useMembership();
   const [activeTab, setActiveTab] = useState<'stake' | 'rewards' | 'proposals' | 'chat' | 'swap'>(isInMiniApp ? 'stake' : 'swap');
   const stakingData = useStaking();
   const treasuryData = useTreasury();
-  const { stats } = useStats();
+  const { stats, loading: statsLoading } = useStats();
+  
+  // Check if core data is still loading
+  const isDataLoading = !stakingData.tokenBalance || !treasuryData.treasuryBalance || statsLoading;
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
@@ -44,11 +47,11 @@ export default function Home() {
                     alt="ABC Logo" 
                     className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
                   />
-                  <h1 className="text-xl sm:text-2xl font-bold matrix-glow">
+                  <h1 className="text-responsive-xl font-bold matrix-glow">
                     {'>'} ABC_DAO
                   </h1>
                 </div>
-                <p className="text-xs text-green-600 font-mono mb-2">
+                <p className="text-responsive-xs text-green-600 font-mono mb-2">
                   Ship code. Earn rewards.
                 </p>
                 <div className="bg-green-950/20 border border-green-900/50 rounded-lg px-3 py-2 mb-2">
@@ -73,7 +76,7 @@ export default function Home() {
                     className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
                   />
                   <div>
-                    <h1 className="text-lg sm:text-2xl font-bold matrix-glow">
+                    <h1 className="text-responsive-xl font-bold matrix-glow">
                       {'>'} ABC_DAO
                     </h1>
                     <p className="hidden sm:block text-xs text-green-600 font-mono">
@@ -102,10 +105,35 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Mobile-First Stats Bar - Horizontal Scroll on Mobile */}
+      {/* Responsive Stats Bar - Stacked on small, grid on larger screens */}
       <div className="bg-black/80 border-b border-green-900/30 backdrop-blur-sm">
         <div className="px-4 py-3">
-          <div className="flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 lg:grid-cols-5 sm:overflow-visible sm:pb-0">
+          {isDataLoading ? (
+            <StatsSkeleton />
+          ) : (
+            <>
+              {/* Mobile: Two-row grid for easier scanning */}
+              <div className="grid grid-cols-2 gap-2 xs:hidden">
+            <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-2 matrix-button">
+              <p className="text-green-600 text-responsive-xs font-mono">Treasury</p>
+              <p className="text-responsive-sm font-bold text-green-400 matrix-glow">{parseFloat(treasuryData.treasuryBalance).toFixed(0)} $ABC</p>
+            </div>
+            <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-2 matrix-button">
+              <p className="text-green-600 text-responsive-xs font-mono">Staked</p>
+              <p className="text-responsive-sm font-bold text-green-400 matrix-glow">{parseFloat(stakingData.totalStaked).toFixed(0)} $ABC</p>
+            </div>
+            <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-2 matrix-button">
+              <p className="text-green-600 text-responsive-xs font-mono">Rewards</p>
+              <p className="text-responsive-sm font-bold text-green-400 matrix-glow">{parseFloat(stakingData.totalRewardsDistributed).toFixed(3)} ETH</p>
+            </div>
+            <Link href="/roster" className="bg-green-950/20 border border-green-900/50 rounded-lg p-2 matrix-button hover:bg-green-900/30 hover:border-green-700/50 transition-all duration-300 block">
+              <p className="text-green-600 text-responsive-xs font-mono">Devs</p>
+              <p className="text-responsive-sm font-bold text-green-400 matrix-glow">{stats.activeDevelopers}</p>
+            </Link>
+          </div>
+          
+          {/* Larger screens: Horizontal layout with original styling */}
+          <div className="hidden xs:flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 lg:grid-cols-5 sm:overflow-visible sm:pb-0">
             <div className="min-w-[140px] sm:min-w-0 bg-green-950/20 border border-green-900/50 rounded-lg p-3 matrix-button">
               <p className="text-green-600 text-xs font-mono">Treasury</p>
               <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">{parseFloat(treasuryData.treasuryBalance).toFixed(0)} $ABC</p>
@@ -124,6 +152,13 @@ export default function Home() {
             </Link>
             <TokenSupplyMini />
           </div>
+          
+              {/* Token supply always visible on mobile, integrated into grid */}
+              <div className="mt-2 xs:hidden">
+                <TokenSupplyMini />
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -136,7 +171,7 @@ export default function Home() {
             <div className="flex bg-green-950/10 border border-green-900/30 p-1 rounded-lg font-mono overflow-x-auto">
               <button
                 onClick={() => setActiveTab('stake')}
-                className={`px-3 py-2 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-sm sm:text-base ${
+                className={`px-4 py-3 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-responsive-sm min-h-[44px] ${
                   activeTab === 'stake' 
                     ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                     : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
@@ -148,7 +183,7 @@ export default function Home() {
               {membership.isMember && (
                 <button
                   onClick={() => setActiveTab('rewards')}
-                  className={`px-3 py-2 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-sm sm:text-base ${
+                  className={`px-4 py-3 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-responsive-sm min-h-[44px] ${
                     activeTab === 'rewards' 
                       ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                       : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
@@ -162,7 +197,7 @@ export default function Home() {
               {!membership.isMember && (
                 <button
                   onClick={() => setActiveTab('proposals')}
-                  className={`px-3 py-2 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-sm sm:text-base ${
+                  className={`px-4 py-3 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-responsive-sm min-h-[44px] ${
                     activeTab === 'proposals' 
                       ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                       : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
@@ -173,7 +208,7 @@ export default function Home() {
               )}
               <button
                 onClick={() => setActiveTab('chat')}
-                className={`px-3 py-2 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-sm sm:text-base ${
+                className={`px-4 py-3 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-responsive-sm min-h-[44px] ${
                   activeTab === 'chat' 
                     ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                     : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
@@ -183,7 +218,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setActiveTab('swap')}
-                className={`px-3 py-2 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-sm sm:text-base ${
+                className={`px-4 py-3 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-responsive-sm min-h-[44px] ${
                   activeTab === 'swap' 
                     ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                     : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
@@ -195,8 +230,12 @@ export default function Home() {
 
             {/* Mobile-Optimized Tab Content */}
             <div className="mt-4">
-              {activeTab === 'stake' && <StakePanel stakingData={stakingData} />}
-              {activeTab === 'rewards' && membership.isMember && <ClaimRewardsPanel />}
+              {activeTab === 'stake' && (
+                isDataLoading ? <TabContentSkeleton /> : <StakePanel stakingData={stakingData} />
+              )}
+              {activeTab === 'rewards' && membership.isMember && (
+                isDataLoading ? <RewardsSkeleton /> : <ClaimRewardsPanel />
+              )}
               {activeTab === 'proposals' && !membership.isMember && <GitHubLinkPanel />}
               {activeTab === 'chat' && (
                 <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm text-center">
@@ -234,7 +273,7 @@ export default function Home() {
             <div className="flex bg-green-950/10 border border-green-900/30 p-1 rounded-lg font-mono max-w-lg mx-auto">
               <button
                 onClick={() => setActiveTab('swap')}
-                className={`flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-sm sm:text-base ${
+                className={`flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-sm sm:text-base min-h-[44px] ${
                   activeTab === 'swap' 
                     ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                     : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
@@ -244,7 +283,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setActiveTab('stake')}
-                className={`flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-sm sm:text-base ${
+                className={`flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-sm sm:text-base min-h-[44px] ${
                   activeTab === 'stake' 
                     ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                     : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
@@ -254,7 +293,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setActiveTab('rewards')}
-                className={`flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-sm sm:text-base ${
+                className={`flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-sm sm:text-base min-h-[44px] ${
                   activeTab === 'rewards' 
                     ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                     : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
@@ -267,8 +306,12 @@ export default function Home() {
             {/* Web User Tab Content */}
             <div className="mt-6">
               {activeTab === 'swap' && <SwapWidget />}
-              {activeTab === 'stake' && <StakePanel stakingData={stakingData} />}
-              {activeTab === 'rewards' && <ClaimRewardsPanel />}
+              {activeTab === 'stake' && (
+                isDataLoading ? <TabContentSkeleton /> : <StakePanel stakingData={stakingData} />
+              )}
+              {activeTab === 'rewards' && (
+                isDataLoading ? <RewardsSkeleton /> : <ClaimRewardsPanel />
+              )}
             </div>
             
             {/* Whitepaper Link */}
@@ -287,7 +330,7 @@ export default function Home() {
       </div>
       
       <ContractAddressesFooter />
-      <Toaster position="bottom-right" />
+      <Toaster position="top-center" />
     </div>
   );
 }
@@ -298,7 +341,7 @@ function StakePanel({ stakingData }: { stakingData: ReturnType<typeof useStaking
 
   return (
     <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-      <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
+      <h2 className="text-responsive-lg font-bold mb-3 text-green-400 matrix-glow font-mono">
         {isStaking ? '> stake_ABC()' : '> unstake_ABC()'}
       </h2>
       
@@ -353,15 +396,15 @@ function StakePanel({ stakingData }: { stakingData: ReturnType<typeof useStaking
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.0"
-              className="flex-1 bg-black border border-green-900/50 rounded-lg px-3 py-2 text-green-400 font-mono text-sm sm:text-base
+              className="flex-1 bg-black border border-green-900/50 rounded-lg px-4 py-3 text-green-400 font-mono text-sm sm:text-base
                          focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600
-                         placeholder:text-green-800"
+                         placeholder:text-green-800 min-h-[44px]"
             />
             <button 
               onClick={() => setAmount(isStaking ? stakingData.tokenBalance : stakingData.stakedAmount)}
               className="bg-green-950/20 border border-green-900/50 hover:border-green-700/50 
-                               text-green-400 hover:text-green-300 px-3 sm:px-4 py-2 rounded-lg font-mono 
-                               transition-all duration-300 matrix-button text-sm sm:text-base">
+                               text-green-400 hover:text-green-300 px-4 py-3 rounded-lg font-mono 
+                               transition-all duration-300 matrix-button text-sm sm:text-base min-h-[44px] min-w-[60px]">
               MAX
             </button>
           </div>
@@ -419,141 +462,5 @@ function StakePanel({ stakingData }: { stakingData: ReturnType<typeof useStaking
   );
 }
 
-function VotePanel() {
-  const stakingData = useStaking();
 
-  return (
-    <div className="space-y-4">
-      <h2 className="text-lg sm:text-xl font-bold text-green-400 matrix-glow font-mono">{'>'} rewards_dashboard()</h2>
-      
-      {/* Mobile-First ETH Staking Rewards */}
-      <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-        <h3 className="text-base sm:text-lg font-semibold mb-3 text-green-400 font-mono">{'>'} ETH_Rewards</h3>
-        
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-3">
-            <p className="text-green-600 text-xs font-mono">Total_Earned</p>
-            <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">{parseFloat(stakingData.totalEarned).toFixed(3)} ETH</p>
-          </div>
-          
-          <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-3">
-            <p className="text-green-600 text-xs font-mono">Pending</p>
-            <p className="text-lg sm:text-xl font-bold text-green-300 matrix-glow">{parseFloat(stakingData.pendingRewards).toFixed(3)} ETH</p>
-          </div>
-        </div>
-
-        <button 
-          onClick={stakingData.handleClaimRewards}
-          disabled={stakingData.isClaimLoading || parseFloat(stakingData.pendingRewards) === 0}
-          className="w-full bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 
-                           text-green-400 hover:text-green-300 py-2.5 sm:py-3 rounded-lg font-mono font-medium 
-                           transition-all duration-300 matrix-button matrix-glow disabled:opacity-50 text-sm sm:text-base">
-          {'>'} {stakingData.isClaimLoading ? 'CLAIMING...' : 'CLAIM_ETH()'}
-        </button>
-      </div>
-
-      {/* Mobile-First Developer Rewards */}
-      <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-        <h3 className="text-base sm:text-lg font-semibold mb-3 text-green-400 font-mono">{'>'} Dev_Rewards</h3>
-        
-        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3">
-          <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-2 sm:p-3">
-            <p className="text-green-600 text-xs font-mono">Commits</p>
-            <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">0</p>
-          </div>
-          
-          <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-2 sm:p-3">
-            <p className="text-green-600 text-xs font-mono">$ABC</p>
-            <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">0</p>
-          </div>
-          
-          <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-2 sm:p-3">
-            <p className="text-green-600 text-xs font-mono">Rank</p>
-            <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">--</p>
-          </div>
-        </div>
-
-        <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3">
-          <h4 className="font-semibold mb-2 text-green-400 font-mono text-sm">{'>'} Reward Rates</h4>
-          <div className="text-xs text-green-600 font-mono space-y-1">
-            <p className="text-green-500">• Commit = 50k-1M $ABC (random)</p>
-            <p className="text-green-500">• PR Merged = Coming Soon™</p>
-            <p className="text-green-500">• Daily Limit = 10 commits</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Unbonding Queue */}
-      <UnbondingPanel stakingData={stakingData} />
-    </div>
-  );
-}
-
-function UnbondingPanel({ stakingData }: { stakingData: ReturnType<typeof useStaking> }) {
-  const unbondingData = useUnbonding();
-
-  return (
-    <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-      <h3 className="text-base sm:text-lg font-semibold mb-3 text-green-400 font-mono">{'>'} Unbonding Queue (7-Day Period)</h3>
-      
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-3">
-          <p className="text-green-600 text-xs font-mono">Unbonding</p>
-          <p className="text-lg sm:text-xl font-bold text-yellow-400 matrix-glow">{parseFloat(unbondingData.totalUnbonding).toFixed(1)}</p>
-        </div>
-        
-        <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-3">
-          <p className="text-green-600 text-xs font-mono">Withdrawable</p>
-          <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">{parseFloat(unbondingData.withdrawableAmount).toFixed(1)}</p>
-        </div>
-      </div>
-
-      {unbondingData.unbondingQueue.length > 0 ? (
-        <div className="space-y-2">
-          <h4 className="font-semibold text-green-400 font-mono text-sm">{'>'} Queue</h4>
-          {unbondingData.unbondingQueue.map((item, index) => {
-            const isReady = item.releaseTime <= Date.now() / 1000;
-            const timeLeft = item.releaseTime - Date.now() / 1000;
-            
-            return (
-              <div key={index} className="bg-green-950/10 border border-green-900/30 rounded-lg p-2.5">
-                <div className="flex justify-between items-center">
-                  <div className="font-mono text-xs sm:text-sm">
-                    <span className="text-green-400">{parseFloat(item.amount).toFixed(1)}</span>
-                    <span className="text-green-600 ml-2">
-                      {isReady ? 'Ready!' : `${Math.ceil(timeLeft / 3600)}h`}
-                    </span>
-                  </div>
-                  <div className={`px-2 py-0.5 rounded text-xs font-mono ${
-                    isReady 
-                      ? 'bg-green-900/50 text-green-400' 
-                      : 'bg-yellow-900/50 text-yellow-400'
-                  }`}>
-                    {isReady ? 'READY' : 'WAIT'}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3 text-center">
-          <p className="text-green-600 font-mono text-xs sm:text-sm">No tokens unbonding</p>
-          <p className="text-green-500 font-mono text-xs mt-1">Unstaked tokens enter a 7-day unbonding period</p>
-        </div>
-      )}
-
-      {parseFloat(unbondingData.withdrawableAmount) > 0 && (
-        <button 
-          onClick={stakingData.handleCompleteUnstake}
-          disabled={stakingData.isUnstakeLoading}
-          className="w-full bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 
-                           text-green-400 hover:text-green-300 py-2.5 sm:py-3 rounded-lg font-mono font-medium 
-                           transition-all duration-300 matrix-button matrix-glow disabled:opacity-50 mt-3 text-sm sm:text-base">
-          {'>'} {stakingData.isUnstakeLoading ? 'WITHDRAWING...' : 'WITHDRAW()'}
-        </button>
-      )}
-    </div>
-  );
-}
 
