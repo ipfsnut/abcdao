@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Download, ExternalLink, X } from 'lucide-react';
+// Using emojis instead of lucide-react icons to avoid dependency
 
 export function RepositoryIntegrationButton() {
   const [isOpen, setIsOpen] = useState(false);
@@ -196,9 +196,9 @@ git push origin main
               </h2>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-blue-400 hover:text-blue-300 p-1"
+                className="text-blue-400 hover:text-blue-300 p-1 text-xl"
               >
-                <X size={20} />
+                ✕
               </button>
             </div>
 
@@ -211,7 +211,7 @@ git push origin main
                     onClick={downloadGuide}
                     className="bg-blue-900/50 hover:bg-blue-900/70 text-blue-400 border border-blue-700/50 p-4 rounded-lg font-mono transition-all duration-300 hover:matrix-glow flex items-center gap-3"
                   >
-                    <Download size={20} />
+                    <span className="text-xl">📥</span>
                     <div className="text-left">
                       <div className="font-bold">Download Guide</div>
                       <div className="text-xs text-blue-300">Full integration instructions</div>
@@ -224,7 +224,7 @@ git push origin main
                     rel="noopener noreferrer"
                     className="bg-green-900/50 hover:bg-green-900/70 text-green-400 border border-green-700/50 p-4 rounded-lg font-mono transition-all duration-300 hover:matrix-glow flex items-center gap-3"
                   >
-                    <ExternalLink size={20} />
+                    <span className="text-xl">🔗</span>
                     <div className="text-left">
                       <div className="font-bold">Join ABC DAO</div>
                       <div className="text-xs text-green-300">Start earning rewards</div>
