@@ -34,7 +34,7 @@ This guide shows repository owners how to integrate with ABC DAO's reward system
 4. Configure the webhook:
 
 \`\`\`
-Payload URL: https://abcdao-production.up.railway.app/api/webhooks/github
+Payload URL: [Provided by ABC DAO team]
 Content type: application/json
 Secret: [Contact ABC DAO team for webhook secret]
 Events: Select "Push events"
@@ -53,8 +53,8 @@ After setup, make a test commit. If successful, you should see:
 ## 💰 How Rewards Work
 
 ### Automatic Reward Calculation
-- **Base reward**: Calculated per commit
-- **Bonus multipliers**: Applied for priority commits, quality contributions
+- **Base reward**: 50,000-1,000,000 $ABC per commit
+- **Bonus rewards**: Applied for priority commits, quality contributions
 - **Distribution**: Rewards added to contributor's claimable balance
 
 ### Commit Tags (Optional)
@@ -93,7 +93,7 @@ Contributors with GitHub linked and ready to earn rewards:
 
 ### Reward Calculation Factors
 - **Commit size**: Lines changed, files modified
-- **Repository importance**: Multiplier based on project significance  
+- **Repository importance**: Base reward varies by project significance  
 - **Contribution quality**: Manual review for bonus rewards
 - **Time factors**: Recent activity bonuses
 
@@ -375,7 +375,7 @@ git push origin main
               <div className="text-3xl font-bold text-purple-300">
                 1M $ABC Per Repository
               </div>
-              <p className="text-sm text-purple-600">Partnership payment</p>
+              <p className="text-sm text-purple-600">Introductory special offer</p>
             </div>
             
             <ul className="space-y-3 mb-6">
@@ -403,9 +403,15 @@ git push origin main
               rel="noopener noreferrer"
               className="w-full bg-purple-900/50 hover:bg-purple-900/70 text-purple-400 border border-purple-700/50 px-4 py-3 rounded-lg font-mono transition-all duration-300 hover:matrix-glow flex items-center justify-center gap-2"
             >
-              <span>Apply for Partnership</span>
+              <span>Contact for Partnership</span>
               <span className="text-lg">→</span>
             </a>
+            
+            <div className="mt-3 p-3 bg-purple-950/20 border border-purple-800/50 rounded-lg">
+              <p className="text-purple-400 font-mono text-xs">
+                💰 Payment: Send 1M $ABC tokens to bot wallet
+              </p>
+            </div>
           </div>
         </div>
 
@@ -423,7 +429,7 @@ git push origin main
                   <div>
                     <span className="text-blue-600">Payload URL:</span>
                     <br />
-                    <code className="text-blue-300">https://abcdao-production.up.railway.app/api/webhooks/github</code>
+                    <code className="text-blue-300">[Provided by ABC DAO team]</code>
                   </div>
                   <div>
                     <span className="text-blue-600">Content type:</span>

@@ -24,7 +24,7 @@ export default function Home() {
   const { isInMiniApp } = useFarcaster();
   const { isConnected } = useAccount();
   const membership = useMembership();
-  const [activeTab, setActiveTab] = useState<'stake' | 'rewards' | 'proposals' | 'chat' | 'swap'>('stake');
+  const [activeTab, setActiveTab] = useState<'stake' | 'rewards' | 'proposals' | 'chat' | 'swap'>(isInMiniApp ? 'stake' : 'swap');
   const stakingData = useStaking();
   const treasuryData = useTreasury();
   const { stats } = useStats();
@@ -231,7 +231,17 @@ export default function Home() {
           /* Web Browser Context: Staking and Rewards Only */
           <>
             {/* Web User Tab Navigation */}
-            <div className="flex bg-green-950/10 border border-green-900/30 p-1 rounded-lg font-mono max-w-md mx-auto">
+            <div className="flex bg-green-950/10 border border-green-900/30 p-1 rounded-lg font-mono max-w-lg mx-auto">
+              <button
+                onClick={() => setActiveTab('swap')}
+                className={`flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-sm sm:text-base ${
+                  activeTab === 'swap' 
+                    ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
+                    : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+                }`}
+              >
+                ./swap
+              </button>
               <button
                 onClick={() => setActiveTab('stake')}
                 className={`flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-sm sm:text-base ${
@@ -256,6 +266,7 @@ export default function Home() {
 
             {/* Web User Tab Content */}
             <div className="mt-6">
+              {activeTab === 'swap' && <SwapWidget />}
               {activeTab === 'stake' && <StakePanel stakingData={stakingData} />}
               {activeTab === 'rewards' && <ClaimRewardsPanel />}
             </div>
