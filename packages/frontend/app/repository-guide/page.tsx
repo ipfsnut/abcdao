@@ -468,7 +468,7 @@ git push origin main
               <div className="mt-4 p-3 bg-blue-950/20 border border-blue-800/50 rounded">
                 <p className="text-blue-300 text-sm font-mono">
                   <strong>Example:</strong><br />
-                  <code>git commit -m "Fix auth bug #priority"</code>
+                  <code>git commit -m &quot;Fix auth bug #priority&quot;</code>
                 </p>
               </div>
             </div>
