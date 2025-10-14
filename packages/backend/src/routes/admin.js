@@ -1,5 +1,6 @@
 import express from 'express';
 import { ethers } from 'ethers';
+import { getPool, refreshConnectionPool, validateSchema } from '../services/database.js';
 
 const router = express.Router();
 
@@ -218,6 +219,86 @@ router.get('/wallet/weth-balance', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('WETH balance check error:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Database management endpoints
+router.get('/database/schema-check', requireAuth, async (req, res) => {
+  try {
+    await validateSchema();
+    res.json({
+      success: true,
+      message: 'Schema validation passed',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Schema validation failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+router.post('/database/refresh-connections', requireAuth, async (req, res) => {
+  try {
+    await refreshConnectionPool();
+    res.json({
+      success: true,
+      message: 'Database connection pool refreshed',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Connection refresh failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+router.get('/database/status', requireAuth, async (req, res) => {
+  try {
+    const pool = getPool();
+    
+    // Get basic connection info
+    const connectionInfo = await pool.query('SELECT current_database(), current_user, version()');
+    const db = connectionInfo.rows[0];
+    
+    // Get table counts
+    const tables = ['users', 'commits', 'memberships', 'migrations'];
+    const counts = {};
+    
+    for (const table of tables) {
+      try {
+        const result = await pool.query(`SELECT COUNT(*) FROM ${table}`);
+        counts[table] = parseInt(result.rows[0].count);
+      } catch (e) {
+        counts[table] = `Error: ${e.message}`;
+      }
+    }
+    
+    // Get recent migrations
+    const migrations = await pool.query('SELECT name, executed_at FROM migrations ORDER BY executed_at DESC LIMIT 5');
+    
+    res.json({
+      database: db.current_database,
+      user: db.current_user,
+      version: db.version.split(' ').slice(0, 2).join(' '),
+      tableCounts: counts,
+      recentMigrations: migrations.rows,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Database status check failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
   }
 });
 

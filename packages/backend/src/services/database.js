@@ -16,6 +16,9 @@ export async function initializeDatabase() {
   
   // Run migrations
   await runMigrations();
+  
+  // Validate schema after migrations
+  await validateSchema();
 }
 
 export function getPool() {
@@ -23,6 +26,90 @@ export function getPool() {
     throw new Error('Database not initialized. Call initializeDatabase() first.');
   }
   return pool;
+}
+
+// Force connection pool refresh (useful after schema changes)
+export async function refreshConnectionPool() {
+  if (pool) {
+    console.log('🔄 Refreshing database connection pool...');
+    await pool.end();
+    pool = null;
+  }
+  await initializeDatabase();
+  console.log('✅ Connection pool refreshed');
+}
+
+// Validate critical schema elements
+export async function validateSchema() {
+  const client = await pool.connect();
+  
+  try {
+    console.log('🔍 Validating database schema...');
+    
+    // Check critical columns exist
+    const criticalChecks = [
+      { table: 'commits', column: 'tags', expected: 'ARRAY' },
+      { table: 'commits', column: 'priority', expected: 'character varying' },
+      { table: 'commits', column: 'is_private', expected: 'boolean' },
+      { table: 'users', column: 'notification_settings', expected: 'jsonb' },
+      { table: 'users', column: 'is_active', expected: 'boolean' }
+    ];
+    
+    const missingColumns = [];
+    
+    for (const check of criticalChecks) {
+      const result = await client.query(`
+        SELECT data_type 
+        FROM information_schema.columns 
+        WHERE table_name = $1 AND column_name = $2
+      `, [check.table, check.column]);
+      
+      if (result.rows.length === 0) {
+        missingColumns.push(`${check.table}.${check.column}`);
+      } else {
+        const actualType = result.rows[0].data_type;
+        if (!actualType.includes(check.expected.toLowerCase()) && !check.expected.includes(actualType)) {
+          console.log(`⚠️ Type mismatch: ${check.table}.${check.column} is ${actualType}, expected ${check.expected}`);
+        }
+      }
+    }
+    
+    // Check critical tables exist
+    const criticalTables = ['users', 'commits', 'memberships', 'priority_usage', 'processed_casts'];
+    const missingTables = [];
+    
+    for (const tableName of criticalTables) {
+      const result = await client.query(`
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_name = $1 AND table_schema = 'public'
+      `, [tableName]);
+      
+      if (result.rows.length === 0) {
+        missingTables.push(tableName);
+      }
+    }
+    
+    if (missingColumns.length > 0 || missingTables.length > 0) {
+      console.error('❌ Schema validation failed:');
+      if (missingTables.length > 0) {
+        console.error('  Missing tables:', missingTables.join(', '));
+      }
+      if (missingColumns.length > 0) {
+        console.error('  Missing columns:', missingColumns.join(', '));
+      }
+      throw new Error('Critical schema elements missing. Run migrations.');
+    }
+    
+    console.log('✅ Schema validation passed');
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Schema validation error:', error.message);
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 async function runMigrations() {
@@ -310,6 +397,83 @@ async function runMigrations() {
 
       await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration8]);
       console.log('✅ Migration: Ensured farcaster_fid unique constraint');
+    }
+
+    // Migration 9: Add missing columns that caused webhook failures
+    const migration9 = 'add_missing_webhook_columns';
+    const exists9 = await client.query('SELECT * FROM migrations WHERE name = $1', [migration9]);
+    
+    if (exists9.rows.length === 0) {
+      // Add missing columns to commits table (for commit tags and priorities)
+      await client.query(`
+        ALTER TABLE commits 
+        ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}',
+        ADD COLUMN IF NOT EXISTS priority VARCHAR(20) DEFAULT 'normal',
+        ADD COLUMN IF NOT EXISTS is_private BOOLEAN DEFAULT false
+      `);
+
+      // Add missing columns to users table (for notifications and status)
+      await client.query(`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS notification_settings JSONB DEFAULT '{
+          "commit_casts": {"enabled": true, "tag_me": true, "include_repo_name": true, "include_commit_message": true, "max_message_length": 100},
+          "daily_limit_casts": {"enabled": true, "tag_me": true, "custom_message": null},
+          "welcome_casts": {"enabled": true, "tag_me": true, "custom_message": null},
+          "privacy": {"show_github_username": true, "show_real_name": false}
+        }'::jsonb,
+        ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true
+      `);
+
+      // Create priority_usage table for tracking priority tag limits
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS priority_usage (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          commit_hash VARCHAR(40) NOT NULL,
+          tag_type VARCHAR(20) NOT NULL,
+          used_at TIMESTAMP DEFAULT NOW(),
+          week_start DATE NOT NULL,
+          UNIQUE(user_id, commit_hash)
+        )
+      `);
+
+      // Add indexes for new columns and table
+      await client.query('CREATE INDEX IF NOT EXISTS idx_commits_tags ON commits USING GIN(tags)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_commits_priority ON commits(priority)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_priority_usage_user_week ON priority_usage(user_id, week_start)');
+
+      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration9]);
+      console.log('✅ Migration: Added missing webhook columns (tags, priority, notification_settings, is_active)');
+    }
+
+    // Migration 10: Add connection pool health check
+    const migration10 = 'add_connection_health_monitoring';
+    const exists10 = await client.query('SELECT * FROM migrations WHERE name = $1', [migration10]);
+    
+    if (exists10.rows.length === 0) {
+      // Create a simple health check table to detect schema drift
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS schema_health (
+          id SERIAL PRIMARY KEY,
+          check_name VARCHAR(255) UNIQUE NOT NULL,
+          expected_result TEXT NOT NULL,
+          last_checked TIMESTAMP DEFAULT NOW(),
+          status VARCHAR(20) DEFAULT 'unknown'
+        )
+      `);
+
+      // Insert health checks for critical columns
+      await client.query(`
+        INSERT INTO schema_health (check_name, expected_result) VALUES
+        ('commits_has_tags_column', 'true'),
+        ('users_has_notification_settings', 'true'),
+        ('priority_usage_table_exists', 'true')
+        ON CONFLICT (check_name) DO NOTHING
+      `);
+
+      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration10]);
+      console.log('✅ Migration: Added schema health monitoring');
     }
 
     

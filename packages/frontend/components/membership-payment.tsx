@@ -22,6 +22,7 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
   const [hasGithub, setHasGithub] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [needsGithubRelink, setNeedsGithubRelink] = useState(false);
   
   const { 
     sendTransaction, 
@@ -50,12 +51,16 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
       const response = await fetch(`${config.backendUrl}/api/users/${fid}/status`);
       if (response.ok) {
         const data = await response.json();
-        setHasGithub(!!data.user?.github_username);
-        // Check multiple payment indicators to prevent double payments
+        const hasGithubLinked = !!data.user?.github_username;
         const hasPayment = !!(data.membership_tx_hash || 
                              data.user?.membership_tx_hash || 
                              data.membership_status === 'paid');
+        
+        setHasGithub(hasGithubLinked);
         setIsPaid(hasPayment);
+        
+        // Detect users who have paid but need to link GitHub
+        setNeedsGithubRelink(hasPayment && !hasGithubLinked);
       }
     } catch (error) {
       console.error('Error checking membership status:', error);
@@ -143,6 +148,110 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
       toast.error('Failed to send payment transaction');
     }
   };
+
+  const handleGithubLinking = async () => {
+    if (!profile) {
+      toast.error('Please connect your Farcaster account first');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${config.backendUrl}/api/auth/github/authorize`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          farcasterFid: profile.fid,
+          farcasterUsername: profile.username,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        window.open(data.authUrl, '_blank', 'width=600,height=700');
+        toast.success('GitHub linking window opened. Please complete the process.');
+        
+        // Check for updates every few seconds after opening GitHub linking
+        const checkInterval = setInterval(() => {
+          if (profile) {
+            checkMembershipStatus(profile.fid);
+            // Stop checking if GitHub is now linked
+            if (hasGithub) {
+              clearInterval(checkInterval);
+              toast.success('GitHub account linked successfully!');
+            }
+          }
+        }, 3000);
+        
+        // Stop checking after 2 minutes
+        setTimeout(() => clearInterval(checkInterval), 120000);
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Failed to start GitHub linking');
+      }
+    } catch (error) {
+      console.error('GitHub linking error:', error);
+      toast.error('Failed to start GitHub linking process');
+    }
+  };
+
+  // Special case: User has paid but needs to link GitHub
+  if (needsGithubRelink) {
+    return (
+      <div className="bg-black/40 border border-yellow-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+        <h2 className="text-lg sm:text-xl font-bold mb-3 text-yellow-400 matrix-glow font-mono">
+          {'>'} complete_setup()
+        </h2>
+        <div className="bg-yellow-950/20 border border-yellow-700/50 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-yellow-400 font-mono text-sm sm:text-base">⚠️ Payment Received</p>
+            <span className="text-green-600 font-mono text-xs sm:text-sm">PAID</span>
+          </div>
+          
+          <div className="space-y-3 text-xs sm:text-sm font-mono">
+            <div className="flex justify-between text-yellow-600">
+              <span>Status:</span>
+              <span className="text-yellow-400">PAYMENT CONFIRMED</span>
+            </div>
+            <div className="flex justify-between text-yellow-600">
+              <span>GitHub:</span>
+              <span className="text-red-400">⚠️ NOT LINKED</span>
+            </div>
+            <div className="flex justify-between text-yellow-600">
+              <span>Fee Paid:</span>
+              <span className="text-green-400">0.002 ETH</span>
+            </div>
+          </div>
+
+          <div className="mt-4 p-3 bg-black/40 border border-yellow-900/30 rounded-lg">
+            <p className="text-yellow-600 font-mono text-xs mb-2">{"// Action Required:"}</p>
+            <p className="text-yellow-400 font-mono text-xs mb-3">
+              Link your GitHub account to start earning $ABC for commits
+            </p>
+            
+            <button
+              onClick={handleGithubLinking}
+              className="w-full bg-yellow-900/50 hover:bg-yellow-900/70 text-yellow-400 font-mono py-2 sm:py-2.5 rounded-lg 
+                       border border-yellow-700/50 transition-all duration-300 hover:matrix-glow
+                       text-sm sm:text-base font-bold"
+            >
+              LINK GITHUB ACCOUNT
+            </button>
+          </div>
+
+          <div className="mt-3 p-3 bg-black/40 border border-yellow-900/30 rounded-lg">
+            <p className="text-yellow-600 font-mono text-xs mb-2">{"// After linking GitHub:"}</p>
+            <ul className="space-y-1 text-yellow-400 font-mono text-xs">
+              <li>→ Start earning $ABC for commits</li>
+              <li>→ Participate in governance</li>
+              <li>→ Access full DAO benefits</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isPaid) {
     return (

@@ -1,4 +1,4 @@
-0x66950b11d43cff503709239a5da7f92b339da50932dbbf80da90f3f5ee4cbb4eimport { NeynarAPIClient } from '@neynar/nodejs-sdk';
+import { NeynarAPIClient } from '@neynar/nodejs-sdk';
 import { TwitterApi } from 'twitter-api-v2';
 import TelegramBot from 'node-telegram-bot-api';
 

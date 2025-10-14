@@ -83,5 +83,13 @@ STAKING_CONTRACT_FIXES.md
 STAKING_CONTRACT_TESTING.md
 TESTING_AND_DEPLOYMENT_WORKFLOW.md
 
-# Claude instructions
+# Claude instructions and documentation
 CLAUDE.md
+railway-db-duplication-document.md
+database-consolidation-plan.md
+build-validation-summary.md
+database-elimination-complete.md
+codebase-upgrade-complete.md
+
+# Database utilities and scripts
+packages/backend/scripts/db-utils.js
