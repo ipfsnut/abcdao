@@ -7,6 +7,7 @@ import { useSendTransaction } from 'wagmi';
 import { toast } from 'sonner';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { config } from '@/lib/config';
+import { TransactionValidator } from './transaction-validator';
 
 // Bot's wallet address for receiving membership payments
 const BOT_WALLET_ADDRESS = '0x475579e65E140B11bc4656dD4b05e0CADc8366eB' as `0x${string}`;
@@ -405,6 +406,9 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
           </ol>
         </div>
       </div>
+
+      {/* Transaction Validator */}
+      <TransactionValidator onValidationSuccess={() => checkMembershipStatus(profile?.fid!)} />
     </div>
   );
 }

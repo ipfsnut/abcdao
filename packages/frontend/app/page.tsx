@@ -4,6 +4,7 @@ import { ContractAddressesFooter } from '@/components/contract-addresses-footer'
 import { FarcasterAuth } from '@/components/farcaster-auth';
 import { GitHubLinkPanel } from '@/components/github-link';
 import { WhitepaperButton } from '@/components/whitepaper-button';
+import { RepositoryIntegrationButton } from '@/components/repository-integration-button';
 import { SwapWidget } from '@/components/swap-widget';
 import { ClaimRewardsPanel } from '@/components/claim-rewards';
 import { TokenSupplyMini } from '@/components/token-supply-chart';
@@ -54,7 +55,10 @@ export default function Home() {
                   <p className="text-green-600 text-xs font-mono text-center">Your Balance</p>
                   <p className="text-sm font-bold text-green-400 matrix-glow text-center">{parseFloat(stakingData.tokenBalance).toFixed(2)} $ABC</p>
                 </div>
-                <WhitepaperButton />
+                <div className="flex flex-col gap-2">
+                  <WhitepaperButton />
+                  <RepositoryIntegrationButton />
+                </div>
               </div>
             </>
           ) : (
@@ -81,6 +85,7 @@ export default function Home() {
                 {/* Mobile-Optimized Actions */}
                 <div className="flex items-center gap-2">
                   <WhitepaperButton />
+                  <RepositoryIntegrationButton />
                   <div className="hidden sm:block">
                     <FarcasterAuth />
                   </div>

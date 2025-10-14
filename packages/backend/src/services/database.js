@@ -476,6 +476,107 @@ async function runMigrations() {
       console.log('✅ Migration: Added schema health monitoring');
     }
 
+    // Migration 11: Add repository registration system
+    const migration11 = 'add_repository_registration_system';
+    const exists11 = await client.query('SELECT * FROM migrations WHERE name = $1', [migration11]);
+    
+    if (exists11.rows.length === 0) {
+      // Create registered_repositories table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS registered_repositories (
+          id SERIAL PRIMARY KEY,
+          repository_name VARCHAR(255) NOT NULL, -- format: "owner/repo"
+          repository_url TEXT NOT NULL,
+          registered_by_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          registration_type VARCHAR(20) NOT NULL, -- 'member' or 'partner'
+          webhook_configured BOOLEAN DEFAULT false,
+          webhook_secret VARCHAR(255),
+          reward_multiplier DECIMAL(3,2) DEFAULT 1.0,
+          payment_tx_hash VARCHAR(66), -- for partner registrations
+          payment_amount DECIMAL(18,2), -- $ABC amount paid
+          status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'active', 'inactive'
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW(),
+          expires_at TIMESTAMP, -- for partner registrations
+          UNIQUE(repository_name)
+        )
+      `);
+
+      // Create repository_permissions table to track user repo access
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS repository_permissions (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          repository_name VARCHAR(255) NOT NULL,
+          permission_level VARCHAR(20) NOT NULL, -- 'admin', 'write', 'read'
+          verified_at TIMESTAMP,
+          last_checked TIMESTAMP DEFAULT NOW(),
+          UNIQUE(user_id, repository_name)
+        )
+      `);
+
+      // Create partner_applications table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS partner_applications (
+          id SERIAL PRIMARY KEY,
+          organization_name VARCHAR(255) NOT NULL,
+          contact_email VARCHAR(255) NOT NULL,
+          repository_name VARCHAR(255) NOT NULL,
+          repository_url TEXT NOT NULL,
+          description TEXT,
+          requested_multiplier DECIMAL(3,2) DEFAULT 2.0,
+          payment_tx_hash VARCHAR(66),
+          payment_verified BOOLEAN DEFAULT false,
+          status VARCHAR(20) DEFAULT 'submitted', -- 'submitted', 'approved', 'rejected', 'active'
+          submitted_by_user_id INTEGER REFERENCES users(id),
+          reviewed_by_user_id INTEGER REFERENCES users(id),
+          review_notes TEXT,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
+
+      // Add indexes
+      await client.query('CREATE INDEX IF NOT EXISTS idx_registered_repos_type ON registered_repositories(registration_type)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_registered_repos_status ON registered_repositories(status)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_repo_permissions_user ON repository_permissions(user_id)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_partner_apps_status ON partner_applications(status)');
+
+      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration11]);
+      console.log('✅ Migration: Added repository registration system');
+    }
+
+    // Migration 12: Add payment recovery system
+    const migration12 = 'add_payment_recovery_system';
+    const exists12 = await client.query('SELECT * FROM migrations WHERE name = $1', [migration12]);
+    
+    if (exists12.rows.length === 0) {
+      // Create payment_recoveries table for orphaned payments
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS payment_recoveries (
+          id SERIAL PRIMARY KEY,
+          transaction_hash VARCHAR(66) UNIQUE NOT NULL,
+          from_address VARCHAR(42) NOT NULL,
+          amount_eth DECIMAL(18,6) NOT NULL,
+          block_number INTEGER NOT NULL,
+          status VARCHAR(20) DEFAULT 'pending_review', -- 'pending_review', 'matched', 'processed', 'ignored'
+          matched_user_id INTEGER REFERENCES users(id),
+          processed_by_user_id INTEGER REFERENCES users(id),
+          admin_notes TEXT,
+          detected_at TIMESTAMP DEFAULT NOW(),
+          processed_at TIMESTAMP
+        )
+      `);
+
+      // Add indexes for payment recovery system
+      await client.query('CREATE INDEX IF NOT EXISTS idx_payment_recoveries_status ON payment_recoveries(status)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_payment_recoveries_tx_hash ON payment_recoveries(transaction_hash)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_payment_recoveries_from_address ON payment_recoveries(from_address)');
+
+      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration12]);
+      console.log('✅ Migration: Added payment recovery system');
+    }
+
     
   } catch (error) {
     console.error('❌ Migration failed:', error);

@@ -115,7 +115,55 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 - Weekly leaderboard posts
 - Community celebration casts
 
-## 7. TECHNICAL ARCHITECTURE
+## 7. MEMBERSHIP SYSTEM & BENEFITS
+
+### Developer Membership (0.002 ETH)
+**Core Benefits**:
+- **Commit Recasts**: Automatic Farcaster recognition for every commit
+- **Variable Rewards**: Earn 50,000-1,000,000 $ABC per commit (randomized)
+- **Repository Registration**: Add up to 3 public repositories to reward system
+- **Priority Tags**: Use #priority, #milestone, #docs tags for bonus rewards
+- **Governance Rights**: Vote on DAO proposals and treasury decisions
+- **Staking Eligibility**: Stake $ABC to earn $ETH from trading fees
+
+**Repository Integration**:
+- Members can register up to **3 public repositories** for automatic rewards
+- GitHub webhook integration tracks commits in real-time  
+- Bot automatically casts achievements: "🚀 @username shipped code! Earned X $ABC"
+- Commit tags (#priority, #milestone) trigger bonus reward multipliers
+- All repositories must be public and member must have admin access
+
+### Partnership Program (1,000,000 $ABC)
+**Organizational Benefits**:
+- **Enhanced Multipliers**: 2x-5x reward rates for all contributors
+- **Priority Support**: Dedicated partnership management
+- **Featured Promotion**: Highlighted in community channels and bot casts
+- **Custom Structures**: Tailored reward systems for specific project needs
+- **Unlimited Repositories**: Add any number of repositories to reward system
+- **Partnership Badge**: Special recognition in all community interactions
+
+**Partnership Qualification**:
+- Payment of 1,000,000 $ABC tokens to partnership contract
+- Organization must maintain active development community
+- Repositories must be substantial open-source projects
+- Commitment to promoting ABC DAO to contributors
+
+### Repository Reward System
+**Automatic Processing**:
+- Webhook monitors all registered repositories 24/7
+- Only commits from ABC DAO members trigger rewards
+- Bot posts immediate recognition on Farcaster
+- Rewards automatically added to claimable balance
+- No manual intervention required
+
+**Smart Recognition**:
+- Base rewards: 50,000-1,000,000 $ABC (randomized)
+- Priority commits: +50% bonus for #priority tag
+- Milestone commits: +100% bonus for #milestone tag  
+- Documentation: +25% bonus for #docs tag
+- Partnership repos: 2x-5x base multiplier applied
+
+## 8. TECHNICAL ARCHITECTURE
 
 ### Smart Contracts
 1. **Token Contract**: v4 Clanker $ABC token (deployed via Clanker)

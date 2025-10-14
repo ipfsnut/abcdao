@@ -18,6 +18,9 @@ import batchRoutes from './routes/batch.js';
 import testGithubRoutes from './routes/test-github.js';
 import commitTagRoutes from './routes/commit-tags.js';
 import tokenSupplyRoutes from './routes/token-supply.js';
+import repositoryRoutes from './routes/repositories.js';
+import transactionValidationRoutes from './routes/transaction-validation.js';
+import paymentRecoveryRoutes from './routes/payment-recovery.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
@@ -25,6 +28,7 @@ import { setupQueues } from './services/queue.js';
 import { RewardDebtCron } from './jobs/reward-debt-cron.js';
 import { NightlyLeaderboardJob } from './jobs/nightly-leaderboard-cron.js';
 import { PaymentMonitor } from './services/payment-monitor.js';
+import { PaymentRecoveryCron } from './jobs/payment-recovery-cron.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -88,6 +92,9 @@ app.use('/api/batch', batchRoutes);
 app.use('/api/test', testGithubRoutes);
 app.use('/api/stats', tokenSupplyRoutes);
 app.use('/api/commits', commitTagRoutes);
+app.use('/api/repositories', repositoryRoutes);
+app.use('/api/auth', transactionValidationRoutes);
+app.use('/api/admin', paymentRecoveryRoutes);
 
 // Custom cast endpoint (requires admin key for security)
 app.post('/api/cast/custom', async (req, res) => {
@@ -235,6 +242,18 @@ async function startServer() {
     } else {
       console.warn('⚠️  Bot wallet address not configured, skipping payment monitor');
     }
+
+    // Start payment recovery cron (always run)
+    try {
+      const paymentRecoveryCron = new PaymentRecoveryCron();
+      paymentRecoveryCron.start();
+      console.log('✅ Payment recovery cron job started (runs every 12 hours)');
+      
+      // Store reference for graceful shutdown
+      global.paymentRecoveryCron = paymentRecoveryCron;
+    } catch (recoveryError) {
+      console.warn('⚠️  Payment recovery cron setup failed:', recoveryError.message);
+    }
     
     // Start server - bind to 0.0.0.0 for Railway
     app.listen(PORT, '0.0.0.0', () => {
@@ -260,6 +279,11 @@ process.on('SIGINT', () => {
   // Stop payment monitor
   if (global.paymentMonitor) {
     global.paymentMonitor.stopMonitoring();
+  }
+  
+  // Stop payment recovery cron
+  if (global.paymentRecoveryCron) {
+    global.paymentRecoveryCron.stop();
   }
   
   process.exit(0);
