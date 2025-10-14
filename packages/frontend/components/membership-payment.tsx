@@ -408,7 +408,7 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
       </div>
 
       {/* Transaction Validator */}
-      <TransactionValidator onValidationSuccess={() => checkMembershipStatus(profile?.fid!)} />
+      <TransactionValidator onValidationSuccess={() => profile?.fid && checkMembershipStatus(profile.fid)} />
     </div>
   );
 }
