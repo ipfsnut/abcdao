@@ -61,6 +61,11 @@ app.use(cors({
       return callback(null, true);
     }
     
+    // Allow Cloudflare Pages deployments
+    if (origin.includes('.pages.dev')) {
+      return callback(null, true);
+    }
+    
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
