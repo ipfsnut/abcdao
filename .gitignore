@@ -93,3 +93,6 @@ codebase-upgrade-complete.md
 
 # Database utilities and scripts
 packages/backend/scripts/db-utils.js
+
+# Repository integration guide and documentation
+REPOSITORY-INTEGRATION-GUIDE.md
