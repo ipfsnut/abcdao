@@ -373,7 +373,7 @@ git push origin main
                 🏢 Partner Organizations
               </h3>
               <div className="text-3xl font-bold text-purple-300">
-                1M $ABC
+                1M $ABC Per Repository
               </div>
               <p className="text-sm text-purple-600">Partnership payment</p>
             </div>
@@ -382,10 +382,6 @@ git push origin main
               <li className="flex items-start gap-3">
                 <span className="text-purple-500 text-lg">✓</span>
                 <span className="text-purple-200"><strong>Unlimited repositories</strong></span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-purple-500 text-lg">✓</span>
-                <span className="text-purple-200">Enhanced multipliers <strong>(2x-5x)</strong></span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-purple-500 text-lg">✓</span>
