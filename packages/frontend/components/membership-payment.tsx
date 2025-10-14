@@ -50,8 +50,12 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
       const response = await fetch(`${config.backendUrl}/api/users/${fid}/status`);
       if (response.ok) {
         const data = await response.json();
-        setHasGithub(!!data.github_username);
-        setIsPaid(!!data.membership_tx_hash);
+        setHasGithub(!!data.user?.github_username);
+        // Check multiple payment indicators to prevent double payments
+        const hasPayment = !!(data.membership_tx_hash || 
+                             data.user?.membership_tx_hash || 
+                             data.membership_status === 'paid');
+        setIsPaid(hasPayment);
       }
     } catch (error) {
       console.error('Error checking membership status:', error);
@@ -111,6 +115,20 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
 
     if (!hasGithub) {
       toast.error('Please link your GitHub account first');
+      return;
+    }
+
+    // Double-check payment status before sending transaction
+    if (isPaid) {
+      toast.error('Membership already paid! Please refresh the page.');
+      return;
+    }
+
+    // Recheck membership status to prevent race conditions
+    await checkMembershipStatus(profile.fid);
+    if (isPaid) {
+      toast.error('Payment already processed! Refreshing page...');
+      setTimeout(() => window.location.reload(), 2000);
       return;
     }
 
