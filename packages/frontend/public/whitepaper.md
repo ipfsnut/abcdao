@@ -19,13 +19,23 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 - **Network**: Base Mainnet  
 - **Supply**: 100,000,000,000 $ABC (100B total supply)
 
-### Revenue Streams for Stakers
-- **Trading fees**: $ETH/$WETH from Clanker trading → Bot wallet → Auto-unwrapped → Staking contract → Distributed to stakers
-- **Membership fees**: 0.002 ETH developer memberships → Staking contract → Distributed to stakers
-- **Developer rewards**: $ABC from trading → Bot wallet → Fixed commit rewards (50,000-1,000,000 $ABC per commit)
+### Fee Distribution Model
+
+**Clanker Trading Fees ($WETH + $ABC)**:
+- **50%** → Dev wallet (primary treasury/collector)
+- **50%** → Bot wallet → Auto-unwrapped → Staking contract → Distributed to stakers
+
+**Membership Fees ($ETH)**:
+- **100%** → Bot wallet → Staking contract → Distributed to stakers
+
+**Developer Rewards ($ABC)**:
+- Funded from Bot wallet's portion of $ABC trading fees
+- Random rewards (50,000-1,000,000 $ABC per commit)
 
 ### Dual Reward System
-Stakers earn $ETH/$WETH (auto-converted to ETH) from two sources while developers earn $ABC for shipping code. The bot automatically unwraps any WETH received into ETH for seamless reward distribution.
+- **Stakers**: Earn $ETH from 50% of Clanker trading fees + 100% of membership fees
+- **Developers**: Earn $ABC tokens for commits (funded from Bot wallet's trading fee portion)
+- **Dev Wallet**: Holds 50% of all Clanker trading fees as primary treasury reserves
 
 ## 3. THE DEVELOPER GAME
 
@@ -39,8 +49,8 @@ Stakers earn $ETH/$WETH (auto-converted to ETH) from two sources while developer
 
 ### Staking Benefits
 - Unlock commit rewards (must be staked to earn)
-- **Earn $ETH from trading fees** (primary reward stream) - supports both ETH and WETH
-- **Earn $ETH from membership fees** (secondary reward stream)
+- **Earn $ETH from 50% of Clanker trading fees** (primary reward stream)
+- **Earn $ETH from 100% of membership fees** (secondary reward stream)
 - Automatic WETH unwrapping for seamless reward distribution
 - Higher stake = higher commit rewards
 - Build reputation on Farcaster
@@ -71,6 +81,7 @@ Stakers earn $ETH/$WETH (auto-converted to ETH) from two sources while developer
 ## 5. REWARD DISTRIBUTION
 
 ### Developer Rewards (Current Phase)
+- Funded by $ABC from Bot wallet's 50% share of trading fees
 - Random rewards between 50,000-1,000,000 $ABC per commit
 - Immediate cast announcements via @abc-bot with commit URLs
 - PostgreSQL tracking with job queue processing (Bull/Redis)
@@ -78,10 +89,15 @@ Stakers earn $ETH/$WETH (auto-converted to ETH) from two sources while developer
 - Future implementation: Smart contract-based claimable rewards
 
 ### Staker Rewards
-- $ETH/$WETH from trading fees distributed to $ABC stakers (WETH auto-unwrapped)
+- $ETH from Bot wallet's 50% share of Clanker trading fees (WETH auto-unwrapped)
+- $ETH from 100% of membership fees
 - Claim anytime from staking contract
 - Compounds with more stakers joining
-- Bot automatically processes WETH → ETH conversion for optimal claiming
+
+### Treasury Reserves
+- Dev wallet holds 50% of all Clanker trading fees ($WETH + $ABC)
+- Primary treasury for long-term project sustainability
+- Separate from operational Bot wallet distributions
 
 ## 6. FARCASTER INTEGRATION
 
@@ -125,9 +141,12 @@ Stakers earn $ETH/$WETH (auto-converted to ETH) from two sources while developer
 2. **Neynar Bot Service**: Automated posting via @abc-bot account
 3. **Account Linker**: Secure GitHub-Farcaster OAuth flow with JWT state tokens
 4. **Reward Database**: PostgreSQL with migrations and proper indexing
-5. **Job Queue System**: Bull/Redis for reliable commit and cast processing
-6. **Cast Processing**: Automated reward announcements with commit URLs
-7. **Future: Smart Contract Integration**: Claimable rewards system (pending)
+5. **Fee Splitter**: Distributes 50% of Clanker fees to Dev wallet, 50% to Bot wallet
+6. **Job Queue System**: Bull/Redis for reliable commit and cast processing
+7. **Cast Processing**: Automated reward announcements with commit URLs
+8. **WETH Unwrapper**: Automatically converts WETH to ETH for reward distribution
+9. **ETH Forwarder**: Transfers Bot wallet's ETH (fees + membership) to staking contract
+10. **Future: Smart Contract Integration**: Claimable rewards system (pending)
 
 ### Security Measures
 - **Smart Contract Security**: OpenZeppelin v5.2 libraries (ReentrancyGuard, Pausable, Ownable)

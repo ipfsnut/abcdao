@@ -2,6 +2,18 @@ import { NeynarAPIClient } from '@neynar/nodejs-sdk';
 import { ethers } from 'ethers';
 import { getPool } from './database.js';
 
+// Conditional social media import
+let socialMedia = null;
+(async () => {
+  try {
+    const socialMediaModule = await import('./social-media.js');
+    socialMedia = socialMediaModule.default;
+    console.log('✅ Social media service loaded');
+  } catch (error) {
+    console.warn('⚠️ Social media service not available:', error.message);
+  }
+})();
+
 class RewardProcessor {
   constructor() {
     this.neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY);
@@ -326,6 +338,24 @@ class RewardProcessor {
       console.log(`   - ${newCasts.length} casts processed`);
       if (contractResult) {
         console.log(`   - Contract updated: ${contractResult.txHash}`);
+      }
+
+      // Announce individual rewards on social media
+      if (socialMedia) {
+        for (const reward of rewardsWithAddresses) {
+          try {
+            await socialMedia.announceCommitReward(
+              reward.username,
+              reward.amount,
+              reward.castText,
+              'ABC DAO' // You might want to extract repo name from castText
+            );
+          } catch (error) {
+            console.warn(`Failed to announce reward for @${reward.username}:`, error.message);
+          }
+        }
+      } else {
+        console.log('⚠️ Social media service not available - skipping announcements');
       }
       
       return {
