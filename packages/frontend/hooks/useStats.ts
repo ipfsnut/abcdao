@@ -4,14 +4,14 @@ import { useState, useEffect } from 'react';
 import { config } from '@/lib/config';
 
 interface Stats {
-  activeDevelopers: number;
+  totalDevelopers: number;
   totalCommits: number;
   totalRewards: number;
 }
 
 export function useStats() {
   const [stats, setStats] = useState<Stats>({
-    activeDevelopers: 0,
+    totalDevelopers: 0,
     totalCommits: 0,
     totalRewards: 0
   });

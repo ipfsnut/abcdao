@@ -8,8 +8,8 @@ router.get('/stats', async (req, res) => {
   try {
     const pool = getPool();
     
-    // Count active developers (users with GitHub linked and verified)
-    const activeDevsResult = await pool.query(`
+    // Count total developers (users with GitHub linked and verified)
+    const totalDevsResult = await pool.query(`
       SELECT COUNT(*) as count 
       FROM users 
       WHERE github_username IS NOT NULL 
@@ -30,7 +30,7 @@ router.get('/stats', async (req, res) => {
     `);
     
     res.json({
-      activeDevelopers: parseInt(activeDevsResult.rows[0].count),
+      totalDevelopers: parseInt(totalDevsResult.rows[0].count),
       totalCommits: parseInt(totalCommitsResult.rows[0].count),
       totalRewards: parseFloat(totalRewardsResult.rows[0].total)
     });

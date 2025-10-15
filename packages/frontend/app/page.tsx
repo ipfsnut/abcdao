@@ -164,9 +164,9 @@ export default function Home() {
                   </div>
                 </CollapsibleStatCard>
                 <CollapsibleStatCard
-                  title="Active Developers"
-                  value={stats.activeDevelopers.toString()}
-                  description="Contributors this month"
+                  title="Total Developers"
+                  value={stats.totalDevelopers.toString()}
+                  description="Verified contributors"
                   href="/roster"
                 >
                   <div className="bg-black/40 border border-green-900/30 rounded p-3">
@@ -212,9 +212,9 @@ export default function Home() {
               </div>
             </CollapsibleStatCard>
             <CollapsibleStatCard
-              title="Active Developers"
-              value={stats.activeDevelopers.toString()}
-              description="Contributors this month"
+              title="Total Developers"
+              value={stats.totalDevelopers.toString()}
+              description="Verified contributors"
               href="/roster"
             >
               <div className="bg-black/40 border border-green-900/30 rounded p-3">
