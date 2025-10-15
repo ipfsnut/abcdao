@@ -352,6 +352,48 @@ router.post('/trigger/abc-rewards', requireAuth, async (req, res) => {
   }
 });
 
+// Update user wallet address in production database
+router.post('/users/:fid/update-wallet', requireAuth, async (req, res) => {
+  try {
+    const { fid } = req.params;
+    const { wallet_address } = req.body;
+    
+    if (!wallet_address) {
+      return res.status(400).json({ error: 'wallet_address required' });
+    }
+    
+    const pool = getPool();
+    
+    const result = await pool.query(`
+      UPDATE users 
+      SET wallet_address = $1, updated_at = NOW()
+      WHERE farcaster_fid = $2
+      RETURNING farcaster_fid, farcaster_username, wallet_address, updated_at
+    `, [wallet_address, fid]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    console.log(`✅ Updated wallet address for FID ${fid}: ${wallet_address}`);
+    
+    res.json({
+      success: true,
+      user: result.rows[0],
+      message: 'Wallet address updated successfully',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Wallet address update failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Debug: Check user wallet address in production database
 router.get('/debug/user/:fid', requireAuth, async (req, res) => {
   try {
