@@ -242,18 +242,32 @@ export function GitHubLinkPanel() {
               <ul className="space-y-1 text-green-400 font-mono text-xs">
                 <li>→ Commit = 50k-1M $ABC (random)</li>
                 <li>→ Daily limit = 10 commits max</li>
+                <li>→ Stake 5M+ $ABC = Premium benefits</li>
               </ul>
             </div>
-            
-            <button
-              onClick={unlinkGitHub}
-              disabled={unlinking}
-              className="w-full mt-3 bg-red-900/30 hover:bg-red-900/50 text-red-400 font-mono py-2.5 rounded-lg 
-                       border border-red-700/50 transition-all duration-300 text-sm
-                       disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
-            >
-              {unlinking ? '⏳ Unlinking...' : '🔗 Unlink GitHub'}
-            </button>
+
+            <div className="mt-3 space-y-2">
+              <button
+                onClick={() => {
+                  // This would open the repository manager component
+                  alert('Repository manager would open here - integrate with your routing system');
+                }}
+                className="w-full bg-blue-900/30 hover:bg-blue-900/50 text-blue-400 font-mono py-2.5 rounded-lg 
+                         border border-blue-700/50 transition-all duration-300 text-sm min-h-[44px]"
+              >
+                📁 Manage Repositories
+              </button>
+              
+              <button
+                onClick={unlinkGitHub}
+                disabled={unlinking}
+                className="w-full bg-red-900/30 hover:bg-red-900/50 text-red-400 font-mono py-2.5 rounded-lg 
+                         border border-red-700/50 transition-all duration-300 text-sm
+                         disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+              >
+                {unlinking ? '⏳ Unlinking...' : '🔗 Unlink GitHub'}
+              </button>
+            </div>
           </div>
         ) : membership.isMember && !isLinked ? (
           // Member needs to link GitHub
@@ -283,6 +297,24 @@ export function GitHubLinkPanel() {
                 <li>2. Link GitHub automatically</li>
                 <li>3. Start earning $ABC for commits</li>
               </ol>
+            </div>
+
+            <div className="bg-purple-950/10 border border-purple-900/30 rounded-lg p-3">
+              <h3 className="font-mono text-purple-400 mb-2 text-sm">{"// Premium benefits:"}</h3>
+              <div className="space-y-1 text-purple-600 font-mono text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-purple-400">⭐</span>
+                  <span>Stake 5M+ $ABC = Skip 0.002 ETH fee</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-purple-400">♾️</span>
+                  <span>Unlimited repository registrations</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-purple-400">🎯</span>
+                  <span>Higher priority reward chances</span>
+                </div>
+              </div>
             </div>
 
             <div className="bg-black/60 border border-green-900/30 rounded-lg p-3">

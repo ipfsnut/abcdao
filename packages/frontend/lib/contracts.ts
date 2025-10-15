@@ -99,9 +99,9 @@ export const CONTRACTS = {
     ] as const
   },
   
-  // ABC Rewards contract for claimable commit rewards
+  // ABC Rewards contract for claimable commit rewards (V2 - FIXED)
   ABC_REWARDS: {
-    address: '0x6f0A63404C6C8CAb2e0f92bf112F4293F9f92E15' as `0x${string}`,
+    address: '0x03CD0F799B4C04DbC22bFAAd35A3F36751F3446c' as `0x${string}`,
     abi: [
       {
         "inputs": [{"name": "user", "type": "address"}],

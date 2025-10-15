@@ -26,10 +26,33 @@ packages/contracts/.env
 .env.production.local
 .env.development.local
 .env.test.local
+.env.*
 
-# GitHub App private key
+# Security-sensitive files
 *.pem
+*.key
+*.p12
+*.pfx
+*.keystore
 github-app-private-key.pem
+private-key*
+*private-key*
+*-private-key*
+wallet-*
+*wallet*
+mnemonic*
+*mnemonic*
+seed*
+*secret*
+*credential*
+*password*
+
+# API Keys and tokens
+*api-key*
+*token*
+*auth*
+neynar-*
+alchemy-*
 
 # IDE
 .vscode/
@@ -59,6 +82,15 @@ scripts/webhooks.js
 scripts/debug-*
 scripts/test-*
 scripts/check-*
+
+# Potentially sensitive development files
+manual-process-payments.js
+investigate-users.js
+create-bot-account.js
+check-payments.js
+*-webhook*.js
+*-webhook*.json
+test-webhook.*
 
 # Test files and development contracts
 test/*
@@ -102,3 +134,34 @@ packages/backend/scripts/db-utils.js
 
 # Repository integration guide and documentation
 REPOSITORY-INTEGRATION-GUIDE.md
+
+# Runtime and temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+.cache/
+tmp/
+temp/
+
+# OS-specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Blockchain/Crypto specific
+foundry.toml
+*.abi
+*.bin
+artifacts/
+cache/
+broadcast/
+deployments-local/
+
+# Evermark integration planning
+evermark-integration-plan.txt
