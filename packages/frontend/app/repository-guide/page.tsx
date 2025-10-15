@@ -424,7 +424,8 @@ git push origin main
                     <span className="text-blue-600">Payload URL:</span>
                     <br />
                     <code className="text-blue-300">[Provided by ABC DAO team]</code>
-fye                  </div>
+fye
+                  </div>
                   <div>
                     <span className="text-blue-600">Content type:</span>
                     <br />

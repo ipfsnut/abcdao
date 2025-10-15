@@ -206,9 +206,7 @@ export default function Home() {
                 </div>
               </div>
             </CollapsibleStatCard>
-            <div className="flex items-center">
-              <TokenSupplyMini />
-            </div>
+            <TokenSupplyMini />
           </div>
           
               {/* Token supply always visible on mobile, integrated into grid */}

@@ -270,19 +270,48 @@ export function TokenSupplyChart({
   );
 }
 
+// Simple donut chart for the mini version (no API calls)
+function MiniDonutChart() {
+  return (
+    <svg width="40" height="40" viewBox="0 0 40 40" className="transform -rotate-90">
+      <circle
+        cx="20"
+        cy="20"
+        r="16"
+        fill="none"
+        stroke="rgba(34, 197, 94, 0.2)"
+        strokeWidth="8"
+      />
+      <circle
+        cx="20"
+        cy="20"
+        r="16"
+        fill="none"
+        stroke="rgba(34, 197, 94, 0.8)"
+        strokeWidth="8"
+        strokeDasharray="75 25"
+        strokeDashoffset="0"
+        className="matrix-glow"
+      />
+    </svg>
+  );
+}
+
 // Compact version for stats bar
 export function TokenSupplyMini() {
   return (
     <a 
       href="/supply"
-      className="min-w-[140px] sm:min-w-0 bg-green-950/20 border border-green-900/50 rounded-lg p-3 matrix-button hover:bg-green-900/30 hover:border-green-700/50 transition-all duration-300 block"
+      className="bg-green-950/20 border border-green-900/50 rounded-lg p-3 matrix-button hover:bg-green-900/30 hover:border-green-700/50 transition-all duration-300 block w-full"
     >
-      <p className="text-green-600 text-xs font-mono">Token_Supply</p>
-      <div className="flex items-center gap-2 mt-1">
-        <TokenSupplyChart size={32} showCenter={false} />
-        <div>
-          <p className="text-lg sm:text-xl font-bold text-green-400 matrix-glow">100B</p>
-          <p className="text-green-600 font-mono text-xs">$ABC</p>
+      <p className="text-green-600 text-responsive-xs font-mono">Token Supply</p>
+      <div className="flex items-center gap-3 mt-1">
+        <div className="flex-shrink-0">
+          <MiniDonutChart />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-responsive-sm font-bold text-green-400 matrix-glow">100B $ABC</p>
+          <p className="text-green-500 font-mono text-xs">Fixed supply</p>
         </div>
       </div>
     </a>
