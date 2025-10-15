@@ -352,6 +352,50 @@ router.post('/trigger/abc-rewards', requireAuth, async (req, res) => {
   }
 });
 
+// Mark user's rewards as claimable after contract allocation
+router.post('/users/:fid/mark-claimable', requireAuth, async (req, res) => {
+  try {
+    const { fid } = req.params;
+    const { contract_tx_hash } = req.body;
+    
+    if (!contract_tx_hash) {
+      return res.status(400).json({ error: 'contract_tx_hash required' });
+    }
+    
+    const pool = getPool();
+    
+    const result = await pool.query(`
+      UPDATE commits 
+      SET 
+        reward_status = 'claimable',
+        contract_tx_hash = $1,
+        transferred_at = NOW()
+      WHERE user_id = (SELECT id FROM users WHERE farcaster_fid = $2)
+        AND reward_status = 'pending'
+        AND reward_amount IS NOT NULL
+      RETURNING id, commit_hash, reward_amount, reward_status
+    `, [contract_tx_hash, fid]);
+    
+    console.log(`✅ Marked ${result.rows.length} rewards as claimable for FID ${fid}`);
+    
+    res.json({
+      success: true,
+      updated_rewards: result.rows.length,
+      rewards: result.rows,
+      message: 'Rewards marked as claimable successfully',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Mark claimable failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Update user wallet address in production database
 router.post('/users/:fid/update-wallet', requireAuth, async (req, res) => {
   try {
