@@ -3,6 +3,7 @@ node_modules/
 .pnp
 .pnp.*
 .yarn/*
+manual-token-testing.md
 
 # Frontend
 packages/frontend/.next/

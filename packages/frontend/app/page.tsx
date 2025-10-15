@@ -105,6 +105,31 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Hero Call-to-Action Section */}
+      <div className="bg-gradient-to-r from-green-950/20 to-black/40 border-b border-green-900/30">
+        <div className="px-4 py-6 text-center">
+          <h2 className="text-responsive-lg font-bold text-green-400 matrix-glow mb-2 font-mono">
+            Ready to earn $ABC?
+          </h2>
+          <p className="text-responsive-xs text-green-600 mb-4 font-mono">
+            Ship code, stake tokens, earn rewards. Join the Always Be Coding movement.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+            <a
+              href="https://app.uniswap.org/#/swap?outputCurrency=0x5c0872b790bb73e2b3a9778db6e7704095624b07&chain=base"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-green-900/30 hover:bg-green-800/40 border border-green-700/50 hover:border-green-600/70 
+                         text-green-400 hover:text-green-300 px-6 py-3 rounded-lg font-mono text-sm
+                         transition-all duration-200 matrix-button w-full sm:w-auto text-center"
+            >
+              🔄 Get $ABC on Uniswap
+            </a>
+            <RepositoryIntegrationButton />
+          </div>
+        </div>
+      </div>
+
       {/* Responsive Stats Bar - Stacked on small, grid on larger screens */}
       <div className="bg-black/80 border-b border-green-900/30 backdrop-blur-sm">
         <div className="px-4 py-3">

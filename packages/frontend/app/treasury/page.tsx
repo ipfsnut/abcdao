@@ -182,34 +182,38 @@ export default function TreasuryPage() {
               <h3 className="text-responsive-lg font-bold mb-4 text-green-400 matrix-glow font-mono">
                 {'>'} Fund Allocation Strategy
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
+              
+              <div className="mb-6">
+                <h4 className="text-green-400 font-mono text-sm mb-3">ETH Distribution (Automated Every 6 Hours)</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
-                    <h4 className="text-green-400 font-mono text-sm mb-2">Developer Incentives (60%)</h4>
-                    <p className="text-green-600 font-mono text-xs">
-                      Rewards for code contributions, commits, and merged PRs. Encourages active development.
-                    </p>
-                  </div>
-                  <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
-                    <h4 className="text-green-400 font-mono text-sm mb-2">Staking Rewards (25%)</h4>
+                    <h5 className="text-green-400 font-mono text-sm mb-2">Staking Rewards (25%)</h5>
                     <p className="text-green-600 font-mono text-xs">
                       ETH rewards distributed to $ABC stakers. Provides passive income for long-term holders.
                     </p>
                   </div>
+                  <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
+                    <h5 className="text-green-400 font-mono text-sm mb-2">Treasury (25%)</h5>
+                    <p className="text-green-600 font-mono text-xs">
+                      Protocol development, operations, and maintenance funding.
+                    </p>
+                  </div>
+                  <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
+                    <h5 className="text-green-400 font-mono text-sm mb-2">Bot Operations (50%)</h5>
+                    <p className="text-green-600 font-mono text-xs">
+                      Retained for gas fees, operations, and future distributions.
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
-                    <h4 className="text-green-400 font-mono text-sm mb-2">Operations (10%)</h4>
-                    <p className="text-green-600 font-mono text-xs">
-                      Infrastructure, hosting, and operational costs for maintaining the DAO.
-                    </p>
-                  </div>
-                  <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
-                    <h4 className="text-green-400 font-mono text-sm mb-2">Reserve Fund (5%)</h4>
-                    <p className="text-green-600 font-mono text-xs">
-                      Emergency fund for unexpected costs and future development initiatives.
-                    </p>
-                  </div>
+              </div>
+
+              <div>
+                <h4 className="text-green-400 font-mono text-sm mb-3">$ABC Token Distribution</h4>
+                <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
+                  <h5 className="text-green-400 font-mono text-sm mb-2">Developer Rewards (100%)</h5>
+                  <p className="text-green-600 font-mono text-xs">
+                    All $ABC tokens go to developers for commits on repos with the ABC DAO tag. Direct incentive for code contributions.
+                  </p>
                 </div>
               </div>
             </div>

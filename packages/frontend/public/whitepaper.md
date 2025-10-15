@@ -219,4 +219,21 @@ The best DAOs don't need complex mechanisms. They need clear purpose, aligned in
 **Staking**: (`0x577822396162022654D5bDc9CB58018cB53e7017`)  
 **Bot Wallet**: (`0x475579e65E140B11bc4656dD4b05e0CADc8366eB`) - Supports ETH & WETH
 
+## Automated ETH Distribution
+
+The ABC DAO bot automatically distributes incoming ETH every 6 hours according to the following allocation:
+
+**Distribution Breakdown:**
+- **25% → Staking Contract** (`0x577822396162022654D5bDc9CB58018cB53e7017`) - Rewards for $ABC stakers
+- **25% → Treasury** (`0x18A85ad341b2D6A2bd67fbb104B4827B922a2A3c`) - Protocol development and maintenance
+- **50% → Bot Operations** (`0x475579e65E140B11bc4656dD4b05e0CADc8366eB`) - Retained for gas, operations, and future distributions
+
+**Automation Details:**
+- **Frequency**: Every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)
+- **Minimum Threshold**: 0.01 ETH (prevents gas-inefficient micro-distributions)
+- **Gas Reserve**: 0.005 ETH maintained for transaction fees
+- **Transparency**: All distributions announced on Farcaster with transaction links
+
+This automated system ensures sustainable funding for both staker rewards and community development while maintaining operational efficiency.
+
 *Version 1.0 | October 2025*

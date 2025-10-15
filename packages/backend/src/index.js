@@ -29,6 +29,7 @@ import { RewardDebtCron } from './jobs/reward-debt-cron.js';
 import { NightlyLeaderboardJob } from './jobs/nightly-leaderboard-cron.js';
 import { PaymentMonitor } from './services/payment-monitor.js';
 import { PaymentRecoveryCron } from './jobs/payment-recovery-cron.js';
+import { EthDistributionCron } from './jobs/eth-distribution-cron.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -259,6 +260,22 @@ async function startServer() {
     } catch (recoveryError) {
       console.warn('⚠️  Payment recovery cron setup failed:', recoveryError.message);
     }
+
+    // Start ETH distribution cron job
+    if (process.env.STAKING_CONTRACT_ADDRESS && process.env.BOT_WALLET_PRIVATE_KEY) {
+      try {
+        const ethDistributionCron = new EthDistributionCron();
+        ethDistributionCron.start();
+        console.log('✅ ETH distribution cron job started (runs every 6 hours)');
+        
+        // Store reference for graceful shutdown
+        global.ethDistributionCron = ethDistributionCron;
+      } catch (ethCronError) {
+        console.warn('⚠️  ETH distribution cron setup failed:', ethCronError.message);
+      }
+    } else {
+      console.warn('⚠️  Staking contract or bot wallet not configured, skipping ETH distribution');
+    }
     
     // Start server - bind to 0.0.0.0 for Railway
     app.listen(PORT, '0.0.0.0', () => {
@@ -289,6 +306,11 @@ process.on('SIGINT', () => {
   // Stop payment recovery cron
   if (global.paymentRecoveryCron) {
     global.paymentRecoveryCron.stop();
+  }
+  
+  // Stop ETH distribution cron
+  if (global.ethDistributionCron) {
+    global.ethDistributionCron.stop();
   }
   
   process.exit(0);
