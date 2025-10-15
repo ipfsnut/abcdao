@@ -40,7 +40,7 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 ## 3. THE DEVELOPER GAME
 
 ### How to Play
-1. **Join ABC DAO**: Pay 0.002 ETH membership fee to bot wallet
+1. **Join ABC DAO**: Pay 0.002 ETH membership fee to protocol wallet
 2. **Link GitHub**: Connect your GitHub account via Farcaster miniapp
 3. **Buy $ABC**: Purchase tokens on Base (Clanker v4 token)
 4. **Stake tokens**: Lock $ABC to unlock commit rewards
@@ -179,8 +179,8 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 ### Membership System
 **Payment Method**: Direct wallet transfer (no smart contract needed)
 - **Fee**: 0.002 ETH one-time payment
-- **Bot Wallet**: `0xBE8C49A4F70D56a489b710F1d45689A3BBb04f35`
-- **Process**: Pay bot wallet → Submit transaction hash → Backend verification
+- **Protocol Wallet**: `0xBE6525b767cA8D38d169C93C8120c0C0957388B8`
+- **Process**: Pay protocol wallet → Submit transaction hash → Backend verification
 - **Benefits**: Lifetime membership + GitHub commit rewards eligibility
 - **Revenue Flow**: ETH to staking contract for rewards distribution
 
@@ -189,11 +189,11 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 2. **Neynar Bot Service**: Automated posting via @abc-bot account
 3. **Account Linker**: Secure GitHub-Farcaster OAuth flow with JWT state tokens
 4. **Reward Database**: PostgreSQL with migrations and proper indexing
-5. **Fee Splitter**: Distributes 50% of Clanker fees to Dev wallet, 50% to Bot wallet
+5. **Fee Splitter**: Distributes 50% of Clanker fees to Dev wallet, 50% to Protocol wallet
 6. **Job Queue System**: Bull/Redis for reliable commit and cast processing
 7. **Cast Processing**: Automated reward announcements with commit URLs
 8. **WETH Unwrapper**: Automatically converts WETH to ETH for reward distribution
-9. **ETH Forwarder**: Transfers Bot wallet's ETH (fees + membership) to staking contract
+9. **ETH Forwarder**: Transfers Protocol wallet's ETH (fees + membership) to staking contract
 10. **Future: Smart Contract Integration**: Claimable rewards system (pending)
 
 ### Security Measures

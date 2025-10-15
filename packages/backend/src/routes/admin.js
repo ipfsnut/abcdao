@@ -13,13 +13,13 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// Get bot wallet balance
+// Get protocol wallet balance
 router.get('/wallet/balance', requireAuth, async (req, res) => {
   try {
     const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL);
-    const botWallet = new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY, provider);
+    const protocolWallet = new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY, provider);
     
-    const ethBalance = await provider.getBalance(botWallet.address);
+    const ethBalance = await provider.getBalance(protocolWallet.address);
     
     let abcBalance = '0';
     if (process.env.ABC_TOKEN_ADDRESS && process.env.ABC_TOKEN_ADDRESS !== '0x...') {
@@ -29,7 +29,7 @@ router.get('/wallet/balance', requireAuth, async (req, res) => {
           ['function balanceOf(address) view returns (uint256)'],
           provider
         );
-        abcBalance = ethers.formatUnits(await abcContract.balanceOf(botWallet.address), 18);
+        abcBalance = ethers.formatUnits(await abcContract.balanceOf(protocolWallet.address), 18);
       } catch (error) {
         console.warn('ABC token balance check failed:', error.message);
         abcBalance = 'N/A';
@@ -39,7 +39,7 @@ router.get('/wallet/balance', requireAuth, async (req, res) => {
     }
     
     res.json({
-      address: botWallet.address,
+      address: protocolWallet.address,
       ethBalance: ethers.formatEther(ethBalance),
       abcBalance: abcBalance
     });
@@ -49,7 +49,7 @@ router.get('/wallet/balance', requireAuth, async (req, res) => {
   }
 });
 
-// Withdraw ETH from bot wallet
+// Withdraw ETH from protocol wallet
 router.post('/wallet/withdraw-eth', requireAuth, async (req, res) => {
   try {
     const { to, amount } = req.body;
@@ -59,9 +59,9 @@ router.post('/wallet/withdraw-eth', requireAuth, async (req, res) => {
     }
     
     const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL);
-    const botWallet = new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY, provider);
+    const protocolWallet = new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY, provider);
     
-    const tx = await botWallet.sendTransaction({
+    const tx = await protocolWallet.sendTransaction({
       to: to,
       value: ethers.parseEther(amount)
     });
@@ -86,9 +86,9 @@ router.post('/wallet/forward-eth', requireAuth, async (req, res) => {
     const { amount } = req.body; // Optional, defaults to most of balance
     
     const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL);
-    const botWallet = new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY, provider);
+    const protocolWallet = new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY, provider);
     
-    const balance = await provider.getBalance(botWallet.address);
+    const balance = await provider.getBalance(protocolWallet.address);
     const gasReserve = ethers.parseEther('0.01'); // Keep 0.01 ETH for gas
     
     let forwardAmount;
@@ -102,7 +102,7 @@ router.post('/wallet/forward-eth', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Insufficient balance to forward' });
     }
     
-    const tx = await botWallet.sendTransaction({
+    const tx = await protocolWallet.sendTransaction({
       to: process.env.STAKING_CONTRACT_ADDRESS,
       value: forwardAmount
     });
@@ -127,7 +127,7 @@ router.post('/wallet/unwrap-weth', requireAuth, async (req, res) => {
     const { amount, forwardAmount } = req.body; // Optional params
     
     const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL);
-    const botWallet = new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY, provider);
+    const protocolWallet = new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY, provider);
     
     // Base mainnet WETH contract
     const WETH_ADDRESS = '0x4200000000000000000000000000000000000006';
@@ -142,7 +142,7 @@ router.post('/wallet/unwrap-weth', requireAuth, async (req, res) => {
     );
     
     // Check WETH balance
-    const wethBalance = await wethContract.balanceOf(botWallet.address);
+    const wethBalance = await wethContract.balanceOf(protocolWallet.address);
     
     if (wethBalance === 0n) {
       return res.status(400).json({ 
@@ -175,7 +175,7 @@ router.post('/wallet/unwrap-weth', requireAuth, async (req, res) => {
     console.log(`✅ Unwrapped ${ethers.formatEther(unwrapAmount)} WETH. TX: ${unwrapTx.hash}`);
     
     // Just unwrap WETH - don't auto-forward for now
-    const ethBalance = await provider.getBalance(botWallet.address);
+    const ethBalance = await provider.getBalance(protocolWallet.address);
     
     res.json({
       success: true,
@@ -198,7 +198,7 @@ router.post('/wallet/unwrap-weth', requireAuth, async (req, res) => {
 router.get('/wallet/weth-balance', requireAuth, async (req, res) => {
   try {
     const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL);
-    const botWallet = new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY, provider);
+    const protocolWallet = new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY, provider);
     
     // Base mainnet WETH contract
     const WETH_ADDRESS = '0x4200000000000000000000000000000000000006';
@@ -208,10 +208,10 @@ router.get('/wallet/weth-balance', requireAuth, async (req, res) => {
       provider
     );
     
-    const wethBalance = await wethContract.balanceOf(botWallet.address);
+    const wethBalance = await wethContract.balanceOf(protocolWallet.address);
     
     res.json({
-      address: botWallet.address,
+      address: protocolWallet.address,
       wethBalance: ethers.formatEther(wethBalance),
       wethContract: WETH_ADDRESS
     });
@@ -344,6 +344,60 @@ router.post('/trigger/abc-rewards', requireAuth, async (req, res) => {
     
   } catch (error) {
     console.error('❌ Admin ABC rewards trigger failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Add missing reward tracking columns to commits table
+router.post('/database/add-reward-columns', requireAuth, async (req, res) => {
+  try {
+    const pool = getPool();
+    
+    console.log('🔧 Adding missing reward tracking columns to commits table...');
+    
+    const migrations = [
+      'ALTER TABLE commits ADD COLUMN IF NOT EXISTS reward_status VARCHAR(20) DEFAULT \'pending\'',
+      'ALTER TABLE commits ADD COLUMN IF NOT EXISTS contract_tx_hash VARCHAR(66)',
+      'ALTER TABLE commits ADD COLUMN IF NOT EXISTS transferred_at TIMESTAMP'
+    ];
+    
+    const results = [];
+    for (const sql of migrations) {
+      try {
+        await pool.query(sql);
+        results.push({ sql, status: 'success' });
+        console.log(`✅ Executed: ${sql}`);
+      } catch (error) {
+        results.push({ sql, status: 'error', error: error.message });
+        console.error(`❌ Failed: ${sql} - ${error.message}`);
+      }
+    }
+    
+    // Verify the columns were added
+    const verifyResult = await pool.query(`
+      SELECT column_name, data_type, column_default 
+      FROM information_schema.columns 
+      WHERE table_name = 'commits' 
+      AND column_name IN ('reward_status', 'contract_tx_hash', 'transferred_at') 
+      ORDER BY column_name
+    `);
+    
+    console.log('✅ Reward tracking columns migration completed');
+    
+    res.json({
+      success: true,
+      message: 'Reward tracking columns added successfully',
+      migrations: results,
+      newColumns: verifyResult.rows,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Reward columns migration failed:', error);
     res.status(500).json({
       success: false,
       error: error.message,

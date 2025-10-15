@@ -4,7 +4,7 @@ import { ethers } from 'ethers';
 class EthDistributionCron {
   constructor() {
     this.provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
-    this.botWallet = new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY, this.provider);
+    this.protocolWallet = new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY, this.provider);
     this.isRunning = false;
     
     // Distribution addresses
@@ -48,7 +48,7 @@ class EthDistributionCron {
     console.log('   - Runs every 6 hours');
     console.log('   - Distributes 25% to staking contract');
     console.log('   - Distributes 25% to treasury address');
-    console.log('   - Keeps 50% + gas reserves in bot wallet\n');
+    console.log('   - Keeps 50% + gas reserves in protocol wallet\n');
   }
 
   /**
@@ -62,13 +62,13 @@ class EthDistributionCron {
   }
 
   /**
-   * Get current bot wallet balance and calculate distribution amounts
+   * Get current protocol wallet balance and calculate distribution amounts
    */
   async calculateDistribution() {
-    const balance = await this.provider.getBalance(this.botWallet.address);
+    const balance = await this.provider.getBalance(this.protocolWallet.address);
     const availableBalance = balance - this.gasReserve;
     
-    console.log(`💰 Bot wallet balance: ${ethers.formatEther(balance)} ETH`);
+    console.log(`💰 Protocol wallet balance: ${ethers.formatEther(balance)} ETH`);
     console.log(`⛽ Gas reserve: ${ethers.formatEther(this.gasReserve)} ETH`);
     console.log(`📊 Available for distribution: ${ethers.formatEther(availableBalance)} ETH`);
     
@@ -111,7 +111,7 @@ class EthDistributionCron {
     
     try {
       // Send to staking contract
-      const stakingTx = await this.botWallet.sendTransaction({
+      const stakingTx = await this.protocolWallet.sendTransaction({
         to: this.stakingContract,
         value: distribution.amountToStaking,
         gasLimit: 50000 // Basic transfer
@@ -133,7 +133,7 @@ class EthDistributionCron {
     
     try {
       // Send to treasury
-      const treasuryTx = await this.botWallet.sendTransaction({
+      const treasuryTx = await this.protocolWallet.sendTransaction({
         to: this.treasuryAddress,
         value: distribution.amountToTreasury,
         gasLimit: 50000 // Basic transfer
@@ -176,7 +176,7 @@ class EthDistributionCron {
         `📊 Distributed: ${ethers.formatEther(totalDistributed)} ETH\\n` +
         `🏦 ${distribution.stakingPercent}% → Staking Contract\\n` +
         `🏛️ ${distribution.treasuryPercent}% → Treasury\\n` +
-        `🤖 ${distribution.remainingPercent}% → Bot Operations\\n\\n` +
+        `🤖 ${distribution.remainingPercent}% → Protocol Operations\\n\\n` +
         `🔗 Staking: basescan.org/tx/${stakingTxHash}\\n` +
         `🔗 Treasury: basescan.org/tx/${treasuryTxHash}\\n\\n` +
         `#ABCDAO #AutomatedETHDistribution`;
@@ -204,7 +204,7 @@ class EthDistributionCron {
       }
       
       console.log('📋 Distribution Configuration:');
-      console.log(`- Bot Wallet: ${this.botWallet.address}`);
+      console.log(`- Protocol Wallet: ${this.protocolWallet.address}`);
       console.log(`- Staking Contract: ${this.stakingContract}`);
       console.log(`- Treasury Address: ${this.treasuryAddress}`);
       console.log(`- Distribution: ${this.distributionPercentage}%/${this.distributionPercentage}%/${100 - (this.distributionPercentage * 2)}%\\n`);
