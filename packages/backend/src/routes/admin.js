@@ -302,4 +302,54 @@ router.get('/database/status', requireAuth, async (req, res) => {
   }
 });
 
+// Trigger ETH distribution immediately for testing
+router.post('/trigger/eth-distribution', requireAuth, async (req, res) => {
+  try {
+    const { EthDistributionCron } = await import('../jobs/eth-distribution-cron.js');
+    const ethCron = new EthDistributionCron();
+    
+    console.log('🧪 Admin triggered ETH distribution...');
+    await ethCron.runNow();
+    
+    res.json({
+      success: true,
+      message: 'ETH distribution triggered successfully',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Admin ETH distribution trigger failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Trigger ABC rewards processing immediately for testing
+router.post('/trigger/abc-rewards', requireAuth, async (req, res) => {
+  try {
+    const { RewardDebtCron } = await import('../jobs/reward-debt-cron.js');
+    const rewardCron = new RewardDebtCron();
+    
+    console.log('🧪 Admin triggered ABC rewards processing...');
+    await rewardCron.runNow();
+    
+    res.json({
+      success: true,
+      message: 'ABC rewards processing triggered successfully',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Admin ABC rewards trigger failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 export default router;
