@@ -352,6 +352,40 @@ router.post('/trigger/abc-rewards', requireAuth, async (req, res) => {
   }
 });
 
+// Debug: Check user wallet address in production database
+router.get('/debug/user/:fid', requireAuth, async (req, res) => {
+  try {
+    const { fid } = req.params;
+    const pool = getPool();
+    
+    const result = await pool.query(`
+      SELECT 
+        farcaster_fid,
+        farcaster_username,
+        wallet_address,
+        membership_status,
+        verified_at,
+        updated_at
+      FROM users 
+      WHERE farcaster_fid = $1
+    `, [fid]);
+    
+    res.json({
+      success: true,
+      user: result.rows[0] || null,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Debug query failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Add missing reward tracking columns to commits table
 router.post('/database/add-reward-columns', requireAuth, async (req, res) => {
   try {
