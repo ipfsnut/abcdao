@@ -1,8 +1,42 @@
 import express from 'express';
 import { getPool } from '../services/database.js';
 import { Octokit } from '@octokit/rest';
+import { ethers } from 'ethers';
 
 const router = express.Router();
+
+// Check if user has 5M+ ABC staked (exempts from repository fees)
+async function checkPremiumStaking(userId) {
+  try {
+    const pool = getPool();
+    const userResult = await pool.query('SELECT wallet_address FROM users WHERE id = $1', [userId]);
+    
+    if (userResult.rows.length === 0 || !userResult.rows[0].wallet_address) {
+      return false;
+    }
+    
+    const walletAddress = userResult.rows[0].wallet_address;
+    
+    // Check staked amount via contract
+    const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL);
+    const stakingContract = new ethers.Contract(
+      process.env.STAKING_CONTRACT_ADDRESS,
+      ['function getStakedAmount(address) view returns (uint256)'],
+      provider
+    );
+    
+    const stakedAmount = await stakingContract.getStakedAmount(walletAddress);
+    const premiumStakeThreshold = ethers.parseEther('5000000'); // 5M ABC
+    
+    console.log(`🔍 Stake check for user ${userId}: ${ethers.formatEther(stakedAmount)} ABC staked`);
+    
+    return stakedAmount >= premiumStakeThreshold;
+    
+  } catch (error) {
+    console.error('Error checking premium staking:', error);
+    return false;
+  }
+}
 
 // Get user's registered repositories
 router.get('/:fid/repositories', async (req, res) => {
@@ -10,6 +44,15 @@ router.get('/:fid/repositories', async (req, res) => {
   
   try {
     const pool = getPool();
+    
+    // Get user info first
+    const userResult = await pool.query('SELECT id FROM users WHERE farcaster_fid = $1', [fid]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    const isPremiumStaker = await checkPremiumStaking(user.id);
     
     // Get user's registered repositories
     const repos = await pool.query(`
@@ -29,14 +72,18 @@ router.get('/:fid/repositories', async (req, res) => {
       ORDER BY rr.created_at DESC
     `, [fid]);
     
-    // Get remaining slots for member registrations
+    // Calculate remaining slots for member registrations
     const memberRepos = repos.rows.filter(r => r.registration_type === 'member');
-    const remainingSlots = Math.max(0, 3 - memberRepos.length);
+    const maxSlots = isPremiumStaker ? 999 : 3; // Unlimited for premium stakers
+    const remainingSlots = isPremiumStaker ? 999 : Math.max(0, 3 - memberRepos.length);
     
     res.json({
       repositories: repos.rows,
       member_slots_used: memberRepos.length,
       member_slots_remaining: remainingSlots,
+      member_slots_max: maxSlots,
+      premium_staker: isPremiumStaker,
+      premium_benefits: isPremiumStaker ? ['Unlimited repositories', 'No 0.002 ETH fee required'] : null,
       partner_repositories: repos.rows.filter(r => r.registration_type === 'partner')
     });
     
@@ -59,22 +106,31 @@ router.post('/:fid/repositories', async (req, res) => {
     const pool = getPool();
     
     // Get user
-    const userResult = await pool.query('SELECT id, access_token FROM users WHERE farcaster_fid = $1', [fid]);
+    const userResult = await pool.query('SELECT id, access_token, wallet_address FROM users WHERE farcaster_fid = $1', [fid]);
     if (userResult.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
     
     const user = userResult.rows[0];
     
-    // Check member repository limit
-    const existingRepos = await pool.query(`
-      SELECT COUNT(*) as count 
-      FROM registered_repositories 
-      WHERE registered_by_user_id = $1 AND registration_type = 'member'
-    `, [user.id]);
+    // Check if user has premium staking (5M+ ABC) to bypass limits
+    const isPremiumStaker = await checkPremiumStaking(user.id);
+    console.log(`🔍 User ${fid} premium staker status: ${isPremiumStaker}`);
     
-    if (parseInt(existingRepos.rows[0].count) >= 3) {
-      return res.status(400).json({ error: 'Maximum 3 member repositories allowed' });
+    // Check member repository limit (bypass for premium stakers)
+    if (!isPremiumStaker) {
+      const existingRepos = await pool.query(`
+        SELECT COUNT(*) as count 
+        FROM registered_repositories 
+        WHERE registered_by_user_id = $1 AND registration_type = 'member'
+      `, [user.id]);
+      
+      if (parseInt(existingRepos.rows[0].count) >= 3) {
+        return res.status(400).json({ 
+          error: 'Maximum 3 member repositories allowed',
+          suggestion: 'Stake 5M+ $ABC to remove repository limits'
+        });
+      }
     }
     
     // Verify GitHub permissions
@@ -117,7 +173,9 @@ router.post('/:fid/repositories', async (req, res) => {
     res.json({
       success: true,
       repository: result.rows[0],
-      message: 'Repository registered successfully. Configure webhook to activate rewards.'
+      message: 'Repository registered successfully. Configure webhook to activate rewards.',
+      premium_staker: isPremiumStaker,
+      limits_bypassed: isPremiumStaker
     });
     
   } catch (error) {

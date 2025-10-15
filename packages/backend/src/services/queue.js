@@ -123,15 +123,21 @@ async function processCastJob(job) {
   try {
     console.log(`📢 Posting cast for ${farcasterUsername}'s commit`);
     
-    // Initialize Neynar client
-    const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY);
+    // Use ABC Commits bot for GitHub activity posts
+    const commitsApiKey = process.env.ABC_COMMITS_API_KEY || process.env.NEYNAR_API_KEY;
+    const commitsSignerUuid = process.env.ABC_COMMITS_SIGNER_UUID || process.env.NEYNAR_SIGNER_UUID;
+    
+    // Initialize Neynar client for commits bot
+    const neynar = new NeynarAPIClient(commitsApiKey);
     
     // Create cast message with proper tagging and links
     const castText = generateCommitAnnouncement(farcasterUsername, farcasterFid, repository, commitMessage, commitUrl, rewardAmount);
     
-    // Post cast (using your bot account)
+    console.log(`📢 Queue posting from @abc-dao-commits bot (signer: ${commitsSignerUuid})`);
+    
+    // Post cast using ABC Commits bot
     const cast = await neynar.publishCast(
-      process.env.NEYNAR_SIGNER_UUID,
+      commitsSignerUuid,
       castText
     );
     

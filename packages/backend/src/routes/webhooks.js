@@ -381,14 +381,20 @@ async function postCommitCast(castData) {
   try {
     console.log(`📢 Posting cast directly for ${farcasterUsername}'s commit`);
     
-    if (!process.env.NEYNAR_API_KEY || !process.env.NEYNAR_SIGNER_UUID) {
-      console.log(`⚠️ Farcaster credentials not configured, skipping cast`);
+    // Use ABC Commits bot for GitHub activity posts
+    const commitsApiKey = process.env.ABC_COMMITS_API_KEY || process.env.NEYNAR_API_KEY;
+    const commitsSignerUuid = process.env.ABC_COMMITS_SIGNER_UUID || process.env.NEYNAR_SIGNER_UUID;
+    
+    if (!commitsApiKey || !commitsSignerUuid) {
+      console.log(`⚠️ ABC Commits bot credentials not configured, skipping cast`);
       return;
     }
     
-    // Initialize Neynar client
+    console.log(`📢 Posting from @abc-dao-commits bot (signer: ${commitsSignerUuid})`);
+    
+    // Initialize Neynar client for commits bot
     const { NeynarAPIClient } = await import('@neynar/nodejs-sdk');
-    const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY);
+    const neynar = new NeynarAPIClient(commitsApiKey);
     
     // Create cast message
     const repoName = repository.split('/').pop() || repository;
@@ -454,9 +460,9 @@ async function postCommitCast(castData) {
     
     const castText = `🚀 New commit!${privacyText}\n\n${usernameText} just pushed to ${repoText}:\n\n"${messageText}"\n\n${rewardText}\n\n🔗 ${commitUrl}\n\n📱 Want rewards? Add our miniapp:\nfarcaster.xyz/miniapps/S1edg9PycxZP/abcdao\n\n#ABCDAO #AlwaysBeCoding`;
     
-    // Post cast
+    // Post cast using ABC Commits bot
     const cast = await neynar.publishCast(
-      process.env.NEYNAR_SIGNER_UUID,
+      commitsSignerUuid,
       castText
     );
     
