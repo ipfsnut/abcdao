@@ -24,7 +24,7 @@ export const config = {
   isProduction: process.env.NODE_ENV === 'production',
   
   // Bot wallet address for payments
-  botWalletAddress: process.env.NEXT_PUBLIC_BOT_WALLET_ADDRESS || '0x475579e65E140B11bc4656dD4b05e0CADc8366eB',
+  botWalletAddress: process.env.NEXT_PUBLIC_BOT_WALLET_ADDRESS || '0xBE8C49A4F70D56a489b710F1d45689A3BBb04f35',
   
   // Check if we have all required environment variables
   isConfigured: () => {

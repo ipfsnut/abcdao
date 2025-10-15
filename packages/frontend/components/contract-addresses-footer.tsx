@@ -68,7 +68,7 @@ export function ContractAddressesFooter() {
   const stakingAddress = process.env.NEXT_PUBLIC_STAKING_CONTRACT_ADDRESS || CONTRACTS.ABC_STAKING?.address;
   const rewardsAddress = process.env.NEXT_PUBLIC_REWARDS_CONTRACT_ADDRESS || CONTRACTS.ABC_REWARDS?.address;
   const governanceAddress = process.env.NEXT_PUBLIC_GOVERNANCE_CONTRACT_ADDRESS;
-  const botWalletAddress = process.env.NEXT_PUBLIC_BOT_WALLET_ADDRESS;
+  const protocolWalletAddress = process.env.NEXT_PUBLIC_PROTOCOL_WALLET_ADDRESS;
   
   // Only show if we have at least one address
   if (!abcTokenAddress && !stakingAddress && !rewardsAddress && !governanceAddress) {
@@ -117,10 +117,10 @@ export function ContractAddressesFooter() {
               />
             )}
             
-            {botWalletAddress && (
+            {protocolWalletAddress && (
               <ContractAddress
-                label="Bot Wallet"
-                address={botWalletAddress}
+                label="Protocol Wallet"
+                address={protocolWalletAddress}
               />
             )}
             

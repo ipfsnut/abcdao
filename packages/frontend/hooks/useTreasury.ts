@@ -5,7 +5,7 @@ import { formatEther } from 'viem';
 import { CONTRACTS, ERC20_ABI } from '@/lib/contracts';
 
 // Bot wallet address (treasury)
-const TREASURY_ADDRESS = '0x475579e65E140B11bc4656dD4b05e0CADc8366eB' as `0x${string}`;
+const TREASURY_ADDRESS = '0xBE8C49A4F70D56a489b710F1d45689A3BBb04f35' as `0x${string}`;
 
 export function useTreasury() {
   // Read treasury ABC token balance

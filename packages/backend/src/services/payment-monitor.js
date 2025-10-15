@@ -8,7 +8,7 @@ dotenv.config();
 class PaymentMonitor {
   constructor() {
     this.provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
-    this.botWalletAddress = process.env.BOT_WALLET_ADDRESS || '0x475579e65E140B11bc4656dD4b05e0CADc8366eB';
+    this.botWalletAddress = process.env.BOT_WALLET_ADDRESS || '0xcCBE95Ab1E3ECfb73cFeA072460E24D5054c28B2';
     this.expectedAmount = ethers.parseEther('0.002'); // 0.002 ETH membership fee
     this.isMonitoring = false;
     this.lastCheckedBlock = null;

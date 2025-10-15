@@ -33,7 +33,7 @@ describe('Transaction Validation API', () => {
     
     // Default environment variables for tests
     process.env.ALCHEMY_RPC_URL = 'https://test-alchemy.com';
-    process.env.BOT_WALLET_ADDRESS = '0x475579e65E140B11bc4656dD4b05e0CADc8366eB';
+    process.env.BOT_WALLET_ADDRESS = '0xcCBE95Ab1E3ECfb73cFeA072460E24D5054c28B2';
   });
 
   describe('POST /api/auth/validate-transaction', () => {

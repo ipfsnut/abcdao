@@ -10,7 +10,7 @@ import { config } from '@/lib/config';
 import { TransactionValidator } from './transaction-validator';
 
 // Bot's wallet address for receiving membership payments
-const BOT_WALLET_ADDRESS = '0x475579e65E140B11bc4656dD4b05e0CADc8366eB' as `0x${string}`;
+const BOT_WALLET_ADDRESS = '0xBE8C49A4F70D56a489b710F1d45689A3BBb04f35' as `0x${string}`;
 const MEMBERSHIP_FEE = '0.002'; // ETH
 
 interface MembershipPaymentPanelProps {

@@ -62,6 +62,11 @@ scripts/check-*
 
 # Test files and development contracts
 test/*
+testing/
+test-*.js
+*-test.js
+*.test.js
+test*.js
 *.t.sol
 *Test.sol
 *Mock*.sol

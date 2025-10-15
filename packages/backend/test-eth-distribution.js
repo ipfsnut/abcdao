@@ -9,7 +9,7 @@ async function testEthDistribution() {
   try {
     const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
     const botWallet = new ethers.Wallet(
-      '0x8b3a36f3e4d1c7a2b5e8f9d6c3a0b7e4f1d8c5a2b9e6f3d0c7a4b1e8f5d2c9a6', // Correct key
+      process.env.BOT_WALLET_PRIVATE_KEY,
       provider
     );
     

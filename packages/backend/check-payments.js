@@ -35,7 +35,7 @@ async function checkMissedPayments() {
     }
     
     // Check the bot wallet for recent transactions
-    const BOT_WALLET_ADDRESS = process.env.BOT_WALLET_ADDRESS || '0x475579e65E140B11bc4656dD4b05e0CADc8366eB';
+    const BOT_WALLET_ADDRESS = process.env.BOT_WALLET_ADDRESS || '0xcCBE95Ab1E3ECfb73cFeA072460E24D5054c28B2';
     const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL);
     
     console.log(`\n🔍 Checking bot wallet: ${BOT_WALLET_ADDRESS}`);

@@ -45,7 +45,7 @@ router.get('/supply', async (req, res) => {
     const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
     
     // Bot wallet address
-    const BOT_WALLET_ADDRESS = process.env.BOT_WALLET_ADDRESS || '0x475579e65E140B11bc4656dD4b05e0CADc8366eB';
+    const BOT_WALLET_ADDRESS = process.env.BOT_WALLET_ADDRESS || '0xcCBE95Ab1E3ECfb73cFeA072460E24D5054c28B2';
     
     // Real Clanker pool manager address (largest holder from BaseScan)
     const CLANKER_POOL_MANAGER = '0x498581fF718922c3f8e6A244956aF099B2652b2b';

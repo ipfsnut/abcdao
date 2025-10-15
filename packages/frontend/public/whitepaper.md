@@ -23,18 +23,18 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 
 **Clanker Trading Fees ($WETH + $ABC)**:
 - **50%** → Dev wallet (primary treasury/collector)
-- **50%** → Bot wallet → Auto-unwrapped → Staking contract → Distributed to stakers
+- **50%** → Protocol wallet → Auto-unwrapped → Staking contract → Distributed to stakers
 
 **Membership Fees ($ETH)**:
-- **100%** → Bot wallet → Staking contract → Distributed to stakers
+- **100%** → Protocol wallet → Staking contract → Distributed to stakers
 
 **Developer Rewards ($ABC)**:
-- Funded from Bot wallet's portion of $ABC trading fees
+- Funded from Protocol wallet's portion of $ABC trading fees
 - Random rewards (50,000-1,000,000 $ABC per commit)
 
 ### Dual Reward System
 - **Stakers**: Earn $ETH from 50% of Clanker trading fees + 100% of membership fees
-- **Developers**: Earn $ABC tokens for commits (funded from Bot wallet's trading fee portion)
+- **Developers**: Earn $ABC tokens for commits (funded from Protocol wallet's trading fee portion)
 - **Dev Wallet**: Holds 50% of all Clanker trading fees as primary treasury reserves
 
 ## 3. THE DEVELOPER GAME
@@ -97,7 +97,7 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 ### Treasury Reserves
 - Dev wallet holds 50% of all Clanker trading fees ($WETH + $ABC)
 - Primary treasury for long-term project sustainability
-- Separate from operational Bot wallet distributions
+- Separate from operational Protocol wallet distributions
 
 ## 6. FARCASTER INTEGRATION
 
@@ -179,7 +179,7 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 ### Membership System
 **Payment Method**: Direct wallet transfer (no smart contract needed)
 - **Fee**: 0.002 ETH one-time payment
-- **Bot Wallet**: `0x475579e65E140B11bc4656dD4b05e0CADc8366eB`
+- **Bot Wallet**: `0xBE8C49A4F70D56a489b710F1d45689A3BBb04f35`
 - **Process**: Pay bot wallet → Submit transaction hash → Backend verification
 - **Benefits**: Lifetime membership + GitHub commit rewards eligibility
 - **Revenue Flow**: ETH to staking contract for rewards distribution
@@ -217,16 +217,16 @@ The best DAOs don't need complex mechanisms. They need clear purpose, aligned in
 **Network**: Base Mainnet  
 **Token**: $ABC (`0x5c0872b790bb73e2b3a9778db6e7704095624b07`)  
 **Staking**: (`0x577822396162022654D5bDc9CB58018cB53e7017`)  
-**Bot Wallet**: (`0x475579e65E140B11bc4656dD4b05e0CADc8366eB`) - Supports ETH & WETH
+**Protocol Wallet**: (`0xBE6525b767cA8D38d169C93C8120c0C0957388B8`) - Supports ETH & WETH
 
 ## Automated ETH Distribution
 
-The ABC DAO bot automatically distributes incoming ETH every 6 hours according to the following allocation:
+The ABC DAO protocol wallet automatically distributes incoming ETH every 6 hours according to the following allocation:
 
 **Distribution Breakdown:**
 - **25% → Staking Contract** (`0x577822396162022654D5bDc9CB58018cB53e7017`) - Rewards for $ABC stakers
 - **25% → Treasury** (`0x18A85ad341b2D6A2bd67fbb104B4827B922a2A3c`) - Protocol development and maintenance
-- **50% → Bot Operations** (`0x475579e65E140B11bc4656dD4b05e0CADc8366eB`) - Retained for gas, operations, and future distributions
+- **50% → Protocol Operations** (`0xBE6525b767cA8D38d169C93C8120c0C0957388B8`) - Retained for gas, operations, and future distributions
 
 **Automation Details:**
 - **Frequency**: Every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)

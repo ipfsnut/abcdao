@@ -176,7 +176,7 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 ### Membership System
 **Payment Method**: Direct wallet transfer (no smart contract needed)
 - **Fee**: 0.002 ETH one-time payment
-- **Bot Wallet**: `0x475579e65E140B11bc4656dD4b05e0CADc8366eB`
+- **Bot Wallet**: `0xcCBE95Ab1E3ECfb73cFeA072460E24D5054c28B2`
 - **Process**: Pay bot wallet → Submit transaction hash → Backend verification
 - **Benefits**: Lifetime membership + GitHub commit rewards eligibility
 - **Revenue Flow**: ETH to staking contract for rewards distribution
@@ -214,6 +214,6 @@ The best DAOs don't need complex mechanisms. They need clear purpose, aligned in
 **Network**: Base Mainnet  
 **Token**: $ABC (`0x5c0872b790bb73e2b3a9778db6e7704095624b07`)  
 **Staking**: (`0x577822396162022654D5bDc9CB58018cB53e7017`)  
-**Bot Wallet**: (`0x475579e65E140B11bc4656dD4b05e0CADc8366eB`) - Supports ETH & WETH  
+**Bot Wallet**: (`0xcCBE95Ab1E3ECfb73cFeA072460E24D5054c28B2`) - Supports ETH & WETH  
 
 *Version 1.0 | October 2025
