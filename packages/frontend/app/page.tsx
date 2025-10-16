@@ -6,6 +6,8 @@ import { GitHubLinkPanel } from '@/components/github-link';
 import { SwapWidget } from '@/components/swap-widget';
 import { ClaimRewardsPanel } from '@/components/claim-rewards';
 import { TokenSupplyMini } from '@/components/token-supply-chart';
+import { BlogSection } from '@/components/blog-section';
+import { MiniAppPrompt } from '@/components/miniapp-prompt';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
@@ -105,6 +107,9 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Mini-app Prompt */}
+      <MiniAppPrompt />
+
       {/* Hero Call-to-Action Section */}
       <div className="bg-gradient-to-r from-green-950/20 to-black/40 border-b border-green-900/30">
         <div className="px-4 py-6 text-center">
@@ -114,6 +119,62 @@ export default function Home() {
           <p className="text-responsive-xs text-green-600 mb-4 font-mono">
             Ship code, stake tokens, earn rewards. Join the Always Be Coding movement.
           </p>
+        </div>
+      </div>
+
+      {/* Hero Section - "Your Open Source Project Here" */}
+      <div className="bg-gradient-to-r from-green-950/30 via-black/60 to-green-950/30 border-b border-green-900/20">
+        <div className="px-4 py-12 text-center relative overflow-hidden">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-5">
+            <div className="grid grid-cols-8 gap-4 h-full">
+              {Array.from({ length: 32 }).map((_, i) => (
+                <div key={i} className="border border-green-400 animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />
+              ))}
+            </div>
+          </div>
+          
+          <div className="relative z-10 max-w-4xl mx-auto">
+            <div className="border-2 border-dashed border-green-600/50 rounded-xl p-8 bg-black/40 backdrop-blur-sm">
+              <h2 className="text-3xl md:text-4xl font-bold text-green-400 matrix-glow mb-4 font-mono">
+                📢 Your Open Source Project Here
+              </h2>
+              <p className="text-green-300 font-mono text-lg mb-6">
+                Get your repository featured and earn rewards for every commit
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <a
+                  href="/docs#repository-registration"
+                  className="bg-green-900/50 hover:bg-green-800/60 border border-green-700/50 hover:border-green-600 
+                           text-green-400 hover:text-green-300 px-6 py-3 rounded-lg font-mono font-semibold
+                           transition-all duration-300 matrix-button matrix-glow"
+                >
+                  List Your Project →
+                </a>
+                <div className="text-green-600 font-mono text-sm">
+                  <span className="hidden sm:inline">•</span> Pay developers automatically 
+                  <span className="hidden sm:inline">•</span> Build in public 
+                  <span className="hidden sm:inline">•</span> Grow your community
+                </div>
+              </div>
+              
+              {/* Sample project showcase */}
+              <div className="mt-8 pt-6 border-t border-green-900/30">
+                <p className="text-green-600 font-mono text-xs mb-4">Featured Projects:</p>
+                <div className="flex flex-wrap justify-center gap-4 text-sm">
+                  <div className="bg-green-950/30 border border-green-900/40 rounded px-3 py-2 font-mono text-green-400">
+                    🚀 abc-dao/core
+                  </div>
+                  <div className="bg-green-950/30 border border-green-900/40 rounded px-3 py-2 font-mono text-green-400">
+                    ⚡ your-project/here
+                  </div>
+                  <div className="bg-green-950/30 border border-green-900/40 rounded px-3 py-2 font-mono text-green-400">
+                    💎 next-big-thing
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -419,6 +480,11 @@ export default function Home() {
             </div>
           </>
         )}
+      </div>
+      
+      {/* Blog Section */}
+      <div className="px-4 mt-8">
+        <BlogSection />
       </div>
       
       <ContractAddressesFooter />

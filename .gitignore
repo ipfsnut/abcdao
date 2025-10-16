@@ -171,3 +171,10 @@ abc-dao-mission-statement.md
 
 # Todo lists
 ToDo*.txt
+
+# Airdrop planning and configuration
+airdrop-*.md
+*airdrop*.md
+airdrop-*.json
+*airdrop*.json
+community-campaigns/

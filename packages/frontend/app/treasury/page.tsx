@@ -5,6 +5,7 @@ import { useTreasury } from '@/hooks/useTreasury';
 import { useStaking } from '@/hooks/useStaking';
 import { useStats } from '@/hooks/useStats';
 import { ContractAddressesFooter } from '@/components/contract-addresses-footer';
+import { BackNavigation } from '@/components/back-navigation';
 import { Skeleton } from '@/components/skeleton-loader';
 
 export default function TreasuryPage() {
@@ -17,19 +18,10 @@ export default function TreasuryPage() {
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
-      {/* Header */}
-      <header className="border-b border-green-900/30 bg-black/90 backdrop-blur-sm">
-        <div className="px-4 py-6">
-          <div className="max-w-6xl mx-auto">
-            <h1 className="text-responsive-xl font-bold matrix-glow mb-2">
-              {'>'} treasury_dashboard()
-            </h1>
-            <p className="text-responsive-xs text-green-600">
-              Community treasury and rewards distribution
-            </p>
-          </div>
-        </div>
-      </header>
+      <BackNavigation 
+        title="treasury_dashboard()" 
+        subtitle="Protocol treasury and rewards distribution" 
+      />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Treasury Overview Cards */}
