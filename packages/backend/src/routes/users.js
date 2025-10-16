@@ -8,12 +8,10 @@ router.get('/stats', async (req, res) => {
   try {
     const pool = getPool();
     
-    // Count total developers (users with GitHub linked and verified)
+    // Count total developers (all registered users)
     const totalDevsResult = await pool.query(`
       SELECT COUNT(*) as count 
-      FROM users 
-      WHERE github_username IS NOT NULL 
-      AND verified_at IS NOT NULL
+      FROM users
     `);
     
     // Get total commits count

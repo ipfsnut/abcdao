@@ -165,7 +165,7 @@ export default function Home() {
                 </CollapsibleStatCard>
                 <CollapsibleStatCard
                   title="Total Developers"
-                  value={stats.totalDevelopers.toString()}
+                  value={(stats.totalDevelopers || 0).toString()}
                   description="Verified contributors"
                   href="/roster"
                 >
@@ -213,7 +213,7 @@ export default function Home() {
             </CollapsibleStatCard>
             <CollapsibleStatCard
               title="Total Developers"
-              value={stats.totalDevelopers.toString()}
+              value={(stats.totalDevelopers || 0).toString()}
               description="Verified contributors"
               href="/roster"
             >
@@ -317,7 +317,7 @@ export default function Home() {
               {activeTab === 'rewards' && membership.isMember && (
                 isDataLoading ? <RewardsSkeleton /> : <ClaimRewardsPanel />
               )}
-              {activeTab === 'proposals' && !membership.isMember && <GitHubLinkPanel />}
+              {activeTab === 'proposals' && (!membership.isMember || (membership.isMember && !membership.hasGithub)) && <GitHubLinkPanel />}
               {activeTab === 'chat' && (
                 <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm text-center">
                   <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
