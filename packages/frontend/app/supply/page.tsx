@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { TokenSupplyChart } from '@/components/token-supply-chart';
+import { BuyABCSection } from '@/components/buy-abc-section';
 import { config } from '@/lib/config';
 import Link from 'next/link';
 
@@ -256,59 +257,8 @@ export default function SupplyPage() {
               </div>
             </div>
 
-            {/* Data Sources */}
-            <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 backdrop-blur-sm">
-              <h3 className="text-lg font-bold mb-4 text-green-400 matrix-glow font-mono">
-                {'>'} Data Sources
-              </h3>
-              <div className="space-y-2">
-                {Object.entries(supplyData.data_sources).map(([key, source]) => (
-                  <div key={key} className="flex justify-between items-center text-sm">
-                    <span className="text-green-600 capitalize">
-                      {key.replace('_', ' ')}:
-                    </span>
-                    <span className="text-green-400 font-mono">
-                      {source}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 p-3 bg-yellow-950/20 border border-yellow-900/30 rounded">
-                <p className="text-yellow-400 text-xs font-mono">
-                  💡 All data is live from blockchain contracts and updates in real-time
-                </p>
-              </div>
-            </div>
-
-            {/* Technical Details */}
-            <div className="mt-6 lg:mt-8 bg-black/60 border border-green-900/30 rounded-xl p-4 lg:p-6">
-              <h3 className="text-lg font-bold mb-3 lg:mb-4 text-green-400 matrix-glow font-mono">
-                {'>'} Technical Details
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6 text-sm">
-                <div>
-                  <h4 className="text-green-400 font-bold mb-2">Token Allocation</h4>
-                  <ul className="space-y-1 text-green-600">
-                    <li>• Total Supply: 100 Billion $ABC</li>
-                    <li>• Liquid: Held by users, freely tradeable</li>
-                    <li>• Staked: Earning ETH rewards</li>
-                    <li>• Treasury: Protocol rewards pool</li>
-                    <li>• Development: Protocol allocation (5%)</li>
-                    <li>• Clanker: Locked liquidity pool</li>
-                  </ul>
-                </div>
-                <div className="mt-4 sm:mt-0">
-                  <h4 className="text-green-400 font-bold mb-2">Data Updates</h4>
-                  <ul className="space-y-1 text-green-600">
-                    <li>• Refreshed on page load</li>
-                    <li>• Smart contract data (when available)</li>
-                    <li>• Real-time staking amounts</li>
-                    <li>• Dynamic treasury balance</li>
-                    <li>• Fixed allocations (dev, clanker)</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+            {/* Buy $ABC Section */}
+            <BuyABCSection />
           </>
         ) : null}
       </div>

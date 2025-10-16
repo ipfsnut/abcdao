@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTreasury } from '@/hooks/useTreasury';
-import { useStaking } from '@/hooks/useStaking';
+import { useStakingWithPrice } from '@/hooks/useStakingWithPrice';
 import { useStats } from '@/hooks/useStats';
 import { ContractAddressesFooter } from '@/components/contract-addresses-footer';
 import { BackNavigation } from '@/components/back-navigation';
@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/skeleton-loader';
 
 export default function TreasuryPage() {
   const treasuryData = useTreasury();
-  const stakingData = useStaking();
+  const stakingData = useStakingWithPrice();
   const { stats, loading: statsLoading } = useStats();
   const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'allocation'>('overview');
 
@@ -40,7 +40,7 @@ export default function TreasuryPage() {
                 <p className="text-responsive-lg font-bold text-green-400 matrix-glow">
                   {parseFloat(treasuryData.treasuryBalance).toFixed(0)} $ABC
                 </p>
-                <p className="text-green-500 text-xs font-mono mt-1">Community funds</p>
+                <p className="text-green-500 text-xs font-mono mt-1">Protocol funds</p>
               </div>
               
               <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
@@ -56,7 +56,9 @@ export default function TreasuryPage() {
                 <p className="text-responsive-lg font-bold text-green-400 matrix-glow">
                   {parseFloat(stakingData.totalStaked).toFixed(0)} $ABC
                 </p>
-                <p className="text-green-500 text-xs font-mono mt-1">Earning rewards</p>
+                <p className="text-green-500 text-xs font-mono mt-1">
+                  {stakingData.formatUSD(stakingData.totalStakedValueUSD)} • Earning rewards
+                </p>
               </div>
               
               <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
