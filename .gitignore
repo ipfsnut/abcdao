@@ -192,3 +192,10 @@ intelligent-*.md
 bot-analysis-*.md
 *bot-analysis*.md
 ai-enhancement-*/
+
+# Discord infrastructure and automation planning
+programmable-discord-*.md
+*programmable-discord*.md
+discord-automation-*.md
+*discord-automation*.md
+repo-structure-*/
