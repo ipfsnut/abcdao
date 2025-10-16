@@ -80,10 +80,10 @@ export class PaymentRecoveryCron {
   async findOrphanedPayments() {
     try {
       const alchemyUrl = process.env.ALCHEMY_RPC_URL;
-      const botWalletAddress = process.env.BOT_WALLET_ADDRESS;
+      const protocolWalletAddress = process.env.PROTOCOL_WALLET_ADDRESS || '0xBE6525b767cA8D38d169C93C8120c0C0957388B8';
       
-      if (!alchemyUrl || !botWalletAddress) {
-        console.warn('⚠️ Missing ALCHEMY_RPC_URL or BOT_WALLET_ADDRESS, skipping payment recovery');
+      if (!alchemyUrl || !protocolWalletAddress) {
+        console.warn('⚠️ Missing ALCHEMY_RPC_URL or PROTOCOL_WALLET_ADDRESS, skipping payment recovery');
         return [];
       }
 
@@ -105,7 +105,7 @@ export class PaymentRecoveryCron {
       // Look back 1 week (approximately 50,400 blocks)
       const fromBlock = Math.max(0, latestBlock - 50400);
 
-      // Get transactions to bot wallet
+      // Get transactions to protocol wallet
       const response = await fetch(alchemyUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -115,7 +115,7 @@ export class PaymentRecoveryCron {
           params: [{
             fromBlock: `0x${fromBlock.toString(16)}`,
             toBlock: 'latest',
-            toAddress: botWalletAddress,
+            toAddress: protocolWalletAddress,
             category: ['external'],
             excludeZeroValue: true,
             maxCount: 100

@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { getPool } from '../services/database.js';
+import { initializeDatabase, getPool } from '../services/database.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -196,6 +196,9 @@ class RewardDebtProcessor {
       console.log('🤖 ABC DAO Reward Debt Processor');
       console.log('==================================\n');
       
+      // Initialize database connection
+      await initializeDatabase();
+      
       const rewardDebt = await this.calculateRewardDebt();
       
       if (rewardDebt.length === 0) {
@@ -251,7 +254,11 @@ class RewardDebtProcessor {
 // Run if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   const processor = new RewardDebtProcessor();
-  processor.processRewardDebt().then(() => {
+  
+  // Initialize database first
+  initializeDatabase().then(() => {
+    return processor.processRewardDebt();
+  }).then(() => {
     console.log('\n✨ Process completed successfully');
     process.exit(0);
   }).catch(error => {

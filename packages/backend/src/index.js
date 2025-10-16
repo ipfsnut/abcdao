@@ -21,6 +21,9 @@ import tokenSupplyRoutes from './routes/token-supply.js';
 import repositoryRoutes from './routes/repositories.js';
 import transactionValidationRoutes from './routes/transaction-validation.js';
 import paymentRecoveryRoutes from './routes/payment-recovery.js';
+// Removed: distributions routes now merged into rewards.js
+import githubVerificationRoutes from './routes/github-verification.js';
+import ethDistributionsRoutes from './routes/eth-distributions.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
@@ -101,6 +104,8 @@ app.use('/api/commits', commitTagRoutes);
 app.use('/api/repositories', repositoryRoutes);
 app.use('/api/auth', transactionValidationRoutes);
 app.use('/api/admin', paymentRecoveryRoutes);
+app.use('/api/github', githubVerificationRoutes);
+app.use('/api/distributions', ethDistributionsRoutes);
 
 // Custom cast endpoint (requires admin key for security)
 app.post('/api/cast/custom', async (req, res) => {

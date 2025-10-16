@@ -9,8 +9,8 @@ import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { config } from '@/lib/config';
 import { TransactionValidator } from './transaction-validator';
 
-// Bot's wallet address for receiving membership payments
-const BOT_WALLET_ADDRESS = '0xBE8C49A4F70D56a489b710F1d45689A3BBb04f35' as `0x${string}`;
+// Protocol wallet address for receiving membership payments
+const PROTOCOL_WALLET_ADDRESS = process.env.NEXT_PUBLIC_PROTOCOL_WALLET_ADDRESS as `0x${string}` || '0xBE6525b767cA8D38d169C93C8120c0C0957388B8' as `0x${string}`;
 const MEMBERSHIP_FEE = '0.002'; // ETH
 
 interface MembershipPaymentPanelProps {
@@ -140,7 +140,7 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
 
     try {
       sendTransaction({
-        to: BOT_WALLET_ADDRESS,
+        to: PROTOCOL_WALLET_ADDRESS,
         value: parseEther(MEMBERSHIP_FEE),
         data: `0x${Buffer.from(`ABC_DAO_MEMBERSHIP_FID:${profile.fid}`).toString('hex')}` as `0x${string}`,
       });

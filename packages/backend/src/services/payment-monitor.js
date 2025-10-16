@@ -8,14 +8,14 @@ dotenv.config();
 class PaymentMonitor {
   constructor() {
     this.provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
-    this.botWalletAddress = process.env.BOT_WALLET_ADDRESS || '0xcCBE95Ab1E3ECfb73cFeA072460E24D5054c28B2';
+    this.protocolWalletAddress = process.env.PROTOCOL_WALLET_ADDRESS || '0xBE6525b767cA8D38d169C93C8120c0C0957388B8';
     this.expectedAmount = ethers.parseEther('0.002'); // 0.002 ETH membership fee
     this.isMonitoring = false;
     this.lastCheckedBlock = null;
   }
 
   /**
-   * Start monitoring payments to bot wallet
+   * Start monitoring membership payments to protocol wallet
    */
   async startMonitoring() {
     if (this.isMonitoring) {
@@ -25,7 +25,7 @@ class PaymentMonitor {
 
     this.isMonitoring = true;
     console.log('👁️ Starting payment monitor...');
-    console.log(`   Watching: ${this.botWalletAddress}`);
+    console.log(`   Watching: ${this.protocolWalletAddress}`);
     console.log(`   Expected amount: ${ethers.formatEther(this.expectedAmount)} ETH`);
 
     // Get current block to start monitoring from
@@ -73,7 +73,7 @@ class PaymentMonitor {
 
       // Check each transaction in the block
       for (const tx of block.transactions) {
-        if (tx.to && tx.to.toLowerCase() === this.botWalletAddress.toLowerCase()) {
+        if (tx.to && tx.to.toLowerCase() === this.protocolWalletAddress.toLowerCase()) {
           await this.processPaymentTransaction(tx);
         }
       }
@@ -247,7 +247,7 @@ class PaymentMonitor {
         if (!block || !block.transactions) continue;
 
         for (const tx of block.transactions) {
-          if (tx.to && tx.to.toLowerCase() === this.botWalletAddress.toLowerCase()) {
+          if (tx.to && tx.to.toLowerCase() === this.protocolWalletAddress.toLowerCase()) {
             await this.processPaymentTransaction(tx);
             paymentsFound++;
           }

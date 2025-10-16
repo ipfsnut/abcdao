@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useStaking } from '@/hooks/useStaking';
 import { useUnbonding } from '@/hooks/useUnbonding';
-import { useTreasury } from '@/hooks/useTreasury';
 import { ContractAddressesFooter } from '@/components/contract-addresses-footer';
 import { BackNavigation } from '@/components/back-navigation';
 import { Skeleton } from '@/components/skeleton-loader';
@@ -11,7 +10,6 @@ import { Skeleton } from '@/components/skeleton-loader';
 export default function StakingPage() {
   const stakingData = useStaking();
   const unbondingData = useUnbonding();
-  const treasuryData = useTreasury();
   const [activeTab, setActiveTab] = useState<'overview' | 'stake' | 'unbonding'>('overview');
   const [amount, setAmount] = useState('');
   const [isStaking, setIsStaking] = useState(true);
@@ -161,12 +159,9 @@ export default function StakingPage() {
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-green-600">Vote Power:</span>
+                        <span className="text-green-600">Estimated APY:</span>
                         <span className="text-green-400">
-                          {treasuryData.treasuryBalance && parseFloat(treasuryData.treasuryBalance) > 0
-                            ? ((parseFloat(stakingData.stakedAmount) / parseFloat(treasuryData.treasuryBalance)) * 100).toFixed(2)
-                            : '0.00'
-                          }%
+                          {stakingData.estimatedAPY ? stakingData.estimatedAPY.toFixed(1) : '0.0'}%
                         </span>
                       </div>
                     </div>

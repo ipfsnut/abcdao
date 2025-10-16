@@ -5,6 +5,9 @@ import { useAPYCalculator } from '@/hooks/useAPYCalculator';
 
 export function APYCalculator() {
   const { apyData, calculateProjectedEarnings, getAPYRange, getOptimalStakingAmount, isLoading } = useAPYCalculator();
+  
+  // Check if we have any meaningful data
+  const hasData = apyData.currentAPY > 0 || apyData.averageAPY > 0;
   const [calculatorAmount, setCalculatorAmount] = useState('10000');
   const [targetMonthly, setTargetMonthly] = useState('100');
 
@@ -55,6 +58,33 @@ export function APYCalculator() {
               <div className="h-20 bg-green-950/20 rounded-lg"></div>
             </div>
             <div className="h-32 bg-green-950/20 rounded-lg"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasData) {
+    return (
+      <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 backdrop-blur-sm">
+        <h3 className="text-lg font-bold text-green-400 matrix-glow font-mono mb-6">
+          {'>'} APY_calculator()
+        </h3>
+        
+        <div className="text-center py-8">
+          <div className="text-4xl mb-4">📈</div>
+          <p className="text-green-600 font-mono text-sm mb-2">APY Calculator Not Available</p>
+          <p className="text-green-700 font-mono text-xs mb-4">
+            APY calculations require ETH distribution history. Calculator will be available after the first automated distribution.
+          </p>
+          <div className="bg-blue-950/20 border border-blue-700/50 rounded-lg p-3 text-left max-w-md mx-auto">
+            <p className="text-blue-400 font-mono text-xs font-semibold mb-1">Calculator will show:</p>
+            <ul className="text-blue-300 font-mono text-xs space-y-1">
+              <li>• Current and historical APY</li>
+              <li>• Earnings projections</li>
+              <li>• Optimal staking amounts</li>
+              <li>• Performance trends</li>
+            </ul>
           </div>
         </div>
       </div>
