@@ -9,14 +9,16 @@ import { BackNavigation } from '@/components/back-navigation';
 import { Skeleton } from '@/components/skeleton-loader';
 import { EthRewardsHistory } from '@/components/eth-rewards-history';
 import { APYCalculator } from '@/components/apy-calculator';
+import { useTreasuryBalances } from '@/hooks/useTreasuryBalances';
 
 export default function TreasuryPage() {
   const treasuryData = useTreasury();
   const stakingData = useStakingWithPrice();
   const { stats, loading: statsLoading } = useStats();
+  const { balances: treasuryBalances, loading: balancesLoading } = useTreasuryBalances();
   const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'allocation'>('overview');
 
-  const isLoading = !treasuryData.treasuryBalance || !stakingData.totalRewardsDistributed || statsLoading;
+  const isLoading = !treasuryData.treasuryBalance || !stakingData.totalRewardsDistributed || statsLoading || balancesLoading;
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
@@ -38,13 +40,11 @@ export default function TreasuryPage() {
           ) : (
             <>
               <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
-                <h3 className="text-green-600 text-responsive-xs font-mono mb-1">Protocol Treasury</h3>
+                <h3 className="text-green-600 text-responsive-xs font-mono mb-1">Total Treasury Value</h3>
                 <p className="text-responsive-lg font-bold text-green-400 matrix-glow">
-                  {parseFloat(treasuryData.treasuryBalance).toFixed(0)} $ABC
+                  {treasuryBalances?.formatUSD(treasuryBalances.totalValueUSD) || '$0.00'}
                 </p>
-                <p className="text-green-500 text-xs font-mono mt-1">
-                  {stakingData.formatUSD(parseFloat(treasuryData.treasuryBalance) * (stakingData.tokenPrice || 0))}
-                </p>
+                <p className="text-green-500 text-xs font-mono mt-1">All protocol assets</p>
               </div>
               
               <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
@@ -138,10 +138,10 @@ export default function TreasuryPage() {
                           <span className="text-green-600">ETH Balance:</span>
                           <div className="text-right">
                             <div className="text-green-400 font-bold">
-                              0.000 ETH
+                              {treasuryBalances?.ethBalance || '0.000'} ETH
                             </div>
                             <div className="text-green-700 text-xs">
-                              $0.00
+                              {treasuryBalances?.formatUSD(treasuryBalances.ethBalanceUSD) || '$0.00'}
                             </div>
                           </div>
                         </div>
@@ -149,10 +149,10 @@ export default function TreasuryPage() {
                           <span className="text-green-600">USDC Balance:</span>
                           <div className="text-right">
                             <div className="text-green-400 font-bold">
-                              0.00 USDC
+                              {treasuryBalances?.usdcBalance || '0.00'} USDC
                             </div>
                             <div className="text-green-700 text-xs">
-                              Protocol funds
+                              {treasuryBalances?.formatUSD(treasuryBalances.usdcBalanceUSD) || '$0.00'}
                             </div>
                           </div>
                         </div>
