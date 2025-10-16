@@ -20,6 +20,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: "ABC DAO - Ship Code, Earn Rewards",
     description: "Stake $ABC, link GitHub, earn crypto for every commit. Built for Farcaster developers.",
+    url: "https://abc.epicdylan.com",
+    siteName: "ABC DAO",
+    type: "website",
     images: [
       {
         url: "https://abc.epicdylan.com/og-image.png",
@@ -28,6 +31,14 @@ export const metadata: Metadata = {
         alt: "ABC DAO - Ship Code, Earn Rewards",
       },
     ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ABC DAO - Ship Code, Earn Rewards",
+    description: "Stake $ABC, link GitHub, earn crypto for every commit. Built for Farcaster developers.",
+    images: ["https://abc.epicdylan.com/og-image.png"],
+    creator: "@epicdylan",
+    site: "@abc_dao",
   },
   other: {
     "fc:miniapp": JSON.stringify({

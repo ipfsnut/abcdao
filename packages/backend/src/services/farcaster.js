@@ -115,6 +115,24 @@ class FarcasterService {
     return this.publishCast(message);
   }
 
+  async followUser(targetFid) {
+    this.initialize();
+    if (!this.client || !this.signerUuid) {
+      console.error('❌ Cannot follow user: Farcaster not configured properly');
+      return null;
+    }
+
+    try {
+      const response = await this.client.followUser(this.signerUuid, targetFid);
+      console.log(`✅ ABC DAO bot now following user FID ${targetFid}`);
+      return response;
+    } catch (error) {
+      console.error(`❌ Failed to follow user ${targetFid}:`, error.message);
+      // Don't throw error - following is a nice-to-have feature
+      return null;
+    }
+  }
+
   async testPost() {
     return this.publishCast('🤖 Hello from @abcbot! Testing 1-2-3... 🚀');
   }

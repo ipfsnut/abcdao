@@ -124,10 +124,10 @@ export function ClaimRewardsPanel() {
   } : null;
 
   const contractStatsParsed = contractStats && Array.isArray(contractStats) && contractStats.length >= 4 ? {
-    totalAllocated: formatEther(contractStats[0] || 0n),
-    totalClaimed: formatEther(contractStats[1] || 0n),
-    contractBalance: formatEther(contractStats[2] || 0n),
-    batchCount: (contractStats[3] || 0n).toString()
+    totalAllocated: formatEther(contractStats[0] || BigInt(0)),
+    totalClaimed: formatEther(contractStats[1] || BigInt(0)),
+    contractBalance: formatEther(contractStats[2] || BigInt(0)),
+    batchCount: (contractStats[3] || BigInt(0)).toString()
   } : null;
 
   if (!address) {

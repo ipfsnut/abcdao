@@ -35,4 +35,10 @@ Deployed to Base Mainnet
 
 ## Documentation
 
-See [whitepaper.txt](./whitepaper.txt) for the full project specification.
+See [WHITEPAPER.md](./WHITEPAPER.md) for the full project specification.
+
+## Links
+
+- **Mini-app**: [https://farcaster.xyz/miniapps/S1edg9PycxZP/abcdao](https://farcaster.xyz/miniapps/S1edg9PycxZP/abcdao)
+- **Website**: [https://abc.epicdylan.com](https://abc.epicdylan.com)
+- **Creator**: [Dylan Stow](https://epicdylan.com)

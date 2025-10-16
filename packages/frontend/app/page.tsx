@@ -59,7 +59,14 @@ export default function Home() {
                   <p className="text-sm font-bold text-green-400 matrix-glow text-center">{parseFloat(stakingData.tokenBalance).toFixed(2)} $ABC</p>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <WhitepaperButton />
+                  <a
+                    href="/docs"
+                    className="bg-green-900/30 hover:bg-green-800/40 border border-green-700/50 hover:border-green-600/70 
+                               text-green-400 hover:text-green-300 px-4 py-2 rounded-lg font-mono text-sm text-center
+                               transition-all duration-200 matrix-button"
+                  >
+                    📚 Documentation
+                  </a>
                   <RepositoryIntegrationButton />
                 </div>
               </div>
@@ -87,8 +94,14 @@ export default function Home() {
                 
                 {/* Mobile-Optimized Actions */}
                 <div className="flex items-center gap-2">
-                  <WhitepaperButton />
-                  <RepositoryIntegrationButton />
+                  <a
+                    href="/docs"
+                    className="bg-green-900/30 hover:bg-green-800/40 border border-green-700/50 hover:border-green-600/70 
+                               text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs
+                               transition-all duration-200 matrix-button"
+                  >
+                    Docs
+                  </a>
                   <div className="hidden sm:block">
                     <FarcasterAuth />
                   </div>
@@ -114,19 +127,6 @@ export default function Home() {
           <p className="text-responsive-xs text-green-600 mb-4 font-mono">
             Ship code, stake tokens, earn rewards. Join the Always Be Coding movement.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-            <a
-              href="https://app.uniswap.org/#/swap?outputCurrency=0x5c0872b790bb73e2b3a9778db6e7704095624b07&chain=base"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-green-900/30 hover:bg-green-800/40 border border-green-700/50 hover:border-green-600/70 
-                         text-green-400 hover:text-green-300 px-6 py-3 rounded-lg font-mono text-sm
-                         transition-all duration-200 matrix-button w-full sm:w-auto text-center"
-            >
-              🔄 Get $ABC on Uniswap
-            </a>
-            <RepositoryIntegrationButton />
-          </div>
         </div>
       </div>
 

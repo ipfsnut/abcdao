@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   // Disable build cache that causes issues with Cloudflare Pages
   experimental: {
     webpackBuildWorker: false

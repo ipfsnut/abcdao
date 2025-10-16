@@ -16,17 +16,33 @@ This guide shows repository owners how to integrate with ABC DAO's reward system
 ## 📋 Prerequisites
 
 ### For Repository Owners:
-- Repository must be **public** on GitHub
+- Repository can be **public or private** on GitHub
 - Admin access to repository settings
-- ABC DAO webhook secret (contact team)
+- ABC DAO membership (0.002 ETH) and GitHub account linked
 
 ### For Contributors:
 - Must be ABC DAO members (paid membership + GitHub linked)
-- GitHub account linked at https://farcaster.xyz/miniapps/S1edg9PycxZP/abcdao
+- GitHub account linked via ABC DAO app
 
 ## ⚙️ Setup Instructions
 
-### Step 1: Add ABC DAO Webhook
+### Step 1: Register Your Repository
+
+First, register your repository with ABC DAO via the API:
+
+\`\`\`bash
+# POST to: https://abcdao-production.up.railway.app/api/repositories/{your-fid}/repositories
+# Body: {
+#   "repository_name": "username/repo-name",
+#   "repository_url": "https://github.com/username/repo-name"
+# }
+\`\`\`
+
+**Limits:**
+- Standard members: 3 repositories
+- Premium stakers (5M+ $ABC): Unlimited repositories
+
+### Step 2: Add ABC DAO Webhook
 
 1. Go to your repository on GitHub
 2. Navigate to **Settings** → **Webhooks**
@@ -34,43 +50,44 @@ This guide shows repository owners how to integrate with ABC DAO's reward system
 4. Configure the webhook:
 
 \`\`\`
-Payload URL: [Provided by ABC DAO team]
+Payload URL: https://abcdao-production.up.railway.app/api/webhooks/github
 Content type: application/json
-Secret: [Contact ABC DAO team for webhook secret]
 Events: Select "Push events"
 Active: ✅ Checked
 \`\`\`
 
 5. Click **Add webhook**
 
-### Step 2: Verify Integration
+### Step 3: Verify Integration
 
 After setup, make a test commit. If successful, you should see:
 - ✅ Webhook delivery in GitHub webhook logs  
-- ✅ Bot cast on Farcaster announcing the commit (if contributor is ABC DAO member)
-- ✅ Reward recorded in ABC DAO system
+- ✅ Bot cast on Farcaster via @abc-dao-commits (if contributor is ABC DAO member)
+- ✅ Reward recorded in ABC DAO system and claimable in app
 
 ## 💰 How Rewards Work
 
 ### Automatic Reward Calculation
-- **Base reward**: 50,000-1,000,000 $ABC per commit
-- **Bonus rewards**: Applied for priority commits, quality contributions
-- **Distribution**: Rewards added to contributor's claimable balance
+- **Base reward**: 50,000-999,000 $ABC per commit (randomized distribution)
+- **Bonus rewards**: 1.5x multiplier for priority tags
+- **Distribution**: Rewards processed in real-time and added to claimable balance
 
 ### Commit Tags (Optional)
 Contributors can add special tags to commit messages for bonus rewards:
 
 \`\`\`bash
-git commit -m "Fix user authentication bug #priority"
+git commit -m "Fix user authentication bug #high"
 git commit -m "Add new feature #milestone" 
-git commit -m "Update documentation #docs"
+git commit -m "Update documentation #silent"  # No Farcaster announcement
+git commit -m "Minor fix #norew"  # Skip rewards entirely
 \`\`\`
 
 ### Bot Announcements
-When ABC DAO members commit to integrated repositories:
-- 🤖 **Bot posts on Farcaster** announcing the contribution
+When ABC DAO members commit to registered repositories:
+- 🤖 **@abc-dao-commits** posts on Farcaster announcing the contribution
 - 📊 **Reward amount** is publicly displayed
 - 🔗 **Links** to commit and contributor profile
+- 🔇 **Silent mode** available with #silent tag
 
 ## 👥 Member Management
 
@@ -81,15 +98,15 @@ Contributors with GitHub linked and ready to earn rewards:
 
 ### Adding New Contributors
 1. **Join ABC DAO**: Pay 0.002 ETH membership fee
-2. **Link GitHub**: Connect account at ABC DAO miniapp
-3. **Start contributing**: Commits to integrated repos automatically earn rewards
+2. **Link GitHub**: Connect account at ABC DAO app
+3. **Start contributing**: Commits to registered repos automatically earn rewards
 
 ## 🔧 Technical Details
 
 ### Webhook Events Processed
-- **Push events**: New commits to main/master branches
+- **Push events**: New commits to any branch
 - **Commit data**: Author, message, repository, timestamp
-- **Filtering**: Only processes commits from ABC DAO members
+- **Filtering**: Only processes commits from ABC DAO members to registered repositories
 
 ### Reward Calculation Factors
 - **Commit size**: Lines changed, files modified
@@ -423,8 +440,7 @@ git push origin main
                   <div>
                     <span className="text-blue-600">Payload URL:</span>
                     <br />
-                    <code className="text-blue-300">[Provided by ABC DAO team]</code>
-fye
+                    <code className="text-blue-300">https://abcdao-production.up.railway.app/api/webhooks/github</code>
                   </div>
                   <div>
                     <span className="text-blue-600">Content type:</span>
@@ -439,33 +455,37 @@ fye
                   <div>
                     <span className="text-blue-600">Secret:</span>
                     <br />
-                    <code className="text-blue-300">[Contact ABC DAO team]</code>
+                    <code className="text-blue-300">Optional (leave blank for now)</code>
                   </div>
                 </div>
               </div>
             </div>
             
             <div>
-              <h4 className="text-lg font-semibold text-blue-300 mb-4">Commit Tag Bonuses</h4>
+              <h4 className="text-lg font-semibold text-blue-300 mb-4">Commit Tag System</h4>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <code className="bg-green-950/30 text-green-400 px-2 py-1 rounded text-sm">#priority</code>
-                  <span className="text-blue-200">+50% bonus rewards</span>
+                  <code className="bg-green-950/30 text-green-400 px-2 py-1 rounded text-sm">#high</code>
+                  <span className="text-blue-200">1.5x bonus rewards</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <code className="bg-purple-950/30 text-purple-400 px-2 py-1 rounded text-sm">#milestone</code>
-                  <span className="text-blue-200">+100% bonus rewards</span>
+                  <span className="text-blue-200">1.5x bonus rewards</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <code className="bg-blue-950/30 text-blue-400 px-2 py-1 rounded text-sm">#docs</code>
-                  <span className="text-blue-200">+25% bonus rewards</span>
+                  <code className="bg-blue-950/30 text-blue-400 px-2 py-1 rounded text-sm">#silent</code>
+                  <span className="text-blue-200">No Farcaster announcement</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <code className="bg-red-950/30 text-red-400 px-2 py-1 rounded text-sm">#norew</code>
+                  <span className="text-blue-200">Skip rewards entirely</span>
                 </div>
               </div>
               
               <div className="mt-4 p-3 bg-blue-950/20 border border-blue-800/50 rounded">
                 <p className="text-blue-300 text-sm font-mono">
                   <strong>Example:</strong><br />
-                  <code>git commit -m &quot;Fix auth bug #priority&quot;</code>
+                  <code>git commit -m &quot;Fix auth bug #high&quot;</code>
                 </p>
               </div>
             </div>

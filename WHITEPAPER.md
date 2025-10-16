@@ -210,10 +210,12 @@ The best DAOs don't need complex mechanisms. They need clear purpose, aligned in
 
 ---
 
-**Stake & Ship**: [abc.epicdylan.com](https://abc.epicdylan.com)  
+**Website**: [abc.epicdylan.com](https://abc.epicdylan.com)  
+**Mini-app**: [farcaster.xyz/miniapps/S1edg9PycxZP/abcdao](https://farcaster.xyz/miniapps/S1edg9PycxZP/abcdao)  
 **Network**: Base Mainnet  
 **Token**: $ABC (`0x5c0872b790bb73e2b3a9778db6e7704095624b07`)  
 **Staking**: (`0x577822396162022654D5bDc9CB58018cB53e7017`)  
 **Bot Wallet**: (`0xcCBE95Ab1E3ECfb73cFeA072460E24D5054c28B2`) - Supports ETH & WETH  
+**Creator**: [Dylan Stow](https://epicdylan.com)
 
 *Version 1.0 | October 2025

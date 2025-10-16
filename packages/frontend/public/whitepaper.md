@@ -21,21 +21,21 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 
 ### Fee Distribution Model
 
-**Clanker Trading Fees ($WETH + $ABC)**:
-- **50%** → Dev wallet (primary treasury/collector)
-- **50%** → Protocol wallet → Auto-unwrapped → Staking contract → Distributed to stakers
+**Clanker Trading Fees**:
+- **$ETH portion** → Staking contract → Distributed to stakers
+- **$ABC portion** → Developer reward pool → Distributed to developers for commits
 
 **Membership Fees ($ETH)**:
-- **100%** → Protocol wallet → Staking contract → Distributed to stakers
+- **100%** → Staking contract → Distributed to stakers
 
 **Developer Rewards ($ABC)**:
-- Funded from Protocol wallet's portion of $ABC trading fees
-- Random rewards (50,000-1,000,000 $ABC per commit)
+- Funded from $ABC trading fees collected by protocol
+- Random rewards (50,000-999,000 $ABC per commit)
 
 ### Dual Reward System
-- **Stakers**: Earn $ETH from 50% of Clanker trading fees + 100% of membership fees
-- **Developers**: Earn $ABC tokens for commits (funded from Protocol wallet's trading fee portion)
-- **Dev Wallet**: Holds 50% of all Clanker trading fees as primary treasury reserves
+- **Stakers**: Earn $ETH from trading fees + 100% of membership fees
+- **Developers**: Earn $ABC tokens from trading fees for commits
+- **Clear Separation**: $ETH flows to stakers, $ABC flows to developers
 
 ## 3. THE DEVELOPER GAME
 
@@ -48,27 +48,26 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 6. **Earn rewards**: Get $ABC for commits + ETH from staking
 
 ### Staking Benefits
-- Unlock commit rewards (must be staked to earn)
-- **Earn $ETH from 50% of Clanker trading fees** (primary reward stream)
-- **Earn $ETH from 100% of membership fees** (secondary reward stream)
+- **Earn $ETH from Clanker trading fees** (primary reward stream)
+- **Earn $ETH from 100% of membership fees** (secondary reward stream)  
 - Automatic WETH unwrapping for seamless reward distribution
-- Higher stake = higher commit rewards
+- Passive income from protocol fees
 - Build reputation on Farcaster
-- No governance - just ship and earn
+- No governance - just stake and earn
 
 ## 4. COMMIT RECOGNITION SYSTEM
 
-### The ABC Bot
-- **Platform**: Farcaster account powered by Neynar API
-- **Function**: Monitors GitHub commits from registered developers
-- **Action**: Posts achievement casts and distributes rewards
+### The ABC DAO Bots
+- **Platform**: Farcaster accounts powered by Neynar API
+- **Function**: Monitor GitHub commits from registered developers
+- **Action**: Post achievement casts and distribute rewards via @abc-dao-commits
 
 ### Recognition Flow
-1. Registered Developer makes a commit to any public repo
-2. ABC Bot detects the commit via GitHub webhooks
-3. Bot posts cast celebrating the commit (tags Farcaster username)
+1. Registered Developer makes a commit to registered repository
+2. ABC DAO backend detects the commit via GitHub webhooks
+3. @abc-dao-commits posts cast celebrating the commit (tags Farcaster username)
 4. $ABC rewards recorded in database for future claiming
-5. Daily batch processing prepares rewards for distribution
+5. Real-time processing and reward distribution
 
 ### Reward Formula
 - Simple: 1 commit = 1 reward
@@ -80,30 +79,25 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 
 ## 5. REWARD DISTRIBUTION
 
-### Developer Rewards (Current Phase)
-- Funded by $ABC from Bot wallet's 50% share of trading fees
-- Random rewards between 50,000-1,000,000 $ABC per commit
-- Immediate cast announcements via @abc-bot with commit URLs
-- PostgreSQL tracking with job queue processing (Bull/Redis)
-- Real-time webhook processing with exponential backoff retry
-- Future implementation: Smart contract-based claimable rewards
+### Developer Rewards
+- Funded by $ABC trading fees collected by protocol
+- Random rewards between 50,000-999,000 $ABC per commit
+- Immediate cast announcements via @abc-dao-commits with commit URLs
+- PostgreSQL tracking with real-time processing
+- Automated reward distribution system
+- Claimable via main ABC DAO application
 
 ### Staker Rewards
-- $ETH from Bot wallet's 50% share of Clanker trading fees (WETH auto-unwrapped)
+- $ETH from Clanker trading fees (WETH auto-unwrapped)
 - $ETH from 100% of membership fees
 - Claim anytime from staking contract
-- Compounds with more stakers joining
-
-### Treasury Reserves
-- Dev wallet holds 50% of all Clanker trading fees ($WETH + $ABC)
-- Primary treasury for long-term project sustainability
-- Separate from operational Protocol wallet distributions
+- Passive income scales with protocol usage
 
 ## 6. FARCASTER INTEGRATION
 
-### ABC Bot Account
-- **Username**: @abc-bot
-- **Purpose**: Automated developer recognition
+### ABC DAO Bots
+- **@abc-dao-commits**: Individual commit announcements and developer recognition
+- **@abc-dao-dev**: Ecosystem updates, leaderboards, and general announcements
 - **Powered by**: Neynar API
 - **Status**: Live and operational
 
@@ -124,32 +118,34 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 **Core Benefits**:
 - **Commit Recasts**: Automatic Farcaster recognition for every commit
 - **Variable Rewards**: Earn 50,000-1,000,000 $ABC per commit (randomized)
-- **Repository Registration**: Add up to 3 public repositories to reward system
-- **Priority Tags**: Use #priority, #milestone, #docs tags for bonus rewards
+- **Repository Registration**: Add up to 3 repositories to reward system
+- **Priority Tags**: Use #high, #milestone tags for 1.5x reward multipliers
 - **Governance Rights**: Vote on DAO proposals and treasury decisions
 - **Staking Eligibility**: Stake $ABC to earn $ETH from trading fees
 
 **Repository Integration**:
-- Members can register up to **3 public repositories** for automatic rewards
+- Members can register up to **3 repositories** for automatic rewards (public or private)
+- **Premium Stakers** (5M+ $ABC staked) get unlimited repository slots
 - GitHub webhook integration tracks commits in real-time  
 - Bot automatically casts achievements: "🚀 @username shipped code! Earned X $ABC"
-- Commit tags (#priority, #milestone) trigger bonus reward multipliers
-- All repositories must be public and member must have admin access
+- Commit tags (#high, #milestone) trigger 1.5x reward multipliers
+- Repository admin access required for registration
 
 ### Partnership Program (1,000,000 $ABC)
 **Organizational Benefits**:
-- **Enhanced Multipliers**: 2x-5x reward rates for all contributors
+- **Enhanced Multipliers**: 2x reward rates for all contributors
 - **Priority Support**: Dedicated partnership management
 - **Featured Promotion**: Highlighted in community channels and bot casts
-- **Custom Structures**: Tailored reward systems for specific project needs
 - **Unlimited Repositories**: Add any number of repositories to reward system
 - **Partnership Badge**: Special recognition in all community interactions
+- **Flexible Configuration**: Custom reward parameters and channel targeting
 
 **Partnership Qualification**:
-- Payment of 1,000,000 $ABC tokens to partnership contract
+- Payment of 1,000,000 $ABC tokens to protocol wallet
 - Organization must maintain active development community
-- Repositories must be substantial open-source projects
-- Commitment to promoting ABC DAO to contributors
+- Must be substantial open-source projects or applications
+- Commitment to promoting ABC DAO within developer community
+- Application review and approval process
 
 ### Repository Reward System
 **Automatic Processing**:
@@ -160,11 +156,12 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 - No manual intervention required
 
 **Smart Recognition**:
-- Base rewards: 50,000-1,000,000 $ABC (randomized)
-- Priority commits: +50% bonus for #priority tag
-- Milestone commits: +100% bonus for #milestone tag  
-- Documentation: +25% bonus for #docs tag
-- Partnership repos: 2x-5x base multiplier applied
+- Base rewards: 50,000-999,000 $ABC (randomized distribution)
+- High priority: 1.5x multiplier for #high tag
+- Milestone commits: 1.5x multiplier for #milestone tag  
+- Silent commits: #silent tag skips Farcaster announcements
+- Skip rewards: #norew tag excludes commit from rewards
+- Partnership repos: 2x base multiplier applied
 
 ## 8. TECHNICAL ARCHITECTURE
 

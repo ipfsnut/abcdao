@@ -2,6 +2,7 @@ import express from 'express';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { getPool } from '../services/database.js';
+import farcasterService from '../services/farcaster.js';
 
 const router = express.Router();
 
@@ -57,8 +58,10 @@ router.get('/github/callback', async (req, res) => {
     
     // Check if user already exists
     const existingUser = await pool.query(`
-      SELECT id FROM users WHERE farcaster_fid = $1
+      SELECT id, verified_at FROM users WHERE farcaster_fid = $1
     `, [farcasterInfo.fid]);
+    
+    const isNewLinking = existingUser.rows.length === 0 || !existingUser.rows[0].verified_at;
     
     if (existingUser.rows.length > 0) {
       // Update existing user
@@ -87,6 +90,17 @@ router.get('/github/callback', async (req, res) => {
     }
     
     console.log(`✅ Linked GitHub ${githubUser.login} to Farcaster ${farcasterInfo.username}`);
+    
+    // Auto-follow the user when they first complete GitHub linking
+    if (isNewLinking) {
+      try {
+        await farcasterService.followUser(farcasterInfo.fid);
+        console.log(`✅ Auto-followed new developer: @${farcasterInfo.username} (FID: ${farcasterInfo.fid})`);
+      } catch (error) {
+        console.error('⚠️ Auto-follow failed (non-critical):', error.message);
+        // Don't fail the linking process if follow fails
+      }
+    }
     
     // Use HTML response with JavaScript for better mobile/frame compatibility
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
