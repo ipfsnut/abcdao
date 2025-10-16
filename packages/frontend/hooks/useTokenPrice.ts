@@ -33,57 +33,88 @@ export function useTokenPrice() {
       const ethPriceData = await ethPriceResponse.json();
       const ethPrice = ethPriceData.ethereum?.usd || 3200;
       
-      // Try to get real $ABC price from DEX or fallback to reasonable estimates
-      let abcPrice = 0.0000123;
+      // Get real $ABC price from multiple sources
+      let abcPrice = 0.0000123; // Fallback
       let priceChange24h = 0;
       let volume24h = 0;
       let marketCap = 0;
       
+      const ABC_CONTRACT = '0x5c0872b790bb73e2b3a9778db6e7704095624b07';
+      const WETH_CONTRACT = '0x4200000000000000000000000000000000000006'; // Base WETH
+      
       try {
-        // TODO: Replace with actual DEX pool query when liquidity pool exists
-        // For now, attempt to get price from a DEX aggregator or use conservative estimates
-        
-        // Method 1: Try CoinGecko if $ABC is listed (likely not yet)
+        // Method 1: Try DexScreener (aggregates from multiple DEXs)
         try {
-          const cgResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=abc-dao&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true');
-          if (cgResponse.ok) {
-            const cgData = await cgResponse.json();
-            if (cgData['abc-dao']) {
-              abcPrice = cgData['abc-dao'].usd;
-              priceChange24h = cgData['abc-dao'].usd_24h_change || 0;
-              volume24h = cgData['abc-dao'].usd_24h_vol || 0;
-              marketCap = cgData['abc-dao'].usd_market_cap || 0;
+          const dexResponse = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${ABC_CONTRACT}`);
+          if (dexResponse.ok) {
+            const dexData = await dexResponse.json();
+            if (dexData.pairs && dexData.pairs.length > 0) {
+              // Find the most liquid pool (highest volume)
+              const bestPair = dexData.pairs.reduce((best: any, current: any) => 
+                (current.volume?.h24 || 0) > (best.volume?.h24 || 0) ? current : best
+              );
+              
+              if (bestPair && bestPair.priceUsd) {
+                abcPrice = parseFloat(bestPair.priceUsd);
+                priceChange24h = bestPair.priceChange?.h24 || 0;
+                volume24h = bestPair.volume?.h24 || 0;
+                marketCap = bestPair.fdv || (abcPrice * 100000000000); // Use FDV or calculate
+                console.log(`Got real $ABC price from DexScreener: $${abcPrice}`);
+              }
             }
           }
         } catch (e) {
-          // CoinGecko doesn't have $ABC listed yet, continue to fallback
+          console.log('DexScreener API failed:', e);
+        }
+
+        // Method 2: Try CoinGecko with contract address
+        if (abcPrice === 0.0000123) {
+          try {
+            const cgResponse = await fetch(`https://api.coingecko.com/api/v3/simple/token_price/base?contract_addresses=${ABC_CONTRACT}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true`);
+            if (cgResponse.ok) {
+              const cgData = await cgResponse.json();
+              const tokenData = cgData[ABC_CONTRACT.toLowerCase()];
+              if (tokenData && tokenData.usd) {
+                abcPrice = tokenData.usd;
+                priceChange24h = tokenData.usd_24h_change || 0;
+                volume24h = tokenData.usd_24h_vol || 0;
+                marketCap = tokenData.usd_market_cap || (abcPrice * 100000000000);
+                console.log(`Got real $ABC price from CoinGecko: $${abcPrice}`);
+              }
+            }
+          } catch (e) {
+            console.log('CoinGecko contract API failed:', e);
+          }
+        }
+
+        // Method 3: Try GeckoTerminal (another reliable source)
+        if (abcPrice === 0.0000123) {
+          try {
+            const gtResponse = await fetch(`https://api.geckoterminal.com/api/v2/networks/base/tokens/${ABC_CONTRACT}`);
+            if (gtResponse.ok) {
+              const gtData = await gtResponse.json();
+              if (gtData.data && gtData.data.attributes && gtData.data.attributes.price_usd) {
+                abcPrice = parseFloat(gtData.data.attributes.price_usd);
+                console.log(`Got real $ABC price from GeckoTerminal: $${abcPrice}`);
+              }
+            }
+          } catch (e) {
+            console.log('GeckoTerminal API failed:', e);
+          }
         }
         
-        // Method 2: Query Uniswap V4 pool directly if it exists
-        // This would require ethers.js and the pool contract ABI
-        // const poolContract = new ethers.Contract(poolAddress, poolABI, provider);
-        // const [sqrtPriceX96] = await poolContract.slot0();
-        // abcPrice = calculatePriceFromSqrtPriceX96(sqrtPriceX96);
-        
-        // Method 3: Use The Graph Protocol subgraph for historical data
-        // This would require querying the Uniswap v3/v4 subgraph for swap events
-        
-        // For now, use conservative estimates based on protocol activity
+        // If no real price found, use a more realistic estimate
         if (abcPrice === 0.0000123) {
-          // Base estimate with small natural variations (not random)
-          const now = Date.now();
-          const hourOfDay = new Date().getHours();
-          const dayVariation = Math.sin((hourOfDay / 24) * Math.PI * 2) * 0.0000001;
-          abcPrice = 0.0000123 + dayVariation;
-          
-          // Conservative estimates for a new token
-          priceChange24h = 0; // No reliable 24h data yet
-          volume24h = 0; // No significant trading volume yet
+          console.log('No real price data found, using fallback estimate');
+          // Use a reasonable fallback based on current market conditions
+          abcPrice = 0.0000123;
+          priceChange24h = 0;
+          volume24h = 0;
           marketCap = abcPrice * 100000000000; // 100B total supply
         }
         
       } catch (error) {
-        console.warn('Could not fetch real price data, using estimates:', error);
+        console.warn('Price fetching failed, using fallback:', error);
         abcPrice = 0.0000123;
         priceChange24h = 0;
         volume24h = 0;

@@ -5,10 +5,10 @@ import { ethers } from 'ethers';
 
 interface TreasuryBalances {
   ethBalance: string;
-  usdcBalance: string;
+  wethBalance: string;
   abcBalance: string;
   ethBalanceUSD: number;
-  usdcBalanceUSD: number;
+  wethBalanceUSD: number;
   totalValueUSD: number;
   lastUpdated: string;
 }
@@ -16,8 +16,8 @@ interface TreasuryBalances {
 // Protocol treasury address - corrected from CLAUDE.md
 const TREASURY_ADDRESS = '0xBE6525b767cA8D38d169C93C8120c0C0957388B8';
 
-// USDC contract address on Base
-const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
+// WETH contract address on Base
+const WETH_ADDRESS = '0x4200000000000000000000000000000000000006';
 
 // ERC20 ABI for balance queries
 const ERC20_ABI = [
@@ -44,20 +44,17 @@ export function useTreasuryBalances() {
       setError(null);
 
       // Use Alchemy RPC for Base network
-      const ALCHEMY_URL = 'https://base-mainnet.g.alchemy.com/v2/your-api-key'; // Replace with actual key
-      
-      // For now, we'll use public RPC endpoints as fallback
-      const provider = new ethers.JsonRpcProvider('https://mainnet.base.org');
+      const provider = new ethers.JsonRpcProvider('https://base-mainnet.g.alchemy.com/v2/518Fe6U9g0rlJj0Sd5O_0');
 
       // Get ETH balance
       const ethBalanceWei = await provider.getBalance(TREASURY_ADDRESS);
       const ethBalance = ethers.formatEther(ethBalanceWei);
 
-      // Get USDC balance
-      const usdcContract = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, provider);
-      const usdcBalanceRaw = await usdcContract.balanceOf(TREASURY_ADDRESS);
-      const usdcDecimals = await usdcContract.decimals();
-      const usdcBalance = ethers.formatUnits(usdcBalanceRaw, usdcDecimals);
+      // Get WETH balance
+      const wethContract = new ethers.Contract(WETH_ADDRESS, ERC20_ABI, provider);
+      const wethBalanceRaw = await wethContract.balanceOf(TREASURY_ADDRESS);
+      const wethDecimals = await wethContract.decimals();
+      const wethBalance = ethers.formatUnits(wethBalanceRaw, wethDecimals);
 
       // Get $ABC balance (we'll use the existing treasury hook for this)
       // This would require the $ABC token contract address when deployed
@@ -70,15 +67,15 @@ export function useTreasuryBalances() {
 
       // Calculate USD values
       const ethBalanceUSD = parseFloat(ethBalance) * ethPrice;
-      const usdcBalanceUSD = parseFloat(usdcBalance); // USDC is 1:1 with USD
-      const totalValueUSD = ethBalanceUSD + usdcBalanceUSD;
+      const wethBalanceUSD = parseFloat(wethBalance) * ethPrice; // WETH is 1:1 with ETH
+      const totalValueUSD = ethBalanceUSD + wethBalanceUSD;
 
       const treasuryBalances: TreasuryBalances = {
         ethBalance,
-        usdcBalance,
+        wethBalance,
         abcBalance,
         ethBalanceUSD,
-        usdcBalanceUSD,
+        wethBalanceUSD,
         totalValueUSD,
         lastUpdated: new Date().toISOString()
       };
@@ -92,10 +89,10 @@ export function useTreasuryBalances() {
       // Fallback to prevent crashes
       setBalances({
         ethBalance: "0.000",
-        usdcBalance: "0.00",
+        wethBalance: "0.00",
         abcBalance: "0",
         ethBalanceUSD: 0,
-        usdcBalanceUSD: 0,
+        wethBalanceUSD: 0,
         totalValueUSD: 0,
         lastUpdated: new Date().toISOString()
       });
