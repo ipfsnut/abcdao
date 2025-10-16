@@ -1,18 +1,15 @@
-import type { Metadata } from "next";
+'use client';
+
+import { useState } from 'react';
 import { ContractAddressesFooter } from '@/components/contract-addresses-footer';
 import { WhitepaperButton } from '@/components/whitepaper-button';
 import { RepositoryIntegrationButton } from '@/components/repository-integration-button';
-import { generatePageMetadata } from '@/lib/metadata';
+import { BlogModal } from '@/components/blog-modal';
 import Link from 'next/link';
 import Image from 'next/image';
 
-export const metadata: Metadata = generatePageMetadata({
-  title: "Documentation",
-  description: "Complete guide to ABC DAO - setup, rewards, GitHub integration, and API reference for developers.",
-  path: "/docs"
-});
-
 export default function DocsPage() {
+  const [showMissionModal, setShowMissionModal] = useState(false);
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
       {/* Header */}
@@ -193,16 +190,14 @@ export default function DocsPage() {
               <p className="text-green-600 text-sm italic">
                 ABC DAO - Where code meets capital, and developers earn what they deserve.
               </p>
-              <a
-                href="/docs/abc-dao-mission-statement.md"
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={() => setShowMissionModal(true)}
                 className="inline-block mt-4 bg-green-900/30 hover:bg-green-800/40 border border-green-700/50 hover:border-green-600/70 
                            text-green-400 hover:text-green-300 px-4 py-2 rounded-lg font-mono text-sm
                            transition-all duration-200 matrix-button"
               >
                 📖 Read Full Mission Statement
-              </a>
+              </button>
             </div>
           </div>
         </section>
@@ -577,6 +572,13 @@ export default function DocsPage() {
       </div>
       
       <ContractAddressesFooter />
+      
+      <BlogModal
+        isOpen={showMissionModal}
+        onClose={() => setShowMissionModal(false)}
+        title="ABC DAO Mission Statement"
+        markdownPath="/docs/abc-dao-mission-statement.md"
+      />
     </div>
   );
 }

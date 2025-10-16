@@ -10,12 +10,14 @@ import { Skeleton } from '@/components/skeleton-loader';
 import { EthRewardsHistory } from '@/components/eth-rewards-history';
 import { APYCalculator } from '@/components/apy-calculator';
 import { useTreasuryBalances } from '@/hooks/useTreasuryBalances';
+import { useTokenPrice } from '@/hooks/useTokenPrice';
 
 export default function TreasuryPage() {
   const treasuryData = useTreasury();
   const stakingData = useStakingWithPrice();
   const { stats, loading: statsLoading } = useStats();
-  const { balances: treasuryBalances, loading: balancesLoading } = useTreasuryBalances();
+  const { balances: treasuryBalances, loading: balancesLoading, formatUSD: formatTreasuryUSD } = useTreasuryBalances();
+  const { priceData } = useTokenPrice();
   const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'allocation'>('overview');
 
   const isLoading = !treasuryData.treasuryBalance || !stakingData.totalRewardsDistributed || statsLoading || balancesLoading;
@@ -42,7 +44,7 @@ export default function TreasuryPage() {
               <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
                 <h3 className="text-green-600 text-responsive-xs font-mono mb-1">Total Treasury Value</h3>
                 <p className="text-responsive-lg font-bold text-green-400 matrix-glow">
-                  {treasuryBalances?.formatUSD(treasuryBalances.totalValueUSD) || '$0.00'}
+                  {treasuryBalances ? formatTreasuryUSD(treasuryBalances.totalValueUSD) : '$0.00'}
                 </p>
                 <p className="text-green-500 text-xs font-mono mt-1">All protocol assets</p>
               </div>
@@ -130,7 +132,7 @@ export default function TreasuryPage() {
                               {parseFloat(treasuryData.treasuryBalance).toFixed(0)} $ABC
                             </div>
                             <div className="text-green-700 text-xs">
-                              {stakingData.formatUSD(parseFloat(treasuryData.treasuryBalance) * (stakingData.tokenPrice || 0))}
+                              {stakingData.formatUSD(parseFloat(treasuryData.treasuryBalance) * (priceData?.price || 0.0000123))}
                             </div>
                           </div>
                         </div>
@@ -141,7 +143,7 @@ export default function TreasuryPage() {
                               {treasuryBalances?.ethBalance || '0.000'} ETH
                             </div>
                             <div className="text-green-700 text-xs">
-                              {treasuryBalances?.formatUSD(treasuryBalances.ethBalanceUSD) || '$0.00'}
+                              {treasuryBalances ? formatTreasuryUSD(treasuryBalances.ethBalanceUSD) : '$0.00'}
                             </div>
                           </div>
                         </div>
@@ -152,7 +154,7 @@ export default function TreasuryPage() {
                               {treasuryBalances?.usdcBalance || '0.00'} USDC
                             </div>
                             <div className="text-green-700 text-xs">
-                              {treasuryBalances?.formatUSD(treasuryBalances.usdcBalanceUSD) || '$0.00'}
+                              {treasuryBalances ? formatTreasuryUSD(treasuryBalances.usdcBalanceUSD) : '$0.00'}
                             </div>
                           </div>
                         </div>
