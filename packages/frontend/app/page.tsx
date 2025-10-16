@@ -3,8 +3,6 @@
 import { ContractAddressesFooter } from '@/components/contract-addresses-footer';
 import { FarcasterAuth } from '@/components/farcaster-auth';
 import { GitHubLinkPanel } from '@/components/github-link';
-import { WhitepaperButton } from '@/components/whitepaper-button';
-import { RepositoryIntegrationButton } from '@/components/repository-integration-button';
 import { SwapWidget } from '@/components/swap-widget';
 import { ClaimRewardsPanel } from '@/components/claim-rewards';
 import { TokenSupplyMini } from '@/components/token-supply-chart';
@@ -57,17 +55,6 @@ export default function Home() {
                 <div className="bg-green-950/20 border border-green-900/50 rounded-lg px-3 py-2 mb-2">
                   <p className="text-green-600 text-xs font-mono text-center">Your Balance</p>
                   <p className="text-sm font-bold text-green-400 matrix-glow text-center">{parseFloat(stakingData.tokenBalance).toFixed(2)} $ABC</p>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <a
-                    href="/docs"
-                    className="bg-green-900/30 hover:bg-green-800/40 border border-green-700/50 hover:border-green-600/70 
-                               text-green-400 hover:text-green-300 px-4 py-2 rounded-lg font-mono text-sm text-center
-                               transition-all duration-200 matrix-button"
-                  >
-                    📚 Documentation
-                  </a>
-                  <RepositoryIntegrationButton />
                 </div>
               </div>
             </>
@@ -429,18 +416,6 @@ export default function Home() {
                   </p>
                 </div>
               )}
-            </div>
-            
-            {/* Whitepaper Link */}
-            <div className="text-center mt-8">
-              <a
-                href="/whitepaper"
-                className="inline-block bg-green-900/30 hover:bg-green-900/50 border border-green-700/50 hover:border-green-600 
-                         text-green-400 hover:text-green-300 px-6 py-3 rounded-lg font-mono
-                         transition-all duration-300 matrix-button text-sm"
-              >
-                📋 Read Whitepaper
-              </a>
             </div>
           </>
         )}
