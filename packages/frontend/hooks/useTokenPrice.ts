@@ -40,7 +40,6 @@ export function useTokenPrice() {
       let marketCap = 0;
       
       const ABC_CONTRACT = '0x5c0872b790bb73e2b3a9778db6e7704095624b07';
-      const WETH_CONTRACT = '0x4200000000000000000000000000000000000006'; // Base WETH
       
       try {
         // Method 1: Try DexScreener (aggregates from multiple DEXs)

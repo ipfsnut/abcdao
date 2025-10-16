@@ -149,13 +149,13 @@ export default function TreasuryPage() {
                           </div>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-green-600">USDC Balance:</span>
+                          <span className="text-green-600">WETH Balance:</span>
                           <div className="text-right">
                             <div className="text-green-400 font-bold">
-                              {treasuryBalances?.usdcBalance || '0.00'} USDC
+                              {treasuryBalances?.wethBalance || '0.00'} WETH
                             </div>
                             <div className="text-green-700 text-xs">
-                              {treasuryBalances ? formatTreasuryUSD(treasuryBalances.usdcBalanceUSD) : '$0.00'}
+                              {treasuryBalances ? formatTreasuryUSD(treasuryBalances.wethBalanceUSD) : '$0.00'}
                             </div>
                           </div>
                         </div>
