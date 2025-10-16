@@ -8,7 +8,6 @@ import { ContractAddressesFooter } from '@/components/contract-addresses-footer'
 import { BackNavigation } from '@/components/back-navigation';
 import { Skeleton } from '@/components/skeleton-loader';
 import { EthRewardsHistory } from '@/components/eth-rewards-history';
-import { APYCalculator } from '@/components/apy-calculator';
 import { useTreasuryBalances } from '@/hooks/useTreasuryBalances';
 import { useTokenPrice } from '@/hooks/useTokenPrice';
 import { useTreasuryTransactions } from '@/hooks/useTreasuryTransactions';
@@ -198,9 +197,6 @@ export default function TreasuryPage() {
 
               {/* ETH Rewards History */}
               <EthRewardsHistory />
-              
-              {/* APY Calculator */}
-              <APYCalculator />
             </div>
           )}
 

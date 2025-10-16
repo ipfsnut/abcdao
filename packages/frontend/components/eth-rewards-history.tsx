@@ -1,6 +1,6 @@
 'use client';
 
-import { useEthRewardsHistory, EthRewardDistribution } from '@/hooks/useEthRewardsHistory';
+import { useEthRewardsHistory } from '@/hooks/useEthRewardsHistory';
 import { useState } from 'react';
 
 export function EthRewardsHistory() {

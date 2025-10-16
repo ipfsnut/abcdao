@@ -60,13 +60,7 @@ export function useEthRewardsHistory() {
         const latestBlock = await provider.getBlockNumber();
         const fromBlock = Math.max(0, latestBlock - 10000); // Last ~10k blocks (~few days on Base)
         
-        // Filter for ETH transfers to staking contract
-        const filter = {
-          address: null, // Any address
-          topics: [],
-          fromBlock: fromBlock,
-          toBlock: 'latest'
-        };
+        // Note: Direct block scanning is more reliable than event filters for ETH transfers
         
         // Get transaction receipts for transfers to staking contract
         const transfers = [];
@@ -78,29 +72,36 @@ export function useEthRewardsHistory() {
             const block = await provider.getBlock(blockNumber, true);
             
             if (block && block.transactions) {
-              for (const tx of block.transactions) {
-                if (tx.to?.toLowerCase() === stakingContract.toLowerCase() && tx.value > 0) {
-                  // Found an ETH transfer to staking contract
-                  const ethAmount = parseFloat(ethers.formatEther(tx.value));
-                  
-                  if (ethAmount > 0.001) { // Only include meaningful amounts
-                    transfers.push({
-                      id: tx.hash,
-                      timestamp: block.timestamp * 1000,
-                      ethAmount: ethAmount,
-                      totalStaked: 711483264, // We'd need to query this at the time
-                      stakersCount: 15, // Estimate - would need to track this
-                      apy: 0, // Will calculate below
-                      ethPrice: currentEthPrice,
-                      transactionHash: tx.hash,
-                      blockNumber: blockNumber
-                    });
+              for (const txHash of block.transactions) {
+                try {
+                  // Get full transaction details
+                  const tx = await provider.getTransaction(txHash as string);
+                  if (tx && tx.to?.toLowerCase() === stakingContract.toLowerCase() && tx.value && tx.value > 0) {
+                    // Found an ETH transfer to staking contract
+                    const ethAmount = parseFloat(ethers.formatEther(tx.value));
+                    
+                    if (ethAmount > 0.001) { // Only include meaningful amounts
+                      transfers.push({
+                        id: tx.hash,
+                        timestamp: block.timestamp * 1000,
+                        ethAmount: ethAmount,
+                        totalStaked: 711483264, // We'd need to query this at the time
+                        stakersCount: 15, // Estimate - would need to track this
+                        apy: 0, // Will calculate below
+                        ethPrice: currentEthPrice,
+                        transactionHash: tx.hash,
+                        blockNumber: blockNumber
+                      });
+                    }
                   }
+                } catch (txError) {
+                  // Skip invalid transactions
+                  continue;
                 }
               }
             }
           } catch (blockError) {
-            console.warn(`Error scanning block ${latestBlock - i}:`, blockError.message);
+            console.warn(`Error scanning block ${latestBlock - i}:`, blockError instanceof Error ? blockError.message : String(blockError));
           }
         }
         
