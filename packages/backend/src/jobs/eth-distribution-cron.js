@@ -9,12 +9,11 @@ class EthDistributionCron {
     
     // Distribution addresses
     this.stakingContract = process.env.STAKING_CONTRACT_ADDRESS;
-    this.treasuryAddress = '0x18A85ad341b2D6A2bd67fbb104B4827B922a2A3c';
     
     // Configuration
     this.minBalanceThreshold = ethers.parseEther('0.01'); // Only distribute if > 0.01 ETH
     this.gasReserve = ethers.parseEther('0.005'); // Keep 0.005 ETH for gas
-    this.distributionPercentage = 25; // 25% to each destination
+    this.stakingPercentage = 25; // 25% to staking contract only
   }
 
   /**
@@ -47,8 +46,7 @@ class EthDistributionCron {
     console.log('✅ ETH distribution cron job started');
     console.log('   - Runs every 6 hours');
     console.log('   - Distributes 25% to staking contract');
-    console.log('   - Distributes 25% to treasury address');
-    console.log('   - Keeps 50% + gas reserves in protocol wallet\n');
+    console.log('   - Keeps 75% + gas reserves in protocol wallet\n');
   }
 
   /**
@@ -83,20 +81,17 @@ class EthDistributionCron {
     }
     
     // Calculate percentage amounts (convert to basis points for BigInt compatibility)
-    const basisPoints = Math.floor(this.distributionPercentage * 100); // 0.25% = 25 basis points
+    const basisPoints = Math.floor(this.stakingPercentage * 100); // 25% = 2500 basis points
     const amountToStaking = (availableBalance * BigInt(basisPoints)) / BigInt(10000);
-    const amountToTreasury = (availableBalance * BigInt(basisPoints)) / BigInt(10000);
-    const remaining = balance - amountToStaking - amountToTreasury;
+    const remaining = balance - amountToStaking;
     
     return {
       totalBalance: balance,
       availableBalance,
       amountToStaking,
-      amountToTreasury,
       remaining,
-      stakingPercent: this.distributionPercentage,
-      treasuryPercent: this.distributionPercentage,
-      remainingPercent: 100 - (this.distributionPercentage * 2)
+      stakingPercent: this.stakingPercentage,
+      remainingPercent: 100 - this.stakingPercentage
     };
   }
 
@@ -129,28 +124,6 @@ class EthDistributionCron {
       throw error;
     }
     
-    console.log(`📤 Sending ${ethers.formatEther(distribution.amountToTreasury)} ETH to treasury...`);
-    
-    try {
-      // Send to treasury
-      const treasuryTx = await this.protocolWallet.sendTransaction({
-        to: this.treasuryAddress,
-        value: distribution.amountToTreasury,
-        gasLimit: 50000 // Basic transfer
-      });
-      
-      console.log(`✅ Treasury transaction sent: ${treasuryTx.hash}`);
-      transactions.push({ type: 'treasury', tx: treasuryTx });
-      
-      // Wait for confirmation
-      await treasuryTx.wait();
-      console.log(`✅ Treasury transaction confirmed`);
-      
-    } catch (error) {
-      console.error('❌ Treasury transaction failed:', error.message);
-      throw error;
-    }
-    
     return transactions;
   }
 
@@ -168,17 +141,14 @@ class EthDistributionCron {
       const config = new Configuration({ apiKey: process.env.NEYNAR_API_KEY });
       const neynar = new NeynarAPIClient(config);
 
-      const totalDistributed = distribution.amountToStaking + distribution.amountToTreasury;
+      const totalDistributed = distribution.amountToStaking;
       const stakingTxHash = transactions.find(t => t.type === 'staking')?.tx.hash;
-      const treasuryTxHash = transactions.find(t => t.type === 'treasury')?.tx.hash;
 
       const castText = `💰 ETH DISTRIBUTION COMPLETE!\\n\\n` +
         `📊 Distributed: ${ethers.formatEther(totalDistributed)} ETH\\n` +
         `🏦 ${distribution.stakingPercent}% → Staking Contract\\n` +
-        `🏛️ ${distribution.treasuryPercent}% → Treasury\\n` +
         `🤖 ${distribution.remainingPercent}% → Protocol Operations\\n\\n` +
-        `🔗 Staking: basescan.org/tx/${stakingTxHash}\\n` +
-        `🔗 Treasury: basescan.org/tx/${treasuryTxHash}\\n\\n` +
+        `🔗 Staking: basescan.org/tx/${stakingTxHash}\\n\\n` +
         `#ABCDAO #AutomatedETHDistribution`;
 
       const cast = await neynar.publishCast(process.env.NEYNAR_SIGNER_UUID, castText);
@@ -206,8 +176,7 @@ class EthDistributionCron {
       console.log('📋 Distribution Configuration:');
       console.log(`- Protocol Wallet: ${this.protocolWallet.address}`);
       console.log(`- Staking Contract: ${this.stakingContract}`);
-      console.log(`- Treasury Address: ${this.treasuryAddress}`);
-      console.log(`- Distribution: ${this.distributionPercentage}%/${this.distributionPercentage}%/${100 - (this.distributionPercentage * 2)}%\\n`);
+      console.log(`- Distribution: ${this.stakingPercentage}%/${100 - this.stakingPercentage}%\\n`);
       
       // Calculate distribution
       const distribution = await this.calculateDistribution();
@@ -219,7 +188,6 @@ class EthDistributionCron {
       
       console.log('\\n📊 Distribution Plan:');
       console.log(`- ${distribution.stakingPercent}% to Staking: ${ethers.formatEther(distribution.amountToStaking)} ETH`);
-      console.log(`- ${distribution.treasuryPercent}% to Treasury: ${ethers.formatEther(distribution.amountToTreasury)} ETH`);
       console.log(`- ${distribution.remainingPercent}% remaining: ${ethers.formatEther(distribution.remaining)} ETH`);
       
       // Execute transactions
@@ -231,7 +199,6 @@ class EthDistributionCron {
       console.log('\\n🎉 ETH Distribution Complete!');
       console.log('================================');
       console.log(`✓ Staking: ${ethers.formatEther(distribution.amountToStaking)} ETH`);
-      console.log(`✓ Treasury: ${ethers.formatEther(distribution.amountToTreasury)} ETH`);
       console.log(`✓ Remaining: ${ethers.formatEther(distribution.remaining)} ETH`);
       
     } catch (error) {

@@ -81,7 +81,7 @@ export function BuyABCSection() {
         </a>
 
         <a
-          href="https://www.dextools.io/app/en/base/pair-explorer/0x..."
+          href="https://www.dextools.io/app/en/base/pair-explorer/0x5c0872b790bb73e2b3a9778db6e7704095624b07"
           target="_blank"
           rel="noopener noreferrer"
           className="bg-blue-900/30 hover:bg-blue-800/40 border border-blue-700/50 hover:border-blue-600/70 

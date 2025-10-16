@@ -11,6 +11,7 @@ import { EthRewardsHistory } from '@/components/eth-rewards-history';
 import { APYCalculator } from '@/components/apy-calculator';
 import { useTreasuryBalances } from '@/hooks/useTreasuryBalances';
 import { useTokenPrice } from '@/hooks/useTokenPrice';
+import { useTreasuryTransactions } from '@/hooks/useTreasuryTransactions';
 
 export default function TreasuryPage() {
   const treasuryData = useTreasury();
@@ -18,6 +19,7 @@ export default function TreasuryPage() {
   const { stats, loading: statsLoading } = useStats();
   const { balances: treasuryBalances, loading: balancesLoading, formatUSD: formatTreasuryUSD } = useTreasuryBalances();
   const { priceData } = useTokenPrice();
+  const { transactions, loading: transactionsLoading, formatTransactionHash, formatTimestamp, getTransactionColor, getTransactionIcon } = useTreasuryTransactions();
   const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'allocation'>('overview');
 
   const isLoading = !treasuryData.treasuryBalance || !stakingData.totalRewardsDistributed || statsLoading || balancesLoading;
@@ -255,14 +257,83 @@ export default function TreasuryPage() {
               <h3 className="text-responsive-lg font-bold mb-4 text-green-400 matrix-glow font-mono">
                 {'>'} Recent Transactions
               </h3>
-              <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4 text-center">
-                <p className="text-green-600 font-mono text-sm">
-                  Transaction history integration coming soon
-                </p>
-                <p className="text-green-500 font-mono text-xs mt-2">
-                  Will display treasury transactions, rewards distributions, and fund movements
-                </p>
-              </div>
+              
+              {transactionsLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
+                      <Skeleton variant="text" width="60%" className="mb-2" />
+                      <Skeleton variant="text" width="40%" />
+                    </div>
+                  ))}
+                </div>
+              ) : transactions.length > 0 ? (
+                <div className="space-y-3">
+                  {transactions.slice(0, 10).map((tx) => (
+                    <div key={tx.hash} className="bg-green-950/10 border border-green-900/30 rounded-lg p-4 hover:bg-green-950/20 hover:border-green-700/50 transition-all duration-300">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg">{getTransactionIcon(tx.type)}</span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={`https://basescan.org/tx/${tx.hash}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-green-400 font-mono text-sm hover:text-green-300 transition-colors"
+                              >
+                                {formatTransactionHash(tx.hash)}
+                              </a>
+                              <span className="text-green-600 font-mono text-xs">
+                                {formatTimestamp(tx.timestamp)}
+                              </span>
+                            </div>
+                            <p className="text-green-600 font-mono text-xs mt-1">
+                              {tx.description}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`font-mono text-sm font-bold ${getTransactionColor(tx.type)}`}>
+                            {tx.type === 'outgoing' || tx.type === 'staking_distribution' ? '-' : '+'}
+                            {tx.ethValue.toFixed(6)} ETH
+                          </div>
+                          {tx.usdValue && (
+                            <div className="text-green-700 font-mono text-xs">
+                              ≈ ${tx.usdValue.toFixed(2)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {transactions.length > 10 && (
+                    <div className="text-center pt-4">
+                      <p className="text-green-600 font-mono text-sm">
+                        Showing 10 most recent transactions
+                      </p>
+                      <a
+                        href={`https://basescan.org/address/0xBE6525b767cA8D38d169C93C8120c0C0957388B8`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-green-400 hover:text-green-300 font-mono text-xs underline"
+                      >
+                        View all on BaseScan →
+                      </a>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4 text-center">
+                  <p className="text-green-600 font-mono text-sm">
+                    No recent transactions found
+                  </p>
+                  <p className="text-green-500 font-mono text-xs mt-2">
+                    Transaction history will appear here as treasury activity occurs
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>

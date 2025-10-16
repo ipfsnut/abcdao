@@ -40,23 +40,36 @@ export default function Home() {
           {isInMiniApp ? (
             /* Miniapp Header: Centered Layout */
             <>
-              <div className="flex flex-col items-center text-center mb-3">
-                <div className="flex items-center gap-3 mb-2">
-                  <img 
-                    src="/abc-logo.png" 
-                    alt="ABC Logo" 
-                    className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
-                  />
-                  <h1 className="text-responsive-xl font-bold matrix-glow">
-                    {'>'} ABC_DAO
-                  </h1>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex-1" />
+                <div className="flex flex-col items-center text-center">
+                  <div className="flex items-center gap-3 mb-2">
+                    <img 
+                      src="/abc-logo.png" 
+                      alt="ABC Logo" 
+                      className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
+                    />
+                    <h1 className="text-responsive-xl font-bold matrix-glow">
+                      {'>'} ABC_DAO
+                    </h1>
+                  </div>
+                  <p className="text-responsive-xs text-green-600 font-mono mb-2">
+                    Ship code. Earn rewards.
+                  </p>
+                  <div className="bg-green-950/20 border border-green-900/50 rounded-lg px-3 py-2 mb-2">
+                    <p className="text-green-600 text-xs font-mono text-center">Your Balance</p>
+                    <p className="text-sm font-bold text-green-400 matrix-glow text-center">{parseFloat(stakingData.tokenBalance).toFixed(2)} $ABC</p>
+                  </div>
                 </div>
-                <p className="text-responsive-xs text-green-600 font-mono mb-2">
-                  Ship code. Earn rewards.
-                </p>
-                <div className="bg-green-950/20 border border-green-900/50 rounded-lg px-3 py-2 mb-2">
-                  <p className="text-green-600 text-xs font-mono text-center">Your Balance</p>
-                  <p className="text-sm font-bold text-green-400 matrix-glow text-center">{parseFloat(stakingData.tokenBalance).toFixed(2)} $ABC</p>
+                <div className="flex-1 flex justify-end">
+                  <a
+                    href="/docs"
+                    className="bg-green-900/30 hover:bg-green-800/40 border border-green-700/50 hover:border-green-600/70 
+                               text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs
+                               transition-all duration-200 matrix-button"
+                  >
+                    Docs
+                  </a>
                 </div>
               </div>
             </>

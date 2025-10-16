@@ -172,30 +172,5 @@ evermark-integration-plan.txt
 # Todo lists
 ToDo*.txt
 
-# Airdrop planning and configuration
-airdrop-*.md
-*airdrop*.md
-airdrop-*.json
-*airdrop*.json
-community-campaigns/
-
-# Social media platform planning and configuration
-bluesky-*.md
-*bluesky*.md
-discord-*.md
-*discord*.md
-social-platform-*/
-
-# Bot enhancement and AI analysis planning
-intelligent-*.md
-*intelligent*.md
-bot-analysis-*.md
-*bot-analysis*.md
-ai-enhancement-*/
-
-# Discord infrastructure and automation planning
-programmable-discord-*.md
-*programmable-discord*.md
-discord-automation-*.md
-*discord-automation*.md
-repo-structure-*/
+# Strategic planning documents
+plans/
