@@ -12,7 +12,7 @@ ABC DAO exists to reward open source developers for their contributions by provi
 - **Staking Rewards**: Distribute ETH earnings from trading fees to $ABC token stakers
 
 ### Revenue Model
-- **Trading Fees**: 50% of $ABC token trading fees fund developer rewards, 50% goes to treasury
+- **Trading Fees**: 100% of $ABC token trading fees go to treasury, which funds developer rewards
 - **Membership Fees**: One-time 0.002 ETH fee to join and access rewards
 - **No Advertising**: We don't sell ads or user data
 - **No Premium Subscriptions**: Core features are available to all members
@@ -41,7 +41,7 @@ ABC DAO exists to reward open source developers for their contributions by provi
 
 ### Financial Transparency
 - **Public Treasury**: All treasury balances visible on-chain
-- **Transparent Fee Distribution**: 50/50 split between rewards and treasury is automated
+- **Transparent Fee Distribution**: All trading fees flow to treasury, which funds developer rewards
 - **No Hidden Reserves**: All token allocations and distributions are public
 - **Real-time Reporting**: Live dashboard shows all financial metrics
 

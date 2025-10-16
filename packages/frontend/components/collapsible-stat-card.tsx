@@ -102,7 +102,7 @@ export function TreasuryRewardsCard({ treasuryBalance, totalRewardsDistributed }
     <CollapsibleStatCard
       title="Treasury & Rewards"
       value={`${parseFloat(treasuryBalance).toFixed(0)} $ABC`}
-      description="Community Treasury"
+      description="Protocol Treasury"
       href="/treasury"
     >
       <div className="bg-black/40 border border-green-900/30 rounded p-3">
