@@ -183,8 +183,27 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Initialize services and start server
+// Start server first, then initialize background services
 async function startServer() {
+  try {
+    // Start Express server FIRST for fast health checks
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 ABC DAO Backend running on port ${PORT}`);
+      console.log(`📊 Health check: http://0.0.0.0:${PORT}/health`);
+      console.log('⏱️  Initializing background services...');
+    });
+    
+    // Initialize background services AFTER server is listening
+    await initializeBackgroundServices();
+    
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Separate function for background service initialization
+async function initializeBackgroundServices() {
   try {
     // Try to initialize database connection (optional for health checks)
     if (process.env.DATABASE_URL) {
@@ -282,15 +301,12 @@ async function startServer() {
       console.warn('⚠️  Staking contract or bot wallet not configured, skipping ETH distribution');
     }
     
-    // Start server - bind to 0.0.0.0 for Railway
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 ABC DAO Backend running on port ${PORT}`);
-      console.log(`📊 Health check: http://0.0.0.0:${PORT}/health`);
-    });
+    console.log('✅ All background services initialized successfully');
     
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
-    process.exit(1);
+    console.error('❌ Failed to initialize background services:', error);
+    // Don't exit - server is already running for health checks
+    console.log('🏥 Server remains available for health checks despite service initialization failures');
   }
 }
 

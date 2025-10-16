@@ -4,6 +4,11 @@ import { getPool } from '../services/database.js';
 
 const router = express.Router();
 
+// Test route to verify mounting
+router.get('/test', (req, res) => {
+  res.json({ status: 'eth-distributions routes are working', timestamp: new Date().toISOString() });
+});
+
 // Get ETH distribution history
 router.get('/history', async (req, res) => {
   try {
