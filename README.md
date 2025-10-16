@@ -41,4 +41,4 @@ See [WHITEPAPER.md](./WHITEPAPER.md) for the full project specification.
 
 - **Mini-app**: [https://farcaster.xyz/miniapps/S1edg9PycxZP/abcdao](https://farcaster.xyz/miniapps/S1edg9PycxZP/abcdao)
 - **Website**: [https://abc.epicdylan.com](https://abc.epicdylan.com)
-- **Creator**: [Dylan Stow](https://epicdylan.com)
+- **Creator**: [Dylan Daniel](https://epicdylan.com)
