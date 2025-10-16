@@ -13,8 +13,8 @@ interface TreasuryBalances {
   lastUpdated: string;
 }
 
-// Protocol treasury address from CLAUDE.md
-const TREASURY_ADDRESS = '0xcCBE95Ab1E3ECfb73cFeA072460E24D5054c28B2';
+// Protocol treasury address - corrected from CLAUDE.md
+const TREASURY_ADDRESS = '0xBE6525b767cA8D38d169C93C8120c0C0957388B8';
 
 // USDC contract address on Base
 const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';

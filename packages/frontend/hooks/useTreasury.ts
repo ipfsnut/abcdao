@@ -4,8 +4,8 @@ import { useReadContract } from 'wagmi';
 import { formatEther } from 'viem';
 import { CONTRACTS, ERC20_ABI } from '@/lib/contracts';
 
-// Protocol/Bot wallet address (treasury)
-const TREASURY_ADDRESS = '0xcCBE95Ab1E3ECfb73cFeA072460E24D5054c28B2' as `0x${string}`;
+// Protocol wallet address (treasury) - corrected address
+const TREASURY_ADDRESS = '0xBE6525b767cA8D38d169C93C8120c0C0957388B8' as `0x${string}`;
 
 export function useTreasury() {
   // Read treasury ABC token balance
