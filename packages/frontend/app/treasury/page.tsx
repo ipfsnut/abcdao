@@ -38,11 +38,13 @@ export default function TreasuryPage() {
           ) : (
             <>
               <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
-                <h3 className="text-green-600 text-responsive-xs font-mono mb-1">Treasury Balance</h3>
+                <h3 className="text-green-600 text-responsive-xs font-mono mb-1">Protocol Treasury</h3>
                 <p className="text-responsive-lg font-bold text-green-400 matrix-glow">
                   {parseFloat(treasuryData.treasuryBalance).toFixed(0)} $ABC
                 </p>
-                <p className="text-green-500 text-xs font-mono mt-1">Protocol funds</p>
+                <p className="text-green-500 text-xs font-mono mt-1">
+                  {stakingData.formatUSD(parseFloat(treasuryData.treasuryBalance) * (stakingData.tokenPrice || 0))}
+                </p>
               </div>
               
               <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
@@ -115,27 +117,44 @@ export default function TreasuryPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 backdrop-blur-sm">
                   <h3 className="text-responsive-lg font-bold mb-4 text-green-400 matrix-glow font-mono">
-                    {'>'} Treasury Overview
+                    {'>'} Treasury Holdings
                   </h3>
                   <div className="space-y-4">
                     <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
-                      <h4 className="text-green-400 font-mono text-sm mb-3">Fund Allocation</h4>
-                      <div className="space-y-2 text-xs font-mono">
-                        <div className="flex justify-between">
-                          <span className="text-green-600">Developer Rewards:</span>
-                          <span className="text-green-400">60%</span>
+                      <h4 className="text-green-400 font-mono text-sm mb-3">Protocol Treasury Assets</h4>
+                      <div className="space-y-3 text-sm font-mono">
+                        <div className="flex justify-between items-center">
+                          <span className="text-green-600">$ABC Tokens:</span>
+                          <div className="text-right">
+                            <div className="text-green-400 font-bold">
+                              {parseFloat(treasuryData.treasuryBalance).toFixed(0)} $ABC
+                            </div>
+                            <div className="text-green-700 text-xs">
+                              {stakingData.formatUSD(parseFloat(treasuryData.treasuryBalance) * (stakingData.tokenPrice || 0))}
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-green-600">Staking Rewards:</span>
-                          <span className="text-green-400">25%</span>
+                        <div className="flex justify-between items-center">
+                          <span className="text-green-600">ETH Balance:</span>
+                          <div className="text-right">
+                            <div className="text-green-400 font-bold">
+                              0.000 ETH
+                            </div>
+                            <div className="text-green-700 text-xs">
+                              $0.00
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-green-600">Operations:</span>
-                          <span className="text-green-400">10%</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-green-600">Reserve:</span>
-                          <span className="text-green-400">5%</span>
+                        <div className="flex justify-between items-center">
+                          <span className="text-green-600">USDC Balance:</span>
+                          <div className="text-right">
+                            <div className="text-green-400 font-bold">
+                              0.00 USDC
+                            </div>
+                            <div className="text-green-700 text-xs">
+                              Protocol funds
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -189,23 +208,29 @@ export default function TreasuryPage() {
               
               <div className="mb-6">
                 <h4 className="text-green-400 font-mono text-sm mb-3">ETH Distribution (Automated Every 6 Hours)</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
-                    <h5 className="text-green-400 font-mono text-sm mb-2">Staking Rewards (25%)</h5>
+                    <h5 className="text-green-400 font-mono text-sm mb-2">Staking Rewards (100%)</h5>
                     <p className="text-green-600 font-mono text-xs">
-                      ETH rewards distributed to $ABC stakers. Provides passive income for long-term holders.
+                      All ETH rewards distributed proportionally to $ABC stakers. Provides passive income for long-term holders.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <h4 className="text-green-400 font-mono text-sm mb-3">Fees</h4>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
+                    <h5 className="text-green-400 font-mono text-sm mb-2">Trading Fees → Staking Rewards (100%)</h5>
+                    <p className="text-green-600 font-mono text-xs">
+                      All trading fees from swaps and transactions flow directly to staking rewards pool for distribution to $ABC stakers.
                     </p>
                   </div>
                   <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
-                    <h5 className="text-green-400 font-mono text-sm mb-2">Treasury (25%)</h5>
+                    <h5 className="text-green-400 font-mono text-sm mb-2">Protocol Fees → Staking Rewards (100%)</h5>
                     <p className="text-green-600 font-mono text-xs">
-                      Protocol development, operations, and maintenance funding.
-                    </p>
-                  </div>
-                  <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
-                    <h5 className="text-green-400 font-mono text-sm mb-2">Bot Operations (50%)</h5>
-                    <p className="text-green-600 font-mono text-xs">
-                      Retained for gas fees, operations, and future distributions.
+                      Protocol-level fees and revenue streams are channeled into the staking rewards system, benefiting all token holders.
                     </p>
                   </div>
                 </div>
@@ -216,7 +241,7 @@ export default function TreasuryPage() {
                 <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
                   <h5 className="text-green-400 font-mono text-sm mb-2">Developer Rewards (100%)</h5>
                   <p className="text-green-600 font-mono text-xs">
-                    All $ABC tokens go to developers for commits on repos with the ABC DAO tag. Direct incentive for code contributions.
+                    All $ABC tokens go directly to developers for commits on repos with the ABC DAO tag. Direct incentive for code contributions.
                   </p>
                 </div>
               </div>
