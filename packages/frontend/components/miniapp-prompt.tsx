@@ -1,16 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
 
 export function MiniAppPrompt() {
-  const { isInMiniApp } = useFarcaster();
+  const { isInMiniApp, user } = useFarcaster();
   const [dismissed, setDismissed] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
-  // Don't show if already in miniapp or if user dismissed it
-  if (isInMiniApp || dismissed) {
+  useEffect(() => {
+    setIsClient(true);
+    // Check if user has previously dismissed this prompt
+    const wasDismissed = localStorage.getItem('miniapp-prompt-dismissed');
+    if (wasDismissed) {
+      setDismissed(true);
+    }
+  }, []);
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    localStorage.setItem('miniapp-prompt-dismissed', 'true');
+  };
+
+  // Don't show if:
+  // - Not client-side rendered yet
+  // - Already in miniapp 
+  // - User dismissed it
+  // - User is accessing via Farcaster but not in miniapp (they likely know about it)
+  if (!isClient || isInMiniApp || dismissed || user) {
     return null;
   }
+
+  // Only show to users who are NOT coming from Farcaster at all
+  // This targets regular web users who might benefit from knowing about the miniapp
 
   return (
     <div className="bg-gradient-to-r from-purple-950/30 via-green-950/30 to-purple-950/30 border-b border-green-900/30">
@@ -40,7 +62,7 @@ export function MiniAppPrompt() {
               Add to Farcaster →
             </a>
             <button
-              onClick={() => setDismissed(true)}
+              onClick={handleDismiss}
               className="text-green-600 hover:text-green-400 font-mono text-xs p-2 transition-colors"
               aria-label="Dismiss"
             >

@@ -91,6 +91,10 @@ export default function DocsPage() {
             {'>'} Documentation
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <a href="#mission-statement" className="bg-black/40 border border-green-900/50 rounded-lg p-4 hover:border-green-700/50 transition-all duration-200">
+              <h3 className="text-green-400 font-mono font-semibold mb-2">🎯 Mission Statement</h3>
+              <p className="text-green-600 text-sm">Our vision and goals for the ecosystem</p>
+            </a>
             <a href="#getting-started" className="bg-black/40 border border-green-900/50 rounded-lg p-4 hover:border-green-700/50 transition-all duration-200">
               <h3 className="text-green-400 font-mono font-semibold mb-2">🚀 Getting Started</h3>
               <p className="text-green-600 text-sm">Set up your account and start earning</p>
@@ -117,6 +121,91 @@ export default function DocsPage() {
             </a>
           </div>
         </div>
+
+        {/* Mission Statement Section */}
+        <section id="mission-statement" className="mb-12">
+          <h2 className="text-xl font-bold text-green-400 matrix-glow mb-6 font-mono">
+            {'>'} Mission Statement
+          </h2>
+          
+          <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 mb-6">
+            <h3 className="text-2xl font-bold text-green-400 matrix-glow mb-4 text-center">
+              Always Be Coding
+            </h3>
+            <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-6 mb-6">
+              <p className="text-green-300 font-mono text-sm leading-relaxed">
+                ABC DAO exists to <strong>incentivize collaboration in the Farcaster ecosystem using appcoins</strong> by creating direct economic rewards for developers who ship code and contribute to decentralized social applications.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="bg-black/40 border border-green-800/50 rounded-lg p-4">
+                <h4 className="text-green-400 font-mono font-semibold mb-3 flex items-center gap-2">
+                  <span>🚀</span> Always Be Coding
+                </h4>
+                <p className="text-green-600 text-sm">Ship code, earn tokens. The blockchain doesn&apos;t care about your resume—it cares about your contributions.</p>
+              </div>
+              <div className="bg-black/40 border border-green-800/50 rounded-lg p-4">
+                <h4 className="text-green-400 font-mono font-semibold mb-3 flex items-center gap-2">
+                  <span>💰</span> Direct Economic Incentives
+                </h4>
+                <p className="text-green-600 text-sm">Every meaningful contribution deserves immediate financial recognition through $ABC token rewards.</p>
+              </div>
+              <div className="bg-black/40 border border-green-800/50 rounded-lg p-4">
+                <h4 className="text-green-400 font-mono font-semibold mb-3 flex items-center gap-2">
+                  <span>🤖</span> Automated & Transparent
+                </h4>
+                <p className="text-green-600 text-sm">No gatekeepers, no subjective evaluations—just code and rewards through smart contracts.</p>
+              </div>
+              <div className="bg-black/40 border border-green-800/50 rounded-lg p-4">
+                <h4 className="text-green-400 font-mono font-semibold mb-3 flex items-center gap-2">
+                  <span>⚡</span> Real-Time Multi-Token Recognition
+                </h4>
+                <p className="text-green-600 text-sm">Earn $ABC plus relevant appcoins ($EMARK, $FRAME, etc.) based on ecosystem impact.</p>
+              </div>
+            </div>
+
+            <div className="bg-blue-950/20 border border-blue-900/50 rounded-lg p-4 mb-6">
+              <h4 className="text-blue-400 font-mono font-semibold mb-3">🌍 Building the Farcaster Ecosystem</h4>
+              <p className="text-blue-300 text-sm mb-3">
+                We prioritize contributions that benefit the entire Farcaster ecosystem, especially infrastructure, tools, and foundational technologies that enable multiple applications and their appcoins to thrive together.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div className="text-center">
+                  <p className="text-blue-400 font-semibold">Short-Term (2025)</p>
+                  <p className="text-blue-600">1,000+ Active Developers</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-blue-400 font-semibold">Medium-Term (2025-2026)</p>
+                  <p className="text-blue-600">Farcaster Ecosystem Standard</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-blue-400 font-semibold">Long-Term (2026+)</p>
+                  <p className="text-blue-600">Universal Funding Model</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <p className="text-green-400 font-mono text-lg font-bold mb-2">
+                Always Be Coding. Always Be Earning. Always Be Building.
+              </p>
+              <p className="text-green-600 text-sm italic">
+                ABC DAO - Where code meets capital, and developers earn what they deserve.
+              </p>
+              <a
+                href="/docs/abc-dao-mission-statement.md"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-4 bg-green-900/30 hover:bg-green-800/40 border border-green-700/50 hover:border-green-600/70 
+                           text-green-400 hover:text-green-300 px-4 py-2 rounded-lg font-mono text-sm
+                           transition-all duration-200 matrix-button"
+              >
+                📖 Read Full Mission Statement
+              </a>
+            </div>
+          </div>
+        </section>
 
         {/* Getting Started Section */}
         <section id="getting-started" className="mb-12">

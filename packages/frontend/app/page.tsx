@@ -12,7 +12,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { useState } from 'react';
-import { useStaking } from '@/hooks/useStaking';
+import { useStakingWithPrice } from '@/hooks/useStakingWithPrice';
 import { useTreasury } from '@/hooks/useTreasury';
 import { useStats } from '@/hooks/useStats';
 import { useMembership } from '@/hooks/useMembership';
@@ -25,7 +25,7 @@ export default function Home() {
   useAccount();
   const membership = useMembership();
   const [activeTab, setActiveTab] = useState<'stake' | 'rewards' | 'proposals' | 'chat' | 'swap'>(isInMiniApp ? 'stake' : 'swap');
-  const stakingData = useStaking();
+  const stakingData = useStakingWithPrice();
   const treasuryData = useTreasury();
   const { stats, loading: statsLoading } = useStats();
   
@@ -493,7 +493,7 @@ export default function Home() {
   );
 }
 
-function StakePanel({ stakingData }: { stakingData: ReturnType<typeof useStaking> }) {
+function StakePanel({ stakingData }: { stakingData: ReturnType<typeof useStakingWithPrice> }) {
   const [amount, setAmount] = useState('');
   const [isStaking, setIsStaking] = useState(true);
 
@@ -566,9 +566,14 @@ function StakePanel({ stakingData }: { stakingData: ReturnType<typeof useStaking
               MAX
             </button>
           </div>
-          <p className="text-xs sm:text-sm text-green-600 mt-2 font-mono">
-            Balance: {parseFloat(stakingData.tokenBalance).toFixed(2)} $ABC
-          </p>
+          <div className="mt-2 space-y-1">
+            <p className="text-xs sm:text-sm text-green-600 font-mono">
+              Balance: {parseFloat(stakingData.tokenBalance).toFixed(2)} $ABC
+            </p>
+            <p className="text-xs text-green-700 font-mono">
+              ≈ {stakingData.formatUSD(stakingData.tokenBalanceUSD)}
+            </p>
+          </div>
         </div>
 
         <button 
@@ -590,7 +595,10 @@ function StakePanel({ stakingData }: { stakingData: ReturnType<typeof useStaking
           <div className="space-y-2 text-xs sm:text-sm font-mono">
             <div className="flex justify-between">
               <span className="text-green-600">Staked</span>
-              <span className="text-green-400">{parseFloat(stakingData.stakedAmount).toFixed(2)} $ABC</span>
+              <div className="text-right">
+                <div className="text-green-400">{parseFloat(stakingData.stakedAmount).toFixed(2)} $ABC</div>
+                <div className="text-green-700 text-xs">≈ {stakingData.formatUSD(stakingData.stakedValueUSD)}</div>
+              </div>
             </div>
             <div className="flex justify-between">
               <span className="text-green-600">ETH Earned</span>

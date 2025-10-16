@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useCallback } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useRoster, useRosterStats } from '@/hooks/useRoster';
+import { useTokenPrice } from '@/hooks/useTokenPrice';
 
 const DEVELOPERS_PER_PAGE = 8;
 
@@ -11,6 +12,7 @@ export default function RosterPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [sortBy, setSortBy] = useState<'commits' | 'rewards' | 'joined'>('commits');
+  const { formatPrice } = useTokenPrice();
 
   // Fetch roster data with current filters
   const { 
@@ -256,7 +258,12 @@ export default function RosterPage() {
                           {dev.total_commits} commits
                         </p>
                         <div className="flex items-center gap-2 text-xs text-green-600 font-mono">
-                          <span>{(parseFloat(String(dev.total_rewards)) || 0).toFixed(2)} $ABC</span>
+                          <div className="text-right">
+                            <span>{(parseFloat(String(dev.total_rewards)) || 0).toFixed(2)} $ABC</span>
+                            <div className="text-green-700 text-xs">
+                              ≈ {formatPrice((parseFloat(String(dev.total_rewards)) || 0))}
+                            </div>
+                          </div>
                           <span>•</span>
                           <span className={dev.is_active ? 'text-green-400' : 'text-gray-500'}>
                             {dev.is_active ? 'Active' : 'Inactive'}

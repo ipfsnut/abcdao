@@ -7,6 +7,8 @@ import { useStats } from '@/hooks/useStats';
 import { ContractAddressesFooter } from '@/components/contract-addresses-footer';
 import { BackNavigation } from '@/components/back-navigation';
 import { Skeleton } from '@/components/skeleton-loader';
+import { EthRewardsHistory } from '@/components/eth-rewards-history';
+import { APYCalculator } from '@/components/apy-calculator';
 
 export default function TreasuryPage() {
   const treasuryData = useTreasury();
@@ -109,65 +111,73 @@ export default function TreasuryPage() {
         {/* Tab Content */}
         <div className="space-y-6">
           {activeTab === 'overview' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 backdrop-blur-sm">
-                <h3 className="text-responsive-lg font-bold mb-4 text-green-400 matrix-glow font-mono">
-                  {'>'} Treasury Overview
-                </h3>
-                <div className="space-y-4">
-                  <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
-                    <h4 className="text-green-400 font-mono text-sm mb-3">Fund Allocation</h4>
-                    <div className="space-y-2 text-xs font-mono">
-                      <div className="flex justify-between">
-                        <span className="text-green-600">Developer Rewards:</span>
-                        <span className="text-green-400">60%</span>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 backdrop-blur-sm">
+                  <h3 className="text-responsive-lg font-bold mb-4 text-green-400 matrix-glow font-mono">
+                    {'>'} Treasury Overview
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
+                      <h4 className="text-green-400 font-mono text-sm mb-3">Fund Allocation</h4>
+                      <div className="space-y-2 text-xs font-mono">
+                        <div className="flex justify-between">
+                          <span className="text-green-600">Developer Rewards:</span>
+                          <span className="text-green-400">60%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-green-600">Staking Rewards:</span>
+                          <span className="text-green-400">25%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-green-600">Operations:</span>
+                          <span className="text-green-400">10%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-green-600">Reserve:</span>
+                          <span className="text-green-400">5%</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-green-600">Staking Rewards:</span>
-                        <span className="text-green-400">25%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 backdrop-blur-sm">
+                  <h3 className="text-responsive-lg font-bold mb-4 text-green-400 matrix-glow font-mono">
+                    {'>'} Recent Activity
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-green-400 font-mono text-sm">ETH Rewards Distribution</p>
+                          <p className="text-green-600 font-mono text-xs">To stakers</p>
+                        </div>
+                        <span className="text-green-300 font-mono text-sm">
+                          {parseFloat(stakingData.totalRewardsDistributed).toFixed(3)} ETH
+                        </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-green-600">Operations:</span>
-                        <span className="text-green-400">10%</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-green-600">Reserve:</span>
-                        <span className="text-green-400">5%</span>
+                    </div>
+                    <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-green-400 font-mono text-sm">Developer Rewards</p>
+                          <p className="text-green-600 font-mono text-xs">Code contributions</p>
+                        </div>
+                        <span className="text-green-300 font-mono text-sm">
+                          {stats.totalRewards || 0} $ABC
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 backdrop-blur-sm">
-                <h3 className="text-responsive-lg font-bold mb-4 text-green-400 matrix-glow font-mono">
-                  {'>'} Recent Activity
-                </h3>
-                <div className="space-y-3">
-                  <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-green-400 font-mono text-sm">ETH Rewards Distribution</p>
-                        <p className="text-green-600 font-mono text-xs">To stakers</p>
-                      </div>
-                      <span className="text-green-300 font-mono text-sm">
-                        {parseFloat(stakingData.totalRewardsDistributed).toFixed(3)} ETH
-                      </span>
-                    </div>
-                  </div>
-                  <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-green-400 font-mono text-sm">Developer Rewards</p>
-                        <p className="text-green-600 font-mono text-xs">Code contributions</p>
-                      </div>
-                      <span className="text-green-300 font-mono text-sm">
-                        {stats.totalRewards || 0} $ABC
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {/* ETH Rewards History */}
+              <EthRewardsHistory />
+              
+              {/* APY Calculator */}
+              <APYCalculator />
             </div>
           )}
 

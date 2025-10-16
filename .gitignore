@@ -167,7 +167,7 @@ deployments-local/
 evermark-integration-plan.txt
 
 # Organization documentation
-abc-dao-mission-statement.md
+# abc-dao-mission-statement.md (now public)
 
 # Todo lists
 ToDo*.txt
@@ -178,3 +178,17 @@ airdrop-*.md
 airdrop-*.json
 *airdrop*.json
 community-campaigns/
+
+# Social media platform planning and configuration
+bluesky-*.md
+*bluesky*.md
+discord-*.md
+*discord*.md
+social-platform-*/
+
+# Bot enhancement and AI analysis planning
+intelligent-*.md
+*intelligent*.md
+bot-analysis-*.md
+*bot-analysis*.md
+ai-enhancement-*/
