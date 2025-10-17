@@ -96,7 +96,7 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
         </div>
       </header>
 
-      <div className="flex relative">
+      <div className="flex relative min-h-screen bg-gray-900">
         {/* Mobile Sidebar Overlay */}
         {sidebarOpen && (
           <div 
@@ -191,8 +191,8 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
         </nav>
 
         {/* Main Content */}
-        <main className="flex-1 lg:ml-0 min-h-screen">
-          <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
+        <main className="flex-1 lg:ml-0 min-h-screen bg-gray-900">
+          <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
             {children}
           </div>
         </main>

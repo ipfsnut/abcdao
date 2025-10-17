@@ -130,7 +130,8 @@ export function ClaimRewardsPanel() {
     batchCount: (contractStats[3] || BigInt(0)).toString()
   } : null;
 
-  if (!address) {
+  // Show rewards info even without Web3 wallet if user is authenticated via Farcaster
+  if (!address && !profile) {
     return (
       <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
         <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
@@ -138,7 +139,7 @@ export function ClaimRewardsPanel() {
         </h2>
         <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-4 text-center">
           <p className="text-yellow-400 font-mono text-sm">
-            Connect wallet to view claimable rewards
+            Connect Farcaster account to view rewards
           </p>
         </div>
       </div>
@@ -212,7 +213,7 @@ export function ClaimRewardsPanel() {
             </div>
 
             {/* Claim Button */}
-            {hasClaimableRewards ? (
+            {hasClaimableRewards && address ? (
               <button
                 onClick={() => claimRewards?.({
                   address: CONTRACTS.ABC_REWARDS.address,
@@ -233,8 +234,11 @@ export function ClaimRewardsPanel() {
               </button>
             ) : userRewards.summary.totalClaimable > 0 ? (
               <div className="bg-blue-950/20 border border-blue-700/30 rounded-lg p-4 text-center">
-                <p className="text-blue-400 font-mono text-sm">
-                  Connect wallet to claim {userRewards.summary.totalClaimable.toLocaleString()} $ABC
+                <p className="text-blue-400 font-mono text-sm mb-3">
+                  Connect Web3 wallet to claim {userRewards.summary.totalClaimable.toLocaleString()} $ABC
+                </p>
+                <p className="text-blue-600 font-mono text-xs">
+                  💡 Use the ConnectButton in the header to link your wallet
                 </p>
               </div>
             ) : (

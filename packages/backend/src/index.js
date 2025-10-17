@@ -111,7 +111,7 @@ app.use('/api/admin', paymentRecoveryRoutes);
 app.use('/api/github', githubVerificationRoutes);
 app.use('/api/distributions', ethDistributionsRoutes);
 app.use('/api/clanker-claims', clankerClaimsRoutes);
-app.use('/api/auth/universal', universalAuthRoutes);
+app.use('/api/universal-auth', universalAuthRoutes);
 
 // Custom cast endpoint (requires admin key for security)
 app.post('/api/cast/custom', async (req, res) => {
@@ -199,8 +199,14 @@ async function startServer() {
       console.log('⏱️  Initializing background services...');
     });
     
-    // Initialize background services AFTER server is listening
-    await initializeBackgroundServices();
+    // Initialize background services AFTER server is listening (with timeout)
+    setTimeout(async () => {
+      try {
+        await initializeBackgroundServices();
+      } catch (error) {
+        console.warn('⚠️  Background services initialization failed:', error.message);
+      }
+    }, 100);
     
   } catch (error) {
     console.error('❌ Failed to start server:', error);
@@ -210,46 +216,65 @@ async function startServer() {
 
 // Separate function for background service initialization
 async function initializeBackgroundServices() {
-  try {
-    // Try to initialize database connection (optional for health checks)
-    if (process.env.DATABASE_URL) {
-      try {
-        await initializeDatabase();
-        console.log('✅ Database connected');
-      } catch (dbError) {
-        console.warn('⚠️  Database connection failed, running without database:', dbError.message);
-      }
-    } else {
-      console.warn('⚠️  DATABASE_URL not set, running without database');
+  console.log('🔄 Initializing background services...');
+  
+  // Helper function to run operations with timeout
+  async function withTimeout(operation, name, timeoutMs = 30000) {
+    try {
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error(`${name} timed out after ${timeoutMs}ms`)), timeoutMs)
+      );
+      
+      await Promise.race([operation(), timeoutPromise]);
+      console.log(`✅ ${name} completed`);
+      return true;
+    } catch (error) {
+      console.warn(`⚠️  ${name} failed:`, error.message);
+      return false;
     }
+  }
+  
+  // Try to initialize database connection (optional for health checks)
+  if (process.env.DATABASE_URL) {
+    await withTimeout(
+      () => initializeDatabase(),
+      'Database initialization',
+      15000
+    );
+  } else {
+    console.warn('⚠️  DATABASE_URL not set, running without database');
+  }
     
-    // Try to setup job queues (optional for health checks) 
-    if (process.env.REDIS_URL) {
-      try {
-        await setupQueues();
-        console.log('✅ Job queues initialized');
-      } catch (queueError) {
-        console.warn('⚠️  Queue setup failed, running without queues:', queueError.message);
-      }
-    } else {
-      console.warn('⚠️  REDIS_URL not set, running without queues');
-    }
+  // Try to setup job queues (optional for health checks) 
+  if (process.env.REDIS_URL) {
+    await withTimeout(
+      () => setupQueues(),
+      'Queue setup',
+      10000
+    );
+  } else {
+    console.warn('⚠️  REDIS_URL not set, running without queues');
+  }
     
-    // Start reward debt processing cron job
-    if (process.env.ABC_REWARDS_CONTRACT_ADDRESS && process.env.BOT_WALLET_PRIVATE_KEY) {
-      try {
-        const rewardCron = new RewardDebtCron();
-        rewardCron.start();
-        console.log('✅ Reward debt cron job started');
-        
-        // Store reference for graceful shutdown
-        global.rewardCron = rewardCron;
-      } catch (cronError) {
-        console.warn('⚠️  Reward cron setup failed:', cronError.message);
-      }
-    } else {
-      console.warn('⚠️  Reward contract or bot wallet not configured, skipping cron job');
-    }
+  // Start background services with timeout protection
+  const serviceInitializers = [];
+  
+  // Start reward debt processing cron job
+  if (process.env.ABC_REWARDS_CONTRACT_ADDRESS && process.env.BOT_WALLET_PRIVATE_KEY) {
+    serviceInitializers.push(
+      withTimeout(
+        async () => {
+          const rewardCron = new RewardDebtCron();
+          rewardCron.start();
+          global.rewardCron = rewardCron;
+        },
+        'Reward debt cron job',
+        5000
+      )
+    );
+  } else {
+    console.warn('⚠️  Reward contract or bot wallet not configured, skipping cron job');
+  }
 
     // Start nightly leaderboard generation (always run)
     try {
