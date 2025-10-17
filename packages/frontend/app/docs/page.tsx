@@ -174,14 +174,12 @@ export default function DocsOverviewPage() {
             </div>
           </div>
         </div>
-        <a
-          href="/docs/abc-dao-mission-statement.md"
-          target="_blank"
-          rel="noopener noreferrer" 
+        <Link
+          href="/docs/mission"
           className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
           Read Full Mission Statement →
-        </a>
+        </Link>
       </div>
 
       {/* Community Links */}

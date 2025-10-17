@@ -24,6 +24,7 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
   
   const navItems = [
     { href: '/docs', label: 'Overview', icon: '🏠' },
+    { href: '/docs/mission', label: 'Mission Statement', icon: '🎯' },
     { href: '/docs/getting-started', label: 'Getting Started', icon: '🚀' },
     { href: '/docs/repository-setup', label: 'Repository Setup', icon: '📁' },
     { href: '/docs/rewards-system', label: 'Rewards & Tags', icon: '💰' },
