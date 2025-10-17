@@ -22,9 +22,9 @@ import { CollapsibleStatCard, TreasuryRewardsCard } from '@/components/collapsib
 
 export default function Home() {
   const { isInMiniApp } = useFarcaster();
-  useAccount();
+  const { isConnected, address } = useAccount();
   const membership = useMembership();
-  const [activeTab, setActiveTab] = useState<'stake' | 'rewards' | 'proposals' | 'chat' | 'swap'>(isInMiniApp ? 'stake' : 'swap');
+  const [activeTab, setActiveTab] = useState<'stake' | 'dev' | 'proposals' | 'chat' | 'swap'>(isInMiniApp ? 'stake' : 'swap');
   const stakingData = useStakingWithPrice();
   const treasuryData = useTreasury();
   const { stats, loading: statsLoading } = useStats();
@@ -59,6 +59,13 @@ export default function Home() {
                   <div className="bg-green-950/20 border border-green-900/50 rounded-lg px-3 py-2 mb-2">
                     <p className="text-green-600 text-xs font-mono text-center">Your Balance</p>
                     <p className="text-sm font-bold text-green-400 matrix-glow text-center">{parseFloat(stakingData.tokenBalance).toFixed(2)} $ABC</p>
+                  </div>
+                  {/* Wallet connection status for miniapp */}
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-yellow-400'} animate-pulse`} />
+                    <p className="text-xs font-mono text-green-600">
+                      {isConnected ? 'Wallet Connected' : 'Connecting Wallet...'}
+                    </p>
                   </div>
                 </div>
                 <div className="flex-1 flex justify-end">
@@ -107,7 +114,8 @@ export default function Home() {
                   <div className="hidden sm:block">
                     <FarcasterAuth />
                   </div>
-                  <ConnectButton />
+                  {/* Only show ConnectButton for web users, miniapp uses auto-connection */}
+                  {!isInMiniApp && <ConnectButton />}
                 </div>
               </div>
               
@@ -321,17 +329,17 @@ export default function Home() {
               >
                 ./stake
               </button>
-              {/* Show rewards tab only for members */}
+              {/* Show dev tab only for members */}
               {membership.isMember && (
                 <button
-                  onClick={() => setActiveTab('rewards')}
+                  onClick={() => setActiveTab('dev')}
                   className={`px-4 py-3 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-responsive-sm min-h-[44px] ${
-                    activeTab === 'rewards' 
+                    activeTab === 'dev' 
                       ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                       : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
                   }`}
                 >
-                  ./rewards
+                  ./dev
                 </button>
               )}
               
@@ -375,8 +383,15 @@ export default function Home() {
               {activeTab === 'stake' && (
                 isDataLoading ? <TabContentSkeleton /> : <StakePanel stakingData={stakingData} />
               )}
-              {activeTab === 'rewards' && membership.isMember && (
-                isDataLoading ? <RewardsSkeleton /> : <ClaimRewardsPanel />
+              {activeTab === 'dev' && membership.isMember && (
+                <div className="text-center">
+                  <a
+                    href="/dev"
+                    className="inline-block bg-green-900/50 hover:bg-green-800/60 text-green-400 font-mono px-6 py-3 rounded-lg border border-green-700/50 transition-all duration-300 matrix-button"
+                  >
+                    Open Developer Dashboard →
+                  </a>
+                </div>
               )}
               {activeTab === 'proposals' && (!membership.isMember || (membership.isMember && !membership.hasGithub)) && <GitHubLinkPanel />}
               {activeTab === 'chat' && (
@@ -384,25 +399,50 @@ export default function Home() {
                   <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
                     {'>'} access_chat()
                   </h2>
-                  <div className="bg-blue-950/20 border border-blue-900/30 rounded-lg p-4 mb-4">
-                    <p className="text-blue-400 font-mono text-sm mb-2">
-                      🔒 Token-Gated Chat
-                    </p>
-                    <p className="text-green-600 font-mono text-xs mb-4">
-                      Join the exclusive ABC community chat on Nounspace. $ABC token holders only.
-                    </p>
-                    <a
-                      href="https://www.nounspace.com/t/base/0x5c0872b790bb73e2b3a9778db6e7704095624b07/Profile"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block bg-green-900/50 hover:bg-green-800/60 text-green-400 font-mono px-4 py-2 rounded-lg border border-green-700/50 transition-all duration-300 matrix-button text-sm"
-                    >
-                      Enter Chat →
-                    </a>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div className="bg-blue-950/20 border border-blue-900/30 rounded-lg p-4">
+                      <p className="text-blue-400 font-mono text-sm mb-2">
+                        🔒 Token-Gated Chat
+                      </p>
+                      <p className="text-green-600 font-mono text-xs mb-3">
+                        Join the exclusive ABC community chat on Nounspace. $ABC token holders only.
+                      </p>
+                      <a
+                        href="https://www.nounspace.com/t/base/0x5c0872b790bb73e2b3a9778db6e7704095624b07/Profile"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block bg-green-900/50 hover:bg-green-800/60 text-green-400 font-mono px-4 py-2 rounded-lg border border-green-700/50 transition-all duration-300 matrix-button text-sm"
+                      >
+                        Enter Chat →
+                      </a>
+                    </div>
+                    
+                    <div className="bg-purple-950/20 border border-purple-900/30 rounded-lg p-4">
+                      <p className="text-purple-400 font-mono text-sm mb-2">
+                        📡 Follow Updates
+                      </p>
+                      <p className="text-green-600 font-mono text-xs mb-3">
+                        Stay updated with ABC DAO announcements and community discussions.
+                      </p>
+                      <a
+                        href="https://warpcast.com/abc-dao"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block bg-purple-900/50 hover:bg-purple-800/60 text-purple-400 font-mono px-4 py-2 rounded-lg border border-purple-700/50 transition-all duration-300 matrix-button text-sm"
+                      >
+                        @abc-dao →
+                      </a>
+                    </div>
                   </div>
-                  <p className="text-green-600/70 font-mono text-xs">
-                    Hold $ABC tokens to verify access. Connect your wallet on Nounspace.
-                  </p>
+                  
+                  <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3 text-center">
+                    <p className="text-green-600/70 font-mono text-xs">
+                      For developer resources and Discord access, visit the{' '}
+                      <a href="/dev" className="text-green-400 hover:text-green-300 underline">
+                        developer dashboard
+                      </a>
+                    </p>
+                  </div>
                 </div>
               )}
               {activeTab === 'swap' && <SwapWidget />}
@@ -434,14 +474,14 @@ export default function Home() {
                 ./stake
               </button>
               <button
-                onClick={() => setActiveTab('rewards')}
+                onClick={() => setActiveTab('dev')}
                 className={`flex-1 px-3 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] ${
-                  activeTab === 'rewards' 
+                  activeTab === 'dev' 
                     ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                     : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
                 }`}
               >
-                ./rewards
+                ./dev
               </button>
               <button
                 onClick={() => setActiveTab('chat')}
@@ -461,33 +501,65 @@ export default function Home() {
               {activeTab === 'stake' && (
                 isDataLoading ? <TabContentSkeleton /> : <StakePanel stakingData={stakingData} />
               )}
-              {activeTab === 'rewards' && (
-                isDataLoading ? <RewardsSkeleton /> : <ClaimRewardsPanel />
+              {activeTab === 'dev' && (
+                <div className="text-center">
+                  <a
+                    href="/dev"
+                    className="inline-block bg-green-900/50 hover:bg-green-800/60 text-green-400 font-mono px-6 py-3 rounded-lg border border-green-700/50 transition-all duration-300 matrix-button"
+                  >
+                    Open Developer Dashboard →
+                  </a>
+                </div>
               )}
               {activeTab === 'chat' && (
                 <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm text-center">
                   <h2 className="text-responsive-lg font-bold mb-3 text-green-400 matrix-glow font-mono">
                     {'>'} access_chat()
                   </h2>
-                  <div className="bg-blue-950/20 border border-blue-900/30 rounded-lg p-4 mb-4">
-                    <p className="text-blue-400 font-mono text-sm mb-2">
-                      🔒 Token-Gated Chat
-                    </p>
-                    <p className="text-green-600 font-mono text-xs mb-4">
-                      Join the exclusive ABC community chat on Nounspace. $ABC token holders only.
-                    </p>
-                    <a
-                      href="https://www.nounspace.com/t/base/0x5c0872b790bb73e2b3a9778db6e7704095624b07/Profile"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block bg-green-900/50 hover:bg-green-800/60 text-green-400 font-mono px-4 py-2 rounded-lg border border-green-700/50 transition-all duration-300 matrix-button text-sm"
-                    >
-                      Enter Chat →
-                    </a>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div className="bg-blue-950/20 border border-blue-900/30 rounded-lg p-4">
+                      <p className="text-blue-400 font-mono text-sm mb-2">
+                        🔒 Token-Gated Chat
+                      </p>
+                      <p className="text-green-600 font-mono text-xs mb-3">
+                        Join the exclusive ABC community chat on Nounspace. $ABC token holders only.
+                      </p>
+                      <a
+                        href="https://www.nounspace.com/t/base/0x5c0872b790bb73e2b3a9778db6e7704095624b07/Profile"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block bg-green-900/50 hover:bg-green-800/60 text-green-400 font-mono px-4 py-2 rounded-lg border border-green-700/50 transition-all duration-300 matrix-button text-sm"
+                      >
+                        Enter Chat →
+                      </a>
+                    </div>
+                    
+                    <div className="bg-purple-950/20 border border-purple-900/30 rounded-lg p-4">
+                      <p className="text-purple-400 font-mono text-sm mb-2">
+                        📡 Follow Updates
+                      </p>
+                      <p className="text-green-600 font-mono text-xs mb-3">
+                        Stay updated with ABC DAO announcements and community discussions.
+                      </p>
+                      <a
+                        href="https://warpcast.com/abc-dao"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block bg-purple-900/50 hover:bg-purple-800/60 text-purple-400 font-mono px-4 py-2 rounded-lg border border-purple-700/50 transition-all duration-300 matrix-button text-sm"
+                      >
+                        @abc-dao →
+                      </a>
+                    </div>
                   </div>
-                  <p className="text-green-600/70 font-mono text-xs">
-                    Hold $ABC tokens to verify access. Connect your wallet on Nounspace.
-                  </p>
+                  
+                  <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3 text-center">
+                    <p className="text-green-600/70 font-mono text-xs">
+                      For developer resources and Discord access, visit the{' '}
+                      <a href="/dev" className="text-green-400 hover:text-green-300 underline">
+                        developer dashboard
+                      </a>
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

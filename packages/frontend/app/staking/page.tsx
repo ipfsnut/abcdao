@@ -6,11 +6,12 @@ import { useUnbonding } from '@/hooks/useUnbonding';
 import { ContractAddressesFooter } from '@/components/contract-addresses-footer';
 import { BackNavigation } from '@/components/back-navigation';
 import { Skeleton } from '@/components/skeleton-loader';
+import { EthRewardsHistory } from '@/components/eth-rewards-history';
 
 export default function StakingPage() {
   const stakingData = useStaking();
   const unbondingData = useUnbonding();
-  const [activeTab, setActiveTab] = useState<'overview' | 'stake' | 'unbonding'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'stake' | 'unbonding' | 'rewards'>('overview');
   const [amount, setAmount] = useState('');
   const [isStaking, setIsStaking] = useState(true);
 
@@ -71,10 +72,10 @@ export default function StakingPage() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex bg-green-950/10 border border-green-900/30 p-1 rounded-lg font-mono mb-6 max-w-lg">
+        <div className="flex bg-green-950/10 border border-green-900/30 p-1 rounded-lg font-mono mb-6 overflow-x-auto">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] ${
+            className={`flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] whitespace-nowrap ${
               activeTab === 'overview' 
                 ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                 : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
@@ -84,7 +85,7 @@ export default function StakingPage() {
           </button>
           <button
             onClick={() => setActiveTab('stake')}
-            className={`flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] ${
+            className={`flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] whitespace-nowrap ${
               activeTab === 'stake' 
                 ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                 : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
@@ -93,8 +94,18 @@ export default function StakingPage() {
             ./stake
           </button>
           <button
+            onClick={() => setActiveTab('rewards')}
+            className={`flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] whitespace-nowrap ${
+              activeTab === 'rewards' 
+                ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
+                : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+            }`}
+          >
+            ./rewards
+          </button>
+          <button
             onClick={() => setActiveTab('unbonding')}
-            className={`flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] ${
+            className={`flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] whitespace-nowrap ${
               activeTab === 'unbonding' 
                 ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                 : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
@@ -343,6 +354,79 @@ export default function StakingPage() {
                   </button>
                 )}
               </div>
+            </div>
+          )}
+
+          {activeTab === 'rewards' && (
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 backdrop-blur-sm mb-6">
+                <h3 className="text-responsive-lg font-bold mb-4 text-green-400 matrix-glow font-mono">
+                  {'>'} ETH Staking Rewards
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4">
+                    <h4 className="text-green-600 text-xs font-mono mb-1">Pending Rewards</h4>
+                    <p className="text-responsive-lg font-bold text-green-300 matrix-glow">
+                      {parseFloat(stakingData.pendingRewards).toFixed(4)} ETH
+                    </p>
+                    <p className="text-green-500 text-xs font-mono mt-1">Available to claim</p>
+                  </div>
+                  
+                  <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4">
+                    <h4 className="text-green-600 text-xs font-mono mb-1">Total Earned</h4>
+                    <p className="text-responsive-lg font-bold text-green-400 matrix-glow">
+                      {parseFloat(stakingData.totalEarned).toFixed(4)} ETH
+                    </p>
+                    <p className="text-green-500 text-xs font-mono mt-1">All time rewards</p>
+                  </div>
+                  
+                  <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4">
+                    <h4 className="text-green-600 text-xs font-mono mb-1">Your Stake</h4>
+                    <p className="text-responsive-lg font-bold text-green-400 matrix-glow">
+                      {parseFloat(stakingData.stakedAmount).toFixed(2)} $ABC
+                    </p>
+                    <p className="text-green-500 text-xs font-mono mt-1">
+                      {stakingData.totalStaked && parseFloat(stakingData.totalStaked) > 0 
+                        ? ((parseFloat(stakingData.stakedAmount) / parseFloat(stakingData.totalStaked)) * 100).toFixed(2)
+                        : '0.00'
+                      }% of total
+                    </p>
+                  </div>
+                </div>
+
+                {parseFloat(stakingData.pendingRewards) > 0 ? (
+                  <button 
+                    onClick={stakingData.handleClaimRewards}
+                    disabled={stakingData.isClaimLoading}
+                    className="w-full bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 
+                             text-green-400 hover:text-green-300 py-3 rounded-lg font-mono font-medium 
+                             transition-all duration-300 matrix-button matrix-glow disabled:opacity-50 min-h-[48px] mb-6"
+                  >
+                    {'>'} {stakingData.isClaimLoading ? 'CLAIMING...' : `CLAIM ${parseFloat(stakingData.pendingRewards).toFixed(4)} ETH REWARDS`}
+                  </button>
+                ) : (
+                  <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4 text-center mb-6">
+                    <p className="text-green-600 font-mono text-sm">No pending rewards</p>
+                    <p className="text-green-500 font-mono text-xs mt-1">
+                      ETH rewards are distributed automatically to stakers
+                    </p>
+                  </div>
+                )}
+
+                <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
+                  <h4 className="text-green-400 font-mono text-sm mb-3">{'>'} How ETH Rewards Work</h4>
+                  <div className="space-y-2 text-xs font-mono text-green-600">
+                    <p>• ETH rewards are distributed every 6 hours from protocol revenue</p>
+                    <p>• 25% of protocol ETH goes to the staking contract</p>
+                    <p>• Your share is proportional to your staked $ABC</p>
+                    <p>• Rewards accumulate automatically and can be claimed anytime</p>
+                    <p>• No fees for claiming - just gas costs</p>
+                  </div>
+                </div>
+              </div>
+
+              <EthRewardsHistory />
             </div>
           )}
         </div>

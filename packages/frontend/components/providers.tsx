@@ -3,8 +3,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
-import { config } from '@/lib/web3';
-import { UnifiedFarcasterProvider } from '@/contexts/unified-farcaster-context';
+import { config, fallbackConfig } from '@/lib/web3';
+import { UnifiedFarcasterProvider, useFarcaster } from '@/contexts/unified-farcaster-context';
 import '@rainbow-me/rainbowkit/styles.css';
 
 const queryClient = new QueryClient();
@@ -56,16 +56,44 @@ const customMatrixTheme = {
   },
 };
 
+// Context-aware Wagmi provider that uses Farcaster wallet in mini-app
+function ContextAwareWagmiProvider({ children }: { children: React.ReactNode }) {
+  const { isInMiniApp, isLoading } = useFarcaster();
+
+  // Don't render until we know the context
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black text-green-400 flex items-center justify-center">
+        <div className="text-center font-mono">
+          <div className="animate-pulse text-green-400 mb-2">🔗</div>
+          <div>Initializing wallet context...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Determine config based on context
+  const selectedConfig = isInMiniApp ? config : fallbackConfig;
+  
+  console.log(`🔗 Using ${isInMiniApp ? 'Farcaster miniapp' : 'standard'} wallet config`);
+
+  return (
+    <WagmiProvider config={selectedConfig as any}>
+      <QueryClientProvider client={queryClient}>
+        <RainbowKitProvider theme={customMatrixTheme}>
+          {children}
+        </RainbowKitProvider>
+      </QueryClientProvider>
+    </WagmiProvider>
+  );
+}
+
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <UnifiedFarcasterProvider>
-      <WagmiProvider config={config}>
-        <QueryClientProvider client={queryClient}>
-          <RainbowKitProvider theme={customMatrixTheme}>
-            {children}
-          </RainbowKitProvider>
-        </QueryClientProvider>
-      </WagmiProvider>
+      <ContextAwareWagmiProvider>
+        {children}
+      </ContextAwareWagmiProvider>
     </UnifiedFarcasterProvider>
   );
 }
