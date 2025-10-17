@@ -85,13 +85,15 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Health check
+// Health check - always return healthy regardless of background service status
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(),
     service: 'abc-dao-backend',
-    version: '1.0.1'
+    version: '1.0.2',
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -202,11 +204,13 @@ async function startServer() {
     // Initialize background services AFTER server is listening (with timeout)
     setTimeout(async () => {
       try {
+        console.log('🔄 Starting background services initialization...');
         await initializeBackgroundServices();
       } catch (error) {
         console.warn('⚠️  Background services initialization failed:', error.message);
+        console.warn('🏥 Server remains healthy for API requests');
       }
-    }, 100);
+    }, 50); // Reduced delay for faster startup
     
   } catch (error) {
     console.error('❌ Failed to start server:', error);
@@ -234,7 +238,8 @@ async function initializeBackgroundServices() {
     }
   }
   
-  // Try to initialize database connection (optional for health checks)
+  try {
+    // Try to initialize database connection (optional for health checks)
   if (process.env.DATABASE_URL) {
     await withTimeout(
       () => initializeDatabase(),
@@ -348,20 +353,8 @@ async function initializeBackgroundServices() {
       console.warn('⚠️  Bot wallet not configured, skipping Clanker rewards cron');
     }
 
-    // Initialize Discord bot
-    if (process.env.DISCORD_BOT_TOKEN) {
-      try {
-        await discordBot.initialize();
-        console.log('✅ Discord bot initialized');
-        
-        // Store reference for graceful shutdown
-        global.discordBot = discordBot;
-      } catch (discordError) {
-        console.warn('⚠️  Discord bot setup failed:', discordError.message);
-      }
-    } else {
-      console.warn('⚠️  Discord bot token not configured, skipping Discord integration');
-    }
+    // Temporarily disable Discord bot for Railway deployment debugging
+    console.warn('⚠️  Discord bot temporarily disabled for Railway deployment debugging');
     
     console.log('✅ All background services initialized successfully');
     

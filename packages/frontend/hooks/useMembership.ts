@@ -1,9 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
-import { useFarcaster } from '@/contexts/unified-farcaster-context';
-import { config } from '@/lib/config';
+import { useUniversalAuth } from '@/contexts/universal-auth-context';
 
 export interface MembershipStatus {
   isMember: boolean;
@@ -19,78 +16,28 @@ export interface MembershipStatus {
 }
 
 export function useMembership() {
-  const { address } = useAccount();
-  const { user: profile } = useFarcaster();
-  const [status, setStatus] = useState<MembershipStatus>({
-    isMember: false,
-    hasGithub: false,
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { user, isLoading, error, refreshUser } = useUniversalAuth();
 
-  useEffect(() => {
-    if (profile?.fid) {
-      fetchMembershipStatus(profile.fid);
-    } else {
-      setLoading(false);
-    }
-  }, [profile]);
-
-  const fetchMembershipStatus = async (fid: number) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await fetch(`${config.backendUrl}/api/users/${fid}/status`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        setStatus({
-          isMember: !!data.membership_tx_hash,
-          hasGithub: !!data.github_username,
-          githubUsername: data.github_username,
-          membershipTxHash: data.membership_tx_hash,
-          farcasterFid: data.farcaster_fid,
-          farcasterUsername: data.farcaster_username,
-          walletAddress: data.wallet_address,
-          joinedAt: data.joined_at,
-          totalCommits: data.total_commits || 0,
-          totalEarned: data.total_earned || 0,
-        });
-      } else if (response.status === 404) {
-        // User not found - not a member yet
-        setStatus({
-          isMember: false,
-          hasGithub: false,
-        });
-      } else {
-        throw new Error('Failed to fetch membership status');
-      }
-    } catch (err) {
-      console.error('Error fetching membership status:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      setStatus({
-        isMember: false,
-        hasGithub: false,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const refreshStatus = () => {
-    if (profile?.fid) {
-      fetchMembershipStatus(profile.fid);
-    }
+  // Map universal user to membership status interface
+  const status: MembershipStatus = {
+    isMember: user?.is_member || false,
+    hasGithub: user?.has_github || false,
+    githubUsername: user?.github_username,
+    membershipTxHash: user?.membership_tx_hash,
+    farcasterFid: user?.farcaster_fid,
+    farcasterUsername: user?.farcaster_username,
+    walletAddress: user?.wallet_address_primary,
+    joinedAt: user?.joined_at,
+    totalCommits: user?.total_commits || 0,
+    totalEarned: user?.total_earned || 0,
   };
 
   return {
     ...status,
-    loading,
+    loading: isLoading,
     error,
-    refreshStatus,
-    isConnected: !!profile,
-    walletConnected: !!address,
+    refreshStatus: refreshUser,
+    isConnected: !!user,
+    walletConnected: !!user?.wallet_address_primary,
   };
 }

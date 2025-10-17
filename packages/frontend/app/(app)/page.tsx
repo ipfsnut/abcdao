@@ -8,6 +8,7 @@ import { ClaimRewardsPanel } from '@/components/claim-rewards';
 import { TokenSupplyMini } from '@/components/token-supply-chart';
 import { BlogSection } from '@/components/blog-section';
 import { MiniAppPrompt } from '@/components/miniapp-prompt';
+import { WebappAuth } from '@/components/webapp-auth';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
@@ -26,7 +27,7 @@ export default function Home() {
   const { isConnected, address } = useAccount();
   const membership = useMembership();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'stake' | 'dev' | 'proposals' | 'chat' | 'swap'>(isInMiniApp ? 'stake' : 'swap');
+  const [activeTab, setActiveTab] = useState<'stake' | 'dev' | 'proposals' | 'chat' | 'swap' | 'join'>(isInMiniApp ? 'stake' : 'join');
   const stakingData = useStakingWithPrice();
   const treasuryData = useTreasury();
   const { stats, loading: statsLoading } = useStats();
@@ -137,15 +138,15 @@ export default function Home() {
       <div className="bg-gradient-to-r from-green-950/20 to-black/40 border-b border-green-900/30">
         <div className="px-4 py-6 text-center">
           <h2 className="text-responsive-lg font-bold text-green-400 matrix-glow mb-2 font-mono">
-            Ready to earn $ABC?
+            Always Be Coding Together
           </h2>
           <p className="text-responsive-xs text-green-600 mb-4 font-mono">
-            Ship code, stake tokens, earn rewards. Join the Always Be Coding movement.
+            Join a community of developers building FOSS projects, learning together, and creating lasting friendships.
           </p>
         </div>
       </div>
 
-      {/* Hero Section - "Your Open Source Project Here" */}
+      {/* Hero Section - Community Builder */}
       <div className="bg-gradient-to-r from-green-950/30 via-black/60 to-green-950/30 border-b border-green-900/20">
         <div className="px-4 py-12 text-center relative overflow-hidden">
           {/* Background Pattern */}
@@ -160,40 +161,73 @@ export default function Home() {
           <div className="relative z-10 max-w-4xl mx-auto">
             <div className="border-2 border-dashed border-green-600/50 rounded-xl p-8 bg-black/40 backdrop-blur-sm">
               <h2 className="text-3xl md:text-4xl font-bold text-green-400 matrix-glow mb-4 font-mono">
-                📢 Your Open Source Project Here
+                🤝 Build. Learn. Belong.
               </h2>
               <p className="text-green-300 font-mono text-lg mb-6">
-                Get your repository featured and earn rewards for every commit
+                Join ABC DAO — a community-driven dev shop where we build open source projects together and form lasting friendships.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              
+              {/* Community Values */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="bg-green-950/20 border border-green-900/40 rounded-lg p-4">
+                  <div className="text-green-400 text-2xl mb-2">🛠️</div>
+                  <h3 className="text-green-400 font-mono font-bold mb-2">Build Together</h3>
+                  <p className="text-green-600 font-mono text-sm">Collaborate on meaningful FOSS projects that make a difference</p>
+                </div>
+                <div className="bg-green-950/20 border border-green-900/40 rounded-lg p-4">
+                  <div className="text-green-400 text-2xl mb-2">📚</div>
+                  <h3 className="text-green-400 font-mono font-bold mb-2">Learn & Grow</h3>
+                  <p className="text-green-600 font-mono text-sm">Share knowledge, mentor others, level up your skills</p>
+                </div>
+                <div className="bg-green-950/20 border border-green-900/40 rounded-lg p-4">
+                  <div className="text-green-400 text-2xl mb-2">🎯</div>
+                  <h3 className="text-green-400 font-mono font-bold mb-2">Create Impact</h3>
+                  <p className="text-green-600 font-mono text-sm">Build public goods and tools that benefit the entire ecosystem</p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
                 <a
-                  href="/docs#repository-registration"
+                  href="/dev"
                   className="bg-green-900/50 hover:bg-green-800/60 border border-green-700/50 hover:border-green-600 
                            text-green-400 hover:text-green-300 px-6 py-3 rounded-lg font-mono font-semibold
                            transition-all duration-300 matrix-button matrix-glow"
                 >
-                  List Your Project →
+                  Join the Community →
                 </a>
-                <div className="text-green-600 font-mono text-sm">
-                  <span className="hidden sm:inline">•</span> Pay developers automatically 
-                  <span className="hidden sm:inline">•</span> Build in public 
-                  <span className="hidden sm:inline">•</span> Grow your community
+                <a
+                  href="/docs"
+                  className="bg-black/40 hover:bg-green-950/30 border border-green-900/50 hover:border-green-600 
+                           text-green-600 hover:text-green-300 px-6 py-3 rounded-lg font-mono 
+                           transition-all duration-300 matrix-button"
+                >
+                  Learn More
+                </a>
+              </div>
+              
+              {/* Community Benefits */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm font-mono">
+                <div className="text-green-600">
+                  👥 Supportive dev community
+                </div>
+                <div className="text-green-600">
+                  🎓 Educational resources & tools
+                </div>
+                <div className="text-green-600">
+                  🏗️ Real-world project experience
+                </div>
+                <div className="text-green-600">
+                  🌟 Recognition for contributions
                 </div>
               </div>
               
-              {/* Sample project showcase */}
+              {/* Current member count */}
               <div className="mt-8 pt-6 border-t border-green-900/30">
-                <p className="text-green-600 font-mono text-xs mb-4">Featured Projects:</p>
-                <div className="flex flex-wrap justify-center gap-4 text-sm">
-                  <div className="bg-green-950/30 border border-green-900/40 rounded px-3 py-2 font-mono text-green-400">
-                    🚀 abc-dao/core
-                  </div>
-                  <div className="bg-green-950/30 border border-green-900/40 rounded px-3 py-2 font-mono text-green-400">
-                    ⚡ your-project/here
-                  </div>
-                  <div className="bg-green-950/30 border border-green-900/40 rounded px-3 py-2 font-mono text-green-400">
-                    💎 next-big-thing
-                  </div>
+                <p className="text-green-600 font-mono text-xs mb-2">Community Members:</p>
+                <div className="flex justify-center items-center gap-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-green-400 font-mono font-bold">{(stats.totalDevelopers || 0)} developers</span>
+                  <span className="text-green-600 font-mono text-sm">building together</span>
                 </div>
               </div>
             </div>
@@ -441,13 +475,23 @@ export default function Home() {
             </div>
           </>
         ) : (
-          /* Web Browser Context: Staking and Rewards Only */
+          /* Web Browser Context: Full functionality with webapp auth */
           <>
             {/* Web User Tab Navigation */}
-            <div className="flex bg-green-950/10 border border-green-900/30 p-1 rounded-lg font-mono max-w-2xl mx-auto">
+            <div className="flex bg-green-950/10 border border-green-900/30 p-1 rounded-lg font-mono max-w-3xl mx-auto overflow-x-auto">
+              <button
+                onClick={() => setActiveTab('join')}
+                className={`flex-1 px-3 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] whitespace-nowrap ${
+                  activeTab === 'join' 
+                    ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
+                    : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+                }`}
+              >
+                ./join
+              </button>
               <button
                 onClick={() => setActiveTab('swap')}
-                className={`flex-1 px-3 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] ${
+                className={`flex-1 px-3 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] whitespace-nowrap ${
                   activeTab === 'swap' 
                     ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                     : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
@@ -457,7 +501,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setActiveTab('stake')}
-                className={`flex-1 px-3 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] ${
+                className={`flex-1 px-3 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] whitespace-nowrap ${
                   activeTab === 'stake' 
                     ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                     : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
@@ -467,13 +511,13 @@ export default function Home() {
               </button>
               <button
                 onClick={() => router.push('/dev')}
-                className="flex-1 px-3 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] text-green-600 hover:text-green-400 hover:bg-green-950/20 border border-transparent hover:border-green-700/50"
+                className="flex-1 px-3 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] text-green-600 hover:text-green-400 hover:bg-green-950/20 border border-transparent hover:border-green-700/50 whitespace-nowrap"
               >
                 ./dev
               </button>
               <button
                 onClick={() => setActiveTab('chat')}
-                className={`flex-1 px-3 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] ${
+                className={`flex-1 px-3 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] whitespace-nowrap ${
                   activeTab === 'chat' 
                     ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
                     : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
@@ -485,6 +529,7 @@ export default function Home() {
 
             {/* Web User Tab Content */}
             <div className="mt-6">
+              {activeTab === 'join' && <WebappAuth />}
               {activeTab === 'swap' && <SwapWidget />}
               {activeTab === 'stake' && (
                 isDataLoading ? <TabContentSkeleton /> : <StakePanel stakingData={stakingData} />
