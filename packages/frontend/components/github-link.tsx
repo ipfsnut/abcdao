@@ -12,27 +12,33 @@ export function GitHubLinkPanel() {
   const { user: profile, isInMiniApp } = useFarcaster();
   const { isConnected } = useAccount();
   const membership = useMembership();
-  const [isLinked, setIsLinked] = useState(false);
-  const [githubUsername, setGithubUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const [inFrame, setInFrame] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [unlinking, setUnlinking] = useState(false);
+  
+  // Use membership hook as single source of truth
+  const isLinked = membership.hasGithub;
+  const githubUsername = membership.githubUsername || '';
 
   useEffect(() => {
     // Detect if we're in a Farcaster frame or iframe
     setInFrame(isInFrame());
     
-    // Check if user has already linked their GitHub
-    if (profile?.fid) {
-      checkGitHubLink(profile.fid);
+    // Check for GitHub OAuth success parameters (user returning from GitHub)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('github_success') === 'true') {
+      console.log('🔄 GitHub OAuth success detected, refreshing membership status...');
+      membership.refreshStatus();
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
     
     // Listen for OAuth callback messages (from popup/iframe)
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'github_linked' && event.data.success) {
-        setIsLinked(true);
-        setGithubUsername(event.data.username);
+        // Refresh membership status to sync with backend
+        membership.refreshStatus();
         setShowPayment(true);
         console.log('✅ GitHub linked via postMessage:', event.data.username);
       }
@@ -40,36 +46,14 @@ export function GitHubLinkPanel() {
     
     window.addEventListener('message', handleMessage);
     
-    // Update linked status from membership hook
-    if (membership.hasGithub) {
-      setIsLinked(true);
-      if (membership.githubUsername) {
-        setGithubUsername(membership.githubUsername);
-      }
-    }
-    
     // Cleanup event listener
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, [profile, membership.hasGithub, membership.githubUsername]);
+  }, [membership]);
 
 
 
-  const checkGitHubLink = async (fid: number) => {
-    try {
-      const response = await fetch(`${config.backendUrl}/api/users/${fid}/status`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.github_username) {
-          setIsLinked(true);
-          setGithubUsername(data.github_username);
-        }
-      }
-    } catch (error) {
-      console.error('Error checking GitHub link:', error);
-    }
-  };
 
   const linkGitHub = async () => {
     if (!profile) {
@@ -137,13 +121,9 @@ export function GitHubLinkPanel() {
       });
 
       if (response.ok) {
-        // Clear local state
-        setIsLinked(false);
-        setGithubUsername('');
-        setShowPayment(false);
-        
-        // Refresh membership status
+        // Refresh membership status to sync with backend
         membership.refreshStatus();
+        setShowPayment(false);
         
         alert('GitHub account unlinked successfully');
       } else {
@@ -258,15 +238,28 @@ export function GitHubLinkPanel() {
                 📁 Manage Repositories
               </button>
               
-              <button
-                onClick={unlinkGitHub}
-                disabled={unlinking}
-                className="w-full bg-red-900/30 hover:bg-red-900/50 text-red-400 font-mono py-2.5 rounded-lg 
-                         border border-red-700/50 transition-all duration-300 text-sm
-                         disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
-              >
-                {unlinking ? '⏳ Unlinking...' : '🔗 Unlink GitHub'}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={unlinkGitHub}
+                  disabled={unlinking}
+                  className="flex-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 font-mono py-2.5 rounded-lg 
+                           border border-red-700/50 transition-all duration-300 text-sm
+                           disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                >
+                  {unlinking ? '⏳ Unlinking...' : '🔗 Unlink GitHub'}
+                </button>
+                
+                <button
+                  onClick={membership.refreshStatus}
+                  disabled={membership.loading}
+                  className="px-4 bg-green-900/30 hover:bg-green-900/50 text-green-400 font-mono py-2.5 rounded-lg 
+                           border border-green-700/50 transition-all duration-300 text-sm
+                           disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                  title="Refresh GitHub connection status"
+                >
+                  {membership.loading ? '🔄' : '↻'}
+                </button>
+              </div>
             </div>
           </div>
         ) : membership.isMember && !isLinked ? (
