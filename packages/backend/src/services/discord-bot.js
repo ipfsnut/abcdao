@@ -10,6 +10,7 @@ class DiscordBotService {
       announcements: process.env.DISCORD_ANNOUNCEMENTS_CHANNEL_ID,
       general: process.env.DISCORD_GENERAL_CHANNEL_ID
     };
+    this.serverManager = null;
   }
 
   /**
@@ -27,6 +28,8 @@ class DiscordBotService {
           GatewayIntentBits.Guilds,
           GatewayIntentBits.GuildMessages,
           GatewayIntentBits.MessageContent
+          // GuildMembers and GuildModeration require privileged intents
+          // These need to be enabled in Discord Developer Portal
         ]
       });
 
@@ -49,9 +52,18 @@ class DiscordBotService {
    * Setup Discord event handlers
    */
   setupEventHandlers() {
-    this.client.once('ready', () => {
+    this.client.once('ready', async () => {
       console.log(`🤖 Discord bot logged in as ${this.client.user.tag}`);
       this.isReady = true;
+      
+      // Initialize server manager
+      try {
+        const { DiscordServerManager } = await import('./discord-server-management.js');
+        this.serverManager = new DiscordServerManager(this);
+        console.log('✅ Discord server manager initialized');
+      } catch (error) {
+        console.error('❌ Failed to initialize server manager:', error);
+      }
       
       // Set bot activity
       this.client.user.setActivity('Rewarding developers with $ABC', { type: 'WATCHING' });
@@ -60,6 +72,13 @@ class DiscordBotService {
     this.client.on('interactionCreate', async (interaction) => {
       if (!interaction.isChatInputCommand()) return;
       await this.handleSlashCommand(interaction);
+    });
+
+    this.client.on('guildMemberAdd', async (member) => {
+      // Welcome new members
+      if (this.serverManager) {
+        await this.serverManager.welcomeNewMember(member);
+      }
     });
 
     this.client.on('error', (error) => {
@@ -105,7 +124,44 @@ class DiscordBotService {
         
       new SlashCommandBuilder()
         .setName('price')
-        .setDescription('Get current $ABC token price information')
+        .setDescription('Get current $ABC token price information'),
+        
+      new SlashCommandBuilder()
+        .setName('admin')
+        .setDescription('Admin commands for server management')
+        .addSubcommand(subcommand =>
+          subcommand
+            .setName('setup')
+            .setDescription('Setup Discord server structure'))
+        .addSubcommand(subcommand =>
+          subcommand
+            .setName('info')
+            .setDescription('Get server information'))
+        .addSubcommand(subcommand =>
+          subcommand
+            .setName('backup')
+            .setDescription('Backup server structure'))
+        .addSubcommand(subcommand =>
+          subcommand
+            .setName('stats')
+            .setDescription('Update server statistics'))
+        .addSubcommand(subcommand =>
+          subcommand
+            .setName('role')
+            .setDescription('Assign role to user')
+            .addUserOption(option =>
+              option.setName('user')
+                .setDescription('User to assign role to')
+                .setRequired(true))
+            .addStringOption(option =>
+              option.setName('tier')
+                .setDescription('Reputation tier')
+                .setRequired(true)
+                .addChoices(
+                  { name: 'Bronze', value: 'Bronze' },
+                  { name: 'Silver', value: 'Silver' },
+                  { name: 'Gold', value: 'Gold' }
+                )))
     ];
 
     try {
@@ -144,6 +200,9 @@ class DiscordBotService {
           break;
         case 'price':
           await this.handlePriceCommand(interaction);
+          break;
+        case 'admin':
+          await this.handleAdminCommand(interaction);
           break;
         default:
           await interaction.editReply('Unknown command!');
@@ -466,6 +525,128 @@ class DiscordBotService {
       .setFooter({ text: 'ABC DAO - Account Verification' });
 
     await interaction.editReply({ embeds: [embed] });
+  }
+
+  /**
+   * Handle /admin command
+   */
+  async handleAdminCommand(interaction) {
+    try {
+      await interaction.deferReply({ ephemeral: true });
+
+      // Check if user has admin permissions
+      const member = interaction.member;
+      const isAdmin = member.permissions.has('Administrator') || 
+                     member.roles.cache.some(role => ['ABC Founder', 'Core Developer'].includes(role.name));
+
+      if (!isAdmin) {
+        return await interaction.editReply('❌ You need admin permissions to use this command.');
+      }
+
+      if (!this.serverManager) {
+        return await interaction.editReply('❌ Server manager not initialized. Try again in a moment.');
+      }
+
+      const subcommand = interaction.options.getSubcommand();
+
+      switch (subcommand) {
+        case 'setup':
+          await interaction.editReply('🏗️ Setting up Discord server structure...');
+          try {
+            await this.serverManager.setupServerStructure();
+            await interaction.editReply('✅ **Server Setup Complete!**\\n\\nServer structure has been created with:\\n• Roles and permissions\\n• Channel categories\\n• Welcome system\\n• Automated notifications');
+          } catch (error) {
+            await interaction.editReply(`❌ Setup failed: ${error.message}`);
+          }
+          break;
+
+        case 'info':
+          try {
+            const info = await this.serverManager.getServerInfo();
+            const embed = new EmbedBuilder()
+              .setColor('#00ff88')
+              .setTitle('📊 Discord Server Information')
+              .addFields(
+                { name: '🏛️ Server Name', value: info.name, inline: true },
+                { name: '👥 Members', value: info.memberCount.toString(), inline: true },
+                { name: '📺 Total Channels', value: info.channels.toString(), inline: true },
+                { name: '📝 Text Channels', value: info.textChannels.toString(), inline: true },
+                { name: '🎤 Voice Channels', value: info.voiceChannels.toString(), inline: true },
+                { name: '📂 Categories', value: info.categories.toString(), inline: true },
+                { name: '🎭 Roles', value: info.roles.toString(), inline: true },
+                { name: '🤖 Bot Status', value: this.isReady ? '✅ Ready' : '❌ Not Ready', inline: true }
+              )
+              .setFooter({ text: 'ABC DAO Server Management' })
+              .setTimestamp();
+            
+            await interaction.editReply({ embeds: [embed] });
+          } catch (error) {
+            await interaction.editReply(`❌ Failed to get server info: ${error.message}`);
+          }
+          break;
+
+        case 'backup':
+          try {
+            await interaction.editReply('💾 Creating server backup...');
+            const backup = await this.serverManager.backupServerStructure();
+            
+            if (backup) {
+              // Save backup to file system or database
+              const fs = await import('fs/promises');
+              const backupPath = `/tmp/discord-backup-${Date.now()}.json`;
+              await fs.writeFile(backupPath, JSON.stringify(backup, null, 2));
+              
+              await interaction.editReply(`✅ **Backup Created!**\\n\\nBackup saved with:\\n• ${backup.roles.length} roles\\n• ${backup.channels.length} channels\\n• Full permission structure\\n\\nTimestamp: ${backup.timestamp}`);
+            } else {
+              await interaction.editReply('❌ Failed to create backup');
+            }
+          } catch (error) {
+            await interaction.editReply(`❌ Backup failed: ${error.message}`);
+          }
+          break;
+
+        case 'stats':
+          try {
+            await interaction.editReply('📊 Updating server statistics...');
+            const success = await this.serverManager.updateServerStats();
+            
+            if (success) {
+              await interaction.editReply('✅ **Statistics Updated!**\\n\\nThe #📊-stats channel has been updated with live platform data.');
+            } else {
+              await interaction.editReply('❌ Failed to update statistics. Make sure the stats channel exists.');
+            }
+          } catch (error) {
+            await interaction.editReply(`❌ Stats update failed: ${error.message}`);
+          }
+          break;
+
+        case 'role':
+          try {
+            const user = interaction.options.getUser('user');
+            const tier = interaction.options.getString('tier');
+            
+            await interaction.editReply(`🎭 Assigning ${tier} tier role to ${user.tag}...`);
+            
+            const success = await this.serverManager.assignReputationRole(user.id, tier);
+            
+            if (success) {
+              await interaction.editReply(`✅ **Role Assigned!**\\n\\n${user.tag} has been assigned the **${tier} Tier** role.`);
+            } else {
+              await interaction.editReply(`❌ Failed to assign role to ${user.tag}. Make sure they are in the server and the role exists.`);
+            }
+          } catch (error) {
+            await interaction.editReply(`❌ Role assignment failed: ${error.message}`);
+          }
+          break;
+
+        default:
+          await interaction.editReply('❌ Unknown admin subcommand.');
+      }
+
+    } catch (error) {
+      console.error('Error in admin command:', error);
+      await interaction.editReply('❌ An error occurred while processing the admin command.');
+    }
   }
 
   /**
