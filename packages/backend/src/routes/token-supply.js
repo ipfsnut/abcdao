@@ -193,4 +193,166 @@ router.get('/supply/history', async (req, res) => {
   }
 });
 
+// Coingecko-specific endpoints for market data aggregators
+// Required format: plain text/number responses
+
+// Total supply endpoint for Coingecko
+router.get('/totalsupply', async (req, res) => {
+  try {
+    const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
+    
+    try {
+      const tokenContract = new ethers.Contract(
+        CONTRACTS.ABC_TOKEN.address,
+        CONTRACTS.ABC_TOKEN.abi,
+        provider
+      );
+      
+      const totalSupplyRaw = await tokenContract.totalSupply();
+      const totalSupply = Number(ethers.formatEther(totalSupplyRaw));
+      
+      // Coingecko expects plain number response
+      res.set('Content-Type', 'text/plain');
+      res.send(totalSupply.toString());
+      
+    } catch (contractError) {
+      console.warn('Contract call failed, using fallback:', contractError.message);
+      // Fallback to known total supply
+      res.set('Content-Type', 'text/plain');
+      res.send('100000000000'); // 100B tokens
+    }
+    
+  } catch (error) {
+    console.error('Error in totalsupply endpoint:', error);
+    res.status(500).send('Error fetching total supply');
+  }
+});
+
+// Circulating supply endpoint for Coingecko
+router.get('/circulatingsupply', async (req, res) => {
+  try {
+    const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
+    
+    const CLANKER_POOL_MANAGER = '0x498581fF718922c3f8e6A244956aF099B2652b2b';
+    
+    try {
+      const tokenContract = new ethers.Contract(
+        CONTRACTS.ABC_TOKEN.address,
+        CONTRACTS.ABC_TOKEN.abi,
+        provider
+      );
+      
+      // Get total supply
+      const totalSupplyRaw = await tokenContract.totalSupply();
+      const totalSupply = Number(ethers.formatEther(totalSupplyRaw));
+      
+      // Get Clanker pool tokens (these should not count as circulating)
+      const poolBalanceRaw = await tokenContract.balanceOf(CLANKER_POOL_MANAGER);
+      const poolBalance = Number(ethers.formatEther(poolBalanceRaw));
+      
+      // Circulating = Total - Pool tokens
+      const circulating = Math.max(0, totalSupply - poolBalance);
+      
+      // Coingecko expects plain number response
+      res.set('Content-Type', 'text/plain');
+      res.send(circulating.toString());
+      
+    } catch (contractError) {
+      console.warn('Contract call failed, using fallback:', contractError.message);
+      // Fallback calculation: 100B total - ~94B pool = ~6B circulating
+      res.set('Content-Type', 'text/plain');
+      res.send('6000000000'); // 6B tokens circulating
+    }
+    
+  } catch (error) {
+    console.error('Error in circulatingsupply endpoint:', error);
+    res.status(500).send('Error fetching circulating supply');
+  }
+});
+
+// Market cap endpoint (optional but helpful)
+router.get('/marketcap', async (req, res) => {
+  try {
+    // Get current price from external API
+    const priceResponse = await fetch('https://api.dexscreener.com/latest/dex/tokens/0x5c0872b790bb73e2b3a9778db6e7704095624b07');
+    const priceData = await priceResponse.json();
+    
+    let currentPrice = 0;
+    if (priceData.pairs && priceData.pairs.length > 0) {
+      currentPrice = parseFloat(priceData.pairs[0].priceUsd);
+    }
+    
+    // Get circulating supply
+    const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
+    const CLANKER_POOL_MANAGER = '0x498581fF718922c3f8e6A244956aF099B2652b2b';
+    
+    try {
+      const tokenContract = new ethers.Contract(
+        CONTRACTS.ABC_TOKEN.address,
+        CONTRACTS.ABC_TOKEN.abi,
+        provider
+      );
+      
+      const totalSupplyRaw = await tokenContract.totalSupply();
+      const totalSupply = Number(ethers.formatEther(totalSupplyRaw));
+      
+      const poolBalanceRaw = await tokenContract.balanceOf(CLANKER_POOL_MANAGER);
+      const poolBalance = Number(ethers.formatEther(poolBalanceRaw));
+      
+      const circulating = Math.max(0, totalSupply - poolBalance);
+      const marketCap = circulating * currentPrice;
+      
+      res.set('Content-Type', 'text/plain');
+      res.send(marketCap.toString());
+      
+    } catch (contractError) {
+      console.warn('Contract call failed for market cap');
+      res.set('Content-Type', 'text/plain');
+      res.send('0');
+    }
+    
+  } catch (error) {
+    console.error('Error calculating market cap:', error);
+    res.status(500).send('Error calculating market cap');
+  }
+});
+
+// Health check endpoint for market data services
+router.get('/health', async (req, res) => {
+  try {
+    const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
+    
+    // Test contract connectivity
+    const tokenContract = new ethers.Contract(
+      CONTRACTS.ABC_TOKEN.address,
+      CONTRACTS.ABC_TOKEN.abi,
+      provider
+    );
+    
+    const totalSupplyRaw = await tokenContract.totalSupply();
+    const totalSupply = Number(ethers.formatEther(totalSupplyRaw));
+    
+    res.json({
+      status: 'healthy',
+      contract_responsive: true,
+      total_supply: totalSupply,
+      last_check: new Date().toISOString(),
+      endpoints: {
+        total_supply: '/api/token-supply/totalsupply',
+        circulating_supply: '/api/token-supply/circulatingsupply',
+        market_cap: '/api/token-supply/marketcap',
+        detailed_supply: '/api/token-supply/supply'
+      }
+    });
+    
+  } catch (error) {
+    res.status(503).json({
+      status: 'unhealthy',
+      contract_responsive: false,
+      error: error.message,
+      last_check: new Date().toISOString()
+    });
+  }
+});
+
 export default router;

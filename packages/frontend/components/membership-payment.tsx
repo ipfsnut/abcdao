@@ -19,7 +19,7 @@ interface MembershipPaymentPanelProps {
 
 export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentPanelProps) {
   const { address, isConnected } = useAccount();
-  const { user: profile } = useFarcaster();
+  const { user: profile, isInMiniApp } = useFarcaster();
   const [hasGithub, setHasGithub] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -351,10 +351,30 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
             </p>
           </div>
         ) : !isConnected ? (
-          <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-3">
-            <p className="text-yellow-400 font-mono text-sm text-center">
-              ⚠️ Connect wallet first
+          <div className="bg-blue-950/20 border border-blue-700/30 rounded-lg p-4">
+            <p className="text-blue-400 font-mono text-sm text-center mb-3">
+              🔗 Wallet Connection Required
             </p>
+            <div className="space-y-2 text-xs font-mono text-blue-600">
+              <p className="text-center">
+                {isInMiniApp 
+                  ? "Your Farcaster wallet will connect automatically when you tap pay"
+                  : "Connect your wallet using the button in the top-right corner"
+                }
+              </p>
+            </div>
+            <button
+              onClick={handlePayment}
+              disabled={isSending || isConfirming || verifying || !profile}
+              className="w-full mt-3 bg-blue-900/50 hover:bg-blue-900/70 text-blue-400 font-mono py-2.5 sm:py-3 rounded-lg 
+                       border border-blue-700/50 transition-all duration-300 hover:matrix-glow
+                       disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-bold"
+            >
+              {isSending ? '// Connecting & Sending...' : 
+               isConfirming ? '// Confirming...' :
+               verifying ? '// Verifying...' :
+               `CONNECT & PAY ${MEMBERSHIP_FEE} ETH`}
+            </button>
           </div>
         ) : (
           <button

@@ -37,7 +37,7 @@ interface UserRewardsData {
 
 export function ClaimRewardsPanel() {
   const { address } = useAccount();
-  const { user: profile } = useFarcaster();
+  const { user: profile, isInMiniApp } = useFarcaster();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [userRewards, setUserRewards] = useState<UserRewardsData | null>(null);
   const [loadingRewards, setLoadingRewards] = useState(true);
@@ -235,10 +235,13 @@ export function ClaimRewardsPanel() {
             ) : userRewards.summary.totalClaimable > 0 ? (
               <div className="bg-blue-950/20 border border-blue-700/30 rounded-lg p-4 text-center">
                 <p className="text-blue-400 font-mono text-sm mb-3">
-                  Connect Web3 wallet to claim {userRewards.summary.totalClaimable.toLocaleString()} $ABC
+                  Connect wallet to claim {userRewards.summary.totalClaimable.toLocaleString()} $ABC
                 </p>
                 <p className="text-blue-600 font-mono text-xs">
-                  💡 Use the ConnectButton in the header to link your wallet
+                  {isInMiniApp 
+                    ? "🔗 Your Farcaster wallet will connect when claiming"
+                    : "💡 Use the ConnectButton in the header to link your wallet"
+                  }
                 </p>
               </div>
             ) : (
