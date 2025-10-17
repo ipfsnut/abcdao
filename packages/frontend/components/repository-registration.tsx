@@ -394,13 +394,48 @@ export function RepositoryRegistration() {
                 </div>
                 
                 {!repo.webhook_configured && repo.status === 'pending' && (
-                  <div className="mt-3 p-2 bg-yellow-950/20 border border-yellow-700/50 rounded">
-                    <p className="text-yellow-400 font-mono text-xs">
-                      ⚠ Configure webhook to activate rewards:
-                    </p>
-                    <code className="text-yellow-300 font-mono text-xs">
-                      URL: https://abcdao-production.up.railway.app/api/webhooks/github
+                  <div className="mt-3 p-3 bg-yellow-950/20 border border-yellow-700/50 rounded">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-yellow-400 font-mono text-xs font-semibold">
+                        ⚠ Webhook Setup Required
+                      </p>
+                      <button
+                        onClick={() => {
+                          const webhookUrl = `${config.backendUrl}/api/webhooks/github`;
+                          const repoName = repo.repository_name;
+                          const githubUrl = `https://github.com/${repoName}/settings/hooks`;
+                          
+                          const instructions = `
+🔧 WEBHOOK SETUP: ${repoName}
+
+1. Click here to open GitHub: ${githubUrl}
+2. Click "Add webhook"
+3. Webhook URL: ${webhookUrl}
+4. Content type: application/json
+5. Events: "Just the push event"
+6. Active: ✅ checked
+7. Click "Add webhook"
+
+Webhook URL copied to clipboard!
+                          `.trim();
+                          
+                          navigator.clipboard.writeText(webhookUrl);
+                          
+                          if (confirm(instructions + '\n\nOpen GitHub settings now?')) {
+                            window.open(githubUrl, '_blank');
+                          }
+                        }}
+                        className="bg-yellow-900/50 hover:bg-yellow-800/60 text-yellow-300 font-mono px-3 py-1 rounded text-xs border border-yellow-700/50 transition-all"
+                      >
+                        🚀 Quick Setup
+                      </button>
+                    </div>
+                    <code className="text-yellow-300 font-mono text-xs block bg-black/40 p-2 rounded">
+                      {config.backendUrl}/api/webhooks/github
                     </code>
+                    <p className="text-yellow-600 font-mono text-xs mt-1">
+                      ✨ Rewards activate immediately after webhook setup
+                    </p>
                   </div>
                 )}
               </div>

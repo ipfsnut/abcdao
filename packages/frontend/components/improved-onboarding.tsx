@@ -210,6 +210,43 @@ export function ImprovedOnboarding() {
                 Enter your GitHub username to verify you're an active developer and see your earning potential.
               </p>
 
+              {/* Repository Qualification Guide */}
+              <div className="bg-blue-950/20 border border-blue-700/50 rounded-lg p-4 mb-6">
+                <h4 className="text-blue-400 font-mono font-semibold mb-3">💡 What Makes a Good Repository?</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
+                  <div className="bg-green-900/20 border border-green-700/30 rounded p-3">
+                    <span className="text-green-400 font-semibold">🔥 High Tier (80+ points)</span>
+                    <ul className="text-green-600 mt-2 space-y-1">
+                      <li>• Recent commits (last 30 days)</li>
+                      <li>• 5+ stars or community interest</li>
+                      <li>• Popular languages (JS, TS, Python, Rust)</li>
+                      <li>• Substantial codebase (100+ files)</li>
+                    </ul>
+                  </div>
+                  <div className="bg-yellow-900/20 border border-yellow-700/30 rounded p-3">
+                    <span className="text-yellow-400 font-semibold">⚡ Medium Tier (50-79 points)</span>
+                    <ul className="text-yellow-600 mt-2 space-y-1">
+                      <li>• Updated in last 90 days</li>
+                      <li>• Active development</li>
+                      <li>• Clear project purpose</li>
+                      <li>• Some community engagement</li>
+                    </ul>
+                  </div>
+                  <div className="bg-gray-900/20 border border-gray-700/30 rounded p-3">
+                    <span className="text-gray-400 font-semibold">📝 Examples</span>
+                    <ul className="text-gray-600 mt-2 space-y-1">
+                      <li>• Web apps & APIs</li>
+                      <li>• Tools & libraries</li>
+                      <li>• Blockchain projects</li>
+                      <li>• Open source contributions</li>
+                    </ul>
+                  </div>
+                </div>
+                <p className="text-blue-600 font-mono text-xs mt-3">
+                  💰 Higher tier repositories = better earning potential! Minimum 50 points required.
+                </p>
+              </div>
+
               <div className="space-y-4 mb-6">
                 <div>
                   <label className="block text-green-600 font-mono text-sm mb-2">
@@ -305,26 +342,80 @@ export function ImprovedOnboarding() {
                     </div>
                   </div>
 
-                  {/* Earning Potential Preview */}
+                  {/* Enhanced Earning Potential Preview */}
                   {githubVerification.estimatedEarnings && (
                     <div className="bg-blue-950/20 border border-blue-700/50 rounded-lg p-4">
-                      <h4 className="text-blue-400 font-mono font-semibold mb-3">💰 Monthly Earning Potential</h4>
-                      <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+                      <h4 className="text-blue-400 font-mono font-semibold mb-3">💰 Earning Potential Analysis</h4>
+                      
+                      {/* Main estimate */}
+                      <div className="grid grid-cols-2 gap-3 text-xs font-mono mb-3">
                         <div className="bg-black/40 border border-blue-900/30 rounded p-2">
-                          <span className="text-blue-600">Estimated Monthly:</span>
-                          <div className="text-blue-400 font-bold">
+                          <span className="text-blue-600">Monthly Estimate:</span>
+                          <div className="text-blue-400 font-bold text-lg">
                             {githubVerification.estimatedEarnings.monthly_earnings_estimate?.toLocaleString() || 0} $ABC
+                          </div>
+                          <div className="text-blue-600 text-xs">
+                            (~${((githubVerification.estimatedEarnings.monthly_earnings_estimate || 0) * 0.000001).toFixed(2)} USD)
                           </div>
                         </div>
                         <div className="bg-black/40 border border-blue-900/30 rounded p-2">
-                          <span className="text-blue-600">Based on:</span>
-                          <div className="text-blue-400">
+                          <span className="text-blue-600">Activity Level:</span>
+                          <div className="text-blue-400 font-bold">
                             {githubVerification.estimatedEarnings.monthly_commits_estimate || 0} commits/month
+                          </div>
+                          <div className="text-blue-600 text-xs">
+                            {githubVerification.estimatedEarnings.monthly_commits_estimate > 50 ? 'High Activity' : 
+                             githubVerification.estimatedEarnings.monthly_commits_estimate > 20 ? 'Moderate Activity' : 'Light Activity'}
                           </div>
                         </div>
                       </div>
-                      <p className="text-blue-600 font-mono text-xs mt-2">
-                        {githubVerification.estimatedEarnings.explanation}
+
+                      {/* Repository breakdown */}
+                      <div className="bg-black/40 border border-blue-900/20 rounded p-3 mb-3">
+                        <div className="flex justify-between text-xs font-mono mb-2">
+                          <span className="text-blue-600">Repository Tiers:</span>
+                          <span className="text-blue-400">{githubVerification.repositories?.qualifying?.length || 0} qualifying</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div className="text-center">
+                            <div className="text-green-400 font-bold">
+                              {githubVerification.repositories?.qualifying?.filter((r: any) => r.earning_potential.tier === 'high').length || 0}
+                            </div>
+                            <div className="text-green-600">High (1M $ABC)</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-yellow-400 font-bold">
+                              {githubVerification.repositories?.qualifying?.filter((r: any) => r.earning_potential.tier === 'medium').length || 0}
+                            </div>
+                            <div className="text-yellow-600">Medium (525k $ABC)</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-gray-400 font-bold">
+                              {githubVerification.repositories?.qualifying?.filter((r: any) => r.earning_potential.tier === 'low').length || 0}
+                            </div>
+                            <div className="text-gray-600">Low (50k $ABC)</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ROI calculation */}
+                      <div className="bg-purple-950/20 border border-purple-700/30 rounded p-3">
+                        <div className="flex justify-between items-center text-xs font-mono">
+                          <span className="text-purple-600">Membership ROI:</span>
+                          <span className="text-purple-400 font-bold">
+                            {githubVerification.estimatedEarnings.monthly_earnings_estimate > 1000000 
+                              ? `~${Math.ceil(1000000 / (githubVerification.estimatedEarnings.monthly_earnings_estimate / 30))} days`
+                              : 'High activity needed'
+                            }
+                          </span>
+                        </div>
+                        <p className="text-purple-600 text-xs mt-1">
+                          0.002 ETH fee (~$5) vs estimated monthly earnings
+                        </p>
+                      </div>
+
+                      <p className="text-blue-600 font-mono text-xs mt-3">
+                        📊 Based on: {githubVerification.estimatedEarnings.explanation}
                       </p>
                     </div>
                   )}

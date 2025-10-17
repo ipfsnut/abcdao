@@ -24,6 +24,7 @@ import paymentRecoveryRoutes from './routes/payment-recovery.js';
 // Removed: distributions routes now merged into rewards.js
 import githubVerificationRoutes from './routes/github-verification.js';
 import ethDistributionsRoutes from './routes/eth-distributions.js';
+import clankerClaimsRoutes from './routes/clanker-claims.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
@@ -33,6 +34,7 @@ import { NightlyLeaderboardJob } from './jobs/nightly-leaderboard-cron.js';
 import { PaymentMonitor } from './services/payment-monitor.js';
 import { PaymentRecoveryCron } from './jobs/payment-recovery-cron.js';
 import { EthDistributionCron } from './jobs/eth-distribution-cron.js';
+import { ClankerRewardsCron } from './jobs/clanker-rewards-cron.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -106,6 +108,7 @@ app.use('/api/auth', transactionValidationRoutes);
 app.use('/api/admin', paymentRecoveryRoutes);
 app.use('/api/github', githubVerificationRoutes);
 app.use('/api/distributions', ethDistributionsRoutes);
+app.use('/api/clanker-claims', clankerClaimsRoutes);
 
 // Custom cast endpoint (requires admin key for security)
 app.post('/api/cast/custom', async (req, res) => {
@@ -300,6 +303,22 @@ async function initializeBackgroundServices() {
     } else {
       console.warn('⚠️  Staking contract or bot wallet not configured, skipping ETH distribution');
     }
+
+    // Start Clanker rewards cron job
+    if (process.env.BOT_WALLET_PRIVATE_KEY) {
+      try {
+        const clankerRewardsCron = new ClankerRewardsCron();
+        clankerRewardsCron.start();
+        console.log('✅ Clanker rewards cron job started (runs daily at 11:30 PM UTC)');
+        
+        // Store reference for graceful shutdown
+        global.clankerRewardsCron = clankerRewardsCron;
+      } catch (clankerCronError) {
+        console.warn('⚠️  Clanker rewards cron setup failed:', clankerCronError.message);
+      }
+    } else {
+      console.warn('⚠️  Bot wallet not configured, skipping Clanker rewards cron');
+    }
     
     console.log('✅ All background services initialized successfully');
     
@@ -332,6 +351,11 @@ process.on('SIGINT', () => {
   // Stop ETH distribution cron
   if (global.ethDistributionCron) {
     global.ethDistributionCron.stop();
+  }
+  
+  // Stop Clanker rewards cron
+  if (global.clankerRewardsCron) {
+    global.clankerRewardsCron.stop();
   }
   
   process.exit(0);

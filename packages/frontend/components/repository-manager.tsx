@@ -218,26 +218,88 @@ export function RepositoryManager() {
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="text-green-400 font-mono text-sm">{repo.repository_name}</h4>
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs font-mono px-2 py-1 rounded ${
-                        repo.status === 'active' 
-                          ? 'bg-green-900/30 text-green-400' 
-                          : 'bg-yellow-900/30 text-yellow-400'
-                      }`}>
-                        {repo.status}
-                      </span>
-                      {repo.webhook_configured && (
-                        <span className="text-green-400 text-xs">✅</span>
-                      )}
+                      <div className="flex items-center gap-1">
+                        {repo.status === 'active' && repo.webhook_configured ? (
+                          <>
+                            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                            <span className="text-xs font-mono px-2 py-1 rounded bg-green-900/30 text-green-400">
+                              🎯 Earning
+                            </span>
+                          </>
+                        ) : repo.status === 'active' && !repo.webhook_configured ? (
+                          <>
+                            <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
+                            <span className="text-xs font-mono px-2 py-1 rounded bg-yellow-900/30 text-yellow-400">
+                              ⚠️ Setup Required
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                            <span className="text-xs font-mono px-2 py-1 rounded bg-gray-900/30 text-gray-400">
+                              📋 Pending
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                   
                   <div className="text-xs font-mono text-green-600">
                     <p>Type: {repo.registration_type}</p>
                     <p>Multiplier: {repo.reward_multiplier}x</p>
+                    
+                    {/* Status Explanation */}
+                    <div className="mt-2 p-2 bg-black/40 border border-green-900/20 rounded">
+                      {repo.status === 'active' && repo.webhook_configured ? (
+                        <p className="text-green-400">
+                          ✅ <strong>Ready!</strong> Your commits will earn {repo.reward_multiplier}x $ABC rewards
+                        </p>
+                      ) : repo.status === 'active' && !repo.webhook_configured ? (
+                        <p className="text-yellow-400">
+                          🔧 <strong>Almost there!</strong> Configure webhook to start earning rewards
+                        </p>
+                      ) : (
+                        <p className="text-gray-400">
+                          ⏳ <strong>Processing...</strong> Repository activation in progress
+                        </p>
+                      )}
+                    </div>
+                    
                     {!repo.webhook_configured && (
-                      <p className="text-yellow-400 mt-1">
-                        ⚠️ Webhook not configured - rewards inactive
-                      </p>
+                      <div className="mt-2">
+                        <p className="text-yellow-400">⚠️ Webhook not configured - rewards inactive</p>
+                        <button
+                          onClick={() => {
+                            // Store which repo needs webhook setup
+                            const repoName = repo.repository_name;
+                            const webhookUrl = `${config.backendUrl}/api/webhooks/github`;
+                            
+                            // Create detailed setup instructions
+                            const instructions = `
+🔧 WEBHOOK SETUP FOR: ${repoName}
+
+📋 Step-by-step instructions:
+
+1. Go to: https://github.com/${repoName}/settings/hooks
+2. Click "Add webhook"
+3. Paste this URL: ${webhookUrl}
+4. Content type: application/json
+5. Events: Select "Just the push event"
+6. Active: ✅ (checked)
+7. Click "Add webhook"
+
+✅ Once added, your commits will earn $ABC rewards!
+                            `.trim();
+                            
+                            navigator.clipboard.writeText(webhookUrl);
+                            alert(instructions);
+                          }}
+                          className="mt-1 text-yellow-600 hover:text-yellow-400 underline"
+                        >
+                          🔧 Setup Webhook
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

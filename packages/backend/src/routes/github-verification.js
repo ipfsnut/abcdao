@@ -143,6 +143,13 @@ router.post('/auto-register', async (req, res) => {
 
     const userId = userResult.rows[0].id;
 
+    // Update user's GitHub username and verification status
+    await pool.query(`
+      UPDATE users 
+      SET github_username = $1, verified_at = NOW(), updated_at = NOW()
+      WHERE id = $2
+    `, [githubUsername, userId]);
+
     // Get verification data to ensure repos are valid
     const verificationService = new GitHubVerificationService();
     const verification = await verificationService.verifyUser(githubUsername);

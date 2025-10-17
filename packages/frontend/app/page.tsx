@@ -341,19 +341,17 @@ export default function Home() {
                 </button>
               )}
               
-              {/* Show join tab only for non-members */}
-              {!membership.isMember && (
-                <button
-                  onClick={() => setActiveTab('proposals')}
-                  className={`px-4 py-3 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-responsive-sm min-h-[44px] ${
-                    activeTab === 'proposals' 
-                      ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
-                      : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
-                  }`}
-                >
-                  ./join
-                </button>
-              )}
+              {/* Show appropriate tab for members vs non-members */}
+              <button
+                onClick={() => setActiveTab('proposals')}
+                className={`px-4 py-3 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-responsive-sm min-h-[44px] ${
+                  activeTab === 'proposals' 
+                    ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
+                    : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+                }`}
+              >
+                {membership.isMember && membership.hasGithub ? './rewards' : './join'}
+              </button>
               <button
                 onClick={() => setActiveTab('chat')}
                 className={`px-4 py-3 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-responsive-sm min-h-[44px] ${
@@ -381,7 +379,13 @@ export default function Home() {
               {activeTab === 'stake' && (
                 isDataLoading ? <TabContentSkeleton /> : <StakePanel stakingData={stakingData} />
               )}
-              {activeTab === 'proposals' && (!membership.isMember || (membership.isMember && !membership.hasGithub)) && <GitHubLinkPanel />}
+              {activeTab === 'proposals' && (
+                (!membership.isMember || (membership.isMember && !membership.hasGithub)) ? (
+                  <GitHubLinkPanel />
+                ) : membership.isMember && membership.hasGithub ? (
+                  <ClaimRewardsPanel />
+                ) : null
+              )}
               {activeTab === 'chat' && (
                 <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm text-center">
                   <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
