@@ -80,7 +80,7 @@ export function UnifiedFarcasterProvider({ children }: { children: ReactNode }) 
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('SDK context timeout')), 2000)
         )
-      ]);
+      ]) as any;
       console.log('✅ SDK Context received:', context);
 
       if (context?.user) {
