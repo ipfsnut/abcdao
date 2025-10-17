@@ -209,26 +209,110 @@ class DiscordBotService {
   }
 
   /**
+   * Fetch real ABC DAO statistics from the API
+   */
+  async fetchABCStats() {
+    const baseUrl = process.env.BACKEND_URL || 'https://abcdao-production.up.railway.app';
+    
+    try {
+      const response = await fetch(`${baseUrl}/api/users/stats`);
+      
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}: ${response.statusText}`);
+      }
+      
+      const stats = await response.json();
+      
+      // Validate required data exists
+      if (typeof stats.totalDevelopers !== 'number' || 
+          typeof stats.totalCommits !== 'number' || 
+          typeof stats.totalRewards !== 'number') {
+        throw new Error('Invalid data format received from API');
+      }
+      
+      return {
+        totalDevelopers: stats.totalDevelopers,
+        totalCommits: stats.totalCommits,
+        totalRewards: stats.totalRewards
+      };
+    } catch (error) {
+      console.error('Error fetching ABC stats:', error);
+      throw new Error(`Unable to fetch stats: ${error.message}`);
+    }
+  }
+
+  /**
    * Handle /stats command
    */
   async handleStatsCommand(interaction) {
     try {
-      // TODO: Query stats from database/API
+      await interaction.deferReply();
+      
+      const stats = await this.fetchABCStats();
+      
+      // Format large numbers
+      const formatNumber = (num) => {
+        if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
+        if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+        return num.toLocaleString();
+      };
+
+      // Format rewards with $ABC suffix
+      const formatRewards = (rewards) => {
+        if (rewards >= 1e6) return `${(rewards / 1e6).toFixed(1)}M $ABC`;
+        if (rewards >= 1e3) return `${(rewards / 1e3).toFixed(1)}K $ABC`;
+        return `${rewards.toLocaleString()} $ABC`;
+      };
+
       const embed = new EmbedBuilder()
         .setColor('#00ff88')
-        .setTitle('📊 ABC DAO Statistics')
+        .setTitle('📊 ABC DAO Live Statistics')
+        .setDescription('*Real-time data from the database*')
         .addFields(
-          { name: '👥 Total Members', value: '0', inline: true },
-          { name: '💰 Total Rewards', value: '0 $ABC', inline: true },
-          { name: '📝 Total Commits', value: '0', inline: true }
-        )
-        .setFooter({ text: 'ABC DAO - Live Statistics' })
-        .setTimestamp();
+          { name: '👥 Total Developers', value: formatNumber(stats.totalDevelopers), inline: true },
+          { name: '📝 Total Commits', value: formatNumber(stats.totalCommits), inline: true },
+          { name: '💰 Rewards Distributed', value: formatRewards(stats.totalRewards), inline: true }
+        );
+
+      // Add additional calculated metrics if we have data
+      if (stats.totalDevelopers > 0 && stats.totalCommits > 0) {
+        const avgCommitsPerDev = (stats.totalCommits / stats.totalDevelopers).toFixed(1);
+        const avgRewardPerCommit = (stats.totalRewards / stats.totalCommits).toFixed(0);
+        
+        embed.addFields(
+          { name: '📈 Avg Commits/Dev', value: avgCommitsPerDev, inline: true },
+          { name: '🎯 Avg Reward/Commit', value: `${avgRewardPerCommit} $ABC`, inline: true },
+          { name: '🚀 Always Be Coding', value: '24/7 automation', inline: true }
+        );
+      }
+
+      embed.addFields(
+        { name: '🔗 Join ABC DAO', value: '[abc.epicdylan.com](https://abc.epicdylan.com)', inline: false }
+      )
+      .setFooter({ text: 'ABC DAO • Live from database' })
+      .setTimestamp();
 
       await interaction.editReply({ embeds: [embed] });
+      
     } catch (error) {
-      console.error('Error fetching stats:', error);
-      await interaction.editReply('❌ Error fetching statistics');
+      console.error('Error in stats command:', error);
+      
+      // Provide specific error message based on error type
+      let errorMessage = '❌ **Statistics Unavailable**\n\n';
+      
+      if (error.message.includes('API returned')) {
+        errorMessage += '🔧 **Backend API Error**\nThe ABC DAO backend is experiencing issues. Please try again in a few minutes.';
+      } else if (error.message.includes('Invalid data format')) {
+        errorMessage += '📊 **Data Format Error**\nReceived invalid data from the backend. The development team has been notified.';
+      } else if (error.message.includes('fetch')) {
+        errorMessage += '🌐 **Network Error**\nUnable to connect to ABC DAO servers. Please check your connection and try again.';
+      } else {
+        errorMessage += '⚠️ **Unknown Error**\nSomething went wrong while fetching statistics. Please try again later.';
+      }
+      
+      errorMessage += '\n\n🔗 **ABC DAO Status**: [abc.epicdylan.com](https://abc.epicdylan.com)';
+      
+      await interaction.editReply(errorMessage);
     }
   }
 
