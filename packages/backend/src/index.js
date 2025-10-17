@@ -25,6 +25,7 @@ import paymentRecoveryRoutes from './routes/payment-recovery.js';
 import githubVerificationRoutes from './routes/github-verification.js';
 import ethDistributionsRoutes from './routes/eth-distributions.js';
 import clankerClaimsRoutes from './routes/clanker-claims.js';
+import universalAuthRoutes from './routes/universal-auth.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
@@ -35,6 +36,7 @@ import { PaymentMonitor } from './services/payment-monitor.js';
 import { PaymentRecoveryCron } from './jobs/payment-recovery-cron.js';
 import { EthDistributionCron } from './jobs/eth-distribution-cron.js';
 import { ClankerRewardsCron } from './jobs/clanker-rewards-cron.js';
+import discordBot from './services/discord-bot.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -109,6 +111,7 @@ app.use('/api/admin', paymentRecoveryRoutes);
 app.use('/api/github', githubVerificationRoutes);
 app.use('/api/distributions', ethDistributionsRoutes);
 app.use('/api/clanker-claims', clankerClaimsRoutes);
+app.use('/api/auth/universal', universalAuthRoutes);
 
 // Custom cast endpoint (requires admin key for security)
 app.post('/api/cast/custom', async (req, res) => {
@@ -318,6 +321,21 @@ async function initializeBackgroundServices() {
       }
     } else {
       console.warn('⚠️  Bot wallet not configured, skipping Clanker rewards cron');
+    }
+
+    // Initialize Discord bot
+    if (process.env.DISCORD_BOT_TOKEN) {
+      try {
+        await discordBot.initialize();
+        console.log('✅ Discord bot initialized');
+        
+        // Store reference for graceful shutdown
+        global.discordBot = discordBot;
+      } catch (discordError) {
+        console.warn('⚠️  Discord bot setup failed:', discordError.message);
+      }
+    } else {
+      console.warn('⚠️  Discord bot token not configured, skipping Discord integration');
     }
     
     console.log('✅ All background services initialized successfully');

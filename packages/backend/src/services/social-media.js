@@ -1,12 +1,16 @@
 import { NeynarAPIClient } from '@neynar/nodejs-sdk';
 import { TwitterApi } from 'twitter-api-v2';
 import TelegramBot from 'node-telegram-bot-api';
+import discordBot from './discord-bot.js';
 
 class SocialMediaService {
   constructor() {
     // Farcaster (already integrated)
     this.neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY);
     this.botFid = process.env.NEYNAR_BOT_FID;
+    
+    // Discord setup
+    this.discord = discordBot;
     
     // Twitter/X setup
     if (process.env.TWITTER_API_KEY) {
@@ -31,7 +35,7 @@ class SocialMediaService {
   /**
    * Post commit reward announcement across all platforms
    */
-  async announceCommitReward(username, amount, commitMessage, repoName) {
+  async announceCommitReward(username, amount, commitMessage, repoName, commitUrl = null) {
     const message = `🎉 @${username} just earned ${amount.toLocaleString()} $ABC tokens!\n\n` +
                    `Commit: "${commitMessage.substring(0, 100)}${commitMessage.length > 100 ? '...' : ''}"\n` +
                    `Repo: ${repoName}\n\n` +
@@ -47,6 +51,22 @@ class SocialMediaService {
       }
     } catch (error) {
       results.farcaster = { success: false, error: error.message };
+    }
+
+    // Discord
+    try {
+      if (this.discord) {
+        const discordResult = await this.discord.announceCommitReward(
+          username, 
+          amount, 
+          commitMessage, 
+          repoName, 
+          commitUrl
+        );
+        results.discord = discordResult;
+      }
+    } catch (error) {
+      results.discord = { success: false, error: error.message };
     }
 
     // Twitter
@@ -90,7 +110,20 @@ class SocialMediaService {
                    `Keep building and earning! 🚀\n` +
                    `#ABCDao #Leaderboard #DeveloperRewards`;
 
-    return await this.broadcastMessage(message);
+    const results = await this.broadcastMessage(message);
+
+    // Send rich leaderboard embed to Discord
+    try {
+      if (this.discord && leaderboardData.length > 0) {
+        const embed = this.discord.createLeaderboardEmbed(leaderboardData);
+        const discordEmbedResult = await this.discord.sendEmbed(embed, 'announcements');
+        results.discord_embed = discordEmbedResult;
+      }
+    } catch (error) {
+      results.discord_embed = { success: false, error: error.message };
+    }
+
+    return results;
   }
 
   /**
@@ -124,6 +157,16 @@ class SocialMediaService {
       }
     } catch (error) {
       results.farcaster = { success: false, error: error.message };
+    }
+
+    // Discord
+    try {
+      if (this.discord) {
+        const discordResult = await this.discord.sendAnnouncement(message);
+        results.discord = discordResult;
+      }
+    } catch (error) {
+      results.discord = { success: false, error: error.message };
     }
 
     // Twitter

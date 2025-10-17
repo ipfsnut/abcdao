@@ -447,11 +447,121 @@ async function runMigrations() {
       console.log('✅ Migration: Added missing webhook columns (tags, priority, notification_settings, is_active)');
     }
 
-    // Migration 10: Add connection pool health check
-    const migration10 = 'add_connection_health_monitoring';
+    // Migration 10: Wallet-First Identity Architecture
+    const migration10 = 'wallet_first_identity_architecture';
     const exists10 = await client.query('SELECT * FROM migrations WHERE name = $1', [migration10]);
     
     if (exists10.rows.length === 0) {
+      console.log('🔄 Applying wallet-first identity migration...');
+      
+      // Read and execute the wallet-first migration SQL
+      const fs = await import('fs');
+      const path = await import('path');
+      const { fileURLToPath } = await import('url');
+      
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = path.dirname(__filename);
+      const migrationPath = path.join(__dirname, '../../migrations/wallet-first-schema-migration.sql');
+      
+      try {
+        const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+        
+        // Split by sections and execute
+        const sections = migrationSQL.split('-- ============================================================================');
+        
+        for (let i = 0; i < sections.length; i++) {
+          const section = sections[i].trim();
+          if (section && !section.startsWith('--') && section.length > 10) {
+            try {
+              // Split individual statements and execute
+              const statements = section.split(';').filter(stmt => stmt.trim().length > 0);
+              
+              for (const statement of statements) {
+                const trimmedStmt = statement.trim();
+                if (trimmedStmt && !trimmedStmt.startsWith('--')) {
+                  await client.query(trimmedStmt);
+                }
+              }
+              
+              console.log(`✅ Wallet-first migration section ${i + 1} completed`);
+            } catch (sectionError) {
+              console.log(`⚠️ Section ${i + 1} partially applied:`, sectionError.message);
+            }
+          }
+        }
+        
+        await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration10]);
+        console.log('✅ Migration: Wallet-first identity architecture applied');
+        
+      } catch (fileError) {
+        console.log('⚠️ Wallet-first migration file not found, applying inline...');
+        
+        // Inline critical wallet-first changes if file not found
+        try {
+          // Add wallet-first columns
+          await client.query(`
+            ALTER TABLE users 
+            ADD COLUMN IF NOT EXISTS wallet_address_primary VARCHAR(42) UNIQUE,
+            ADD COLUMN IF NOT EXISTS onboarding_step INTEGER DEFAULT 0,
+            ADD COLUMN IF NOT EXISTS entry_context VARCHAR(20) DEFAULT 'farcaster',
+            ADD COLUMN IF NOT EXISTS can_earn_rewards BOOLEAN DEFAULT FALSE,
+            ADD COLUMN IF NOT EXISTS display_name VARCHAR(100),
+            ADD COLUMN IF NOT EXISTS membership_status VARCHAR(20) DEFAULT 'pending',
+            ADD COLUMN IF NOT EXISTS membership_paid_at TIMESTAMP,
+            ADD COLUMN IF NOT EXISTS membership_tx_hash VARCHAR(66),
+            ADD COLUMN IF NOT EXISTS total_abc_earned DECIMAL(18,6) DEFAULT 0,
+            ADD COLUMN IF NOT EXISTS reputation_score DECIMAL(10,2) DEFAULT 0,
+            ADD COLUMN IF NOT EXISTS reputation_tier VARCHAR(20) DEFAULT 'Bronze',
+            ADD COLUMN IF NOT EXISTS voting_power DECIMAL(10,2) DEFAULT 0,
+            ADD COLUMN IF NOT EXISTS quality_score_avg DECIMAL(4,2) DEFAULT 0,
+            ADD COLUMN IF NOT EXISTS repositories_proposed INTEGER DEFAULT 0,
+            ADD COLUMN IF NOT EXISTS governance_votes_cast INTEGER DEFAULT 0,
+            ADD COLUMN IF NOT EXISTS discord_id VARCHAR(100)
+          `);
+          
+          // Make farcaster_fid optional
+          await client.query('ALTER TABLE users ALTER COLUMN farcaster_fid DROP NOT NULL');
+          
+          // Backfill existing users
+          await client.query(`
+            UPDATE users 
+            SET 
+              wallet_address_primary = wallet_address,
+              onboarding_step = CASE 
+                WHEN github_username IS NOT NULL AND wallet_address IS NOT NULL THEN 2
+                WHEN wallet_address IS NOT NULL THEN 1
+                ELSE 0
+              END,
+              can_earn_rewards = (github_username IS NOT NULL AND wallet_address IS NOT NULL),
+              display_name = COALESCE(farcaster_username, github_username, 'User-' || id),
+              membership_status = CASE 
+                WHEN wallet_address IS NOT NULL THEN 'active'
+                ELSE 'pending'
+              END,
+              total_abc_earned = COALESCE(total_rewards_earned, 0),
+              reputation_score = COALESCE(total_rewards_earned * 10, 0)
+            WHERE wallet_address_primary IS NULL
+          `);
+          
+          // Add wallet lookup indexes
+          await client.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_wallet_primary ON users(wallet_address_primary) WHERE wallet_address_primary IS NOT NULL');
+          await client.query('CREATE INDEX IF NOT EXISTS idx_users_can_earn_rewards ON users(can_earn_rewards) WHERE can_earn_rewards = TRUE');
+          
+          await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration10]);
+          console.log('✅ Migration: Wallet-first identity (inline version) applied');
+          
+        } catch (inlineError) {
+          console.log('⚠️ Inline wallet-first migration failed:', inlineError.message);
+          throw inlineError;
+        }
+      }
+    }
+
+    // Migration 11: Add connection pool health check
+    const migration11 = 'add_connection_health_monitoring';
+    const exists11 = await client.query('SELECT * FROM migrations WHERE name = $1', [migration11]);
+    
+    if (exists11.rows.length === 0) {
       // Create a simple health check table to detect schema drift
       await client.query(`
         CREATE TABLE IF NOT EXISTS schema_health (
@@ -472,15 +582,15 @@ async function runMigrations() {
         ON CONFLICT (check_name) DO NOTHING
       `);
 
-      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration10]);
+      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration11]);
       console.log('✅ Migration: Added schema health monitoring');
     }
 
-    // Migration 11: Add repository registration system
-    const migration11 = 'add_repository_registration_system';
-    const exists11 = await client.query('SELECT * FROM migrations WHERE name = $1', [migration11]);
+    // Migration 12: Add repository registration system
+    const migration12 = 'add_repository_registration_system';
+    const exists12 = await client.query('SELECT * FROM migrations WHERE name = $1', [migration12]);
     
-    if (exists11.rows.length === 0) {
+    if (exists12.rows.length === 0) {
       // Create registered_repositories table
       await client.query(`
         CREATE TABLE IF NOT EXISTS registered_repositories (
@@ -542,15 +652,15 @@ async function runMigrations() {
       await client.query('CREATE INDEX IF NOT EXISTS idx_repo_permissions_user ON repository_permissions(user_id)');
       await client.query('CREATE INDEX IF NOT EXISTS idx_partner_apps_status ON partner_applications(status)');
 
-      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration11]);
+      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration12]);
       console.log('✅ Migration: Added repository registration system');
     }
 
-    // Migration 12: Add payment recovery system
-    const migration12 = 'add_payment_recovery_system';
-    const exists12 = await client.query('SELECT * FROM migrations WHERE name = $1', [migration12]);
+    // Migration 13: Add payment recovery system
+    const migration13 = 'add_payment_recovery_system';
+    const exists13 = await client.query('SELECT * FROM migrations WHERE name = $1', [migration13]);
     
-    if (exists12.rows.length === 0) {
+    if (exists13.rows.length === 0) {
       // Create payment_recoveries table for orphaned payments
       await client.query(`
         CREATE TABLE IF NOT EXISTS payment_recoveries (
@@ -573,7 +683,7 @@ async function runMigrations() {
       await client.query('CREATE INDEX IF NOT EXISTS idx_payment_recoveries_tx_hash ON payment_recoveries(transaction_hash)');
       await client.query('CREATE INDEX IF NOT EXISTS idx_payment_recoveries_from_address ON payment_recoveries(from_address)');
 
-      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration12]);
+      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration13]);
       console.log('✅ Migration: Added payment recovery system');
     }
 

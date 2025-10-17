@@ -43,6 +43,20 @@ export function BlogModal({ isOpen, onClose, title, markdownPath }: BlogModalPro
     }
   }, [isOpen, markdownPath]);
 
+  // Handle ESC key press to close modal
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscapeKey);
+      return () => document.removeEventListener('keydown', handleEscapeKey);
+    }
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (

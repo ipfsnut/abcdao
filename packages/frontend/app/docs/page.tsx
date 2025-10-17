@@ -4,21 +4,21 @@ import Link from 'next/link';
 
 export default function DocsOverviewPage() {
   return (
-    <div className="max-w-4xl">
+    <div className="w-full">
       {/* Hero Section */}
-      <div className="mb-12">
-        <h1 className="text-4xl font-bold text-white mb-4">
+      <div className="mb-8 sm:mb-12">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 sm:mb-4">
           ABC DAO Documentation
         </h1>
-        <p className="text-xl text-gray-300 leading-relaxed">
+        <p className="text-base sm:text-lg lg:text-xl text-gray-300 leading-relaxed">
           Complete guide to earning <span className="text-green-400 font-semibold">$ABC tokens</span> for your 
           code contributions. From setup to advanced integration, we&apos;ve got you covered.
         </p>
       </div>
 
       {/* Quick Start Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-        <div className="bg-gradient-to-br from-green-900/30 to-green-800/20 border border-green-700/50 rounded-xl p-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
+        <div className="bg-gradient-to-br from-green-900/30 to-green-800/20 border border-green-700/50 rounded-xl p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center text-white text-xl font-bold">
               🚀
@@ -33,13 +33,13 @@ export default function DocsOverviewPage() {
           </p>
           <Link
             href="/docs/getting-started"
-            className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors min-h-[44px] touch-manipulation"
           >
             Start Here →
           </Link>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 border border-blue-700/50 rounded-xl p-6">
+        <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 border border-blue-700/50 rounded-xl p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center text-white text-xl font-bold">
               📁
@@ -54,7 +54,7 @@ export default function DocsOverviewPage() {
           </p>
           <Link
             href="/docs/repository-setup"
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors min-h-[44px] touch-manipulation"
           >
             Setup Guide →
           </Link>
@@ -62,9 +62,9 @@ export default function DocsOverviewPage() {
       </div>
 
       {/* Main Documentation Grid */}
-      <div className="mb-12">
-        <h2 className="text-2xl font-bold text-white mb-6">Documentation</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="mb-8 sm:mb-12">
+        <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">Documentation</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <Link
             href="/docs/getting-started"
             className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 hover:border-gray-600 hover:bg-gray-800/70 transition-all group"
@@ -146,13 +146,13 @@ export default function DocsOverviewPage() {
       </div>
 
       {/* Mission Statement Preview */}
-      <div className="bg-gradient-to-r from-green-900/20 to-blue-900/20 border border-green-700/30 rounded-xl p-8 mb-12">
-        <h2 className="text-2xl font-bold text-white mb-4">Always Be Coding</h2>
-        <p className="text-gray-300 text-lg leading-relaxed mb-6">
+      <div className="bg-gradient-to-r from-green-900/20 to-blue-900/20 border border-green-700/30 rounded-xl p-4 sm:p-6 lg:p-8 mb-8 sm:mb-12">
+        <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4">Always Be Coding</h2>
+        <p className="text-gray-300 text-base sm:text-lg leading-relaxed mb-4 sm:mb-6">
           ABC DAO exists to <strong className="text-green-400">incentivize collaboration in the Farcaster ecosystem</strong> by 
           creating direct economic rewards for developers who ship code and contribute to decentralized social applications.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <span className="text-green-400 text-lg">🚀</span>
@@ -176,16 +176,16 @@ export default function DocsOverviewPage() {
         </div>
         <Link
           href="/docs/mission"
-          className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors min-h-[44px] touch-manipulation"
         >
           Read Full Mission Statement →
         </Link>
       </div>
 
       {/* Community Links */}
-      <div className="border-t border-gray-700 pt-8">
-        <h3 className="text-lg font-semibold text-white mb-4">Community & Support</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="border-t border-gray-700 pt-6 sm:pt-8">
+        <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">Community & Support</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <a
             href="https://warpcast.com/abc-dao"
             target="_blank"
