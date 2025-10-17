@@ -353,8 +353,19 @@ async function initializeBackgroundServices() {
       console.warn('⚠️  Bot wallet not configured, skipping Clanker rewards cron');
     }
 
-    // Temporarily disable Discord bot for Railway deployment debugging
-    console.warn('⚠️  Discord bot temporarily disabled for Railway deployment debugging');
+    // Initialize Discord bot with shorter timeout
+    if (process.env.DISCORD_BOT_TOKEN) {
+      await withTimeout(
+        async () => {
+          await discordBot.initialize();
+          global.discordBot = discordBot;
+        },
+        'Discord bot initialization',
+        10000 // 10 second timeout
+      );
+    } else {
+      console.warn('⚠️  Discord bot token not configured, skipping Discord integration');
+    }
     
     console.log('✅ All background services initialized successfully');
     

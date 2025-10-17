@@ -33,11 +33,15 @@ class DiscordBotService {
       this.setupEventHandlers();
       await this.registerSlashCommands();
       
-      await this.client.login(process.env.DISCORD_BOT_TOKEN);
+      // Login but don't wait for ready event to avoid hanging
+      this.client.login(process.env.DISCORD_BOT_TOKEN).catch(error => {
+        console.error('❌ Discord bot login failed:', error);
+      });
       
-      console.log('✅ Discord bot initialized successfully');
+      console.log('✅ Discord bot initialization started');
     } catch (error) {
       console.error('❌ Discord bot initialization failed:', error);
+      throw error;
     }
   }
 
