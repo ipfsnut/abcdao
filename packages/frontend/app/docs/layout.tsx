@@ -3,6 +3,17 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
+import { Geist, Geist_Mono } from "next/font/google";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono", 
+  subsets: ["latin"],
+});
 
 interface DocsLayoutProps {
   children: React.ReactNode;
@@ -21,7 +32,7 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
+    <div className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-gray-900 text-gray-100 font-sans antialiased`}>
       {/* Header */}
       <header className="border-b border-gray-700 bg-gray-900/95 backdrop-blur-sm sticky top-0 z-50">
         <div className="px-4 py-3">
