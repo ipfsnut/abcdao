@@ -19,11 +19,13 @@ import { useMembership } from '@/hooks/useMembership';
 import { Toaster } from 'sonner';
 import { StatsSkeleton, TabContentSkeleton, RewardsSkeleton } from '@/components/skeleton-loader';
 import { CollapsibleStatCard, TreasuryRewardsCard } from '@/components/collapsible-stat-card';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const { isInMiniApp } = useFarcaster();
   const { isConnected, address } = useAccount();
   const membership = useMembership();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'stake' | 'dev' | 'proposals' | 'chat' | 'swap'>(isInMiniApp ? 'stake' : 'swap');
   const stakingData = useStakingWithPrice();
   const treasuryData = useTreasury();
@@ -332,12 +334,8 @@ export default function Home() {
               {/* Show dev tab only for members */}
               {membership.isMember && (
                 <button
-                  onClick={() => setActiveTab('dev')}
-                  className={`px-4 py-3 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-responsive-sm min-h-[44px] ${
-                    activeTab === 'dev' 
-                      ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
-                      : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
-                  }`}
+                  onClick={() => router.push('/dev')}
+                  className="px-4 py-3 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-responsive-sm min-h-[44px] text-green-600 hover:text-green-400 hover:bg-green-950/20 border border-transparent hover:border-green-700/50"
                 >
                   ./dev
                 </button>
@@ -382,16 +380,6 @@ export default function Home() {
             <div className="mt-4">
               {activeTab === 'stake' && (
                 isDataLoading ? <TabContentSkeleton /> : <StakePanel stakingData={stakingData} />
-              )}
-              {activeTab === 'dev' && membership.isMember && (
-                <div className="text-center">
-                  <a
-                    href="/dev"
-                    className="inline-block bg-green-900/50 hover:bg-green-800/60 text-green-400 font-mono px-6 py-3 rounded-lg border border-green-700/50 transition-all duration-300 matrix-button"
-                  >
-                    Open Developer Dashboard →
-                  </a>
-                </div>
               )}
               {activeTab === 'proposals' && (!membership.isMember || (membership.isMember && !membership.hasGithub)) && <GitHubLinkPanel />}
               {activeTab === 'chat' && (
@@ -474,12 +462,8 @@ export default function Home() {
                 ./stake
               </button>
               <button
-                onClick={() => setActiveTab('dev')}
-                className={`flex-1 px-3 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] ${
-                  activeTab === 'dev' 
-                    ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
-                    : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
-                }`}
+                onClick={() => router.push('/dev')}
+                className="flex-1 px-3 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] text-green-600 hover:text-green-400 hover:bg-green-950/20 border border-transparent hover:border-green-700/50"
               >
                 ./dev
               </button>
@@ -500,16 +484,6 @@ export default function Home() {
               {activeTab === 'swap' && <SwapWidget />}
               {activeTab === 'stake' && (
                 isDataLoading ? <TabContentSkeleton /> : <StakePanel stakingData={stakingData} />
-              )}
-              {activeTab === 'dev' && (
-                <div className="text-center">
-                  <a
-                    href="/dev"
-                    className="inline-block bg-green-900/50 hover:bg-green-800/60 text-green-400 font-mono px-6 py-3 rounded-lg border border-green-700/50 transition-all duration-300 matrix-button"
-                  >
-                    Open Developer Dashboard →
-                  </a>
-                </div>
               )}
               {activeTab === 'chat' && (
                 <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm text-center">

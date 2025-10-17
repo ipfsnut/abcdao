@@ -104,7 +104,7 @@ router.get('/github/callback', async (req, res) => {
     
     // Use HTML response with JavaScript for better mobile/frame compatibility
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const successUrl = `${frontendUrl}?github_linked=true&username=${encodeURIComponent(githubUser.login)}`;
+    const successUrl = `${frontendUrl}/dev?github_linked=true&username=${encodeURIComponent(githubUser.login)}`;
     
     res.send(`
       <!DOCTYPE html>

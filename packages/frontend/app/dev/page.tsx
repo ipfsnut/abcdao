@@ -7,12 +7,33 @@ import { RepositoryManager } from '@/components/repository-manager';
 import { ContractAddressesFooter } from '@/components/contract-addresses-footer';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { useMembership } from '@/hooks/useMembership';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function DevPage() {
   const { user } = useFarcaster();
   const membership = useMembership();
   const [activeTab, setActiveTab] = useState<'rewards' | 'github' | 'repositories'>('rewards');
+
+  // Check for GitHub OAuth success on page load
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('github_linked') === 'true') {
+      console.log('🎉 GitHub OAuth success detected on dev page');
+      const username = urlParams.get('username');
+      if (username) {
+        console.log(`✅ Welcome GitHub @${username}!`);
+      }
+      
+      // Refresh membership status and switch to GitHub tab
+      setTimeout(() => {
+        membership.refreshStatus();
+        setActiveTab('github');
+      }, 500);
+      
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [membership]);
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">

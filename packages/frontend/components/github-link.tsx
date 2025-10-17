@@ -27,9 +27,18 @@ export function GitHubLinkPanel() {
     
     // Check for GitHub OAuth success parameters (user returning from GitHub)
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('github_success') === 'true') {
+    if (urlParams.get('github_linked') === 'true') {
       console.log('🔄 GitHub OAuth success detected, refreshing membership status...');
-      membership.refreshStatus();
+      const username = urlParams.get('username');
+      if (username) {
+        console.log(`✅ GitHub @${username} linked successfully`);
+      }
+      
+      // Refresh membership status after a small delay to allow backend to finish
+      setTimeout(() => {
+        membership.refreshStatus();
+      }, 500);
+      
       // Clean up URL parameters
       window.history.replaceState({}, document.title, window.location.pathname);
     }
