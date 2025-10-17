@@ -251,29 +251,154 @@ class DiscordBotService {
   }
 
   /**
+   * Fetch real $ABC token price data
+   */
+  async fetchABCPriceData() {
+    const ABC_CONTRACT = '0x5c0872b790bb73e2b3a9778db6e7704095624b07';
+    
+    try {
+      // Try DEXScreener API first (free, no key required)
+      const dexResponse = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${ABC_CONTRACT}`);
+      
+      if (dexResponse.ok) {
+        const dexData = await dexResponse.json();
+        
+        if (dexData.pairs && dexData.pairs.length > 0) {
+          // Get the most liquid pair (highest volume)
+          const bestPair = dexData.pairs.sort((a, b) => parseFloat(b.volume?.h24 || 0) - parseFloat(a.volume?.h24 || 0))[0];
+          
+          return {
+            price: parseFloat(bestPair.priceUsd) || 0,
+            priceChangePercent: parseFloat(bestPair.priceChange?.h24) || 0,
+            marketCap: parseFloat(bestPair.marketCap) || 0,
+            volume24h: parseFloat(bestPair.volume?.h24) || 0,
+            liquidity: parseFloat(bestPair.liquidity?.usd) || 0,
+            pairAddress: bestPair.pairAddress,
+            dexName: bestPair.dexId
+          };
+        }
+      }
+
+      // Fallback: Direct blockchain query for basic token data
+      const { ethers } = await import('ethers');
+      const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
+      
+      const erc20Abi = [
+        'function totalSupply() view returns (uint256)',
+        'function decimals() view returns (uint8)',
+        'function balanceOf(address) view returns (uint256)'
+      ];
+      
+      const contract = new ethers.Contract(ABC_CONTRACT, erc20Abi, provider);
+      const [totalSupply, decimals] = await Promise.all([
+        contract.totalSupply(),
+        contract.decimals()
+      ]);
+      
+      const formattedSupply = ethers.formatUnits(totalSupply, decimals);
+      
+      return {
+        price: 0,
+        priceChangePercent: 0,
+        marketCap: 0,
+        volume24h: 0,
+        liquidity: 0,
+        totalSupply: formattedSupply,
+        fallbackData: true
+      };
+      
+    } catch (error) {
+      console.error('Error fetching ABC price data:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Handle /price command
    */
   async handlePriceCommand(interaction) {
     try {
-      // TODO: Fetch real price data
-      const embed = new EmbedBuilder()
-        .setColor('#00ff88')
-        .setTitle('💎 $ABC Token Price')
-        .addFields(
-          { name: 'Current Price', value: '$0.00', inline: true },
-          { name: '24h Change', value: '0%', inline: true },
-          { name: 'Market Cap', value: 'N/A', inline: true }
-        )
-        .addFields(
-          { name: '🔗 Trade $ABC', value: '[Uniswap](https://app.uniswap.org/#/swap?outputCurrency=0x5c0872b790bb73e2b3a9778db6e7704095624b07&chain=base)', inline: false }
-        )
-        .setFooter({ text: 'ABC DAO - Token Information' })
-        .setTimestamp();
+      await interaction.deferReply();
+      
+      const priceData = await this.fetchABCPriceData();
+
+      // Format price with appropriate decimal places for micro-cap
+      const formatPrice = (price) => {
+        if (price < 0.000001) {
+          return price.toFixed(9); // 9 decimal places for very small prices
+        } else if (price < 0.01) {
+          return price.toFixed(6);
+        } else {
+          return price.toFixed(4);
+        }
+      };
+
+      // Format large numbers with appropriate suffixes
+      const formatNumber = (num) => {
+        if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
+        if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
+        if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+        return num.toString();
+      };
+
+      // Format market cap with $ symbol
+      const formatMarketCap = (marketCap) => {
+        if (marketCap < 1000) {
+          return `$${marketCap.toFixed(0)}`;
+        }
+        return `$${formatNumber(marketCap)}`;
+      };
+
+      // Price change emoji and formatting
+      const changeEmoji = priceData.priceChangePercent >= 0 ? '📈' : '📉';
+      const changeColor = priceData.priceChangePercent >= 0 ? '+' : '';
+      const changeFormatted = `${changeEmoji} ${changeColor}${priceData.priceChangePercent.toFixed(2)}%`;
+
+      let embed;
+      
+      if (priceData.fallbackData) {
+        // Fallback embed when price data unavailable
+        embed = new EmbedBuilder()
+          .setColor('#ffaa00')
+          .setTitle('💎 $ABC Token Info')
+          .setDescription('*Clanker token on Base blockchain*')
+          .addFields(
+            { name: '💰 Price', value: 'No trading data', inline: true },
+            { name: '🪙 Total Supply', value: `${formatNumber(parseFloat(priceData.totalSupply))}`, inline: true },
+            { name: '⚠️ Status', value: 'Limited liquidity', inline: true }
+          )
+          .addFields(
+            { name: '🔗 Trade $ABC', value: '[Uniswap V3](https://app.uniswap.org/#/swap?outputCurrency=0x5c0872b790bb73e2b3a9778db6e7704095624b07&chain=base) | [Clanker](https://clanker.world/clanker/0x5c0872b790bb73e2b3a9778db6e7704095624b07)', inline: false }
+          )
+          .setFooter({ text: 'ABC DAO • Always Be Coding • Data from blockchain' })
+          .setTimestamp();
+      } else {
+        // Full embed with price data
+        embed = new EmbedBuilder()
+          .setColor(priceData.priceChangePercent >= 0 ? '#00ff88' : '#ff4444')
+          .setTitle('💎 $ABC Token Price')
+          .setDescription(`*Trading on ${priceData.dexName || 'DEX'} • Base blockchain*`)
+          .addFields(
+            { name: '💰 Price', value: priceData.price > 0 ? `$${formatPrice(priceData.price)}` : 'No price data', inline: true },
+            { name: '📊 24h Change', value: changeFormatted, inline: true },
+            { name: '🏦 Market Cap', value: formatMarketCap(priceData.marketCap), inline: true }
+          )
+          .addFields(
+            { name: '📈 Volume (24h)', value: priceData.volume24h > 0 ? `$${formatNumber(priceData.volume24h)}` : 'No volume', inline: true },
+            { name: '💧 Liquidity', value: priceData.liquidity > 0 ? `$${formatNumber(priceData.liquidity)}` : 'No data', inline: true },
+            { name: '🪙 Supply', value: priceData.totalSupply ? formatNumber(parseFloat(priceData.totalSupply)) : '100B', inline: true }
+          )
+          .addFields(
+            { name: '🔗 Trade $ABC', value: '[Uniswap V3](https://app.uniswap.org/#/swap?outputCurrency=0x5c0872b790bb73e2b3a9778db6e7704095624b07&chain=base) | [Clanker](https://clanker.world/clanker/0x5c0872b790bb73e2b3a9778db6e7704095624b07)', inline: false }
+          )
+          .setFooter({ text: `ABC DAO • Always Be Coding • Data from ${priceData.dexName || 'DEXScreener'}` })
+          .setTimestamp();
+      }
 
       await interaction.editReply({ embeds: [embed] });
     } catch (error) {
       console.error('Error fetching price:', error);
-      await interaction.editReply('❌ Error fetching price data');
+      await interaction.editReply('❌ Error fetching price data. Try again later.');
     }
   }
 
