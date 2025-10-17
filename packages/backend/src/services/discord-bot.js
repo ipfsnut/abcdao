@@ -158,27 +158,97 @@ class DiscordBotService {
    * Handle /rewards command
    */
   async handleRewardsCommand(interaction) {
-    const username = interaction.options.getString('username') || interaction.user.username;
-    
     try {
-      // TODO: Query user rewards from database
-      // For now, return placeholder
+      await interaction.deferReply();
+      
+      const username = interaction.options.getString('username');
+      let searchUser = username;
+      
+      // If no username provided, try to find user by Discord ID
+      if (!searchUser) {
+        const discordId = interaction.user.id;
+        const userByDiscord = await this.findUserByDiscordId(discordId);
+        if (userByDiscord) {
+          searchUser = userByDiscord.github_username || userByDiscord.display_name;
+        } else {
+          // Suggest linking Discord account
+          const embed = new EmbedBuilder()
+            .setColor('#ffaa00')
+            .setTitle('🔗 Link Your Account First')
+            .setDescription('To see your rewards, please link your Discord account to ABC DAO!')
+            .addFields(
+              { name: '1️⃣ Visit ABC DAO', value: '[abc.epicdylan.com](https://abc.epicdylan.com)', inline: false },
+              { name: '2️⃣ Connect & Link Discord', value: 'Complete your profile setup', inline: false },
+              { name: '3️⃣ Use Command', value: 'Try `/rewards` again or specify a GitHub username', inline: false }
+            )
+            .setFooter({ text: 'ABC DAO - Link your account to see personalized data' })
+            .setTimestamp();
+          
+          return await interaction.editReply({ embeds: [embed] });
+        }
+      }
+
+      // Look up user rewards
+      const user = await this.findUserByGithubUsername(searchUser);
+      
+      if (!user) {
+        const embed = new EmbedBuilder()
+          .setColor('#ff4444')
+          .setTitle('👤 User Not Found')
+          .setDescription(`No ABC DAO user found with GitHub username: **${searchUser}**`)
+          .addFields(
+            { name: '💡 Try These', value: '• Check the spelling\\n• Use `/rewards username` with a valid GitHub username\\n• Ask the user to join ABC DAO first', inline: false },
+            { name: '🔗 Join ABC DAO', value: '[abc.epicdylan.com](https://abc.epicdylan.com)', inline: false }
+          )
+          .setFooter({ text: 'ABC DAO - User lookup' })
+          .setTimestamp();
+        
+        return await interaction.editReply({ embeds: [embed] });
+      }
+
+      // Calculate rank from leaderboard
+      const leaderboard = await this.getLeaderboardData();
+      const userRank = leaderboard.findIndex(u => u.github_username === user.github_username) + 1;
+      
+      // Format rewards numbers
+      const formatRewards = (amount) => {
+        if (amount >= 1e6) return `${(amount / 1e6).toFixed(1)}M $ABC`;
+        if (amount >= 1e3) return `${(amount / 1e3).toFixed(1)}K $ABC`;
+        return `${amount?.toLocaleString() || 0} $ABC`;
+      };
+
       const embed = new EmbedBuilder()
         .setColor('#00ff88')
         .setTitle('💰 ABC DAO Rewards')
-        .setDescription(`Rewards for @${username}`)
+        .setDescription(`Rewards for **${user.display_name}** (@${user.github_username})`)
         .addFields(
-          { name: 'Total Earned', value: '0 $ABC', inline: true },
-          { name: 'This Week', value: '0 $ABC', inline: true },
-          { name: 'Rank', value: 'N/A', inline: true }
+          { name: '💎 Total Earned', value: formatRewards(user.total_abc_earned), inline: true },
+          { name: '📝 Total Commits', value: `${user.total_commits || 0}`, inline: true },
+          { name: '🏆 Rank', value: userRank > 0 ? `#${userRank}` : 'Unranked', inline: true }
         )
-        .setFooter({ text: 'ABC DAO - Rewarding Open Source' })
+        .addFields(
+          { name: '⭐ Reputation', value: `${user.reputation_tier} (${parseFloat(user.reputation_score || 0).toFixed(1)})`, inline: true },
+          { name: '🎯 Can Earn', value: user.can_earn_rewards ? '✅ Active' : '❌ Inactive', inline: true },
+          { name: '🔗 Entry Via', value: user.entry_context === 'farcaster' ? '🎭 Farcaster' : '🌐 Webapp', inline: true }
+        );
+
+      // Add recent activity if available
+      if (user.last_commit_at) {
+        const lastCommit = new Date(user.last_commit_at);
+        const daysAgo = Math.floor((Date.now() - lastCommit.getTime()) / (1000 * 60 * 60 * 24));
+        embed.addFields(
+          { name: '⏰ Last Commit', value: daysAgo === 0 ? 'Today' : `${daysAgo} days ago`, inline: false }
+        );
+      }
+
+      embed.setFooter({ text: 'ABC DAO - Live from database' })
         .setTimestamp();
 
       await interaction.editReply({ embeds: [embed] });
+      
     } catch (error) {
       console.error('Error fetching rewards:', error);
-      await interaction.editReply('❌ Error fetching rewards data');
+      await interaction.editReply('❌ Error fetching rewards data. Please try again later.');
     }
   }
 
@@ -186,25 +256,89 @@ class DiscordBotService {
    * Handle /leaderboard command
    */
   async handleLeaderboardCommand(interaction) {
-    const limit = interaction.options.getInteger('limit') || 10;
-    
     try {
-      // TODO: Query leaderboard from database
-      // For now, return placeholder
+      await interaction.deferReply();
+      
+      const limit = interaction.options.getInteger('limit') || 10;
+      const maxLimit = Math.min(limit, 20); // Cap at 20 for Discord embed limits
+      
+      const leaderboard = await this.getLeaderboardData(maxLimit);
+      
+      if (!leaderboard || leaderboard.length === 0) {
+        const embed = new EmbedBuilder()
+          .setColor('#ffaa00')
+          .setTitle('🏆 ABC DAO Leaderboard')
+          .setDescription('No developers found yet. Be the first to earn $ABC rewards!')
+          .addFields(
+            { name: '🚀 Get Started', value: '[Join ABC DAO](https://abc.epicdylan.com) and start earning!', inline: false }
+          )
+          .setFooter({ text: 'ABC DAO - Developer Rankings' })
+          .setTimestamp();
+        
+        return await interaction.editReply({ embeds: [embed] });
+      }
+
       const embed = new EmbedBuilder()
         .setColor('#00ff88')
-        .setTitle('🏆 ABC DAO Leaderboard')
-        .setDescription(`Top ${limit} developers`)
-        .addFields(
-          { name: '🥇 Coming Soon', value: 'Leaderboard will show top contributors', inline: false }
-        )
-        .setFooter({ text: 'ABC DAO - Developer Rankings' })
+        .setTitle('🏆 ABC DAO Developer Leaderboard')
+        .setDescription(`Top ${maxLimit} developers earning $ABC tokens`)
         .setTimestamp();
 
+      // Format leaderboard entries
+      leaderboard.forEach((dev, index) => {
+        const medals = ['🥇', '🥈', '🥉'];
+        const medal = medals[index] || `${index + 1}️⃣`;
+        
+        // Format rewards
+        const formatRewards = (amount) => {
+          if (amount >= 1e6) return `${(amount / 1e6).toFixed(1)}M`;
+          if (amount >= 1e3) return `${(amount / 1e3).toFixed(1)}K`;
+          return `${amount?.toLocaleString() || 0}`;
+        };
+
+        const name = `${medal} ${dev.display_name}`;
+        const rewards = formatRewards(dev.total_abc_earned);
+        const commits = dev.total_commits || 0;
+        const tier = dev.reputation_tier || 'Bronze';
+        
+        let value = `**${rewards} $ABC** • ${commits} commits`;
+        if (dev.github_username) {
+          value += `\\n[GitHub](https://github.com/${dev.github_username})`;
+        }
+        if (tier !== 'Bronze') {
+          value += ` • ${tier}`;
+        }
+        
+        embed.addFields({
+          name: name,
+          value: value,
+          inline: true
+        });
+      });
+
+      // Add summary stats
+      const totalRewards = leaderboard.reduce((sum, dev) => sum + (parseFloat(dev.total_abc_earned) || 0), 0);
+      const totalCommits = leaderboard.reduce((sum, dev) => sum + (dev.total_commits || 0), 0);
+      
+      const formatNumber = (num) => {
+        if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
+        if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
+        return num.toLocaleString();
+      };
+
+      embed.addFields({
+        name: '📊 Leaderboard Stats',
+        value: `💰 **${formatNumber(totalRewards)} $ABC** total distributed\\n📝 **${formatNumber(totalCommits)}** commits by top ${maxLimit}`,
+        inline: false
+      });
+
+      embed.setFooter({ text: 'ABC DAO - Live developer rankings' });
+
       await interaction.editReply({ embeds: [embed] });
+      
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
-      await interaction.editReply('❌ Error fetching leaderboard data');
+      await interaction.editReply('❌ Error fetching leaderboard data. Please try again later.');
     }
   }
 
@@ -582,7 +716,60 @@ class DiscordBotService {
   }
 
   /**
-   * Create leaderboard embed
+   * Find user by Discord ID
+   */
+  async findUserByDiscordId(discordId) {
+    try {
+      const { initializeDatabase, getPool } = await import('../services/database.js');
+      await initializeDatabase();
+      const pool = getPool();
+      
+      const result = await pool.query(
+        'SELECT * FROM users WHERE discord_id = $1',
+        [discordId]
+      );
+      
+      return result.rows[0] || null;
+    } catch (error) {
+      console.error('Error finding user by Discord ID:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Find user by GitHub username
+   */
+  async findUserByGithubUsername(username) {
+    try {
+      const { initializeDatabase } = await import('../services/database.js');
+      const { WalletUser } = await import('../models/WalletUser.js');
+      
+      await initializeDatabase();
+      return await WalletUser.findByGithubUsername(username);
+    } catch (error) {
+      console.error('Error finding user by GitHub username:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get leaderboard data from database
+   */
+  async getLeaderboardData(limit = 10) {
+    try {
+      const { initializeDatabase } = await import('../services/database.js');
+      const { WalletUser } = await import('../models/WalletUser.js');
+      
+      await initializeDatabase();
+      return await WalletUser.getLeaderboard(limit);
+    } catch (error) {
+      console.error('Error fetching leaderboard data:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Create leaderboard embed (legacy method - kept for backwards compatibility)
    */
   createLeaderboardEmbed(leaderboardData) {
     const embed = new EmbedBuilder()
