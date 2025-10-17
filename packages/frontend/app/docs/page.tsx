@@ -152,7 +152,7 @@ export default function DocsOverviewPage() {
           ABC DAO exists to <strong className="text-green-400">incentivize collaboration in the Farcaster ecosystem</strong> by 
           creating direct economic rewards for developers who ship code and contribute to decentralized social applications.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <span className="text-green-400 text-lg">🚀</span>
@@ -174,6 +174,14 @@ export default function DocsOverviewPage() {
             </div>
           </div>
         </div>
+        <a
+          href="/docs/abc-dao-mission-statement.md"
+          target="_blank"
+          rel="noopener noreferrer" 
+          className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+        >
+          Read Full Mission Statement →
+        </a>
       </div>
 
       {/* Community Links */}
