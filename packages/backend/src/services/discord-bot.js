@@ -727,8 +727,13 @@ class DiscordBotService {
 
       // Format price with appropriate decimal places for micro-cap
       const formatPrice = (price) => {
-        if (price < 0.000001) {
-          return price.toFixed(9); // 9 decimal places for very small prices
+        if (price === 0) return '0';
+        
+        // For extremely small numbers, use scientific notation
+        if (price < 0.0000001) {
+          return price.toExponential(2); // e.g., "1.23e-8"
+        } else if (price < 0.000001) {
+          return price.toFixed(10); // 10 decimal places for very small prices
         } else if (price < 0.01) {
           return price.toFixed(6);
         } else {
