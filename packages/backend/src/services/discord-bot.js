@@ -183,7 +183,12 @@ class DiscordBotService {
    */
   async handleSlashCommand(interaction) {
     try {
-      await interaction.deferReply();
+      // Handle admin commands differently (ephemeral)
+      if (interaction.commandName === 'admin') {
+        await interaction.deferReply({ ephemeral: true });
+      } else {
+        await interaction.deferReply();
+      }
 
       switch (interaction.commandName) {
         case 'rewards':
@@ -209,7 +214,11 @@ class DiscordBotService {
       }
     } catch (error) {
       console.error('Error handling slash command:', error);
-      await interaction.editReply('An error occurred while processing your command.');
+      if (interaction.deferred) {
+        await interaction.editReply('An error occurred while processing your command.');
+      } else {
+        await interaction.reply('An error occurred while processing your command.');
+      }
     }
   }
 
@@ -218,7 +227,6 @@ class DiscordBotService {
    */
   async handleRewardsCommand(interaction) {
     try {
-      await interaction.deferReply();
       
       const username = interaction.options.getString('username');
       let searchUser = username;
@@ -316,7 +324,6 @@ class DiscordBotService {
    */
   async handleLeaderboardCommand(interaction) {
     try {
-      await interaction.deferReply();
       
       const limit = interaction.options.getInteger('limit') || 10;
       const maxLimit = Math.min(limit, 20); // Cap at 20 for Discord embed limits
@@ -439,7 +446,6 @@ class DiscordBotService {
    */
   async handleStatsCommand(interaction) {
     try {
-      await interaction.deferReply();
       
       const stats = await this.fetchABCStats();
       
@@ -532,7 +538,6 @@ class DiscordBotService {
    */
   async handleAdminCommand(interaction) {
     try {
-      await interaction.deferReply({ ephemeral: true });
 
       // Check if user has admin permissions
       const member = interaction.member;
@@ -717,7 +722,6 @@ class DiscordBotService {
    */
   async handlePriceCommand(interaction) {
     try {
-      await interaction.deferReply();
       
       const priceData = await this.fetchABCPriceData();
 
