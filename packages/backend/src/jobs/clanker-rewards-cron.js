@@ -14,6 +14,15 @@ class ClankerRewardsCron {
       "function claimRewards() external returns (bool)",
       "function getLastClaimTime(address account) view returns (uint256)"
     ];
+    
+    // WETH configuration for auto-unwrapping after claims
+    this.wethAddress = '0x4200000000000000000000000000000000000006'; // Base WETH
+    this.wethAbi = [
+      "function balanceOf(address) view returns (uint256)",
+      "function withdraw(uint256) external",
+      "function decimals() view returns (uint8)",
+      "function symbol() view returns (string)"
+    ];
   }
 
   /**
@@ -49,6 +58,7 @@ class ClankerRewardsCron {
     console.log('✅ Clanker rewards cron job started');
     console.log('   - Runs daily at 11:30 PM UTC');
     console.log('   - Checks and claims accumulated Clanker rewards');
+    console.log('   - Auto-unwraps any WETH received from claims');
     console.log('   - Executes before nightly leaderboard job\n');
   }
 
@@ -63,7 +73,7 @@ class ClankerRewardsCron {
   }
 
   /**
-   * Check if there are claimable Clanker rewards
+   * Check if there are claimable Clanker rewards (via RPC)
    */
   async checkClaimableRewards() {
     if (!this.clankerContractAddress) {
@@ -72,22 +82,23 @@ class ClankerRewardsCron {
     }
 
     try {
+      console.log(`🔍 Checking rewards via RPC for wallet: ${this.protocolWallet.address}`);
+      
+      // Use RPC calls instead of direct contract interaction for balance checks
       const clankerContract = new ethers.Contract(
         this.clankerContractAddress,
         this.clankerRewardsAbi,
         this.provider
       );
-
-      console.log(`🔍 Checking rewards for wallet: ${this.protocolWallet.address}`);
       
-      // Check pending rewards
+      // Check pending rewards via RPC
       const pendingRewards = await clankerContract.checkRewards(this.protocolWallet.address);
       const lastClaimTime = await clankerContract.getLastClaimTime(this.protocolWallet.address);
       
       const rewardsEth = ethers.formatEther(pendingRewards);
       const lastClaimDate = lastClaimTime > 0 ? new Date(Number(lastClaimTime) * 1000) : null;
       
-      console.log(`💰 Pending rewards: ${rewardsEth} ETH`);
+      console.log(`💰 Pending rewards (via RPC): ${rewardsEth} ETH`);
       console.log(`📅 Last claim: ${lastClaimDate ? lastClaimDate.toISOString() : 'Never'}`);
       
       // Only claim if there are meaningful rewards (> 0.001 ETH)
@@ -104,7 +115,7 @@ class ClankerRewardsCron {
       };
       
     } catch (error) {
-      console.error('❌ Error checking Clanker rewards:', error.message);
+      console.error('❌ Error checking Clanker rewards via RPC:', error.message);
       throw error;
     }
   }
@@ -252,6 +263,10 @@ class ClankerRewardsCron {
       // Record the claim
       await this.recordClaim(rewardsInfo, claimResult);
       
+      // IMMEDIATELY check and unwrap any WETH received from the claim
+      console.log('\n🔄 Checking for WETH to unwrap after successful claim...');
+      await this.checkAndUnwrapWeth();
+      
       // Announce on social media
       await this.announceClaim(claimResult);
       
@@ -333,6 +348,161 @@ class ClankerRewardsCron {
     }
     
     return issues.length === 0;
+  }
+
+  /**
+   * Check WETH balance and unwrap if needed
+   * This runs immediately after successful Clanker claims
+   */
+  async checkAndUnwrapWeth() {
+    try {
+      console.log('🔍 Checking WETH balance after claim...');
+      
+      // Use contract instance for reliable balance check (same pattern as existing code)
+      const wethContract = new ethers.Contract(this.wethAddress, this.wethAbi, this.provider);
+      
+      const wethAmount = await wethContract.balanceOf(this.protocolWallet.address);
+      const wethBalanceEth = ethers.formatEther(wethAmount);
+      
+      console.log(`💰 Current WETH balance: ${wethBalanceEth} WETH`);
+      
+      // Set minimum threshold to avoid gas waste on tiny amounts
+      const minUnwrapThreshold = ethers.parseEther('0.001'); // 0.001 ETH minimum
+      
+      if (wethAmount <= minUnwrapThreshold) {
+        console.log(`⚠️ WETH balance below threshold (${ethers.formatEther(minUnwrapThreshold)} ETH), skipping unwrap`);
+        return;
+      }
+      
+      // Unwrap the WETH
+      await this.unwrapWeth(wethAmount, wethBalanceEth);
+      
+    } catch (error) {
+      console.error('❌ Error checking/unwrapping WETH:', error.message);
+      // Don't throw - WETH unwrap failure shouldn't break the claim process
+    }
+  }
+
+  /**
+   * Unwrap WETH to native ETH
+   */
+  async unwrapWeth(wethAmount, wethBalanceEth) {
+    try {
+      const wethContract = new ethers.Contract(this.wethAddress, this.wethAbi, this.protocolWallet);
+
+      console.log(`🔄 Unwrapping ${wethBalanceEth} WETH to native ETH...`);
+      
+      // Get ETH balance before unwrapping (via RPC)
+      const ethBalanceBefore = await this.provider.getBalance(this.protocolWallet.address);
+      
+      // Estimate gas for withdrawal
+      const gasEstimate = await wethContract.withdraw.estimateGas(wethAmount);
+      const gasLimit = gasEstimate + (gasEstimate / 10n); // Add 10% buffer
+      
+      // Execute withdrawal
+      const tx = await wethContract.withdraw(wethAmount, {
+        gasLimit: gasLimit
+      });
+      
+      console.log(`📤 WETH unwrap transaction sent: ${tx.hash}`);
+      
+      // Wait for confirmation
+      const receipt = await tx.wait();
+      console.log(`✅ WETH unwrap confirmed in block ${receipt.blockNumber}`);
+      
+      // Get ETH balance after unwrapping (via RPC)
+      const ethBalanceAfter = await this.provider.getBalance(this.protocolWallet.address);
+      const ethGained = ethBalanceAfter - ethBalanceBefore + receipt.gasUsed * receipt.gasPrice;
+      
+      const unwrapResult = {
+        transactionHash: tx.hash,
+        blockNumber: receipt.blockNumber,
+        gasUsed: receipt.gasUsed.toString(),
+        wethUnwrapped: wethBalanceEth,
+        ethGained: ethers.formatEther(ethGained),
+        ethBalanceBefore: ethers.formatEther(ethBalanceBefore),
+        ethBalanceAfter: ethers.formatEther(ethBalanceAfter)
+      };
+      
+      // Record the unwrap
+      await this.recordWethUnwrap(unwrapResult);
+      
+      // Announce if significant amount
+      if (parseFloat(wethBalanceEth) >= 0.01) {
+        await this.announceWethUnwrap(unwrapResult);
+      }
+      
+      console.log(`✅ WETH unwrap complete: ${wethBalanceEth} WETH → ${unwrapResult.ethGained} ETH`);
+      
+    } catch (error) {
+      console.error('❌ Error unwrapping WETH:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Record WETH unwrap in database
+   */
+  async recordWethUnwrap(unwrapResult) {
+    try {
+      const recordResponse = await fetch(`${process.env.BACKEND_URL || 'http://localhost:3001'}/api/weth-unwraps/record`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletAddress: this.protocolWallet.address,
+          transactionHash: unwrapResult.transactionHash,
+          wethAmount: unwrapResult.wethUnwrapped,
+          ethReceived: unwrapResult.ethGained,
+          blockNumber: unwrapResult.blockNumber,
+          gasUsed: unwrapResult.gasUsed,
+          unwrapDate: new Date().toISOString(),
+          ethBalanceBefore: unwrapResult.ethBalanceBefore,
+          ethBalanceAfter: unwrapResult.ethBalanceAfter,
+          triggeredBy: 'clanker-claim' // Mark this as triggered by Clanker claim
+        })
+      });
+      
+      if (recordResponse.ok) {
+        console.log(`✅ WETH unwrap recorded in database`);
+      } else {
+        console.warn(`⚠️ Failed to record WETH unwrap: ${recordResponse.status}`);
+      }
+    } catch (recordError) {
+      console.warn(`⚠️ Error recording WETH unwrap:`, recordError.message);
+    }
+  }
+
+  /**
+   * Announce WETH unwrap on Farcaster (for significant amounts)
+   */
+  async announceWethUnwrap(unwrapResult) {
+    try {
+      if (!process.env.NEYNAR_API_KEY || !process.env.NEYNAR_SIGNER_UUID) {
+        console.log('⚠️ Farcaster credentials not configured, skipping WETH unwrap announcement');
+        return;
+      }
+
+      const { NeynarAPIClient, Configuration } = await import('@neynar/nodejs-sdk');
+      const config = new Configuration({ apiKey: process.env.NEYNAR_API_KEY });
+      const neynar = new NeynarAPIClient(config);
+
+      const castText = `🔄 AUTO WETH UNWRAP!
+
+💰 Amount: ${unwrapResult.wethUnwrapped} WETH → ETH
+🤖 Triggered after Clanker claim  
+📈 Keeping treasury liquid
+
+🔗 Unwrap: basescan.org/tx/${unwrapResult.transactionHash}
+
+#ABCDAO #WETHUnwrap #AutoTreasury`;
+
+      const cast = await neynar.publishCast(process.env.NEYNAR_SIGNER_UUID, castText);
+      console.log(`✅ WETH unwrap announced: ${cast.cast.hash}`);
+      
+    } catch (error) {
+      console.error('❌ Failed to announce WETH unwrap:', error.message);
+      // Don't throw - announcement failure shouldn't break the process
+    }
   }
 }
 

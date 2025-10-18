@@ -37,7 +37,7 @@ import { PaymentMonitor } from './services/payment-monitor.js';
 import { PaymentRecoveryCron } from './jobs/payment-recovery-cron.js';
 import { EthDistributionCron } from './jobs/eth-distribution-cron.js';
 import { ClankerRewardsCron } from './jobs/clanker-rewards-cron.js';
-import { WethUnwrapCron } from './jobs/weth-unwrap-cron.js';
+// Removed: WethUnwrapCron now integrated into ClankerRewardsCron
 import discordBot from './services/discord-bot.js';
 
 const app = express();
@@ -356,21 +356,8 @@ async function initializeBackgroundServices() {
       console.warn('⚠️  Bot wallet not configured, skipping Clanker rewards cron');
     }
 
-    // Start WETH unwrap cron job
-    if (process.env.BOT_WALLET_PRIVATE_KEY) {
-      try {
-        const wethUnwrapCron = new WethUnwrapCron();
-        wethUnwrapCron.start();
-        console.log('✅ WETH unwrap cron job started (runs every 2 hours)');
-        
-        // Store reference for graceful shutdown
-        global.wethUnwrapCron = wethUnwrapCron;
-      } catch (wethCronError) {
-        console.warn('⚠️  WETH unwrap cron setup failed:', wethCronError.message);
-      }
-    } else {
-      console.warn('⚠️  Bot wallet not configured, skipping WETH unwrap cron');
-    }
+    // WETH unwrapping now integrated into Clanker rewards cron job
+    // No standalone WETH unwrap cron needed - it's triggered after successful claims
 
     // Initialize Discord bot completely asynchronously (non-blocking)
     if (process.env.DISCORD_BOT_TOKEN) {
@@ -428,10 +415,8 @@ process.on('SIGINT', () => {
     global.clankerRewardsCron.stop();
   }
   
-  // Stop WETH unwrap cron
-  if (global.wethUnwrapCron) {
-    global.wethUnwrapCron.stop();
-  }
+  // WETH unwrapping now handled by Clanker rewards cron
+  // No standalone WETH cron to stop
   
   process.exit(0);
 });

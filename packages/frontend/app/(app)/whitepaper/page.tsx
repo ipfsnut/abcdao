@@ -11,7 +11,7 @@ export default function WhitepaperPage() {
 
   useEffect(() => {
     // Load whitepaper content from static file and inject dynamic addresses
-    fetch('/whitepaper.md')
+    fetch('/docs/whitepaper.md')
       .then(res => res.text())
       .then(content => {
         // Get addresses from environment variables with fallbacks

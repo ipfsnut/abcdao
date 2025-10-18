@@ -18,10 +18,13 @@ import { useStakingWithPrice } from '@/hooks/useStakingWithPrice';
 import { useTreasury } from '@/hooks/useTreasury';
 import { useStats } from '@/hooks/useStats';
 import { useMembership } from '@/hooks/useMembership';
+import { useTreasuryBalances } from '@/hooks/useTreasuryBalances';
+import { useTokenPrice } from '@/hooks/useTokenPrice';
 import { Toaster } from 'sonner';
 import { StatsSkeleton, TabContentSkeleton } from '@/components/skeleton-loader';
 import { CollapsibleStatCard, TreasuryRewardsCard } from '@/components/collapsible-stat-card';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function Home() {
   const { isInMiniApp } = useFarcaster();
@@ -32,9 +35,21 @@ export default function Home() {
   const stakingData = useStakingWithPrice();
   const treasuryData = useTreasury();
   const { stats, loading: statsLoading } = useStats();
+  const { balances: treasuryBalances, loading: balancesLoading, formatUSD: formatTreasuryUSD } = useTreasuryBalances();
+  const { priceData } = useTokenPrice();
   
-  // Check if core data is still loading (fix treasury balance check)
-  const isDataLoading = !stakingData.tokenBalance || treasuryData.isLoading || statsLoading;
+  // Calculate total treasury value (ETH + $ABC)
+  const calculateTotalTreasuryValue = () => {
+    if (!treasuryBalances || !priceData || !treasuryData.treasuryBalance) return '$0.00';
+    
+    const abcValueUSD = parseFloat(treasuryData.treasuryBalance) * (priceData.price || 0.0000123);
+    const totalValueUSD = treasuryBalances.totalValueUSD + abcValueUSD;
+    
+    return formatTreasuryUSD(totalValueUSD);
+  };
+
+  // Check if core data is still loading (include treasury balances)
+  const isDataLoading = !stakingData.tokenBalance || treasuryData.isLoading || statsLoading || balancesLoading;
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
@@ -62,7 +77,7 @@ export default function Home() {
                   </p>
                   <div className="bg-green-950/20 border border-green-900/50 rounded-lg px-3 py-2 mb-2">
                     <p className="text-green-600 text-xs font-mono text-center">Your Balance</p>
-                    <p className="text-sm font-bold text-green-400 matrix-glow text-center">{parseFloat(stakingData.tokenBalance).toFixed(2)} $ABC</p>
+                    <p className="text-sm font-bold text-green-400 matrix-glow text-center">{parseFloat(stakingData.tokenBalance).toFixed(0)} $ABC</p>
                   </div>
                   {/* Wallet connection status for miniapp */}
                   <div className="flex items-center justify-center gap-2 mb-2">
@@ -144,6 +159,145 @@ export default function Home() {
           <p className="text-responsive-xs text-green-600 mb-4 font-mono">
             Join a community of developers building FOSS projects, learning together, and creating lasting friendships.
           </p>
+        </div>
+      </div>
+
+      {/* Smart Header Stats - 2 Expandable Containers */}
+      <div className="bg-black/80 border-b border-green-900/30 backdrop-blur-sm">
+        <div className="px-4 py-4">
+          {isDataLoading ? (
+            <StatsSkeleton />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-6xl mx-auto">
+              
+              {/* Treasury & Rewards Container */}
+              <CollapsibleStatCard
+                title="💰 Treasury & Rewards"
+                value={calculateTotalTreasuryValue()}
+                description="Total treasury value (ETH + $ABC)"
+                href="/treasury"
+              >
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-black/40 border border-green-900/30 rounded p-3 text-center">
+                      <p className="text-green-600 font-mono text-xs mb-1">$ABC Holdings</p>
+                      <p className="text-green-400 font-mono font-bold text-sm">{parseFloat(treasuryData.treasuryBalance).toFixed(0)} $ABC</p>
+                    </div>
+                    <div className="bg-black/40 border border-green-900/30 rounded p-3 text-center">
+                      <p className="text-green-600 font-mono text-xs mb-1">ETH Distributed</p>
+                      <p className="text-green-400 font-mono font-bold text-sm">{parseFloat(stakingData.totalRewardsDistributed).toFixed(3)} ETH</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-green-600 font-mono text-xs">Total Staked:</span>
+                      <span className="text-green-400 font-mono text-sm">{parseFloat(stakingData.totalStaked).toFixed(0)} $ABC</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-green-600 font-mono text-xs">Staking APY:</span>
+                      <span className="text-green-400 font-mono text-sm">Variable</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3">
+                    <p className="text-green-600 font-mono text-xs mb-2">Protocol Treasury:</p>
+                    <a 
+                      href="https://basescan.org/address/0xBE6525b767cA8D38d169C93C8120c0C0957388B8"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-green-400 hover:text-green-300 font-mono text-xs underline break-all"
+                    >
+                      0xBE6525b767cA8D38d169C93C8120c0C0957388B8
+                    </a>
+                    <p className="text-green-700 font-mono text-xs mt-1">abcdao.base.eth</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-2">
+                    <Link
+                      href="/treasury"
+                      className="bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs text-center transition-all duration-300 matrix-button"
+                    >
+                      {'>'} Treasury
+                    </Link>
+                    <Link
+                      href="/staking"
+                      className="bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs text-center transition-all duration-300 matrix-button"
+                    >
+                      {'>'} Staking
+                    </Link>
+                    <Link
+                      href="/supply"
+                      className="bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs text-center transition-all duration-300 matrix-button"
+                    >
+                      {'>'} Supply
+                    </Link>
+                  </div>
+                </div>
+              </CollapsibleStatCard>
+
+              {/* Total Developers Container */}
+              <CollapsibleStatCard
+                title="👥 DAO Members"
+                value={(stats.totalDevelopers || 0).toString()}
+                description="Verified contributors"
+                href="/roster"
+              >
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-black/40 border border-green-900/30 rounded p-3 text-center">
+                      <p className="text-green-600 font-mono text-xs mb-1">Active Members</p>
+                      <p className="text-green-400 font-mono font-bold text-sm">{stats.totalDevelopers || 0}</p>
+                    </div>
+                    <div className="bg-black/40 border border-green-900/30 rounded p-3 text-center">
+                      <p className="text-green-600 font-mono text-xs mb-1">Total Commits</p>
+                      <p className="text-green-400 font-mono font-bold text-sm">{stats.totalCommits || 0}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-green-600 font-mono text-xs">Rewards Paid:</span>
+                      <span className="text-green-400 font-mono text-sm">{stats.totalRewards || 0} $ABC</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-green-600 font-mono text-xs">Membership Fee:</span>
+                      <span className="text-green-400 font-mono text-sm">0.002 ETH</span>
+                    </div>
+                  </div>
+                  
+                  {!membership.isMember ? (
+                    <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-3">
+                      <p className="text-green-400 font-mono text-xs mb-2 text-center">💎 Join the DAO</p>
+                      <p className="text-green-600 font-mono text-xs mb-2 text-center">Get access to dev tools, rewards, and community</p>
+                      <Link
+                        href="/dev"
+                        className="block bg-green-900/50 hover:bg-green-800/60 text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs text-center transition-all duration-300 matrix-button"
+                      >
+                        Join for 0.002 ETH →
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      <Link
+                        href="/roster"
+                        className="bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs text-center transition-all duration-300 matrix-button"
+                      >
+                        {'>'} Roster
+                      </Link>
+                      <Link
+                        href="/dev"
+                        className="bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs text-center transition-all duration-300 matrix-button"
+                      >
+                        {'>'} Dev Tools
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </CollapsibleStatCard>
+
+            </div>
+          )}
         </div>
       </div>
 
@@ -236,415 +390,177 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Responsive Stats Bar - Stacked on small, grid on larger screens */}
-      <div className="bg-black/80 border-b border-green-900/30 backdrop-blur-sm">
-        <div className="px-4 py-3">
-          {isDataLoading ? (
-            <StatsSkeleton />
-          ) : (
-            <>
-              {/* Mobile: Collapsible stats cards */}
-              <div className="grid grid-cols-1 gap-2 xs:hidden">
-                <TreasuryRewardsCard 
-                  treasuryBalance={treasuryData.treasuryBalance}
-                  totalRewardsDistributed={stakingData.totalRewardsDistributed}
-                />
-                <CollapsibleStatCard
-                  title="Total Staked"
-                  value={`${parseFloat(stakingData.totalStaked).toFixed(0)} $ABC`}
-                  description="Community staking"
-                  href="/staking"
-                >
-                  <div className="bg-black/40 border border-green-900/30 rounded p-3">
-                    <h4 className="text-green-400 font-mono text-xs mb-2">Staking Info</h4>
-                    <div className="space-y-1 text-xs font-mono">
-                      <div className="flex justify-between">
-                        <span className="text-green-600">APY:</span>
-                        <span className="text-green-400">Variable</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-green-600">Rewards:</span>
-                        <span className="text-green-400">ETH</span>
-                      </div>
-                    </div>
-                  </div>
-                </CollapsibleStatCard>
-                <CollapsibleStatCard
-                  title="Total Developers"
-                  value={(stats.totalDevelopers || 0).toString()}
-                  description="Verified contributors"
-                  href="/roster"
-                >
-                  <div className="bg-black/40 border border-green-900/30 rounded p-3">
-                    <h4 className="text-green-400 font-mono text-xs mb-2">Developer Activity</h4>
-                    <div className="space-y-1 text-xs font-mono">
-                      <div className="flex justify-between">
-                        <span className="text-green-600">Total Commits:</span>
-                        <span className="text-green-400">{stats.totalCommits || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-green-600">Rewards Paid:</span>
-                        <span className="text-green-400">{stats.totalRewards || 0} $ABC</span>
-                      </div>
-                    </div>
-                  </div>
-                </CollapsibleStatCard>
-              </div>
+      {/* Streamlined Two-Container Layout */}
+      <div className="px-4 mt-6 space-y-6">
+        {/* $ABC Token Container */}
+        <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+          <h2 className="text-lg sm:text-xl font-bold mb-4 text-green-400 matrix-glow font-mono">
+            {'>'} $ABC Token
+          </h2>
           
-          {/* Larger screens: Collapsible stats grid */}
-          <div className="hidden xs:grid gap-3 xs:grid-cols-2 lg:grid-cols-4">
-            <TreasuryRewardsCard 
-              treasuryBalance={treasuryData.treasuryBalance}
-              totalRewardsDistributed={stakingData.totalRewardsDistributed}
-            />
-            <CollapsibleStatCard
-              title="Total Staked"
-              value={`${parseFloat(stakingData.totalStaked).toFixed(0)} $ABC`}
-              description="Community staking"
-              href="/staking"
-            >
-              <div className="bg-black/40 border border-green-900/30 rounded p-3">
-                <h4 className="text-green-400 font-mono text-xs mb-2">Staking Info</h4>
-                <div className="space-y-1 text-xs font-mono">
-                  <div className="flex justify-between">
-                    <span className="text-green-600">APY:</span>
-                    <span className="text-green-400">Variable</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-green-600">Rewards:</span>
-                    <span className="text-green-400">ETH</span>
-                  </div>
-                </div>
+          <div className="space-y-4">
+            {/* Token Info Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-center">
+                <p className="text-green-600 font-mono text-xs mb-1">Your Balance</p>
+                <p className="text-green-400 font-mono font-bold">{parseFloat(stakingData.tokenBalance).toFixed(0)} $ABC</p>
               </div>
-            </CollapsibleStatCard>
-            <CollapsibleStatCard
-              title="Total Developers"
-              value={(stats.totalDevelopers || 0).toString()}
-              description="Verified contributors"
-              href="/roster"
-            >
-              <div className="bg-black/40 border border-green-900/30 rounded p-3">
-                <h4 className="text-green-400 font-mono text-xs mb-2">Developer Activity</h4>
-                <div className="space-y-1 text-xs font-mono">
-                  <div className="flex justify-between">
-                    <span className="text-green-600">Total Commits:</span>
-                    <span className="text-green-400">{stats.totalCommits || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-green-600">Rewards Paid:</span>
-                    <span className="text-green-400">{stats.totalRewards || 0} $ABC</span>
-                  </div>
-                </div>
+              <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-center">
+                <p className="text-green-600 font-mono text-xs mb-1">Staked</p>
+                <p className="text-green-400 font-mono font-bold">{parseFloat(stakingData.stakedAmount).toFixed(0)} $ABC</p>
               </div>
-            </CollapsibleStatCard>
-            <TokenSupplyMini />
-          </div>
-          
-              {/* Token supply always visible on mobile, integrated into grid */}
-              <div className="mt-2 xs:hidden">
-                <TokenSupplyMini />
+              <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-center">
+                <p className="text-green-600 font-mono text-xs mb-1">Pending ETH</p>
+                <p className="text-green-400 font-mono font-bold">{parseFloat(stakingData.pendingRewards).toFixed(4)} ETH</p>
               </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Conditional Content Based on Context */}
-      <div className="px-4 mt-6">
-        {isInMiniApp ? (
-          /* Farcaster Miniapp Context: Full DAO Functionality */
-          <>
-            {/* Mobile-First Tab Navigation */}
-            <div className="flex bg-green-950/10 border border-green-900/30 p-1 rounded-lg font-mono overflow-x-auto">
+            </div>
+            
+            {/* Token Actions */}
+            <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setActiveTab('stake')}
-                className={`px-4 py-3 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-responsive-sm min-h-[44px] ${
+                className={`p-3 rounded-lg border font-mono font-medium transition-all duration-300 ${
                   activeTab === 'stake' 
-                    ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
-                    : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+                    ? 'bg-green-900/50 text-green-400 border-green-700/50 matrix-glow' 
+                    : 'bg-green-950/20 text-green-600 border-green-900/30 hover:text-green-400 hover:border-green-700/50'
                 }`}
               >
-                ./stake
+                🏦 Stake & Earn
               </button>
-              {/* Show dev tab only for members */}
-              {membership.isMember && (
-                <button
-                  onClick={() => setActiveTab('dev')}
-                  className={`px-4 py-3 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-responsive-sm min-h-[44px] ${
-                    activeTab === 'dev' 
-                      ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
-                      : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
-                  }`}
-                >
-                  ./dev
-                </button>
+              <button
+                onClick={() => setActiveTab('swap')}
+                className={`p-3 rounded-lg border font-mono font-medium transition-all duration-300 ${
+                  activeTab === 'swap' 
+                    ? 'bg-green-900/50 text-green-400 border-green-700/50 matrix-glow' 
+                    : 'bg-green-950/20 text-green-600 border-green-900/30 hover:text-green-400 hover:border-green-700/50'
+                }`}
+              >
+                🔄 Buy/Sell
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* DAO Member Container */}
+        <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+          <h2 className="text-lg sm:text-xl font-bold mb-4 text-green-400 matrix-glow font-mono">
+            {'>'} DAO Membership
+          </h2>
+          
+          {!membership.isMember ? (
+            /* Non-Member: Show membership benefits and join CTA */
+            <div className="space-y-4">
+              <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
+                <h3 className="text-green-400 font-mono font-bold mb-3">💎 Join for 0.002 ETH</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm font-mono mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <span className="text-green-600">Create developer profile</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <span className="text-green-600">Showcase GitHub work</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <span className="text-green-600">Earn $ABC from commits</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <span className="text-green-600">Access exclusive tools</span>
+                  </div>
+                </div>
+              </div>
+              <GitHubLinkPanel />
+            </div>
+          ) : (
+            /* Member: Show profile and member tools */
+            <div className="space-y-4">
+              {membership.hasGithub ? (
+                <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
+                  <h3 className="text-green-400 font-mono font-bold mb-3">👤 Your Profile</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                        <span className="text-green-400 font-mono text-sm">DAO Member</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                        <span className="text-green-400 font-mono text-sm">GitHub Connected</span>
+                      </div>
+                    </div>
+                    <div className="bg-black/40 border border-green-900/30 rounded p-3">
+                      <p className="text-green-600 font-mono text-xs mb-2">🔗 GitHub Profile</p>
+                      <a 
+                        href={`https://github.com/${membership.githubUsername || 'your-username'}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-green-400 hover:text-green-300 font-mono text-sm underline"
+                      >
+                        @{membership.githubUsername || 'your-username'}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-4 text-center">
+                  <p className="text-yellow-400 font-mono text-sm mb-3">
+                    🔗 Complete your profile by connecting GitHub
+                  </p>
+                  <GitHubLinkPanel />
+                </div>
               )}
               
-              {/* Show appropriate tab for members vs non-members */}
-              <button
-                onClick={() => setActiveTab('proposals')}
-                className={`px-4 py-3 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-responsive-sm min-h-[44px] ${
-                  activeTab === 'proposals' 
-                    ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
-                    : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
-                }`}
-              >
-                {membership.isMember && membership.hasGithub ? './rewards' : './join'}
-              </button>
-              <button
-                onClick={() => setActiveTab('chat')}
-                className={`px-4 py-3 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-responsive-sm min-h-[44px] ${
-                  activeTab === 'chat' 
-                    ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
-                    : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
-                }`}
-              >
-                ./chat
-              </button>
-              <button
-                onClick={() => setActiveTab('swap')}
-                className={`px-4 py-3 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-responsive-sm min-h-[44px] ${
-                  activeTab === 'swap' 
-                    ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
-                    : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
-                }`}
-              >
-                ./swap
-              </button>
+              {/* Member tools */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  onClick={() => setActiveTab('proposals')}
+                  className={`p-3 rounded-lg border font-mono font-medium transition-all duration-300 ${
+                    activeTab === 'proposals' 
+                      ? 'bg-green-900/50 text-green-400 border-green-700/50 matrix-glow' 
+                      : 'bg-green-950/20 text-green-600 border-green-900/30 hover:text-green-400 hover:border-green-700/50'
+                  }`}
+                >
+                  💰 Claim Rewards
+                </button>
+                <button
+                  onClick={() => setActiveTab('dev')}
+                  className={`p-3 rounded-lg border font-mono font-medium transition-all duration-300 ${
+                    activeTab === 'dev' 
+                      ? 'bg-green-900/50 text-green-400 border-green-700/50 matrix-glow' 
+                      : 'bg-green-950/20 text-green-600 border-green-900/30 hover:text-green-400 hover:border-green-700/50'
+                  }`}
+                >
+                  🛠️ Dev Tools
+                </button>
+              </div>
             </div>
-
-            {/* Mobile-Optimized Tab Content */}
-            <div className="mt-4">
-              {activeTab === 'stake' && (
-                isDataLoading ? <TabContentSkeleton /> : <StakePanel stakingData={stakingData} />
-              )}
-              {activeTab === 'proposals' && (
-                (!membership.isMember || (membership.isMember && !membership.hasGithub)) ? (
-                  <GitHubLinkPanel />
-                ) : membership.isMember && membership.hasGithub ? (
-                  <ClaimRewardsPanel />
-                ) : null
-              )}
-              {activeTab === 'dev' && (
-                <div className="space-y-4">
-                  {/* Repository Manager - Embedded in Mini-App */}
-                  {membership.hasGithub ? (
-                    <RepositoryManager />
-                  ) : (
-                    <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-                      <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
-                        {'>'} repository_manager()
-                      </h2>
-                      <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-4 text-center">
-                        <p className="text-yellow-400 font-mono text-sm mb-3">
-                          🔗 Connect GitHub first to manage repositories
-                        </p>
-                        <button
-                          onClick={() => setActiveTab('proposals')}
-                          className="bg-green-900/50 hover:bg-green-800/60 text-green-400 font-mono px-4 py-2 rounded-lg border border-green-700/50 transition-all duration-300 matrix-button text-sm"
-                        >
-                          Connect GitHub →
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Quick Dev Links */}
-                  <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-                    <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
-                      {'>'} quick_access()
-                    </h2>
-                    <div className="grid grid-cols-2 gap-3">
-                      <a
-                        href="https://docs.abc.epicdylan.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-blue-950/20 border border-blue-900/30 rounded-lg p-3 text-center hover:bg-blue-900/30 transition-all duration-300"
-                      >
-                        <p className="text-blue-400 font-mono text-xs mb-1">📚 Docs</p>
-                        <p className="text-green-600 font-mono text-xs">API Reference</p>
-                      </a>
-                      <a
-                        href="https://discord.gg/HK62WQWJ"
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="bg-indigo-950/20 border border-indigo-900/30 rounded-lg p-3 text-center hover:bg-indigo-900/30 transition-all duration-300"
-                      >
-                        <p className="text-indigo-400 font-mono text-xs mb-1">💬 Discord</p>
-                        <p className="text-green-600 font-mono text-xs">Dev Chat</p>
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              )}
-              {activeTab === 'chat' && (
-                <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm text-center">
-                  <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
-                    {'>'} access_chat()
-                  </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div className="bg-blue-950/20 border border-blue-900/30 rounded-lg p-4">
-                      <p className="text-blue-400 font-mono text-sm mb-2">
-                        🔒 Token-Gated Chat
-                      </p>
-                      <p className="text-green-600 font-mono text-xs mb-3">
-                        Join the exclusive ABC community chat on Nounspace. $ABC token holders only.
-                      </p>
-                      <a
-                        href="https://www.nounspace.com/t/base/0x5c0872b790bb73e2b3a9778db6e7704095624b07/Profile"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block bg-green-900/50 hover:bg-green-800/60 text-green-400 font-mono px-4 py-2 rounded-lg border border-green-700/50 transition-all duration-300 matrix-button text-sm"
-                      >
-                        Enter Chat →
-                      </a>
-                    </div>
-                    
-                    <div className="bg-purple-950/20 border border-purple-900/30 rounded-lg p-4">
-                      <p className="text-purple-400 font-mono text-sm mb-2">
-                        📡 Follow Updates
-                      </p>
-                      <p className="text-green-600 font-mono text-xs mb-3">
-                        Stay updated with ABC DAO announcements and community discussions.
-                      </p>
-                      <a
-                        href="https://warpcast.com/abc-dao"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block bg-purple-900/50 hover:bg-purple-800/60 text-purple-400 font-mono px-4 py-2 rounded-lg border border-purple-700/50 transition-all duration-300 matrix-button text-sm"
-                      >
-                        @abc-dao →
-                      </a>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3 text-center">
-                    <p className="text-green-600/70 font-mono text-xs">
-                      For developer resources and Discord access, visit the{' '}
-                      <a href="/dev" className="text-green-400 hover:text-green-300 underline">
-                        developer dashboard
-                      </a>
-                    </p>
-                  </div>
-                </div>
-              )}
-              {activeTab === 'swap' && <SwapWidget />}
-            </div>
-          </>
-        ) : (
-          /* Web Browser Context: Full functionality with webapp auth */
-          <>
-            {/* Web User Tab Navigation */}
-            <div className="flex bg-green-950/10 border border-green-900/30 p-1 rounded-lg font-mono max-w-3xl mx-auto overflow-x-auto">
-              <button
-                onClick={() => setActiveTab('join')}
-                className={`flex-1 px-3 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] whitespace-nowrap ${
-                  activeTab === 'join' 
-                    ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
-                    : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
-                }`}
-              >
-                ./join
-              </button>
-              <button
-                onClick={() => setActiveTab('swap')}
-                className={`flex-1 px-3 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] whitespace-nowrap ${
-                  activeTab === 'swap' 
-                    ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
-                    : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
-                }`}
-              >
-                ./swap
-              </button>
-              <button
-                onClick={() => setActiveTab('stake')}
-                className={`flex-1 px-3 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] whitespace-nowrap ${
-                  activeTab === 'stake' 
-                    ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
-                    : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
-                }`}
-              >
-                ./stake
-              </button>
-              <button
-                onClick={() => router.push('/dev')}
-                className="flex-1 px-3 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] text-green-600 hover:text-green-400 hover:bg-green-950/20 border border-transparent hover:border-green-700/50 whitespace-nowrap"
-              >
-                ./dev
-              </button>
-              <button
-                onClick={() => setActiveTab('chat')}
-                className={`flex-1 px-3 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] whitespace-nowrap ${
-                  activeTab === 'chat' 
-                    ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
-                    : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
-                }`}
-              >
-                ./chat
-              </button>
-            </div>
-
-            {/* Web User Tab Content */}
-            <div className="mt-6">
-              {activeTab === 'join' && <WebappAuth />}
-              {activeTab === 'swap' && <SwapWidget />}
-              {activeTab === 'stake' && (
-                isDataLoading ? <TabContentSkeleton /> : <StakePanel stakingData={stakingData} />
-              )}
-              {activeTab === 'chat' && (
-                <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm text-center">
-                  <h2 className="text-responsive-lg font-bold mb-3 text-green-400 matrix-glow font-mono">
-                    {'>'} access_chat()
-                  </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div className="bg-blue-950/20 border border-blue-900/30 rounded-lg p-4">
-                      <p className="text-blue-400 font-mono text-sm mb-2">
-                        🔒 Token-Gated Chat
-                      </p>
-                      <p className="text-green-600 font-mono text-xs mb-3">
-                        Join the exclusive ABC community chat on Nounspace. $ABC token holders only.
-                      </p>
-                      <a
-                        href="https://www.nounspace.com/t/base/0x5c0872b790bb73e2b3a9778db6e7704095624b07/Profile"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block bg-green-900/50 hover:bg-green-800/60 text-green-400 font-mono px-4 py-2 rounded-lg border border-green-700/50 transition-all duration-300 matrix-button text-sm"
-                      >
-                        Enter Chat →
-                      </a>
-                    </div>
-                    
-                    <div className="bg-purple-950/20 border border-purple-900/30 rounded-lg p-4">
-                      <p className="text-purple-400 font-mono text-sm mb-2">
-                        📡 Follow Updates
-                      </p>
-                      <p className="text-green-600 font-mono text-xs mb-3">
-                        Stay updated with ABC DAO announcements and community discussions.
-                      </p>
-                      <a
-                        href="https://warpcast.com/abc-dao"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block bg-purple-900/50 hover:bg-purple-800/60 text-purple-400 font-mono px-4 py-2 rounded-lg border border-purple-700/50 transition-all duration-300 matrix-button text-sm"
-                      >
-                        @abc-dao →
-                      </a>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3 text-center">
-                    <p className="text-green-600/70 font-mono text-xs">
-                      For developer resources and Discord access, visit the{' '}
-                      <a href="/dev" className="text-green-400 hover:text-green-300 underline">
-                        developer dashboard
-                      </a>
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </>
-        )}
+          )}
+        </div>
+        
+        {/* Content Display Area */}
+        <div>
+          {activeTab === 'stake' && (
+            isDataLoading ? <TabContentSkeleton /> : <StakePanel stakingData={stakingData} />
+          )}
+          {activeTab === 'swap' && <SwapWidget />}
+          {activeTab === 'proposals' && membership.isMember && membership.hasGithub && (
+            <ClaimRewardsPanel />
+          )}
+          {activeTab === 'dev' && membership.isMember && (
+            membership.hasGithub ? (
+              <RepositoryManager />
+            ) : (
+              <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-4 text-center">
+                <p className="text-yellow-400 font-mono text-sm mb-3">
+                  🔗 Connect GitHub first to access dev tools
+                </p>
+                <GitHubLinkPanel />
+              </div>
+            )
+          )}
+        </div>
       </div>
       
       {/* Blog Section */}
@@ -733,7 +649,7 @@ function StakePanel({ stakingData }: { stakingData: ReturnType<typeof useStaking
           </div>
           <div className="mt-2 space-y-1">
             <p className="text-xs sm:text-sm text-green-600 font-mono">
-              Balance: {parseFloat(stakingData.tokenBalance).toFixed(2)} $ABC
+              Balance: {parseFloat(stakingData.tokenBalance).toFixed(0)} $ABC
             </p>
             <p className="text-xs text-green-700 font-mono">
               ≈ {stakingData.formatUSD(stakingData.tokenBalanceUSD)}
@@ -761,7 +677,7 @@ function StakePanel({ stakingData }: { stakingData: ReturnType<typeof useStaking
             <div className="flex justify-between">
               <span className="text-green-600">Staked</span>
               <div className="text-right">
-                <div className="text-green-400">{parseFloat(stakingData.stakedAmount).toFixed(2)} $ABC</div>
+                <div className="text-green-400">{parseFloat(stakingData.stakedAmount).toFixed(0)} $ABC</div>
                 <div className="text-green-700 text-xs">≈ {stakingData.formatUSD(stakingData.stakedValueUSD)}</div>
               </div>
             </div>

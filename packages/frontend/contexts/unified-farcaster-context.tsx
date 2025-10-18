@@ -74,11 +74,12 @@ export function UnifiedFarcasterProvider({ children }: { children: ReactNode }) 
         return false;
       }
 
-      // Get context from SDK with timeout
+      // Get context from SDK with timeout (shorter for dev)
+      const timeoutMs = process.env.NODE_ENV === 'development' ? 500 : 2000;
       const context = await Promise.race([
         sdk.context,
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('SDK context timeout')), 2000)
+          setTimeout(() => reject(new Error('SDK context timeout')), timeoutMs)
         )
       ]) as any;
       console.log('✅ SDK Context received:', context);
