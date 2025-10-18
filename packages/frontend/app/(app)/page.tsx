@@ -6,6 +6,7 @@ import { GitHubLinkPanel } from '@/components/github-link';
 import { SwapWidget } from '@/components/swap-widget';
 import { ClaimRewardsPanel } from '@/components/claim-rewards';
 import { RepositoryManager } from '@/components/repository-manager';
+import { TestClaimDebug } from '@/components/test-claim-debug';
 import { TokenSupplyMini } from '@/components/token-supply-chart';
 import { BlogSection } from '@/components/blog-section';
 import { MiniAppPrompt } from '@/components/miniapp-prompt';
@@ -33,8 +34,8 @@ export default function Home() {
   const treasuryData = useTreasury();
   const { stats, loading: statsLoading } = useStats();
   
-  // Check if core data is still loading
-  const isDataLoading = !stakingData.tokenBalance || !treasuryData.treasuryBalance || statsLoading;
+  // Check if core data is still loading (fix treasury balance check)
+  const isDataLoading = !stakingData.tokenBalance || treasuryData.isLoading || statsLoading;
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
@@ -422,7 +423,10 @@ export default function Home() {
                 (!membership.isMember || (membership.isMember && !membership.hasGithub)) ? (
                   <GitHubLinkPanel />
                 ) : membership.isMember && membership.hasGithub ? (
-                  <ClaimRewardsPanel />
+                  <div className="space-y-4">
+                    <TestClaimDebug />
+                    <ClaimRewardsPanel />
+                  </div>
                 ) : null
               )}
               {activeTab === 'dev' && (

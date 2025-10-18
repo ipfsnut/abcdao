@@ -21,7 +21,7 @@ export default function TreasuryPage() {
   const { transactions, loading: transactionsLoading, formatTransactionHash, formatTimestamp, getTransactionColor, getTransactionIcon } = useTreasuryTransactions();
   const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'allocation'>('overview');
 
-  const isLoading = !treasuryData.treasuryBalance || !stakingData.totalRewardsDistributed || statsLoading || balancesLoading;
+  const isLoading = treasuryData.isLoading || !stakingData.totalRewardsDistributed || statsLoading || balancesLoading;
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
