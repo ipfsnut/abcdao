@@ -6,7 +6,11 @@ import { GitHubLinkPanel } from '@/components/github-link';
 import { SwapWidget } from '@/components/swap-widget';
 import { ClaimRewardsPanel } from '@/components/claim-rewards';
 import { RepositoryManager } from '@/components/repository-manager';
-import { TestClaimDebug } from '../../components/test-claim-debug';
+import dynamic from 'next/dynamic';
+
+const TestClaimDebug = dynamic(() => import('@/components/test-claim-debug').then(mod => ({ default: mod.TestClaimDebug })), {
+  ssr: false
+});
 import { TokenSupplyMini } from '@/components/token-supply-chart';
 import { BlogSection } from '@/components/blog-section';
 import { MiniAppPrompt } from '@/components/miniapp-prompt';
@@ -20,13 +24,13 @@ import { useTreasury } from '@/hooks/useTreasury';
 import { useStats } from '@/hooks/useStats';
 import { useMembership } from '@/hooks/useMembership';
 import { Toaster } from 'sonner';
-import { StatsSkeleton, TabContentSkeleton, RewardsSkeleton } from '@/components/skeleton-loader';
+import { StatsSkeleton, TabContentSkeleton } from '@/components/skeleton-loader';
 import { CollapsibleStatCard, TreasuryRewardsCard } from '@/components/collapsible-stat-card';
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const { isInMiniApp } = useFarcaster();
-  const { isConnected, address } = useAccount();
+  const { isConnected } = useAccount();
   const membership = useMembership();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'stake' | 'dev' | 'proposals' | 'chat' | 'swap' | 'join'>(isInMiniApp ? 'stake' : 'join');
