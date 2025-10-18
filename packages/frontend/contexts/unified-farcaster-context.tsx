@@ -68,14 +68,20 @@ export function UnifiedFarcasterProvider({ children }: { children: ReactNode }) 
     try {
       console.log('🔍 Checking for Farcaster miniapp context...');
       
+      // Skip Farcaster SDK entirely in development mode
+      if (process.env.NODE_ENV === 'development') {
+        console.log('💻 Development mode: Skipping Farcaster SDK, using direct wallet connection');
+        return false;
+      }
+      
       // Check if SDK is available
       if (!sdk) {
         console.log('❌ SDK not available');
         return false;
       }
 
-      // Get context from SDK with timeout (shorter for dev)
-      const timeoutMs = process.env.NODE_ENV === 'development' ? 500 : 2000;
+      // Get context from SDK with timeout
+      const timeoutMs = 2000;
       const context = await Promise.race([
         sdk.context,
         new Promise((_, reject) => 

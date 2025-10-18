@@ -29,6 +29,9 @@ import wethUnwrapsRoutes from './routes/weth-unwraps.js';
 import universalAuthRoutes from './routes/universal-auth.js';
 import userActionsRoutes from './routes/user-actions.js';
 import treasuryRoutes from './routes/treasury.js';
+import stakingRoutes from './routes/staking.js';
+import usersCommitsRoutes from './routes/users-commits.js';
+import blockchainEventsRoutes from './routes/blockchain-events.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
@@ -44,6 +47,9 @@ import discordBot from './services/discord-bot.js';
 import { RealtimeBroadcastManager } from './services/realtime-broadcast.js';
 import { startVerificationService } from './services/blockchain-verification.js';
 import { treasuryDataManager } from './services/treasury-data-manager.js';
+import { stakingDataManager } from './services/staking-data-manager.js';
+import { userCommitDataManager } from './services/user-commit-data-manager.js';
+import { blockchainEventsManager } from './services/blockchain-events-manager.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -143,9 +149,32 @@ app.get('/api', (req, res) => {
         'POST /api/webhooks/github': 'GitHub webhook handler'
       },
       'treasury': {
-        'GET /api/distributions': 'ETH distributions',
-        'GET /api/clanker-claims': 'Clanker claims history',
-        'GET /api/weth-unwraps': 'WETH unwrap history'
+        'GET /api/treasury/current': 'Current treasury snapshot',
+        'GET /api/treasury/history': 'Treasury historical data',
+        'GET /api/treasury/prices': 'Token prices',
+        'GET /api/treasury/stats': 'Treasury statistics'
+      },
+      'staking': {
+        'GET /api/staking/overview': 'Current staking metrics and APY',
+        'GET /api/staking/history': 'Historical staking data',
+        'GET /api/staking/position/:wallet': 'User staking position',
+        'GET /api/staking/apy/historical': 'APY calculation history',
+        'GET /api/staking/leaderboard': 'Top stakers'
+      },
+      'users-commits': {
+        'GET /api/users-commits/profile/:identifier': 'User profile by wallet/FID/username',
+        'GET /api/users-commits/leaderboard': 'User leaderboard',
+        'GET /api/users-commits/commits/recent': 'Recent commits across all users',
+        'GET /api/users-commits/commits/user/:userId': 'Commits for specific user',
+        'GET /api/users-commits/stats': 'System-wide user and commit statistics',
+        'POST /api/users-commits/webhook/github': 'GitHub webhook for systematic processing'
+      },
+      'blockchain-events': {
+        'GET /api/blockchain-events/events/:contract': 'Recent events for contract',
+        'GET /api/blockchain-events/state/:contract': 'Current contract state',
+        'GET /api/blockchain-events/processing-status': 'Event processing status',
+        'GET /api/blockchain-events/events/staking/recent': 'Recent staking events',
+        'GET /api/blockchain-events/events/rewards/recent': 'Recent rewards events'
       }
     },
     websocket: {
@@ -174,6 +203,9 @@ app.use('/api/weth-unwraps', wethUnwrapsRoutes);
 app.use('/api/universal-auth', universalAuthRoutes);
 app.use('/api/user-actions', userActionsRoutes);
 app.use('/api/treasury', treasuryRoutes);
+app.use('/api/staking', stakingRoutes);
+app.use('/api/users-commits', usersCommitsRoutes);
+app.use('/api/blockchain-events', blockchainEventsRoutes);
 
 // Custom cast endpoint (requires admin key for security)
 app.post('/api/cast/custom', async (req, res) => {
@@ -470,6 +502,33 @@ async function initializeBackgroundServices(server) {
     } catch (treasuryError) {
       console.warn('⚠️  Treasury Data Manager initialization failed:', treasuryError.message);
     }
+
+    // Initialize Staking Data Manager
+    try {
+      await stakingDataManager.initialize();
+      console.log('✅ Staking Data Manager initialized');
+      global.stakingDataManager = stakingDataManager;
+    } catch (stakingError) {
+      console.warn('⚠️  Staking Data Manager initialization failed:', stakingError.message);
+    }
+
+    // Initialize User/Commit Data Manager
+    try {
+      await userCommitDataManager.initialize();
+      console.log('✅ User/Commit Data Manager initialized');
+      global.userCommitDataManager = userCommitDataManager;
+    } catch (userCommitError) {
+      console.warn('⚠️  User/Commit Data Manager initialization failed:', userCommitError.message);
+    }
+
+    // Initialize Blockchain Events Manager
+    try {
+      await blockchainEventsManager.initialize();
+      console.log('✅ Blockchain Events Manager initialized');
+      global.blockchainEventsManager = blockchainEventsManager;
+    } catch (blockchainError) {
+      console.warn('⚠️  Blockchain Events Manager initialization failed:', blockchainError.message);
+    }
     
     console.log('✅ All background services initialized successfully');
     
@@ -517,6 +576,21 @@ process.on('SIGINT', () => {
   // Treasury Data Manager cleanup (intervals are cleared automatically on process exit)
   if (global.treasuryDataManager) {
     console.log('👋 Treasury Data Manager shutdown');
+  }
+  
+  // Staking Data Manager cleanup (intervals are cleared automatically on process exit)
+  if (global.stakingDataManager) {
+    console.log('👋 Staking Data Manager shutdown');
+  }
+  
+  // User/Commit Data Manager cleanup
+  if (global.userCommitDataManager) {
+    console.log('👋 User/Commit Data Manager shutdown');
+  }
+  
+  // Blockchain Events Manager cleanup
+  if (global.blockchainEventsManager) {
+    console.log('👋 Blockchain Events Manager shutdown');
   }
   
   // WETH unwrapping now handled by Clanker rewards cron

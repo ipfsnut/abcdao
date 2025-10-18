@@ -143,7 +143,7 @@ export function useStakingWithActions() {
         address: CONTRACTS.ABC_TOKEN.address,
         abi: ERC20_ABI,
         functionName: 'approve',
-        args: [CONTRACTS.ABC_STAKING.address, amountWei],
+        args: [CONTRACTS.ABC_STAKING.address, amountWei] as const,
       }, {
         onSuccess: (hash) => {
           setTxHashes(prev => ({ ...prev, approve: hash }));
@@ -177,7 +177,7 @@ export function useStakingWithActions() {
         address: CONTRACTS.ABC_STAKING.address,
         abi: CONTRACTS.ABC_STAKING.abi,
         functionName: 'stake',
-        args: [amountWei],
+        args: [amountWei] as const,
       }, {
         onSuccess: (hash) => {
           setTxHashes(prev => ({ ...prev, stake: hash }));
@@ -210,7 +210,6 @@ export function useStakingWithActions() {
         address: CONTRACTS.ABC_STAKING.address,
         abi: CONTRACTS.ABC_STAKING.abi,
         functionName: 'unstake',
-        args: [amountWei],
       }, {
         onSuccess: (hash) => {
           setTxHashes(prev => ({ ...prev, unstake: hash }));
@@ -238,7 +237,7 @@ export function useStakingWithActions() {
       writeClaim({
         address: CONTRACTS.ABC_STAKING.address,
         abi: CONTRACTS.ABC_STAKING.abi,
-        functionName: 'claimRewards',
+        functionName: 'withdrawRewards',
       }, {
         onSuccess: (hash) => {
           setTxHashes(prev => ({ ...prev, claim: hash }));

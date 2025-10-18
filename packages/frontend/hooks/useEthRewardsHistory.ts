@@ -72,7 +72,7 @@ export function useEthRewardsHistory() {
     
     // Get current week's cumulative APY (all distributions in the same week have the same APY)
     const latestDistribution = distributions[0];
-    return latestDistribution.weeklyAPY || latestDistribution.apy || 0;
+    return latestDistribution.apy || 0;
   };
 
   const getAverageAPY = (weeks: number = 4) => {

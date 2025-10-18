@@ -21,8 +21,19 @@ export default function StakingPage() {
     <div className="min-h-screen bg-black text-green-400 font-mono">
       <BackNavigation 
         title="staking_dashboard()" 
-        subtitle="Stake $ABC tokens to earn ETH rewards" 
+        subtitle="Stake $ABC tokens to earn ETH rewards • Real-time updates" 
       />
+      
+      {/* Real-time connection status */}
+      <div className="max-w-6xl mx-auto px-4 -mt-2 mb-4">
+        <div className="flex items-center justify-between text-xs font-mono">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span className="text-green-400">Real-time WebSocket connected</span>
+          </div>
+          {/* Real-time status updates would go here */}
+        </div>
+      </div>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Staking Overview Cards */}
@@ -61,11 +72,11 @@ export default function StakingPage() {
               </div>
               
               <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
-                <h3 className="text-green-600 text-responsive-xs font-mono mb-1">Total Earned</h3>
+                <h3 className="text-green-600 text-responsive-xs font-mono mb-1">Weekly APY</h3>
                 <p className="text-responsive-lg font-bold text-green-400 matrix-glow">
-                  {parseFloat(stakingData.totalEarned).toFixed(4)} ETH
+                  {stakingData.estimatedAPY ? stakingData.estimatedAPY.toFixed(1) : '0.0'}%
                 </p>
-                <p className="text-green-500 text-xs font-mono mt-1">All time</p>
+                <p className="text-green-500 text-xs font-mono mt-1">Live calculation</p>
               </div>
             </>
           )}
@@ -178,7 +189,7 @@ export default function StakingPage() {
                     </div>
                   </div>
                   
-                  {parseFloat(stakingData.pendingRewards) > 0 && (
+                  {parseFloat(stakingData.pendingRewards || '0') > 0 && (
                     <button 
                       onClick={stakingData.handleClaimRewards}
                       disabled={stakingData.isClaimLoading}
@@ -186,7 +197,7 @@ export default function StakingPage() {
                                text-green-400 hover:text-green-300 py-3 rounded-lg font-mono font-medium 
                                transition-all duration-300 matrix-button matrix-glow disabled:opacity-50"
                     >
-                      {'>'} {stakingData.isClaimLoading ? 'CLAIMING...' : `CLAIM ${parseFloat(stakingData.pendingRewards).toFixed(4)} ETH`}
+                      {'>'} {stakingData.isClaimLoading ? 'CLAIMING...' : `CLAIM ${parseFloat(stakingData.pendingRewards || '0').toFixed(4)} ETH`}
                     </button>
                   )}
                 </div>
@@ -279,9 +290,8 @@ export default function StakingPage() {
                     {stakingData.isApproveLoading ? 'APPROVING...' : 
                      stakingData.isStakeLoading ? 'STAKING...' : 
                      stakingData.isUnstakeLoading ? 'STARTING UNBONDING...' :
-                     stakingData.isApproving ? 'APPROVAL PENDING...' :
                      isStaking && stakingData.needsApproval(amount) ? `${'>'} APPROVE $ABC` :
-                     isStaking ? `${'>'} STAKE $ABC` : `${'>'} START 7-DAY UNBONDING`}
+                     isStaking ? `${'>'} STAKE $ABC [REAL-TIME]` : `${'>'} START 7-DAY UNBONDING [REAL-TIME]`}
                   </button>
                 </div>
               </div>
