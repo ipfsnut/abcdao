@@ -5,6 +5,7 @@ import { FarcasterAuth } from '@/components/farcaster-auth';
 import { GitHubLinkPanel } from '@/components/github-link';
 import { SwapWidget } from '@/components/swap-widget';
 import { ClaimRewardsPanel } from '@/components/claim-rewards';
+import { RepositoryManager } from '@/components/repository-manager';
 import { TokenSupplyMini } from '@/components/token-supply-chart';
 import { BlogSection } from '@/components/blog-section';
 import { MiniAppPrompt } from '@/components/miniapp-prompt';
@@ -368,8 +369,12 @@ export default function Home() {
               {/* Show dev tab only for members */}
               {membership.isMember && (
                 <button
-                  onClick={() => router.push('/dev')}
-                  className="px-4 py-3 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-responsive-sm min-h-[44px] text-green-600 hover:text-green-400 hover:bg-green-950/20 border border-transparent hover:border-green-700/50"
+                  onClick={() => setActiveTab('dev')}
+                  className={`px-4 py-3 sm:px-4 rounded-md font-medium transition-all duration-300 whitespace-nowrap text-responsive-sm min-h-[44px] ${
+                    activeTab === 'dev' 
+                      ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50' 
+                      : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+                  }`}
                 >
                   ./dev
                 </button>
@@ -419,6 +424,58 @@ export default function Home() {
                 ) : membership.isMember && membership.hasGithub ? (
                   <ClaimRewardsPanel />
                 ) : null
+              )}
+              {activeTab === 'dev' && (
+                <div className="space-y-4">
+                  {/* Repository Manager - Embedded in Mini-App */}
+                  {membership.hasGithub ? (
+                    <RepositoryManager />
+                  ) : (
+                    <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+                      <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
+                        {'>'} repository_manager()
+                      </h2>
+                      <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-4 text-center">
+                        <p className="text-yellow-400 font-mono text-sm mb-3">
+                          🔗 Connect GitHub first to manage repositories
+                        </p>
+                        <button
+                          onClick={() => setActiveTab('proposals')}
+                          className="bg-green-900/50 hover:bg-green-800/60 text-green-400 font-mono px-4 py-2 rounded-lg border border-green-700/50 transition-all duration-300 matrix-button text-sm"
+                        >
+                          Connect GitHub →
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Quick Dev Links */}
+                  <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+                    <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
+                      {'>'} quick_access()
+                    </h2>
+                    <div className="grid grid-cols-2 gap-3">
+                      <a
+                        href="https://docs.abc.epicdylan.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-blue-950/20 border border-blue-900/30 rounded-lg p-3 text-center hover:bg-blue-900/30 transition-all duration-300"
+                      >
+                        <p className="text-blue-400 font-mono text-xs mb-1">📚 Docs</p>
+                        <p className="text-green-600 font-mono text-xs">API Reference</p>
+                      </a>
+                      <a
+                        href="https://discord.gg/HK62WQWJ"
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="bg-indigo-950/20 border border-indigo-900/30 rounded-lg p-3 text-center hover:bg-indigo-900/30 transition-all duration-300"
+                      >
+                        <p className="text-indigo-400 font-mono text-xs mb-1">💬 Discord</p>
+                        <p className="text-green-600 font-mono text-xs">Dev Chat</p>
+                      </a>
+                    </div>
+                  </div>
+                </div>
               )}
               {activeTab === 'chat' && (
                 <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm text-center">
