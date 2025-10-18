@@ -9,7 +9,28 @@ router.get('/test', (req, res) => {
   res.json({ status: 'eth-distributions routes are working', timestamp: new Date().toISOString() });
 });
 
-// Get ETH distribution history
+// Helper function to get real-time $ABC price
+async function fetchABCPrice() {
+  try {
+    const response = await fetch('https://api.dexscreener.com/latest/dex/tokens/0x5c0872b790bb73e2b3a9778db6e7704095624b07');
+    if (response.ok) {
+      const data = await response.json();
+      if (data.pairs && data.pairs.length > 0) {
+        const bestPair = data.pairs.reduce((best, current) => 
+          (current.volume?.h24 || 0) > (best.volume?.h24 || 0) ? current : best
+        );
+        if (bestPair && bestPair.priceUsd) {
+          return parseFloat(bestPair.priceUsd);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to fetch real $ABC price:', e);
+  }
+  return 0.0000123; // Fallback
+}
+
+// Get ETH distribution history with cumulative weekly APY calculation
 router.get('/history', async (req, res) => {
   try {
     const pool = getPool();
@@ -32,19 +53,82 @@ router.get('/history', async (req, res) => {
       LIMIT 50
     `);
 
-    const distributions = result.rows.map(row => ({
+    // Get current $ABC price for APY recalculation
+    const abcPrice = await fetchABCPrice();
+    console.log('Using $ABC price for backend APY calculation:', abcPrice);
+
+    const rawDistributions = result.rows.map(row => ({
       id: row.transaction_hash,
       timestamp: new Date(row.timestamp).getTime(),
       ethAmount: parseFloat(row.eth_amount),
       totalStaked: parseFloat(row.total_staked_at_time),
       stakersCount: row.stakers_count,
-      apy: parseFloat(row.calculated_apy || 0),
+      apy: 0, // Will recalculate with cumulative logic
       ethPrice: parseFloat(row.eth_price_usd),
       transactionHash: row.transaction_hash,
       blockNumber: row.block_number
     }));
 
-    res.json(distributions);
+    // Group distributions by week and calculate cumulative weekly APY
+    const weeklyGroups = new Map();
+
+    // Group by week (Sunday 00:00 UTC cycles)
+    for (const dist of rawDistributions) {
+      const date = new Date(dist.timestamp);
+      // Get Sunday of the week (week starts Sunday 00:00 UTC)
+      const weekStart = new Date(date);
+      weekStart.setUTCDate(date.getUTCDate() - date.getUTCDay()); // Go back to Sunday
+      weekStart.setUTCHours(0, 0, 0, 0); // Set to 00:00 UTC
+      
+      const weekKey = weekStart.toISOString().split('T')[0]; // YYYY-MM-DD format
+      
+      if (!weeklyGroups.has(weekKey)) {
+        weeklyGroups.set(weekKey, {
+          distributions: [],
+          totalETH: 0,
+          totalETHUSD: 0,
+          totalStaked: dist.totalStaked,
+          weekStart: weekStart.getTime()
+        });
+      }
+      
+      const week = weeklyGroups.get(weekKey);
+      week.distributions.push(dist);
+      week.totalETH += dist.ethAmount;
+      week.totalETHUSD += (dist.ethAmount * dist.ethPrice);
+    }
+
+    // Calculate cumulative APY for each distribution within each week
+    for (const [weekKey, week] of weeklyGroups) {
+      // Sort distributions within the week by timestamp (oldest first)
+      week.distributions.sort((a, b) => a.timestamp - b.timestamp);
+      
+      const stakedABCValueUSD = week.totalStaked * abcPrice;
+      let cumulativeETH = 0;
+      let cumulativeETHUSD = 0;
+      
+      // Calculate cumulative APY for each distribution
+      for (const dist of week.distributions) {
+        // Add this distribution to the cumulative totals
+        cumulativeETH += dist.ethAmount;
+        cumulativeETHUSD += (dist.ethAmount * dist.ethPrice);
+        
+        // Calculate APY based on cumulative ETH received so far this week
+        const weeklyReturn = cumulativeETHUSD / stakedABCValueUSD;
+        const cumulativeAPY = weeklyReturn * 52 * 100;
+        
+        // Assign the cumulative APY to this distribution
+        dist.apy = cumulativeAPY;
+        dist.weeklyTotalETH = cumulativeETH;
+        dist.weeklyAPY = cumulativeAPY;
+        dist.isPartialWeek = cumulativeETH < week.totalETH;
+      }
+    }
+
+    // Sort back to newest first for response
+    rawDistributions.sort((a, b) => b.timestamp - a.timestamp);
+
+    res.json(rawDistributions);
 
   } catch (error) {
     console.error('Error fetching ETH distribution history:', error);
@@ -83,9 +167,11 @@ router.post('/record', async (req, res) => {
       console.warn('Could not fetch ETH price, using fallback');
     }
 
-    // Calculate APY
+    // Get real-time $ABC price and calculate APY
+    const abcPrice = await fetchABCPrice();
+    console.log('Recording distribution with $ABC price:', abcPrice);
+    
     const weeklyEthPerABC = ethAmount / (totalStaked || 711483264);
-    const abcPrice = 0.0000123; // Estimate
     const weeklyReturn = (weeklyEthPerABC * ethPrice) / abcPrice;
     const calculatedAPY = weeklyReturn * 52 * 100;
 

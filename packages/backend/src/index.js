@@ -27,6 +27,7 @@ import ethDistributionsRoutes from './routes/eth-distributions.js';
 import clankerClaimsRoutes from './routes/clanker-claims.js';
 import wethUnwrapsRoutes from './routes/weth-unwraps.js';
 import universalAuthRoutes from './routes/universal-auth.js';
+import userActionsRoutes from './routes/user-actions.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
@@ -39,6 +40,8 @@ import { EthDistributionCron } from './jobs/eth-distribution-cron.js';
 import { ClankerRewardsCron } from './jobs/clanker-rewards-cron.js';
 // Removed: WethUnwrapCron now integrated into ClankerRewardsCron
 import discordBot from './services/discord-bot.js';
+import { RealtimeBroadcastManager } from './services/realtime-broadcast.js';
+import { startVerificationService } from './services/blockchain-verification.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -99,6 +102,56 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API routes index
+app.get('/api', (req, res) => {
+  res.json({
+    message: 'ABC DAO API - User-Triggered Data Architecture',
+    version: '2.0.0',
+    features: ['Real-time WebSocket updates', 'Optimistic user actions', 'Background blockchain verification'],
+    endpoints: {
+      // New user-triggered architecture
+      'user-actions': {
+        'POST /api/user-actions/process': 'Process user action (stake, unstake, commit)',
+        'GET /api/user-actions/staking/overview': 'Get real-time staking metrics',
+        'GET /api/user-actions/staking/position/:wallet': 'Get user staking position',
+        'GET /api/user-actions/history/:wallet': 'Get user action history',
+        'GET /api/user-actions/commits/:wallet': 'Get user commits',
+        'POST /api/user-actions/staking': 'Direct staking action',
+        'POST /api/user-actions/commit': 'Direct commit action'
+      },
+      // Legacy endpoints (still active)
+      'users': {
+        'GET /api/users': 'List users',
+        'GET /api/users/:fid': 'Get user by FID', 
+        'POST /api/users/:fid/process-payment': 'Process membership payment'
+      },
+      'rewards': {
+        'GET /api/rewards': 'Get rewards data',
+        'POST /api/rewards/process': 'Process rewards'
+      },
+      'auth': {
+        'POST /api/auth/github': 'GitHub OAuth',
+        'POST /api/auth/transaction': 'Transaction validation'
+      },
+      'admin': {
+        'GET /api/admin/stats': 'Admin statistics',
+        'POST /api/admin/payment-recovery': 'Payment recovery'
+      },
+      'webhooks': {
+        'POST /api/webhooks/github': 'GitHub webhook handler'
+      },
+      'treasury': {
+        'GET /api/distributions': 'ETH distributions',
+        'GET /api/clanker-claims': 'Clanker claims history',
+        'GET /api/weth-unwraps': 'WETH unwrap history'
+      }
+    },
+    websocket: {
+      'ws://localhost:3001/realtime': 'Real-time updates (authenticate with userWallet)'
+    }
+  });
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/webhooks', webhookRoutes);
@@ -117,6 +170,7 @@ app.use('/api/distributions', ethDistributionsRoutes);
 app.use('/api/clanker-claims', clankerClaimsRoutes);
 app.use('/api/weth-unwraps', wethUnwrapsRoutes);
 app.use('/api/universal-auth', universalAuthRoutes);
+app.use('/api/user-actions', userActionsRoutes);
 
 // Custom cast endpoint (requires admin key for security)
 app.post('/api/cast/custom', async (req, res) => {
@@ -197,10 +251,15 @@ app.use('*', (req, res) => {
 // Start server first, then initialize background services
 async function startServer() {
   try {
-    // Start Express server FIRST for fast health checks
-    app.listen(PORT, '0.0.0.0', () => {
+    // Create HTTP server for WebSocket support
+    const { createServer } = await import('http');
+    const server = createServer(app);
+    
+    // Start server FIRST for fast health checks
+    server.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 ABC DAO Backend running on port ${PORT}`);
       console.log(`📊 Health check: http://0.0.0.0:${PORT}/health`);
+      console.log(`🔌 WebSocket endpoint: ws://0.0.0.0:${PORT}/realtime`);
       console.log('⏱️  Initializing background services...');
     });
     
@@ -208,7 +267,7 @@ async function startServer() {
     setTimeout(async () => {
       try {
         console.log('🔄 Starting background services initialization...');
-        await initializeBackgroundServices();
+        await initializeBackgroundServices(server);
       } catch (error) {
         console.warn('⚠️  Background services initialization failed:', error.message);
         console.warn('🏥 Server remains healthy for API requests');
@@ -222,7 +281,7 @@ async function startServer() {
 }
 
 // Separate function for background service initialization
-async function initializeBackgroundServices() {
+async function initializeBackgroundServices(server) {
   console.log('🔄 Initializing background services...');
   
   // Helper function to run operations with timeout
@@ -359,6 +418,29 @@ async function initializeBackgroundServices() {
     // WETH unwrapping now integrated into Clanker rewards cron job
     // No standalone WETH unwrap cron needed - it's triggered after successful claims
 
+    // Initialize Real-time WebSocket Broadcasting
+    try {
+      const realtimeBroadcaster = RealtimeBroadcastManager.getInstance();
+      realtimeBroadcaster.initialize(server);
+      console.log('✅ Real-time WebSocket broadcasting initialized');
+      global.realtimeBroadcaster = realtimeBroadcaster;
+    } catch (realtimeError) {
+      console.warn('⚠️  Real-time broadcasting setup failed:', realtimeError.message);
+    }
+
+    // Start Blockchain Verification Service
+    if (process.env.BASE_RPC_URL) {
+      try {
+        const verificationService = startVerificationService();
+        console.log('✅ Blockchain verification service started');
+        global.verificationService = verificationService;
+      } catch (verificationError) {
+        console.warn('⚠️  Blockchain verification setup failed:', verificationError.message);
+      }
+    } else {
+      console.warn('⚠️  BASE_RPC_URL not configured, skipping blockchain verification');
+    }
+
     // Initialize Discord bot completely asynchronously (non-blocking)
     if (process.env.DISCORD_BOT_TOKEN) {
       // Start Discord bot initialization in background without waiting
@@ -413,6 +495,11 @@ process.on('SIGINT', () => {
   // Stop Clanker rewards cron
   if (global.clankerRewardsCron) {
     global.clankerRewardsCron.stop();
+  }
+  
+  // Stop verification service
+  if (global.verificationService) {
+    global.verificationService.stop();
   }
   
   // WETH unwrapping now handled by Clanker rewards cron
