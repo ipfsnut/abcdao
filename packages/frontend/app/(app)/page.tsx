@@ -6,7 +6,7 @@ import { GitHubLinkPanel } from '@/components/github-link';
 import { SwapWidget } from '@/components/swap-widget';
 import { ClaimRewardsPanel } from '@/components/claim-rewards';
 import { RepositoryManager } from '@/components/repository-manager';
-import { TestClaimDebug } from '@/components/test-claim-debug';
+import { TestClaimDebug } from '../../components/test-claim-debug';
 import { TokenSupplyMini } from '@/components/token-supply-chart';
 import { BlogSection } from '@/components/blog-section';
 import { MiniAppPrompt } from '@/components/miniapp-prompt';

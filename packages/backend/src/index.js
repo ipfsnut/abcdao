@@ -25,6 +25,7 @@ import paymentRecoveryRoutes from './routes/payment-recovery.js';
 import githubVerificationRoutes from './routes/github-verification.js';
 import ethDistributionsRoutes from './routes/eth-distributions.js';
 import clankerClaimsRoutes from './routes/clanker-claims.js';
+import wethUnwrapsRoutes from './routes/weth-unwraps.js';
 import universalAuthRoutes from './routes/universal-auth.js';
 
 // Import services
@@ -36,6 +37,7 @@ import { PaymentMonitor } from './services/payment-monitor.js';
 import { PaymentRecoveryCron } from './jobs/payment-recovery-cron.js';
 import { EthDistributionCron } from './jobs/eth-distribution-cron.js';
 import { ClankerRewardsCron } from './jobs/clanker-rewards-cron.js';
+import { WethUnwrapCron } from './jobs/weth-unwrap-cron.js';
 import discordBot from './services/discord-bot.js';
 
 const app = express();
@@ -113,6 +115,7 @@ app.use('/api/admin', paymentRecoveryRoutes);
 app.use('/api/github', githubVerificationRoutes);
 app.use('/api/distributions', ethDistributionsRoutes);
 app.use('/api/clanker-claims', clankerClaimsRoutes);
+app.use('/api/weth-unwraps', wethUnwrapsRoutes);
 app.use('/api/universal-auth', universalAuthRoutes);
 
 // Custom cast endpoint (requires admin key for security)
@@ -353,6 +356,22 @@ async function initializeBackgroundServices() {
       console.warn('⚠️  Bot wallet not configured, skipping Clanker rewards cron');
     }
 
+    // Start WETH unwrap cron job
+    if (process.env.BOT_WALLET_PRIVATE_KEY) {
+      try {
+        const wethUnwrapCron = new WethUnwrapCron();
+        wethUnwrapCron.start();
+        console.log('✅ WETH unwrap cron job started (runs every 2 hours)');
+        
+        // Store reference for graceful shutdown
+        global.wethUnwrapCron = wethUnwrapCron;
+      } catch (wethCronError) {
+        console.warn('⚠️  WETH unwrap cron setup failed:', wethCronError.message);
+      }
+    } else {
+      console.warn('⚠️  Bot wallet not configured, skipping WETH unwrap cron');
+    }
+
     // Initialize Discord bot completely asynchronously (non-blocking)
     if (process.env.DISCORD_BOT_TOKEN) {
       // Start Discord bot initialization in background without waiting
@@ -407,6 +426,11 @@ process.on('SIGINT', () => {
   // Stop Clanker rewards cron
   if (global.clankerRewardsCron) {
     global.clankerRewardsCron.stop();
+  }
+  
+  // Stop WETH unwrap cron
+  if (global.wethUnwrapCron) {
+    global.wethUnwrapCron.stop();
   }
   
   process.exit(0);

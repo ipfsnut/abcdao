@@ -12,9 +12,10 @@ const nextConfig: NextConfig = {
   },
   // Disable build cache that causes issues with Cloudflare Pages
   experimental: {
-    webpackBuildWorker: false
+    webpackBuildWorker: false,
+    optimizePackageImports: ['@rainbow-me/rainbowkit', 'wagmi', 'viem']
   },
-  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+  webpack: (config) => {
     // Disable webpack cache that creates huge files
     config.cache = false;
     return config;
