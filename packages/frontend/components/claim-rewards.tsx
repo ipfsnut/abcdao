@@ -36,7 +36,7 @@ interface UserRewardsData {
 }
 
 export function ClaimRewardsPanel() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, connector } = useAccount();
   const { connect, connectors, isPending: isConnectPending } = useConnect();
   const { user: profile, isInMiniApp } = useFarcaster();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -79,6 +79,20 @@ export function ClaimRewardsPanel() {
     }
   });
 
+  // Auto-connect wallet for Farcaster miniapp users
+  useEffect(() => {
+    if (isInMiniApp && profile && !isConnected && connectors.length > 0) {
+      console.log('🔗 Auto-connecting Farcaster wallet for miniapp user...');
+      const farcasterConnector = connectors.find(connector => 
+        connector.name.toLowerCase().includes('farcaster') || 
+        connector.id.includes('farcaster')
+      );
+      if (farcasterConnector) {
+        connect({ connector: farcasterConnector });
+      }
+    }
+  }, [isInMiniApp, profile, isConnected, connectors, connect]);
+
   // Fetch user rewards from API
   useEffect(() => {
     if (profile?.fid) {
@@ -114,6 +128,10 @@ export function ClaimRewardsPanel() {
     }
   }, [claimSuccess, refetchClaimable, refetchRewardInfo]);
 
+  // Enhanced wallet connection detection for Farcaster miniapp
+  const isWalletConnected = isConnected || (isInMiniApp && profile && address);
+  const effectiveAddress = address;
+  
   const hasClaimableRewards = claimableAmount && claimableAmount > BigInt(0);
   const claimableInEther = claimableAmount ? formatEther(claimableAmount) : '0';
   
@@ -157,12 +175,38 @@ export function ClaimRewardsPanel() {
         {/* Wallet Connection Status for Mini-App Debug */}
         {isInMiniApp && (
           <div className="bg-gray-950/20 border border-gray-700/30 rounded-lg p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400 font-mono text-xs">Wallet Status:</span>
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'} animate-pulse`} />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400 font-mono text-xs">Wallet Status:</span>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${isWalletConnected ? 'bg-green-400' : 'bg-red-400'} animate-pulse`} />
+                  <span className="text-gray-300 font-mono text-xs">
+                    {isWalletConnected ? `Connected: ${effectiveAddress?.slice(0, 6)}...${effectiveAddress?.slice(-4)}` : 'Not Connected'}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400 font-mono text-xs">Connector:</span>
                 <span className="text-gray-300 font-mono text-xs">
-                  {isConnected ? `Connected: ${address?.slice(0, 6)}...${address?.slice(-4)}` : 'Not Connected'}
+                  {connector?.name || 'None'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400 font-mono text-xs">FC User:</span>
+                <span className="text-gray-300 font-mono text-xs">
+                  {profile ? `${profile.username} (${profile.fid})` : 'None'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400 font-mono text-xs">Connectors:</span>
+                <span className="text-gray-300 font-mono text-xs">
+                  {connectors.map(c => c.name).join(', ') || 'None'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400 font-mono text-xs">Connect Pending:</span>
+                <span className="text-gray-300 font-mono text-xs">
+                  {isConnectPending ? 'Yes' : 'No'}
                 </span>
               </div>
             </div>
@@ -229,7 +273,7 @@ export function ClaimRewardsPanel() {
             </div>
 
             {/* Claim Button */}
-            {hasClaimableRewards && address ? (
+            {hasClaimableRewards && isWalletConnected && effectiveAddress ? (
               <button
                 onClick={() => claimRewards?.({
                   address: CONTRACTS.ABC_REWARDS.address,
