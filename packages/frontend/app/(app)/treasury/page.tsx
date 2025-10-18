@@ -21,6 +21,15 @@ export default function TreasuryPage() {
   const { transactions, loading: transactionsLoading, formatTransactionHash, formatTimestamp, getTransactionColor, getTransactionIcon } = useTreasuryTransactions();
   const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'allocation'>('overview');
 
+  const calculateTotalTreasuryValue = () => {
+    if (!treasuryBalances || !priceData || !treasuryData.treasuryBalance) return '$0.00';
+    
+    const abcValueUSD = parseFloat(treasuryData.treasuryBalance) * (priceData.price || 0.0000123);
+    const totalValueUSD = treasuryBalances.totalValueUSD + abcValueUSD;
+    
+    return formatTreasuryUSD(totalValueUSD);
+  };
+
   const isLoading = treasuryData.isLoading || !stakingData.totalRewardsDistributed || statsLoading || balancesLoading;
 
   return (
@@ -45,7 +54,7 @@ export default function TreasuryPage() {
               <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
                 <h3 className="text-green-600 text-responsive-xs font-mono mb-1">Total Treasury Value</h3>
                 <p className="text-responsive-lg font-bold text-green-400 matrix-glow">
-                  {treasuryBalances ? formatTreasuryUSD(treasuryBalances.totalValueUSD) : '$0.00'}
+                  {calculateTotalTreasuryValue()}
                 </p>
                 <p className="text-green-500 text-xs font-mono mt-1">All protocol assets</p>
               </div>

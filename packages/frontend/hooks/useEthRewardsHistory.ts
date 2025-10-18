@@ -22,147 +22,37 @@ export function useEthRewardsHistory() {
     fetchRewardsHistory();
   }, []);
 
+
   const fetchRewardsHistory = async () => {
     try {
       setLoading(true);
       
-      // Fetch real ETH distribution history from multiple sources
+      // Fetch ETH distribution history from backend (with pre-calculated cumulative APY)
       const realDistributions: EthRewardDistribution[] = [];
       
-      // Method 1: Get from backend API 
+      // Get from backend API (primary source with proper APY calculations)
       try {
+        console.log('Fetching from backend URL:', `${config.backendUrl}/api/distributions/history`);
         const response = await fetch(`${config.backendUrl}/api/distributions/history`);
+        console.log('Backend response status:', response.status);
         if (response.ok) {
           const apiData = await response.json();
+          console.log('Backend API data:', apiData);
           if (Array.isArray(apiData) && apiData.length > 0) {
-            console.log(`Fetched ${apiData.length} distributions from backend API`);
+            console.log(`✅ Fetched ${apiData.length} distributions with calculated APY from backend`);
+            console.log('Sample distribution APY:', apiData[0]?.apy);
             realDistributions.push(...apiData);
           }
+        } else {
+          console.log('Backend response not ok:', response.status, response.statusText);
         }
       } catch (e) {
-        console.log('Backend distribution API not available:', e);
+        console.log('❌ Backend distribution API error:', e);
       }
       
-      // Method 2: Query blockchain for actual ETH distribution events
-      try {
-        const { ethers } = await import('ethers');
-        const provider = new ethers.JsonRpcProvider('https://base-mainnet.g.alchemy.com/v2/518Fe6U9g0rlJj0Sd5O_0');
-        
-        // Get current ETH price
-        const ethPriceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
-        const ethPriceData = await ethPriceResponse.json();
-        const currentEthPrice = ethPriceData.ethereum?.usd || 3200;
-        
-        // Query staking contract for ETH deposits (distributions)
-        const stakingContract = '0x577822396162022654D5bDc9CB58018cB53e7017';
-        
-        // Get recent blocks to scan for ETH transfers to staking contract
-        const latestBlock = await provider.getBlockNumber();
-        const fromBlock = Math.max(0, latestBlock - 10000); // Last ~10k blocks (~few days on Base)
-        
-        // Note: Direct block scanning is more reliable than event filters for ETH transfers
-        
-        // Get transaction receipts for transfers to staking contract
-        const transfers = [];
-        
-        // Check known distribution transactions first
-        const knownTxHashes = [
-          '0x6949daf8bcaaac73db0b71fcfec97f33915b4a263a62d133040646e96ca5eb3c',
-          '0xb029d9081dafbe64f0596ee5b88ca2a6e5514fc45a90e9ab0c171d843fd674a2'
-        ];
-        
-        for (const txHash of knownTxHashes) {
-          try {
-            const tx = await provider.getTransaction(txHash);
-            const receipt = await provider.getTransactionReceipt(txHash);
-            
-            if (tx && receipt && receipt.status === 1) {
-              const block = await provider.getBlock(receipt.blockNumber);
-              const ethAmount = parseFloat(ethers.formatEther(tx.value));
-              
-              if (ethAmount > 0.001 && block) {
-                transfers.push({
-                  id: tx.hash,
-                  timestamp: block.timestamp * 1000,
-                  ethAmount: ethAmount,
-                  totalStaked: 711483264,
-                  stakersCount: 15,
-                  apy: 0, // Will calculate below
-                  ethPrice: currentEthPrice,
-                  transactionHash: tx.hash,
-                  blockNumber: receipt.blockNumber
-                });
-              }
-            }
-          } catch (txError) {
-            console.warn(`Error checking known transaction ${txHash}:`, txError instanceof Error ? txError.message : String(txError));
-          }
-        }
-        
-        // Also scan recent blocks but with a more efficient approach
-        for (let i = 0; i < Math.min(50, latestBlock - fromBlock); i += 20) {
-          try {
-            const blockNumber = latestBlock - i;
-            const block = await provider.getBlock(blockNumber, true);
-            
-            if (block && block.transactions) {
-              for (const txHash of block.transactions) {
-                try {
-                  const tx = await provider.getTransaction(txHash as string);
-                  if (tx && tx.to?.toLowerCase() === stakingContract.toLowerCase() && tx.value && tx.value > 0) {
-                    const ethAmount = parseFloat(ethers.formatEther(tx.value));
-                    
-                    if (ethAmount > 0.001) {
-                      // Check if we already have this transaction
-                      const exists = transfers.find(t => t.transactionHash === tx.hash);
-                      if (!exists) {
-                        transfers.push({
-                          id: tx.hash,
-                          timestamp: block.timestamp * 1000,
-                          ethAmount: ethAmount,
-                          totalStaked: 711483264,
-                          stakersCount: 15,
-                          apy: 0, // Will calculate below
-                          ethPrice: currentEthPrice,
-                          transactionHash: tx.hash,
-                          blockNumber: blockNumber
-                        });
-                      }
-                    }
-                  }
-                } catch (txError) {
-                  // Skip invalid transactions
-                  continue;
-                }
-              }
-            }
-          } catch (blockError) {
-            console.warn(`Error scanning block ${latestBlock - i}:`, blockError instanceof Error ? blockError.message : String(blockError));
-          }
-        }
-        
-        // Calculate APY for each distribution
-        for (const dist of transfers) {
-          if (dist.totalStaked > 0 && dist.ethAmount > 0) {
-            // Simplified APY calculation
-            const weeklyEthPerABC = dist.ethAmount / dist.totalStaked;
-            const abcPrice = 0.0000123; // Current ABC price estimate
-            const weeklyReturn = (weeklyEthPerABC * dist.ethPrice) / abcPrice;
-            dist.apy = weeklyReturn * 52 * 100;
-          }
-        }
-        
-        realDistributions.push(...transfers);
-        console.log(`Found ${transfers.length} ETH distributions from blockchain scan`);
-        
-      } catch (e) {
-        console.warn('Could not fetch blockchain distribution data:', e);
-      }
-      
-      // Method 3: No fallback data - show "no data" state instead of fake data
+      // Fallback: If backend is not available, show empty state
       if (realDistributions.length === 0) {
-        console.log('No real distribution data available, showing empty state');
-        // Don't add fake data - let components handle empty state properly
+        console.log('No distribution data available from backend, showing empty state');
       }
       
       // Sort by timestamp (newest first)
@@ -180,16 +70,9 @@ export function useEthRewardsHistory() {
   const calculateCurrentWeeklyAPY = () => {
     if (distributions.length === 0) return 0;
     
-    const lastDistribution = distributions[0];
-    
-    // Real APY calculation based on actual ETH rewards
-    // APY = (ETH earned per ABC token * ETH price / ABC price) * 52 weeks * 100
-    const ethPerABC = lastDistribution.ethAmount / lastDistribution.totalStaked;
-    const ethPrice = lastDistribution.ethPrice || 3200;
-    const abcPrice = 0.0000123; // Current ABC price estimate
-    
-    const weeklyReturn = (ethPerABC * ethPrice) / abcPrice;
-    return weeklyReturn * 52 * 100; // Annualized percentage
+    // Get current week's cumulative APY (all distributions in the same week have the same APY)
+    const latestDistribution = distributions[0];
+    return latestDistribution.weeklyAPY || latestDistribution.apy || 0;
   };
 
   const getAverageAPY = (weeks: number = 4) => {

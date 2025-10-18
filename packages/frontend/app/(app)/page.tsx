@@ -23,6 +23,7 @@ import { useTokenPrice } from '@/hooks/useTokenPrice';
 import { Toaster } from 'sonner';
 import { StatsSkeleton, TabContentSkeleton } from '@/components/skeleton-loader';
 import { CollapsibleStatCard, TreasuryRewardsCard } from '@/components/collapsible-stat-card';
+import { EthRewardsHistory } from '@/components/eth-rewards-history';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -566,6 +567,11 @@ export default function Home() {
       {/* Blog Section */}
       <div className="px-4 mt-8">
         <BlogSection />
+      </div>
+      
+      {/* ETH Rewards History - Recent Activity */}
+      <div className="px-4 mt-8">
+        <EthRewardsHistory />
       </div>
       
       <ContractAddressesFooter />

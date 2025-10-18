@@ -23,6 +23,15 @@ export function EthRewardsHistory() {
     });
   };
 
+  const formatDateTime = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const formatETH = (amount: number) => {
     return amount.toFixed(4);
   };
@@ -125,10 +134,10 @@ export function EthRewardsHistory() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
                 <div className="text-green-400 font-mono text-sm font-semibold">
-                  Week {index + 1}
+                  #{distributions.length - index}
                 </div>
                 <div className="text-green-600 font-mono text-xs">
-                  {formatDate(distribution.timestamp)}
+                  {formatDateTime(distribution.timestamp)}
                 </div>
               </div>
               <div className="text-right">
