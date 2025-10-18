@@ -28,6 +28,7 @@ import clankerClaimsRoutes from './routes/clanker-claims.js';
 import wethUnwrapsRoutes from './routes/weth-unwraps.js';
 import universalAuthRoutes from './routes/universal-auth.js';
 import userActionsRoutes from './routes/user-actions.js';
+import treasuryRoutes from './routes/treasury.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
@@ -42,6 +43,7 @@ import { ClankerRewardsCron } from './jobs/clanker-rewards-cron.js';
 import discordBot from './services/discord-bot.js';
 import { RealtimeBroadcastManager } from './services/realtime-broadcast.js';
 import { startVerificationService } from './services/blockchain-verification.js';
+import { treasuryDataManager } from './services/treasury-data-manager.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -171,6 +173,7 @@ app.use('/api/clanker-claims', clankerClaimsRoutes);
 app.use('/api/weth-unwraps', wethUnwrapsRoutes);
 app.use('/api/universal-auth', universalAuthRoutes);
 app.use('/api/user-actions', userActionsRoutes);
+app.use('/api/treasury', treasuryRoutes);
 
 // Custom cast endpoint (requires admin key for security)
 app.post('/api/cast/custom', async (req, res) => {
@@ -458,6 +461,15 @@ async function initializeBackgroundServices(server) {
     } else {
       console.warn('⚠️  Discord bot token not configured, skipping Discord integration');
     }
+
+    // Initialize Treasury Data Manager
+    try {
+      await treasuryDataManager.initialize();
+      console.log('✅ Treasury Data Manager initialized');
+      global.treasuryDataManager = treasuryDataManager;
+    } catch (treasuryError) {
+      console.warn('⚠️  Treasury Data Manager initialization failed:', treasuryError.message);
+    }
     
     console.log('✅ All background services initialized successfully');
     
@@ -500,6 +512,11 @@ process.on('SIGINT', () => {
   // Stop verification service
   if (global.verificationService) {
     global.verificationService.stop();
+  }
+  
+  // Treasury Data Manager cleanup (intervals are cleared automatically on process exit)
+  if (global.treasuryDataManager) {
+    console.log('👋 Treasury Data Manager shutdown');
   }
   
   // WETH unwrapping now handled by Clanker rewards cron

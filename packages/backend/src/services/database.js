@@ -687,6 +687,71 @@ async function runMigrations() {
       console.log('✅ Migration: Added payment recovery system');
     }
 
+    // Migration 14: Treasury Data Management Schema
+    const migration14 = 'treasury_data_management_schema';
+    const exists14 = await client.query('SELECT * FROM migrations WHERE name = $1', [migration14]);
+    
+    if (exists14.rows.length === 0) {
+      console.log('🔄 Creating treasury data management schema...');
+      
+      // Create treasury_snapshots table for historical treasury tracking
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS treasury_snapshots (
+          id SERIAL PRIMARY KEY,
+          snapshot_time TIMESTAMP NOT NULL DEFAULT NOW(),
+          eth_balance DECIMAL(18,6) NOT NULL,
+          abc_balance DECIMAL(18,6) NOT NULL,
+          total_value_usd DECIMAL(18,2) NOT NULL,
+          staking_tvl DECIMAL(18,6) NOT NULL,
+          created_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
+
+      // Create token_prices table for systematic price management
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS token_prices (
+          id SERIAL PRIMARY KEY,
+          token_symbol VARCHAR(10) NOT NULL UNIQUE,
+          price_usd DECIMAL(18,8) NOT NULL,
+          market_cap DECIMAL(18,2),
+          volume_24h DECIMAL(18,2),
+          price_change_24h DECIMAL(8,4),
+          updated_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
+
+      // Create data_freshness table for monitoring data manager health
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS data_freshness (
+          domain VARCHAR(50) PRIMARY KEY,
+          last_update TIMESTAMP NOT NULL DEFAULT NOW(),
+          update_frequency_seconds INTEGER NOT NULL DEFAULT 300,
+          is_healthy BOOLEAN DEFAULT true,
+          error_count INTEGER DEFAULT 0,
+          last_error TEXT
+        )
+      `);
+
+      // Add indexes for performance
+      await client.query('CREATE INDEX IF NOT EXISTS idx_treasury_snapshots_time ON treasury_snapshots(snapshot_time DESC)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_token_prices_symbol ON token_prices(token_symbol)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_token_prices_updated ON token_prices(updated_at DESC)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_data_freshness_domain ON data_freshness(domain)');
+
+      // Initialize data_freshness for treasury domain
+      await client.query(`
+        INSERT INTO data_freshness (domain, update_frequency_seconds) 
+        VALUES ('treasury', 300)
+        ON CONFLICT (domain) DO NOTHING
+      `);
+
+      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration14]);
+      console.log('✅ Migration: Created treasury data management schema');
+      console.log('   - treasury_snapshots: Historical treasury value tracking');
+      console.log('   - token_prices: Systematic price data management');
+      console.log('   - data_freshness: Data manager health monitoring');
+    }
+
     
   } catch (error) {
     console.error('❌ Migration failed:', error);
