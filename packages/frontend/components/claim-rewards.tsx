@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useConnect } from 'wagmi';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { CONTRACTS } from '@/lib/contracts';
 import { config } from '@/lib/config';
@@ -36,7 +36,8 @@ interface UserRewardsData {
 }
 
 export function ClaimRewardsPanel() {
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
+  const { connect, connectors, isPending: isConnectPending } = useConnect();
   const { user: profile, isInMiniApp } = useFarcaster();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [userRewards, setUserRewards] = useState<UserRewardsData | null>(null);
@@ -153,6 +154,21 @@ export function ClaimRewardsPanel() {
       </h2>
       
       <div className="space-y-4">
+        {/* Wallet Connection Status for Mini-App Debug */}
+        {isInMiniApp && (
+          <div className="bg-gray-950/20 border border-gray-700/30 rounded-lg p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400 font-mono text-xs">Wallet Status:</span>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'} animate-pulse`} />
+                <span className="text-gray-300 font-mono text-xs">
+                  {isConnected ? `Connected: ${address?.slice(0, 6)}...${address?.slice(-4)}` : 'Not Connected'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Rewards Summary */}
         {loadingRewards ? (
           <div className="bg-green-950/20 border border-green-700/50 rounded-lg p-4 text-center">
@@ -237,12 +253,32 @@ export function ClaimRewardsPanel() {
                 <p className="text-blue-400 font-mono text-sm mb-3">
                   Connect wallet to claim {userRewards.summary.totalClaimable.toLocaleString()} $ABC
                 </p>
-                <p className="text-blue-600 font-mono text-xs">
-                  {isInMiniApp 
-                    ? "🔗 Your Farcaster wallet will connect when claiming"
-                    : "💡 Use the ConnectButton in the header to link your wallet"
-                  }
-                </p>
+                {isInMiniApp ? (
+                  <div className="space-y-3">
+                    <p className="text-blue-600 font-mono text-xs mb-2">
+                      🔗 Connect your Farcaster wallet to claim rewards
+                    </p>
+                    <button
+                      onClick={() => {
+                        const farcasterConnector = connectors.find(connector => 
+                          connector.name.toLowerCase().includes('farcaster') || 
+                          connector.id.includes('farcaster')
+                        );
+                        if (farcasterConnector) {
+                          connect({ connector: farcasterConnector });
+                        }
+                      }}
+                      disabled={isConnectPending}
+                      className="bg-green-900/50 hover:bg-green-800/60 text-green-400 font-mono px-4 py-2 rounded-lg border border-green-700/50 transition-all duration-300 matrix-button text-sm disabled:opacity-50"
+                    >
+                      {isConnectPending ? '🔗 Connecting...' : '🔗 Connect Wallet'}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-blue-600 font-mono text-xs">
+                    💡 Use the ConnectButton in the header to link your wallet
+                  </p>
+                )}
               </div>
             ) : (
               <div className="bg-gray-950/20 border border-gray-700/30 rounded-lg p-4 text-center">
