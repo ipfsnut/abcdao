@@ -604,6 +604,81 @@ export class StakingDataManager {
   }
 
   /**
+   * Get staking overview with current metrics and APY breakdown
+   */
+  async getStakingOverview() {
+    const pool = getPool();
+    
+    // Get latest staking snapshot
+    const snapshotResult = await pool.query(`
+      SELECT * FROM staking_snapshots 
+      ORDER BY snapshot_time DESC 
+      LIMIT 1
+    `);
+    
+    // Get APY breakdown for different periods
+    const apyResult = await pool.query(`
+      SELECT DISTINCT ON (calculation_period) 
+        calculation_period,
+        calculated_apy,
+        rewards_distributed,
+        average_staked,
+        calculation_time
+      FROM apy_calculations 
+      ORDER BY calculation_period, calculation_time DESC
+    `);
+    
+    return {
+      currentSnapshot: snapshotResult.rows[0] || null,
+      apyBreakdown: apyResult.rows || []
+    };
+  }
+
+  /**
+   * Get current staking snapshot
+   */
+  async getCurrentSnapshot() {
+    const pool = getPool();
+    
+    const result = await pool.query(`
+      SELECT * FROM staking_snapshots 
+      ORDER BY snapshot_time DESC 
+      LIMIT 1
+    `);
+    
+    return result.rows[0] || null;
+  }
+
+  /**
+   * Get staking history for a time period
+   */
+  async getStakingHistory(days = 30) {
+    const pool = getPool();
+    
+    const result = await pool.query(`
+      SELECT * FROM staking_snapshots 
+      WHERE snapshot_time >= NOW() - INTERVAL '${days} days'
+      ORDER BY snapshot_time ASC
+    `);
+    
+    return result.rows;
+  }
+
+  /**
+   * Get staker position for a specific wallet
+   */
+  async getStakerPosition(walletAddress) {
+    const pool = getPool();
+    
+    const result = await pool.query(`
+      SELECT * FROM staker_positions 
+      WHERE wallet_address = $1
+    `, [walletAddress.toLowerCase()]);
+    
+    return result.rows[0] || null;
+  }
+
+  /**
    * Get top stakers leaderboard
    */
   async getTopStakers(limit = 20) {

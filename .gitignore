@@ -180,3 +180,4 @@ ToDo*.txt
 # Strategic planning documents
 plans/
 temp/
+migrations/add-extended-treasury-schema.sql

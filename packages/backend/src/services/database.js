@@ -752,6 +752,242 @@ async function runMigrations() {
       console.log('   - data_freshness: Data manager health monitoring');
     }
 
+    // Migration 15: Extended Treasury Schema
+    const migration15 = 'add-extended-treasury-schema';
+    const exists15 = await client.query('SELECT name FROM migrations WHERE name = $1', [migration15]);
+    
+    if (exists15.rows.length === 0) {
+      console.log('🔄 Adding extended treasury token data schema...');
+      
+      // Add extended columns to token_prices table
+      await client.query(`
+        ALTER TABLE token_prices 
+        ADD COLUMN IF NOT EXISTS volume_6h DECIMAL(18,2),
+        ADD COLUMN IF NOT EXISTS volume_1h DECIMAL(18,2),
+        ADD COLUMN IF NOT EXISTS liquidity_usd DECIMAL(18,2),
+        ADD COLUMN IF NOT EXISTS price_change_6h DECIMAL(8,4),
+        ADD COLUMN IF NOT EXISTS price_change_1h DECIMAL(8,4),
+        ADD COLUMN IF NOT EXISTS pair_address VARCHAR(100),
+        ADD COLUMN IF NOT EXISTS dex_id VARCHAR(50)
+      `);
+
+      // Add indexes for performance
+      await client.query('CREATE INDEX IF NOT EXISTS idx_token_prices_pair ON token_prices(pair_address)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_token_prices_dex ON token_prices(dex_id)');
+
+      // Reset treasury health to clear errors
+      await client.query(`
+        UPDATE data_freshness 
+        SET is_healthy = true, error_count = 0, last_error = NULL
+        WHERE domain = 'treasury'
+      `);
+
+      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration15]);
+      console.log('✅ Migration: Extended treasury token data schema');
+      console.log('   - Added extended market data columns to token_prices');
+      console.log('   - Fixed Treasury Data Manager compatibility');
+      console.log('   - Reset treasury health status');
+    }
+
+    // Migration 16: Staking Data Manager Schema
+    const migration16 = 'add-staking-data-manager-schema';
+    const exists16 = await client.query('SELECT name FROM migrations WHERE name = $1', [migration16]);
+    
+    if (exists16.rows.length === 0) {
+      console.log('🔄 Creating staking data management schema...');
+      
+      // Create staking_snapshots table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS staking_snapshots (
+          id SERIAL PRIMARY KEY,
+          total_staked DECIMAL(18,6) NOT NULL,
+          total_stakers INTEGER NOT NULL,
+          rewards_pool_balance DECIMAL(18,6) NOT NULL,
+          total_rewards_distributed DECIMAL(18,6) NOT NULL,
+          current_apy DECIMAL(8,4) NOT NULL,
+          snapshot_time TIMESTAMP NOT NULL DEFAULT NOW(),
+          created_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
+
+      // Create staker_positions table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS staker_positions (
+          id SERIAL PRIMARY KEY,
+          wallet_address VARCHAR(42) NOT NULL UNIQUE,
+          staked_amount DECIMAL(18,6) NOT NULL DEFAULT 0,
+          rewards_earned DECIMAL(18,6) DEFAULT 0,
+          pending_rewards DECIMAL(18,6) DEFAULT 0,
+          last_stake_time TIMESTAMP,
+          last_reward_claim TIMESTAMP,
+          is_active BOOLEAN DEFAULT true,
+          updated_at TIMESTAMP DEFAULT NOW(),
+          created_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
+
+      // Create apy_calculations table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS apy_calculations (
+          id SERIAL PRIMARY KEY,
+          calculation_period VARCHAR(20) NOT NULL,
+          rewards_distributed DECIMAL(18,6) NOT NULL,
+          average_staked DECIMAL(18,6) NOT NULL,
+          calculated_apy DECIMAL(8,4) NOT NULL,
+          calculation_time TIMESTAMP DEFAULT NOW()
+        )
+      `);
+
+      // Create unbonding_positions table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS unbonding_positions (
+          id SERIAL PRIMARY KEY,
+          wallet_address VARCHAR(42) NOT NULL,
+          amount DECIMAL(18,6) NOT NULL,
+          release_time TIMESTAMP NOT NULL,
+          is_withdrawn BOOLEAN DEFAULT false,
+          created_at TIMESTAMP DEFAULT NOW(),
+          withdrawn_at TIMESTAMP
+        )
+      `);
+
+      // Add indexes for performance
+      await client.query('CREATE INDEX IF NOT EXISTS idx_staking_snapshots_time ON staking_snapshots(snapshot_time DESC)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_staker_positions_wallet ON staker_positions(wallet_address)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_staker_positions_active ON staker_positions(is_active, updated_at DESC)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_apy_calculations_period ON apy_calculations(calculation_period, calculation_time DESC)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_unbonding_wallet ON unbonding_positions(wallet_address)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_unbonding_release ON unbonding_positions(release_time)');
+
+      // Initialize data_freshness for staking domain
+      await client.query(`
+        INSERT INTO data_freshness (domain, update_frequency_seconds) 
+        VALUES ('staking', 120)
+        ON CONFLICT (domain) DO UPDATE SET 
+          update_frequency_seconds = 120,
+          is_healthy = true,
+          error_count = 0,
+          last_error = NULL
+      `);
+
+      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration16]);
+      console.log('✅ Migration: Created staking data management schema');
+      console.log('   - staking_snapshots: Historical staking metrics tracking');
+      console.log('   - staker_positions: Individual staker position management');
+      console.log('   - apy_calculations: APY calculations and history');
+      console.log('   - unbonding_positions: Unbonding period tracking');
+    }
+
+    // Migration 17: Blockchain Events Manager Schema
+    const migration17 = 'add-blockchain-events-schema';
+    const exists17 = await client.query('SELECT name FROM migrations WHERE name = $1', [migration17]);
+    
+    if (exists17.rows.length === 0) {
+      console.log('🔄 Creating blockchain events management schema...');
+      
+      // Create blockchain_events table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS blockchain_events (
+          id SERIAL PRIMARY KEY,
+          block_number BIGINT NOT NULL,
+          transaction_hash VARCHAR(66) NOT NULL,
+          log_index INTEGER NOT NULL,
+          contract_address VARCHAR(42) NOT NULL,
+          event_name VARCHAR(100) NOT NULL,
+          event_data JSONB NOT NULL,
+          timestamp TIMESTAMP NOT NULL,
+          processed BOOLEAN DEFAULT false,
+          processing_error TEXT,
+          created_at TIMESTAMP DEFAULT NOW(),
+          
+          UNIQUE(transaction_hash, log_index)
+        )
+      `);
+
+      // Create contract_states table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS contract_states (
+          id SERIAL PRIMARY KEY,
+          contract_address VARCHAR(42) NOT NULL,
+          state_name VARCHAR(100) NOT NULL,
+          state_value JSONB NOT NULL,
+          block_number BIGINT NOT NULL,
+          updated_at TIMESTAMP DEFAULT NOW(),
+          
+          UNIQUE(contract_address, state_name)
+        )
+      `);
+
+      // Create event_processing_log table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS event_processing_log (
+          id SERIAL PRIMARY KEY,
+          contract_address VARCHAR(42) NOT NULL,
+          event_name VARCHAR(100) NOT NULL,
+          last_processed_block BIGINT NOT NULL,
+          events_processed INTEGER DEFAULT 0,
+          last_error TEXT,
+          updated_at TIMESTAMP DEFAULT NOW(),
+          
+          UNIQUE(contract_address, event_name)
+        )
+      `);
+
+      // Create monitored_transactions table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS monitored_transactions (
+          id SERIAL PRIMARY KEY,
+          transaction_hash VARCHAR(66) UNIQUE NOT NULL,
+          contract_address VARCHAR(42) NOT NULL,
+          function_name VARCHAR(100),
+          from_address VARCHAR(42) NOT NULL,
+          to_address VARCHAR(42) NOT NULL,
+          value_eth DECIMAL(18,6) DEFAULT 0,
+          gas_used INTEGER,
+          gas_price BIGINT,
+          status VARCHAR(20) DEFAULT 'pending',
+          confirmation_count INTEGER DEFAULT 0,
+          block_number BIGINT,
+          timestamp TIMESTAMP,
+          created_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
+
+      // Add indexes for performance
+      await client.query('CREATE INDEX IF NOT EXISTS idx_blockchain_events_contract ON blockchain_events(contract_address, event_name)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_blockchain_events_block ON blockchain_events(block_number DESC)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_blockchain_events_timestamp ON blockchain_events(timestamp DESC)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_blockchain_events_processed ON blockchain_events(processed, created_at)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_blockchain_events_tx_hash ON blockchain_events(transaction_hash)');
+      
+      await client.query('CREATE INDEX IF NOT EXISTS idx_contract_states_address ON contract_states(contract_address)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_contract_states_updated ON contract_states(updated_at DESC)');
+      
+      await client.query('CREATE INDEX IF NOT EXISTS idx_event_processing_contract ON event_processing_log(contract_address)');
+      
+      await client.query('CREATE INDEX IF NOT EXISTS idx_monitored_transactions_hash ON monitored_transactions(transaction_hash)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_monitored_transactions_status ON monitored_transactions(status, created_at)');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_monitored_transactions_contract ON monitored_transactions(contract_address)');
+
+      // Initialize data_freshness for blockchain_events domain
+      await client.query(`
+        INSERT INTO data_freshness (domain, update_frequency_seconds) 
+        VALUES ('blockchain_events', 30)
+        ON CONFLICT (domain) DO UPDATE SET 
+          update_frequency_seconds = 30,
+          is_healthy = true,
+          error_count = 0,
+          last_error = NULL
+      `);
+
+      await client.query('INSERT INTO migrations (name) VALUES ($1)', [migration17]);
+      console.log('✅ Migration: Created blockchain events management schema');
+      console.log('   - blockchain_events: Systematic event processing');
+      console.log('   - contract_states: Contract state tracking');
+      console.log('   - event_processing_log: Event processing monitoring');
+      console.log('   - monitored_transactions: Transaction monitoring');
+    }
+
     
   } catch (error) {
     console.error('❌ Migration failed:', error);
