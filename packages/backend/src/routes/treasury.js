@@ -1,5 +1,6 @@
 import express from 'express';
 import { treasuryDataManager } from '../services/treasury-data-manager.js';
+import { getPool } from '../services/database.js';
 
 const router = express.Router();
 
@@ -213,6 +214,60 @@ router.post('/refresh', async (req, res) => {
       error: 'Failed to refresh treasury data',
       message: error.message 
     });
+  }
+});
+
+/**
+ * GET /api/treasury/transactions
+ * Returns treasury transactions (ETH distributions to staking contract)
+ */
+router.get('/transactions', async (req, res) => {
+  try {
+    const pool = getPool();
+    
+    // Get ETH distribution transactions from database
+    const result = await pool.query(`
+      SELECT 
+        transaction_hash as hash,
+        block_number,
+        timestamp,
+        eth_amount,
+        total_staked_at_time,
+        stakers_count,
+        eth_price_usd,
+        calculated_apy
+      FROM eth_distributions 
+      ORDER BY timestamp DESC 
+      LIMIT 20
+    `);
+
+    // Format transactions for frontend
+    const transactions = result.rows.map(row => {
+      const ethValue = parseFloat(row.eth_amount);
+      const ethPrice = parseFloat(row.eth_price_usd) || 3200;
+      const usdValue = ethValue * ethPrice;
+      
+      return {
+        hash: row.hash,
+        blockNumber: row.block_number,
+        timestamp: new Date(row.timestamp).getTime(),
+        from: '0xBE6525b767cA8D38d169C93C8120c0C0957388B8', // Treasury address
+        to: '0x577822396162022654D5bDc9CB58018cB53e7017', // Staking contract
+        value: (ethValue * 1e18).toString(), // Convert to wei string
+        gasUsed: '50000', // Estimated
+        gasPrice: '1000000000', // Estimated 1 gwei
+        type: 'staking_distribution',
+        description: 'ETH distribution to staking contract',
+        ethValue: ethValue,
+        usdValue: usdValue
+      };
+    });
+
+    res.json(transactions);
+
+  } catch (error) {
+    console.error('Error fetching treasury transactions:', error);
+    res.status(500).json({ error: 'Failed to fetch treasury transactions' });
   }
 });
 

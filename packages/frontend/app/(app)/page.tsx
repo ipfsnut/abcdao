@@ -158,7 +158,7 @@ export default function Home() {
       <div className="bg-gradient-to-r from-green-950/20 to-black/40 border-b border-green-900/30">
         <div className="px-4 py-6 text-center">
           <h2 className="text-responsive-lg font-bold text-green-400 matrix-glow mb-2 font-mono">
-            Always Be Coding Together
+            Always Be Coding
           </h2>
           <p className="text-responsive-xs text-green-600 mb-4 font-mono">
             Join a community of developers building FOSS projects, learning together, and creating lasting friendships.
