@@ -33,6 +33,7 @@ import stakingRoutes from './routes/staking.js';
 import usersCommitsRoutes from './routes/users-commits.js';
 import blockchainEventsRoutes from './routes/blockchain-events.js';
 import systemHealthRoutes from './routes/system-health.js';
+import castRoutes from './routes/cast.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
@@ -214,6 +215,7 @@ app.use('/api/staking', stakingRoutes);
 app.use('/api/users-commits', usersCommitsRoutes);
 app.use('/api/blockchain-events', blockchainEventsRoutes);
 app.use('/api/system-health', systemHealthRoutes);
+app.use('/api/cast', castRoutes);
 
 // Custom cast endpoint (requires admin key for security)
 app.post('/api/cast/custom', async (req, res) => {
