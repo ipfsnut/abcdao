@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useConnect } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useConnect } from 'wagmi';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
+import { useRewardsSystematic } from '@/hooks/useRewardsSystematic';
 import { CONTRACTS } from '@/lib/contracts';
-import { config } from '@/lib/config';
-import { formatEther } from 'viem';
 import { CommitTagsDocs } from './commit-tags-docs';
 
 interface RewardSummary {
@@ -39,34 +38,18 @@ export function ClaimRewardsPanel() {
   const { address, isConnected, connector } = useAccount();
   const { connect, connectors, isPending: isConnectPending } = useConnect();
   const { user: profile, isInMiniApp } = useFarcaster();
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [userRewards, setUserRewards] = useState<UserRewardsData | null>(null);
-  const [loadingRewards, setLoadingRewards] = useState(true);
+  
+  // Use systematic rewards data instead of reactive contract calls
+  const {
+    userRewards,
+    isUserRewardsLoading: loadingRewards,
+    userRewardsError,
+    refetchUserRewards
+  } = useRewardsSystematic();
 
-  // Get user's claimable amount
-  const { data: claimableAmount, refetch: refetchClaimable } = useReadContract({
-    address: CONTRACTS.ABC_REWARDS.address,
-    abi: CONTRACTS.ABC_REWARDS.abi,
-    functionName: 'getClaimableAmount',
-    args: address ? [address] : undefined,
-    query: { enabled: !!address }
-  });
-
-  // Get user's reward info
-  const { data: rewardInfo, refetch: refetchRewardInfo } = useReadContract({
-    address: CONTRACTS.ABC_REWARDS.address,
-    abi: CONTRACTS.ABC_REWARDS.abi,
-    functionName: 'getUserRewardInfo',
-    args: address ? [address] : undefined,
-    query: { enabled: !!address }
-  });
-
-  // Get contract stats
-  const { data: contractStats } = useReadContract({
-    address: CONTRACTS.ABC_REWARDS.address,
-    abi: CONTRACTS.ABC_REWARDS.abi,
-    functionName: 'getContractStats'
-  });
+  // Calculate claimable amount from systematic data instead of contract calls
+  const hasClaimableRewards = userRewards && userRewards.summary.totalClaimable > 0;
+  const claimableInTokens = userRewards?.summary.totalClaimable || 0;
 
   // Execute claim
   const { writeContract: claimRewards, data: claimTxData, isPending: isClaimPending } = useWriteContract();
@@ -93,61 +76,18 @@ export function ClaimRewardsPanel() {
     }
   }, [isInMiniApp, profile, isConnected, connectors, connect]);
 
-  // Fetch user rewards from API
-  useEffect(() => {
-    if (profile?.fid) {
-      fetchUserRewards(profile.fid);
-    }
-  }, [profile, refreshTrigger]);
-
-  const fetchUserRewards = async (fid: number) => {
-    try {
-      setLoadingRewards(true);
-      const response = await fetch(`${config.backendUrl}/api/rewards/user/${fid}`);
-      if (response.ok) {
-        const data = await response.json();
-        setUserRewards(data);
-      } else {
-        console.error('Failed to fetch user rewards');
-        setUserRewards(null);
-      }
-    } catch (error) {
-      console.error('Error fetching user rewards:', error);
-      setUserRewards(null);
-    } finally {
-      setLoadingRewards(false);
-    }
-  };
+  // Handle success - refetch systematic data instead of individual contract calls
 
   // Handle success in useEffect
   useEffect(() => {
     if (claimSuccess) {
-      setRefreshTrigger(prev => prev + 1);
-      refetchClaimable();
-      refetchRewardInfo();
+      refetchUserRewards();
     }
-  }, [claimSuccess, refetchClaimable, refetchRewardInfo]);
+  }, [claimSuccess, refetchUserRewards]);
 
   // Enhanced wallet connection detection for Farcaster miniapp
   const isWalletConnected = isConnected || (isInMiniApp && profile && address);
   const effectiveAddress = address;
-  
-  const hasClaimableRewards = claimableAmount && claimableAmount > BigInt(0);
-  const claimableInEther = claimableAmount ? formatEther(claimableAmount) : '0';
-  
-  const rewardInfoParsed = rewardInfo ? {
-    totalAllocated: formatEther(rewardInfo[0]),
-    totalClaimed: formatEther(rewardInfo[1]),
-    claimable: formatEther(rewardInfo[2]),
-    lastUpdated: rewardInfo[3]
-  } : null;
-
-  const contractStatsParsed = contractStats && Array.isArray(contractStats) && contractStats.length >= 4 ? {
-    totalAllocated: formatEther(contractStats[0] || BigInt(0)),
-    totalClaimed: formatEther(contractStats[1] || BigInt(0)),
-    contractBalance: formatEther(contractStats[2] || BigInt(0)),
-    batchCount: (contractStats[3] || BigInt(0)).toString()
-  } : null;
 
   // Show rewards info even without Web3 wallet if user is authenticated via Farcaster
   if (!address && !profile) {
@@ -289,7 +229,7 @@ export function ClaimRewardsPanel() {
                   ? '⏳ Claiming...' 
                   : isClaimPending 
                   ? '📝 Confirming...'
-                  : `🎁 CLAIM ${parseFloat(claimableInEther).toLocaleString()} $ABC`
+                  : `🎁 CLAIM ${claimableInTokens.toLocaleString()} $ABC`
                 }
               </button>
             ) : userRewards.summary.totalClaimable > 0 ? (
