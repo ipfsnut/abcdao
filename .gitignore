@@ -54,7 +54,7 @@ seed*
 *auth-token*
 *auth-secret*
 auth.json
-auth.js
+# auth.js - removed, was blocking legitimate route files  
 .auth
 neynar-*
 alchemy-*
@@ -104,6 +104,7 @@ test-*.js
 *-test.js
 *.test.js
 test*.js
+!test-github.js
 *.t.sol
 *Test.sol
 *Mock*.sol
