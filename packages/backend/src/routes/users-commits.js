@@ -15,7 +15,8 @@ router.get('/test', (req, res) => {
   res.json({ 
     status: 'users/commits routes are working', 
     timestamp: new Date().toISOString(),
-    manager: 'UserCommitDataManager'
+    manager: 'UserCommitDataManager',
+    deploymentTest: 'META_FIELD_UPDATE_DEPLOYED'
   });
 });
 
@@ -111,24 +112,36 @@ router.get('/leaderboard', async (req, res) => {
 
     const leaderboard = await userCommitDataManager.getLeaderboard(timeframe, limit);
     
-    const formattedLeaderboard = leaderboard.map((user, index) => ({
-      rank: index + 1,
-      id: user.id,
-      profile: {
-        farcasterUsername: user.farcaster_username,
-        githubUsername: user.github_username,
-        displayName: user.display_name,
-        avatarUrl: user.avatar_url
-      },
-      stats: {
-        commits: parseInt(user.commits),
-        totalRewards: parseFloat(user.total_rewards),
-        lastCommitAt: user.last_commit_at
-      },
-      membership: {
-        status: user.membership_status
-      }
-    }));
+    const formattedLeaderboard = leaderboard.map((user, index) => {
+      // Determine if user is active based on recent commits (30 days threshold)
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const hasRecentCommits = user.last_commit_at && new Date(user.last_commit_at) >= thirtyDaysAgo;
+      const hasAnyCommits = parseInt(user.commits) > 0;
+      
+      return {
+        rank: index + 1,
+        id: user.id,
+        profile: {
+          farcasterUsername: user.farcaster_username,
+          githubUsername: user.github_username,
+          displayName: user.display_name,
+          avatarUrl: user.avatar_url
+        },
+        stats: {
+          commits: parseInt(user.commits),
+          totalRewards: parseFloat(user.total_rewards),
+          lastCommitAt: user.last_commit_at
+        },
+        membership: {
+          status: user.membership_status
+        },
+        meta: {
+          isActive: hasRecentCommits || hasAnyCommits, // Active if commits in last 30 days OR any commits ever
+          joinedAt: null, // Could add this from user creation date if needed
+          createdAt: null  // Could add this from user creation date if needed
+        }
+      };
+    });
 
     res.json({
       timeframe,

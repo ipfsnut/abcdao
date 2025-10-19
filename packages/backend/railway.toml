@@ -3,8 +3,8 @@ builder = "nixpacks"
 buildCommand = "npm ci"
 
 [deploy]
-startCommand = "node packages/backend/src/index.js"
-healthcheckPath = "/health"
+startCommand = "node src/index.js"
+healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 numReplicas = 1
