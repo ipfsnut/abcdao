@@ -18,10 +18,35 @@ export class TreasuryDataManager {
   constructor() {
     this.walletAddress = process.env.PROTOCOL_WALLET_ADDRESS || '0xBE6525b767cA8D38d169C93C8120c0C0957388B8';
     this.stakingContract = process.env.STAKING_CONTRACT_ADDRESS || '0x577822396162022654D5bDc9CB58018cB53e7017';
+    this.abcTokenContract = process.env.ABC_TOKEN_CONTRACT_ADDRESS || '0x5c0872b790bb73e2b3a9778db6e7704095624b07';
     this.provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
     this.updateInterval = 5 * 60 * 1000; // 5 minutes
     this.priceUpdateInterval = 10 * 60 * 1000; // 10 minutes for token prices
     this.isInitialized = false;
+    
+    // ERC-20 ABI for balance checking
+    this.erc20ABI = [
+      {
+        "type": "function",
+        "name": "balanceOf",
+        "inputs": [{"name": "account", "type": "address"}],
+        "outputs": [{"name": "", "type": "uint256"}],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function", 
+        "name": "decimals",
+        "inputs": [],
+        "outputs": [{"name": "", "type": "uint8"}],
+        "stateMutability": "view"
+      }
+    ];
+    
+    this.abcContract = new ethers.Contract(
+      this.abcTokenContract,
+      this.erc20ABI,
+      this.provider
+    );
   }
 
   /**
@@ -69,16 +94,17 @@ export class TreasuryDataManager {
       
       // Fetch current balances
       const ethBalance = await this.provider.getBalance(this.walletAddress);
+      const abcBalance = await this.getProtocolABCBalance();
       const stakingTvl = await this.getStakingTVL();
       const tokenPrices = await this.getCurrentTokenPrices();
       
       // Calculate total value
-      const totalValueUsd = this.calculateTotalValue(ethBalance, stakingTvl, tokenPrices);
+      const totalValueUsd = this.calculateTotalValue(ethBalance, abcBalance, stakingTvl, tokenPrices);
       
       // Store snapshot
       await this.storeTreasurySnapshot({
         ethBalance: ethers.formatEther(ethBalance),
-        abcBalance: stakingTvl, // ABC tokens in staking represent treasury ABC
+        abcBalance: parseFloat(ethers.formatEther(abcBalance)),
         totalValueUsd,
         stakingTvl,
         timestamp: new Date()
@@ -210,6 +236,20 @@ export class TreasuryDataManager {
   }
 
   /**
+   * Get protocol wallet's actual ABC token balance
+   */
+  async getProtocolABCBalance() {
+    try {
+      const balance = await this.abcContract.balanceOf(this.walletAddress);
+      console.log(`📊 Protocol wallet ABC balance: ${ethers.formatEther(balance)} ABC`);
+      return balance;
+    } catch (error) {
+      console.warn('Failed to fetch protocol ABC balance:', error);
+      return BigInt(0); // Return 0 if can't fetch
+    }
+  }
+
+  /**
    * Get current staking TVL
    */
   async getStakingTVL() {
@@ -226,9 +266,17 @@ export class TreasuryDataManager {
   /**
    * Calculate total treasury value in USD
    */
-  calculateTotalValue(ethBalance, stakingTvl, tokenPrices) {
+  calculateTotalValue(ethBalance, abcBalance, stakingTvl, tokenPrices) {
     const ethValueUsd = parseFloat(ethers.formatEther(ethBalance)) * (tokenPrices.ETH || 3200);
-    const abcValueUsd = stakingTvl * (tokenPrices.ABC || 0.0000123);
+    
+    // Use real-time ABC price from token market data, not hardcoded fallback
+    const abcPrice = tokenPrices.ABC || 0.000001; // Use actual fetched price
+    const abcValueUsd = parseFloat(ethers.formatEther(abcBalance)) * abcPrice;
+    
+    // Note: We only count the protocol wallet's direct holdings, not the staking TVL
+    // The staking TVL represents user-staked tokens, not protocol treasury
+    console.log(`💰 Treasury calculation: ETH ${ethValueUsd.toFixed(2)} (${ethers.formatEther(ethBalance)} ETH) + ABC ${abcValueUsd.toFixed(2)} (${ethers.formatEther(abcBalance)} ABC @ $${abcPrice}) = ${(ethValueUsd + abcValueUsd).toFixed(2)} USD`);
+    
     return ethValueUsd + abcValueUsd;
   }
 

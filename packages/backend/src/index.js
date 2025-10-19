@@ -32,6 +32,7 @@ import treasuryRoutes from './routes/treasury.js';
 import stakingRoutes from './routes/staking.js';
 import usersCommitsRoutes from './routes/users-commits.js';
 import blockchainEventsRoutes from './routes/blockchain-events.js';
+import systemHealthRoutes from './routes/system-health.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
@@ -175,6 +176,12 @@ app.get('/api', (req, res) => {
         'GET /api/blockchain-events/processing-status': 'Event processing status',
         'GET /api/blockchain-events/events/staking/recent': 'Recent staking events',
         'GET /api/blockchain-events/events/rewards/recent': 'Recent rewards events'
+      },
+      'system-health': {
+        'GET /api/system-health/overview': 'Overall system health status',
+        'GET /api/system-health/details': 'Detailed health information',
+        'GET /api/system-health/metrics': 'Performance metrics for all domains',
+        'POST /api/system-health/refresh-all': 'Manually trigger refresh for all data managers'
       }
     },
     websocket: {
@@ -206,6 +213,7 @@ app.use('/api/treasury', treasuryRoutes);
 app.use('/api/staking', stakingRoutes);
 app.use('/api/users-commits', usersCommitsRoutes);
 app.use('/api/blockchain-events', blockchainEventsRoutes);
+app.use('/api/system-health', systemHealthRoutes);
 
 // Custom cast endpoint (requires admin key for security)
 app.post('/api/cast/custom', async (req, res) => {
