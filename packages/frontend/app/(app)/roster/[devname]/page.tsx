@@ -7,7 +7,8 @@ export async function generateStaticParams(): Promise<{ devname: string }[]> {
   return [
     { devname: 'test' },
     { devname: 'admin' },
-    { devname: 'demo' }
+    { devname: 'demo' },
+    { devname: 'epicdylan' }
   ];
 }
 
