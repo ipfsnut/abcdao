@@ -287,9 +287,14 @@ export default function RosterPage() {
                           dev.meta?.isActive ? 'bg-green-400 matrix-glow' : 'bg-gray-600'
                         }`}></div>
                         <div>
-                          <h4 className="font-semibold text-green-400 font-mono">
-                            @{dev.profile?.farcasterUsername || 'Unknown'}
-                          </h4>
+                          <Link 
+                            href={`/roster/${dev.profile?.farcasterUsername || dev.profile?.githubUsername || dev.id}`}
+                            className="group"
+                          >
+                            <h4 className="font-semibold text-green-400 font-mono group-hover:text-green-300 transition-colors duration-300">
+                              @{dev.profile?.farcasterUsername || 'Unknown'}
+                            </h4>
+                          </Link>
                           <div className="flex items-center gap-2 text-xs text-green-600 font-mono">
                             <span>GitHub: @{dev.profile?.githubUsername || 'Unknown'}</span>
                             <span>•</span>

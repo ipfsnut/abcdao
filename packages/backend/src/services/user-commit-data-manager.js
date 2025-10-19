@@ -540,8 +540,8 @@ export class UserCommitDataManager {
       query = 'SELECT * FROM users_master WHERE farcaster_fid = $1';
       params = [parseInt(identifier)];
     } else {
-      // GitHub username
-      query = 'SELECT * FROM users_master WHERE github_username = $1';
+      // String identifier - check if it's a GitHub username OR Farcaster username
+      query = 'SELECT * FROM users_master WHERE github_username = $1 OR farcaster_username = $1';
       params = [identifier];
     }
     
