@@ -17,13 +17,13 @@ class EthDistributionCron {
   }
 
   /**
-   * Start the cron job to check for ETH distribution every 6 hours
+   * Start the cron job to check for ETH distribution daily
    */
   start() {
-    console.log('⏰ Starting ETH distribution cron job (every 6 hours)...');
+    console.log('⏰ Starting ETH distribution cron job (daily at 12:00 PM UTC)...');
     
-    // Run every 6 hours at minute 0
-    this.cronJob = cron.schedule('0 */6 * * *', async () => {
+    // Run daily at 12:00 PM UTC
+    this.cronJob = cron.schedule('0 12 * * *', async () => {
       if (this.isRunning) {
         console.log('⚠️ ETH distribution already running, skipping...');
         return;
@@ -44,7 +44,7 @@ class EthDistributionCron {
     });
 
     console.log('✅ ETH distribution cron job started');
-    console.log('   - Runs every 6 hours');
+    console.log('   - Runs daily at 12:00 PM UTC');
     console.log('   - Distributes 25% to staking contract');
     console.log('   - Keeps 75% + gas reserves in protocol wallet\n');
   }
@@ -257,23 +257,24 @@ class EthDistributionCron {
    */
   getNextRuns() {
     const now = new Date();
-    const next6h = new Date(now);
-    const next12h = new Date(now);
+    const nextDaily = new Date(now);
+    const followingDaily = new Date(now);
     
-    // Find next 6-hour interval (0, 6, 12, 18)
+    // Find next daily run at 12:00 PM UTC
     const currentHour = now.getUTCHours();
-    const nextHour = Math.ceil((currentHour + 1) / 6) * 6;
     
-    next6h.setUTCHours(nextHour % 24, 0, 0, 0);
-    if (nextHour >= 24) {
-      next6h.setUTCDate(next6h.getUTCDate() + 1);
+    if (currentHour >= 12) {
+      // If it's already past 12 PM today, schedule for tomorrow
+      nextDaily.setUTCDate(nextDaily.getUTCDate() + 1);
     }
+    nextDaily.setUTCHours(12, 0, 0, 0);
     
-    next12h.setTime(next6h.getTime() + (6 * 60 * 60 * 1000));
+    // Following run is 24 hours later
+    followingDaily.setTime(nextDaily.getTime() + (24 * 60 * 60 * 1000));
 
     return {
-      next: next6h,
-      following: next12h
+      next: nextDaily,
+      following: followingDaily
     };
   }
 }

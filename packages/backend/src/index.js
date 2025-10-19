@@ -431,7 +431,7 @@ async function initializeBackgroundServices(server) {
       try {
         const ethDistributionCron = new EthDistributionCron();
         ethDistributionCron.start();
-        console.log('✅ ETH distribution cron job started (runs every 6 hours)');
+        console.log('✅ ETH distribution cron job started (runs daily at 12:00 PM UTC)');
         
         // Store reference for graceful shutdown
         global.ethDistributionCron = ethDistributionCron;
