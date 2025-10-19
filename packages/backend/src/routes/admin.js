@@ -1,6 +1,7 @@
 import express from 'express';
 import { ethers } from 'ethers';
 import { getPool, refreshConnectionPool, validateSchema } from '../services/database.js';
+import { farcasterService } from '../services/farcaster.js';
 
 const router = express.Router();
 
@@ -518,6 +519,44 @@ router.post('/database/add-reward-columns', requireAuth, async (req, res) => {
     
   } catch (error) {
     console.error('❌ Reward columns migration failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Post cast from bot account
+router.post('/cast', requireAuth, async (req, res) => {
+  try {
+    const { text, options = {} } = req.body;
+    
+    if (!text || typeof text !== 'string' || text.trim().length === 0) {
+      return res.status(400).json({ error: 'Text is required and must be non-empty' });
+    }
+    
+    if (text.length > 320) {
+      return res.status(400).json({ error: 'Text must be 320 characters or less' });
+    }
+    
+    console.log(`🎙️ Admin casting: ${text.substring(0, 50)}...`);
+    
+    const cast = await farcasterService.publishCast(text, options);
+    
+    res.json({
+      success: true,
+      cast: {
+        hash: cast.hash,
+        text: cast.text,
+        timestamp: cast.timestamp
+      },
+      message: 'Cast published successfully',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Admin cast failed:', error);
     res.status(500).json({
       success: false,
       error: error.message,
