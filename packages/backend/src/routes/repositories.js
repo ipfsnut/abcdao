@@ -334,4 +334,62 @@ router.post('/:fid/repositories/:repoId/webhook', async (req, res) => {
   }
 });
 
+// Fix existing pending repositories by setting up webhooks
+router.post('/:fid/repositories/:repoId/fix-webhook', async (req, res) => {
+  const { fid, repoId } = req.params;
+  
+  try {
+    const pool = getPool();
+    
+    // Get repository details and verify ownership
+    const repoResult = await pool.query(`
+      SELECT rr.id, rr.repository_name, rr.repository_url, rr.status
+      FROM registered_repositories rr
+      JOIN users u ON rr.registered_by_user_id = u.id
+      WHERE rr.id = $1 AND u.farcaster_fid = $2 AND rr.status = 'pending'
+    `, [repoId, fid]);
+    
+    if (repoResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Pending repository not found or access denied' });
+    }
+    
+    const repo = repoResult.rows[0];
+    
+    // Generate webhook URL
+    const backendUrl = process.env.BACKEND_URL || 'https://abcdao-production.up.railway.app';
+    const webhookUrl = `${backendUrl}/api/webhooks/github`;
+    
+    // Extract owner/repo from repository name
+    const [owner, repoName] = repo.repository_name.split('/');
+    
+    // Set up webhook using GitHub API
+    const accessToken = await githubAPIService.getUserAccessToken(fid);
+    await githubAPIService.createWebhook(accessToken, owner, repoName, webhookUrl);
+    
+    // Update repository status
+    await pool.query(`
+      UPDATE registered_repositories 
+      SET 
+        webhook_configured = true,
+        status = 'active',
+        updated_at = NOW()
+      WHERE id = $1
+    `, [repoId]);
+    
+    res.json({
+      success: true,
+      message: `Webhook configured successfully for ${repo.repository_name}. Repository is now active.`
+    });
+    
+  } catch (error) {
+    console.error('Error fixing webhook:', error);
+    
+    if (error.message === 'User not found or GitHub not linked') {
+      return res.status(401).json({ error: 'GitHub account not linked. Please link your GitHub account first.' });
+    }
+    
+    res.status(500).json({ error: 'Failed to configure webhook: ' + error.message });
+  }
+});
+
 export default router;

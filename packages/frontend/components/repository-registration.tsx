@@ -412,13 +412,41 @@ export function RepositoryRegistration() {
                       <p className="text-yellow-400 font-mono text-xs font-semibold">
                         ⚠ Webhook Setup Required
                       </p>
-                      <button
-                        onClick={() => {
-                          const webhookUrl = `${config.backendUrl}/api/webhooks/github`;
-                          const repoName = repo.repository_name;
-                          const githubUrl = `https://github.com/${repoName}/settings/hooks`;
-                          
-                          const instructions = `
+                      <div className="flex gap-2">
+                        <button
+                          onClick={async () => {
+                            if (!profile?.fid) return;
+                            
+                            try {
+                              const response = await fetch(`${config.backendUrl}/api/repositories/${profile.fid}/repositories/${repo.id}/fix-webhook`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' }
+                              });
+                              
+                              const data = await response.json();
+                              
+                              if (response.ok) {
+                                toast.success(data.message || 'Webhook configured successfully!');
+                                fetchRepositories(); // Refresh the list
+                              } else {
+                                toast.error(data.error || 'Failed to configure webhook');
+                              }
+                            } catch (error) {
+                              console.error('Error fixing webhook:', error);
+                              toast.error('Failed to configure webhook');
+                            }
+                          }}
+                          className="bg-green-900/50 hover:bg-green-800/60 text-green-300 font-mono px-3 py-1 rounded text-xs border border-green-700/50 transition-all"
+                        >
+                          🔧 Auto Fix
+                        </button>
+                        <button
+                          onClick={() => {
+                            const webhookUrl = `${config.backendUrl}/api/webhooks/github`;
+                            const repoName = repo.repository_name;
+                            const githubUrl = `https://github.com/${repoName}/settings/hooks`;
+                            
+                            const instructions = `
 🔧 WEBHOOK SETUP: ${repoName}
 
 1. Click here to open GitHub: ${githubUrl}
@@ -430,24 +458,25 @@ export function RepositoryRegistration() {
 7. Click "Add webhook"
 
 Webhook URL copied to clipboard!
-                          `.trim();
-                          
-                          navigator.clipboard.writeText(webhookUrl);
-                          
-                          if (confirm(instructions + '\n\nOpen GitHub settings now?')) {
-                            window.open(githubUrl, '_blank');
-                          }
-                        }}
-                        className="bg-yellow-900/50 hover:bg-yellow-800/60 text-yellow-300 font-mono px-3 py-1 rounded text-xs border border-yellow-700/50 transition-all"
-                      >
-                        🚀 Quick Setup
-                      </button>
+                            `.trim();
+                            
+                            navigator.clipboard.writeText(webhookUrl);
+                            
+                            if (confirm(instructions + '\n\nOpen GitHub settings now?')) {
+                              window.open(githubUrl, '_blank');
+                            }
+                          }}
+                          className="bg-yellow-900/50 hover:bg-yellow-800/60 text-yellow-300 font-mono px-3 py-1 rounded text-xs border border-yellow-700/50 transition-all"
+                        >
+                          📋 Manual Setup
+                        </button>
+                      </div>
                     </div>
                     <code className="text-yellow-300 font-mono text-xs block bg-black/40 p-2 rounded">
                       {config.backendUrl}/api/webhooks/github
                     </code>
-                    <p className="text-yellow-600 font-mono text-xs mt-1">
-                      ✨ Rewards activate immediately after webhook setup
+                    <p className="text-green-600 font-mono text-xs mt-1">
+                      💡 Try "Auto Fix" if you've linked GitHub OAuth above
                     </p>
                   </div>
                 )}
