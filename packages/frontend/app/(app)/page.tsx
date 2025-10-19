@@ -22,6 +22,7 @@ import { Toaster } from 'sonner';
 import { StatsSkeleton, TabContentSkeleton } from '@/components/skeleton-loader';
 import { CollapsibleStatCard, TreasuryRewardsCard } from '@/components/collapsible-stat-card';
 import { EthRewardsHistory } from '@/components/eth-rewards-history';
+import { ABCPriceWidget } from '@/components/abc-price-widget';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -302,6 +303,13 @@ export default function Home() {
 
             </div>
           )}
+        </div>
+      </div>
+
+      {/* $ABC Price Widget */}
+      <div className="bg-black/80 border-b border-green-900/30 backdrop-blur-sm">
+        <div className="px-4 py-6">
+          <ABCPriceWidget />
         </div>
       </div>
 

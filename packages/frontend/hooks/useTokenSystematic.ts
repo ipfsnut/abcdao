@@ -60,13 +60,17 @@ export function useTokenSystematic(symbol: string = 'ABC'): UseTokenSystematicRe
   );
 
   const formatPrice = (price: number): string => {
+    // For very small prices (micro-cap tokens), show more decimal places
     if (price < 0.000001) {
-      return price.toExponential(3);
-    }
-    if (price < 0.01) {
+      // For extremely small prices, show up to 12 decimal places
+      return price.toFixed(12).replace(/\.?0+$/, '');
+    } else if (price < 0.0001) {
+      return price.toFixed(8).replace(/\.?0+$/, '');
+    } else if (price < 0.01) {
       return price.toFixed(6);
+    } else {
+      return price.toFixed(4);
     }
-    return price.toFixed(4);
   };
 
   const formatVolume = (volume: number): string => {
