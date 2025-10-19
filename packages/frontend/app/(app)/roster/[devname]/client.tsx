@@ -4,6 +4,35 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { ChevronLeftIcon, ArrowTopRightOnSquareIcon, FolderIcon } from '@heroicons/react/24/outline';
 
+// Simple error boundary to catch any provider issues
+function ErrorBoundary({ children }: { children: React.ReactNode }) {
+  const [hasError, setHasError] = useState(false);
+  
+  useEffect(() => {
+    const handleError = () => setHasError(true);
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
+  
+  if (hasError) {
+    return (
+      <div className="min-h-screen bg-black text-green-400 font-mono flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-400 mb-4">Something went wrong loading the page</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-green-900/50 hover:bg-green-800/60 text-green-400 px-4 py-2 rounded-lg border border-green-700/50"
+          >
+            Reload Page
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
+  return <>{children}</>;
+}
+
 interface DeveloperProfile {
   id: string;
   identifiers: {
@@ -54,7 +83,7 @@ interface RepositoryData {
   premium_benefits?: string[];
 }
 
-export default function DeveloperProfileClient({ devname }: { devname: string }) {
+function DeveloperProfileClientInner({ devname }: { devname: string }) {
   const [profile, setProfile] = useState<DeveloperProfile | null>(null);
   const [repositories, setRepositories] = useState<RepositoryData | null>(null);
   const [userCommits, setUserCommits] = useState<any[]>([]);
@@ -69,9 +98,17 @@ export default function DeveloperProfileClient({ devname }: { devname: string })
         setLoading(true);
         setError(null);
         
+        // Add timeout to prevent hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
         // Try to fetch by username (could be GitHub username or Farcaster username)
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app';
-        const response = await fetch(`${backendUrl}/api/users-commits/profile/${devname}`);
+        const response = await fetch(`${backendUrl}/api/users-commits/profile/${devname}`, {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
         
         if (!response.ok) {
           throw new Error('Developer not found');
@@ -83,13 +120,23 @@ export default function DeveloperProfileClient({ devname }: { devname: string })
         // Also fetch repository data and user commits if we have a user ID
         if (data.identifiers?.farcasterFid) {
           try {
-            const repoResponse = await fetch(`${backendUrl}/api/repositories/${data.identifiers.farcasterFid}/repositories`);
+            const repoController = new AbortController();
+            const repoTimeoutId = setTimeout(() => repoController.abort(), 8000);
+            
+            const repoResponse = await fetch(`${backendUrl}/api/repositories/${data.identifiers.farcasterFid}/repositories`, {
+              signal: repoController.signal
+            });
+            
+            clearTimeout(repoTimeoutId);
+            
             if (repoResponse.ok) {
               const repoData = await repoResponse.json();
               setRepositories(repoData);
             }
           } catch (repoError) {
-            console.warn('Failed to fetch repository data:', repoError);
+            if (repoError instanceof Error && repoError.name !== 'AbortError') {
+              console.warn('Failed to fetch repository data:', repoError);
+            }
           }
         }
         
@@ -97,19 +144,33 @@ export default function DeveloperProfileClient({ devname }: { devname: string })
         if (data.id) {
           try {
             setCommitsLoading(true);
-            const commitsResponse = await fetch(`${backendUrl}/api/users-commits/commits/user/${data.id}?limit=10`);
+            const commitsController = new AbortController();
+            const commitsTimeoutId = setTimeout(() => commitsController.abort(), 8000);
+            
+            const commitsResponse = await fetch(`${backendUrl}/api/users-commits/commits/user/${data.id}?limit=10`, {
+              signal: commitsController.signal
+            });
+            
+            clearTimeout(commitsTimeoutId);
+            
             if (commitsResponse.ok) {
               const commitsData = await commitsResponse.json();
               setUserCommits(commitsData.commits || []);
             }
           } catch (commitsError) {
-            console.warn('Failed to fetch user commits:', commitsError);
+            if (commitsError instanceof Error && commitsError.name !== 'AbortError') {
+              console.warn('Failed to fetch user commits:', commitsError);
+            }
           } finally {
             setCommitsLoading(false);
           }
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load profile');
+        if (err instanceof Error && err.name === 'AbortError') {
+          setError('Request timed out. Please try again.');
+        } else {
+          setError(err instanceof Error ? err.message : 'Failed to load profile');
+        }
       } finally {
         setLoading(false);
       }
@@ -535,5 +596,13 @@ export default function DeveloperProfileClient({ devname }: { devname: string })
         )}
       </div>
     </div>
+  );
+}
+
+export default function DeveloperProfileClient({ devname }: { devname: string }) {
+  return (
+    <ErrorBoundary>
+      <DeveloperProfileClientInner devname={devname} />
+    </ErrorBoundary>
   );
 }
