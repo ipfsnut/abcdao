@@ -138,6 +138,35 @@ router.get('/stats', async (req, res) => {
 });
 
 /**
+ * POST /api/treasury/refresh
+ * Manually trigger treasury data and price updates
+ */
+router.post('/refresh', async (req, res) => {
+  try {
+    console.log('🔄 Manual treasury refresh triggered...');
+    
+    // Trigger treasury data update
+    await treasuryDataManager.updateTreasuryData();
+    
+    // Trigger price update  
+    await treasuryDataManager.updateTokenPrices();
+    
+    res.json({
+      success: true,
+      message: 'Treasury data and prices refreshed successfully',
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Error manually refreshing treasury data:', error);
+    res.status(500).json({ 
+      error: 'Failed to refresh treasury data',
+      message: error.message 
+    });
+  }
+});
+
+/**
  * GET /api/treasury/health
  * Returns data manager health status
  */

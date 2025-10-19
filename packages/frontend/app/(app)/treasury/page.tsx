@@ -1,36 +1,37 @@
 'use client';
 
 import { useState } from 'react';
-import { useTreasury } from '@/hooks/useTreasury';
-import { useStakingWithPrice } from '@/hooks/useStakingWithPrice';
+import { useTreasurySystematic } from '@/hooks/useTreasurySystematic';
+import { useStakingSystematic } from '@/hooks/useStakingSystematic';
 import { useStats } from '@/hooks/useStats';
 import { ContractAddressesFooter } from '@/components/contract-addresses-footer';
 import { BackNavigation } from '@/components/back-navigation';
 import { Skeleton } from '@/components/skeleton-loader';
 import { EthRewardsHistory } from '@/components/eth-rewards-history';
-import { useTreasuryBalances } from '@/hooks/useTreasuryBalances';
-import { useTokenPrice } from '@/hooks/useTokenPrice';
 import { useTreasuryTransactions } from '@/hooks/useTreasuryTransactions';
 
 export default function TreasuryPage() {
-  const treasuryData = useTreasury();
-  const stakingData = useStakingWithPrice();
+  const treasuryData = useTreasurySystematic();
+  const stakingData = useStakingSystematic();
   const { stats, loading: statsLoading } = useStats();
-  const { balances: treasuryBalances, loading: balancesLoading, formatUSD: formatTreasuryUSD } = useTreasuryBalances();
-  const { priceData } = useTokenPrice();
   const { transactions, loading: transactionsLoading, formatTransactionHash, formatTimestamp, getTransactionColor, getTransactionIcon } = useTreasuryTransactions();
   const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'allocation'>('overview');
 
   const calculateTotalTreasuryValue = () => {
-    if (!treasuryBalances || !priceData || !treasuryData.treasuryBalance) return '$0.00';
+    if (!treasuryData.totalValueUSD) return '$0.00';
     
-    const abcValueUSD = parseFloat(treasuryData.treasuryBalance) * (priceData.price || 0.0000123);
-    const totalValueUSD = treasuryBalances.totalValueUSD + abcValueUSD;
+    // The systematic treasury data already includes the calculated total value
+    const totalValueUSD = treasuryData.totalValueUSD;
     
-    return formatTreasuryUSD(totalValueUSD);
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(totalValueUSD);
   };
 
-  const isLoading = treasuryData.isLoading || !stakingData.totalRewardsDistributed || statsLoading || balancesLoading;
+  const isLoading = treasuryData.isLoading || !stakingData.totalRewardsDistributed || statsLoading;
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
@@ -73,7 +74,7 @@ export default function TreasuryPage() {
                   {parseFloat(stakingData.totalStaked).toFixed(0)} $ABC
                 </p>
                 <p className="text-green-500 text-xs font-mono mt-1">
-                  {stakingData.formatUSD(stakingData.totalStakedValueUSD)} • Earning rewards
+                  ${(stakingData.totalStaked * treasuryData.abcPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} • Earning rewards
                 </p>
               </div>
               
@@ -142,7 +143,7 @@ export default function TreasuryPage() {
                               {parseFloat(treasuryData.treasuryBalance).toFixed(0)} $ABC
                             </div>
                             <div className="text-green-700 text-xs">
-                              {stakingData.formatUSD(parseFloat(treasuryData.treasuryBalance) * (priceData?.price || 0.0000123))}
+                              ${(treasuryData.treasuryBalance * treasuryData.abcPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                           </div>
                         </div>
@@ -150,10 +151,10 @@ export default function TreasuryPage() {
                           <span className="text-green-600">ETH Balance:</span>
                           <div className="text-right">
                             <div className="text-green-400 font-bold">
-                              {treasuryBalances?.ethBalance || '0.000'} ETH
+                              {treasuryData.ethBalance.toFixed(3)} ETH
                             </div>
                             <div className="text-green-700 text-xs">
-                              {treasuryBalances ? formatTreasuryUSD(treasuryBalances.ethBalanceUSD) : '$0.00'}
+                              ${(treasuryData.ethBalance * treasuryData.ethPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                           </div>
                         </div>
@@ -161,10 +162,10 @@ export default function TreasuryPage() {
                           <span className="text-green-600">WETH Balance:</span>
                           <div className="text-right">
                             <div className="text-green-400 font-bold">
-                              {treasuryBalances?.wethBalance || '0.00'} WETH
+                              0.00 WETH
                             </div>
                             <div className="text-green-700 text-xs">
-                              {treasuryBalances ? formatTreasuryUSD(treasuryBalances.wethBalanceUSD) : '$0.00'}
+                              $0.00
                             </div>
                           </div>
                         </div>
