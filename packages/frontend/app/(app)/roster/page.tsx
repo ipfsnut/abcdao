@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, useCallback } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
-import { useRoster, useRosterStats } from '@/hooks/useRoster';
+import { useLeaderboardSystematic, useUsersCommitsStatsSystematic } from '@/hooks/useUsersCommitsSystematic';
 import { useTokenPrice } from '@/hooks/useTokenPrice';
 
 const DEVELOPERS_PER_PAGE = 8;
@@ -14,23 +14,67 @@ export default function RosterPage() {
   const [sortBy, setSortBy] = useState<'commits' | 'rewards' | 'joined'>('commits');
   const { formatPrice } = useTokenPrice();
 
-  // Fetch roster data with current filters
+  // Fetch systematic leaderboard data
   const { 
-    developers, 
-    pagination, 
-    loading, 
-    error 
-  } = useRoster({
-    page: currentPage,
-    limit: DEVELOPERS_PER_PAGE,
-    filter: activeFilter,
-    sort: sortBy,
-    autoRefresh: true,
-    refreshInterval: 30000 // Refresh every 30 seconds
+    leaderboard: developers, 
+    isLoading: loading, 
+    isError: hasError,
+    error: errorMessage
+  } = useLeaderboardSystematic('all', DEVELOPERS_PER_PAGE * 10); // Get more data for client-side filtering
+
+  // Fetch systematic stats for the header
+  const { 
+    totalUsers,
+    paidMembers,
+    totalCommits,
+    isLoading: statsLoading 
+  } = useUsersCommitsStatsSystematic();
+
+  // Transform systematic data to match existing interface
+  const error = hasError ? (errorMessage || 'Failed to load roster data') : null;
+  
+  // Client-side filtering and pagination since systematic API doesn't support complex filters yet
+  const filteredDevelopers = developers.filter(dev => {
+    if (activeFilter === 'active') return dev.meta?.isActive;
+    if (activeFilter === 'inactive') return !dev.meta?.isActive;
+    return true; // 'all'
   });
 
-  // Fetch roster stats for the header
-  const { stats: rosterStats, loading: statsLoading } = useRosterStats();
+  // Client-side sorting
+  const sortedDevelopers = [...filteredDevelopers].sort((a, b) => {
+    if (sortBy === 'commits') return (b.stats?.commits || 0) - (a.stats?.commits || 0);
+    if (sortBy === 'rewards') return (parseFloat(b.stats?.totalRewards) || 0) - (parseFloat(a.stats?.totalRewards) || 0);
+    if (sortBy === 'joined') return new Date(b.meta?.joinedAt || b.profile?.createdAt).getTime() - new Date(a.meta?.joinedAt || a.profile?.createdAt).getTime();
+    return 0;
+  });
+
+  // Client-side pagination
+  const totalCount = sortedDevelopers.length;
+  const totalPages = Math.ceil(totalCount / DEVELOPERS_PER_PAGE);
+  const startIndex = (currentPage - 1) * DEVELOPERS_PER_PAGE;
+  const paginatedDevelopers = sortedDevelopers.slice(startIndex, startIndex + DEVELOPERS_PER_PAGE);
+
+  // Create pagination object to match existing interface
+  const pagination = {
+    currentPage,
+    totalPages,
+    totalCount,
+    limit: DEVELOPERS_PER_PAGE,
+    hasPreviousPage: currentPage > 1,
+    hasNextPage: currentPage < totalPages
+  };
+
+  // Create rosterStats object to match existing interface
+  const rosterStats = {
+    totalDevelopers: totalUsers,
+    activeDevelopers: paidMembers, // Using paid members as active for now
+    inactiveDevelopers: totalUsers - paidMembers,
+    totalCommits,
+    averageCommits: totalUsers > 0 ? Math.round(totalCommits / totalUsers) : 0
+  };
+
+  // Use paginated developers for rendering
+  const renderDevelopers = paginatedDevelopers;
 
   // Handle page changes
   const handlePageChange = useCallback((newPage: number) => {
@@ -225,14 +269,14 @@ export default function RosterPage() {
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-400 mb-4"></div>
               <p className="text-green-600 font-mono">Loading developers...</p>
             </div>
-          ) : developers.length === 0 ? (
+          ) : renderDevelopers.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-green-600 font-mono">No developers found for this filter.</p>
             </div>
           ) : (
             <>
               <div className="grid gap-3">
-                {developers.map((dev) => (
+                {renderDevelopers.map((dev) => (
                   <div
                     key={dev.id}
                     className="bg-green-950/10 border border-green-900/30 rounded-lg p-4 hover:bg-green-950/20 hover:border-green-700/50 transition-all duration-300"
@@ -240,33 +284,33 @@ export default function RosterPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className={`w-3 h-3 rounded-full ${
-                          dev.is_active ? 'bg-green-400 matrix-glow' : 'bg-gray-600'
+                          dev.meta?.isActive ? 'bg-green-400 matrix-glow' : 'bg-gray-600'
                         }`}></div>
                         <div>
                           <h4 className="font-semibold text-green-400 font-mono">
-                            @{dev.farcaster_username}
+                            @{dev.profile?.farcasterUsername || 'Unknown'}
                           </h4>
                           <div className="flex items-center gap-2 text-xs text-green-600 font-mono">
-                            <span>GitHub: @{dev.github_username}</span>
+                            <span>GitHub: @{dev.profile?.githubUsername || 'Unknown'}</span>
                             <span>•</span>
-                            <span>Joined {formatDate(dev.created_at)}</span>
+                            <span>Joined {formatDate(dev.meta?.joinedAt || dev.profile?.createdAt)}</span>
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-bold text-green-400 matrix-glow font-mono">
-                          {dev.total_commits} commits
+                          {dev.stats?.commits || 0} commits
                         </p>
                         <div className="flex items-center gap-2 text-xs text-green-600 font-mono">
                           <div className="text-right">
-                            <span>{(parseFloat(String(dev.total_rewards)) || 0).toFixed(2)} $ABC</span>
+                            <span>{(parseFloat(String(dev.stats?.totalRewards)) || 0).toFixed(2)} $ABC</span>
                             <div className="text-green-700 text-xs">
-                              ≈ {formatPrice((parseFloat(String(dev.total_rewards)) || 0))}
+                              ≈ {formatPrice((parseFloat(String(dev.stats?.totalRewards)) || 0))}
                             </div>
                           </div>
                           <span>•</span>
-                          <span className={dev.is_active ? 'text-green-400' : 'text-gray-500'}>
-                            {dev.is_active ? 'Active' : 'Inactive'}
+                          <span className={dev.meta?.isActive ? 'text-green-400' : 'text-gray-500'}>
+                            {dev.meta?.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </div>
                       </div>

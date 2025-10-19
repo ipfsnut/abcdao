@@ -15,11 +15,9 @@ import { useAccount } from 'wagmi';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { useState } from 'react';
 import { useStakingWithPrice } from '@/hooks/useStakingWithPrice';
-import { useTreasury } from '@/hooks/useTreasury';
-import { useStats } from '@/hooks/useStats';
+import { useTreasurySystematic } from '@/hooks/useTreasurySystematic';
+import { useUsersCommitsStatsSystematic } from '@/hooks/useUsersCommitsSystematic';
 import { useMembership } from '@/hooks/useMembership';
-import { useTreasuryBalances } from '@/hooks/useTreasuryBalances';
-import { useTokenPrice } from '@/hooks/useTokenPrice';
 import { Toaster } from 'sonner';
 import { StatsSkeleton, TabContentSkeleton } from '@/components/skeleton-loader';
 import { CollapsibleStatCard, TreasuryRewardsCard } from '@/components/collapsible-stat-card';
@@ -34,23 +32,28 @@ export default function Home() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'stake' | 'dev' | 'proposals' | 'chat' | 'swap' | 'join'>(isInMiniApp ? 'stake' : 'join');
   const stakingData = useStakingWithPrice();
-  const treasuryData = useTreasury();
-  const { stats, loading: statsLoading } = useStats();
-  const { balances: treasuryBalances, loading: balancesLoading, formatUSD: formatTreasuryUSD } = useTreasuryBalances();
-  const { priceData } = useTokenPrice();
+  const treasuryData = useTreasurySystematic();
+  const { 
+    totalUsers: totalDevelopers,
+    totalCommits,
+    totalRewardsDistributed: totalRewards,
+    isLoading: statsLoading 
+  } = useUsersCommitsStatsSystematic();
   
-  // Calculate total treasury value (ETH + $ABC)
-  const calculateTotalTreasuryValue = () => {
-    if (!treasuryBalances || !priceData || !treasuryData.treasuryBalance) return '$0.00';
+  // Use systematic treasury data - value already calculated
+  const formatTotalTreasuryValue = () => {
+    if (!treasuryData.totalValueUSD) return '$0.00';
     
-    const abcValueUSD = parseFloat(treasuryData.treasuryBalance) * (priceData.price || 0.0000123);
-    const totalValueUSD = treasuryBalances.totalValueUSD + abcValueUSD;
-    
-    return formatTreasuryUSD(totalValueUSD);
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(treasuryData.totalValueUSD);
   };
 
-  // Check if core data is still loading (include treasury balances)
-  const isDataLoading = !stakingData.tokenBalance || treasuryData.isLoading || statsLoading || balancesLoading;
+  // Check if core data is still loading
+  const isDataLoading = !stakingData.tokenBalance || treasuryData.isLoading || statsLoading;
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
@@ -174,7 +177,7 @@ export default function Home() {
               {/* Treasury & Rewards Container */}
               <CollapsibleStatCard
                 title="💰 Treasury & Rewards"
-                value={calculateTotalTreasuryValue()}
+                value={formatTotalTreasuryValue()}
                 description="Total treasury value (ETH + $ABC)"
                 href="/treasury"
               >
@@ -182,7 +185,7 @@ export default function Home() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-black/40 border border-green-900/30 rounded p-3 text-center">
                       <p className="text-green-600 font-mono text-xs mb-1">$ABC Holdings</p>
-                      <p className="text-green-400 font-mono font-bold text-sm">{parseFloat(treasuryData.treasuryBalance).toFixed(0)} $ABC</p>
+                      <p className="text-green-400 font-mono font-bold text-sm">{parseFloat(treasuryData.abcBalance || 0).toFixed(0)} $ABC</p>
                     </div>
                     <div className="bg-black/40 border border-green-900/30 rounded p-3 text-center">
                       <p className="text-green-600 font-mono text-xs mb-1">ETH Distributed</p>
@@ -240,7 +243,7 @@ export default function Home() {
               {/* Total Developers Container */}
               <CollapsibleStatCard
                 title="👥 DAO Members"
-                value={(stats.totalDevelopers || 0).toString()}
+                value={(totalDevelopers || 0).toString()}
                 description="Verified contributors"
                 href="/roster"
               >
@@ -248,18 +251,18 @@ export default function Home() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-black/40 border border-green-900/30 rounded p-3 text-center">
                       <p className="text-green-600 font-mono text-xs mb-1">Active Members</p>
-                      <p className="text-green-400 font-mono font-bold text-sm">{stats.totalDevelopers || 0}</p>
+                      <p className="text-green-400 font-mono font-bold text-sm">{totalDevelopers || 0}</p>
                     </div>
                     <div className="bg-black/40 border border-green-900/30 rounded p-3 text-center">
                       <p className="text-green-600 font-mono text-xs mb-1">Total Commits</p>
-                      <p className="text-green-400 font-mono font-bold text-sm">{stats.totalCommits || 0}</p>
+                      <p className="text-green-400 font-mono font-bold text-sm">{totalCommits || 0}</p>
                     </div>
                   </div>
                   
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-green-600 font-mono text-xs">Rewards Paid:</span>
-                      <span className="text-green-400 font-mono text-sm">{stats.totalRewards || 0} $ABC</span>
+                      <span className="text-green-400 font-mono text-sm">{totalRewards || 0} $ABC</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-green-600 font-mono text-xs">Membership Fee:</span>
@@ -382,7 +385,7 @@ export default function Home() {
                 <p className="text-green-600 font-mono text-xs mb-2">Community Members:</p>
                 <div className="flex justify-center items-center gap-2">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-green-400 font-mono font-bold">{(stats.totalDevelopers || 0)} developers</span>
+                  <span className="text-green-400 font-mono font-bold">{(totalDevelopers || 0)} developers</span>
                   <span className="text-green-600 font-mono text-sm">building together</span>
                 </div>
               </div>

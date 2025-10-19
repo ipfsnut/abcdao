@@ -9,6 +9,8 @@ import { BackNavigation } from '@/components/back-navigation';
 import { Skeleton } from '@/components/skeleton-loader';
 import { EthRewardsHistory } from '@/components/eth-rewards-history';
 import { useTreasuryTransactions } from '@/hooks/useTreasuryTransactions';
+import { CONTRACTS } from '@/lib/contracts';
+import Link from 'next/link';
 
 export default function TreasuryPage() {
   const treasuryData = useTreasurySystematic();
@@ -199,6 +201,108 @@ export default function TreasuryPage() {
                         <span className="text-green-300 font-mono text-sm">
                           {stats.totalRewards || 0} $ABC
                         </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions & Links Section */}
+              <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 backdrop-blur-sm">
+                <h3 className="text-responsive-lg font-bold mb-4 text-green-400 matrix-glow font-mono">
+                  {'>'} Quick Actions & Resources
+                </h3>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Token Information */}
+                  <div className="space-y-4">
+                    <h4 className="text-green-400 font-mono text-sm mb-3">🪙 Token Information</h4>
+                    <div className="space-y-3">
+                      <Link
+                        href="/supply"
+                        className="flex items-center justify-between bg-green-950/10 border border-green-900/30 rounded-lg p-3 hover:bg-green-950/20 hover:border-green-700/50 transition-all duration-300"
+                      >
+                        <div>
+                          <p className="text-green-400 font-mono text-sm">📊 Token Supply & Metrics</p>
+                          <p className="text-green-600 font-mono text-xs">Circulating supply, distribution, analytics</p>
+                        </div>
+                        <span className="text-green-400 font-mono text-sm">→</span>
+                      </Link>
+                      
+                      <a
+                        href={`https://basescan.org/token/${CONTRACTS.ABC_TOKEN.address}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between bg-green-950/10 border border-green-900/30 rounded-lg p-3 hover:bg-green-950/20 hover:border-green-700/50 transition-all duration-300"
+                      >
+                        <div>
+                          <p className="text-green-400 font-mono text-sm">🔗 $ABC Contract</p>
+                          <p className="text-green-600 font-mono text-xs">{CONTRACTS.ABC_TOKEN.address.slice(0, 10)}...{CONTRACTS.ABC_TOKEN.address.slice(-8)}</p>
+                        </div>
+                        <span className="text-green-400 font-mono text-sm">↗</span>
+                      </a>
+                      
+                      <a
+                        href={`https://dexscreener.com/base/${CONTRACTS.ABC_TOKEN.address}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between bg-green-950/10 border border-green-900/30 rounded-lg p-3 hover:bg-green-950/20 hover:border-green-700/50 transition-all duration-300"
+                      >
+                        <div>
+                          <p className="text-green-400 font-mono text-sm">📈 Price Chart</p>
+                          <p className="text-green-600 font-mono text-xs">Live trading data on DexScreener</p>
+                        </div>
+                        <span className="text-green-400 font-mono text-sm">↗</span>
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Staking Information */}
+                  <div className="space-y-4">
+                    <h4 className="text-green-400 font-mono text-sm mb-3">🏦 Staking & Rewards</h4>
+                    <div className="space-y-3">
+                      <Link
+                        href="/staking"
+                        className="flex items-center justify-between bg-green-950/10 border border-green-900/30 rounded-lg p-3 hover:bg-green-950/20 hover:border-green-700/50 transition-all duration-300"
+                      >
+                        <div>
+                          <p className="text-green-400 font-mono text-sm">🚀 Stake $ABC</p>
+                          <p className="text-green-600 font-mono text-xs">Earn ETH rewards from protocol fees</p>
+                        </div>
+                        <span className="text-green-400 font-mono text-sm">→</span>
+                      </Link>
+                      
+                      <a
+                        href={`https://basescan.org/address/${CONTRACTS.ABC_STAKING.address}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between bg-green-950/10 border border-green-900/30 rounded-lg p-3 hover:bg-green-950/20 hover:border-green-700/50 transition-all duration-300"
+                      >
+                        <div>
+                          <p className="text-green-400 font-mono text-sm">⚡ Staking Contract</p>
+                          <p className="text-green-600 font-mono text-xs">{CONTRACTS.ABC_STAKING.address.slice(0, 10)}...{CONTRACTS.ABC_STAKING.address.slice(-8)}</p>
+                        </div>
+                        <span className="text-green-400 font-mono text-sm">↗</span>
+                      </a>
+                      
+                      <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3">
+                        <div className="flex justify-between items-center mb-2">
+                          <p className="text-green-400 font-mono text-sm">💰 Current APY</p>
+                          <p className="text-green-300 font-mono text-sm font-bold">Variable</p>
+                        </div>
+                        <p className="text-green-600 font-mono text-xs">Based on protocol trading fees & rewards</p>
+                      </div>
+                      
+                      <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3">
+                        <div className="flex justify-between items-center mb-2">
+                          <p className="text-green-400 font-mono text-sm">📊 Total Staked</p>
+                          <p className="text-green-300 font-mono text-sm font-bold">
+                            {parseFloat(stakingData.totalStaked).toFixed(0)} $ABC
+                          </p>
+                        </div>
+                        <p className="text-green-600 font-mono text-xs">
+                          ${(stakingData.totalStaked * treasuryData.abcPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD value locked
+                        </p>
                       </div>
                     </div>
                   </div>

@@ -254,11 +254,17 @@ export class StakingDataManager {
     const rewardsUSD = totalETHRewards * avgETHPrice;
     const stakedUSD = averageStaked * avgABCPrice;
     
+    // Calculate actual annualized return based on real on-chain events
     const periodicReturn = rewardsUSD / stakedUSD;
-    const periodsPerYear = 8760 / hoursBack; // Hours in year / period hours
-    const apy = (Math.pow(1 + periodicReturn, periodsPerYear) - 1) * 100;
+    const hoursPerYear = 8760;
+    const annualizationFactor = hoursPerYear / hoursBack;
+    
+    // Simple linear extrapolation - if this period had X return, 
+    // what would a full year of similar activity yield?
+    const apy = periodicReturn * annualizationFactor * 100;
     
     console.log(`📊 APY calculation (${period}): ${totalETHRewards.toFixed(4)} ETH ($${rewardsUSD.toFixed(2)}) / ${averageStaked.toFixed(0)} ABC ($${stakedUSD.toFixed(2)}) = ${apy.toFixed(2)}% APY`);
+    console.log(`   Details: ETH@$${avgETHPrice} | ABC@$${avgABCPrice} | Period: ${hoursBack}h | Annualization: ${annualizationFactor.toFixed(1)}x`);
     
     return {
       rewardsDistributed: totalETHRewards, // Keep in ETH for display
@@ -271,7 +277,9 @@ export class StakingDataManager {
         rewardsUSD,
         stakedUSD,
         periodicReturn,
-        periodsPerYear
+        annualizationFactor,
+        hoursBack,
+        calculationMethod: 'simple_linear_extrapolation'
       }
     };
   }
