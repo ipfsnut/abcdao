@@ -50,7 +50,11 @@ router.get('/overview', async (req, res) => {
       apyBreakdown: apyBreakdown.map(apy => ({
         period: apy.calculation_period,
         apy: parseFloat(apy.calculated_apy),
-        calculatedAt: apy.calculation_time
+        calculatedAt: apy.calculation_time,
+        calculationDetails: apy.calculation_details ? 
+          (typeof apy.calculation_details === 'string' ? 
+            JSON.parse(apy.calculation_details) : 
+            apy.calculation_details) : null
       }))
     });
 
@@ -176,7 +180,11 @@ router.get('/apy/historical', async (req, res) => {
       apy: parseFloat(calc.calculated_apy),
       rewardsDistributed: parseFloat(calc.rewards_distributed),
       averageStaked: parseFloat(calc.average_staked),
-      calculatedAt: calc.calculation_time
+      calculatedAt: calc.calculation_time,
+      calculationDetails: calc.calculation_details ? 
+        (typeof calc.calculation_details === 'string' ? 
+          JSON.parse(calc.calculation_details) : 
+          calc.calculation_details) : null
     }));
 
     res.json({

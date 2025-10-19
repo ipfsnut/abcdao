@@ -169,6 +169,7 @@ export class StakingDataManager {
           rewardsDistributed: apy.rewardsDistributed,
           averageStaked: apy.averageStaked,
           calculatedAPY: apy.apy,
+          calculationDetails: apy.calculationDetails,
           timestamp: new Date()
         });
       }
@@ -183,42 +184,95 @@ export class StakingDataManager {
 
   /**
    * Calculate APY for a specific time period
+   * Fixed: Now converts both ETH rewards and ABC staked to USD for proper ratio calculation
    */
   async calculateAPYForPeriod(period) {
     const hoursBack = period === '24h' ? 24 : period === '7d' ? 168 : 720;
     const pool = getPool();
     
-    // Get average staked amount over period
+    // Get average staked amount over period (in ABC tokens)
     const avgStakedResult = await pool.query(`
       SELECT AVG(total_staked) as average
       FROM staking_snapshots 
       WHERE snapshot_time >= NOW() - INTERVAL '${hoursBack} hours'
     `);
     
-    // Get rewards distributed in period (using ETH distributions as proxy)
+    // Get rewards distributed in period with ETH prices
     const rewardsResult = await pool.query(`
-      SELECT COALESCE(SUM(eth_amount), 0) as total_rewards
+      SELECT 
+        COALESCE(SUM(eth_amount), 0) as total_eth_rewards,
+        AVG(eth_price_usd) as avg_eth_price
       FROM eth_distributions 
       WHERE created_at >= NOW() - INTERVAL '${hoursBack} hours'
         AND status = 'completed'
+        AND eth_price_usd IS NOT NULL
     `);
     
-    const averageStaked = parseFloat(avgStakedResult.rows[0]?.average) || 0;
-    const rewardsDistributed = parseFloat(rewardsResult.rows[0]?.total_rewards) || 0;
+    // Get average ABC price during the period from token market data
+    const abcPriceResult = await pool.query(`
+      SELECT AVG(price_usd) as avg_abc_price
+      FROM token_market_data 
+      WHERE token_symbol = 'ABC' 
+        AND updated_at >= NOW() - INTERVAL '${hoursBack} hours'
+    `);
     
-    // Calculate annualized return
-    if (averageStaked === 0) {
-      return { rewardsDistributed: 0, averageStaked: 0, apy: 0 };
+    // Fallback to most recent ABC price if no data in period
+    let avgABCPrice = parseFloat(abcPriceResult.rows[0]?.avg_abc_price);
+    if (!avgABCPrice) {
+      const recentABCPrice = await pool.query(`
+        SELECT price_usd 
+        FROM token_market_data 
+        WHERE token_symbol = 'ABC' 
+        ORDER BY updated_at DESC 
+        LIMIT 1
+      `);
+      avgABCPrice = parseFloat(recentABCPrice.rows[0]?.price_usd) || 0;
     }
     
-    const periodicReturn = rewardsDistributed / averageStaked;
+    const averageStaked = parseFloat(avgStakedResult.rows[0]?.average) || 0;
+    const totalETHRewards = parseFloat(rewardsResult.rows[0]?.total_eth_rewards) || 0;
+    const avgETHPrice = parseFloat(rewardsResult.rows[0]?.avg_eth_price) || 0;
+    
+    // Calculate returns in USD terms (fixing the unit mismatch bug)
+    if (averageStaked === 0 || avgABCPrice === 0) {
+      console.log(`📊 APY calculation (${period}): No staking data or ABC price - returning 0%`);
+      return { 
+        rewardsDistributed: 0, 
+        averageStaked: 0, 
+        apy: 0,
+        calculationDetails: {
+          averageStaked,
+          totalETHRewards,
+          avgETHPrice,
+          avgABCPrice,
+          rewardsUSD: 0,
+          stakedUSD: 0
+        }
+      };
+    }
+    
+    const rewardsUSD = totalETHRewards * avgETHPrice;
+    const stakedUSD = averageStaked * avgABCPrice;
+    
+    const periodicReturn = rewardsUSD / stakedUSD;
     const periodsPerYear = 8760 / hoursBack; // Hours in year / period hours
     const apy = (Math.pow(1 + periodicReturn, periodsPerYear) - 1) * 100;
     
+    console.log(`📊 APY calculation (${period}): ${totalETHRewards.toFixed(4)} ETH ($${rewardsUSD.toFixed(2)}) / ${averageStaked.toFixed(0)} ABC ($${stakedUSD.toFixed(2)}) = ${apy.toFixed(2)}% APY`);
+    
     return {
-      rewardsDistributed,
+      rewardsDistributed: totalETHRewards, // Keep in ETH for display
       averageStaked,
-      apy: Math.max(0, apy) // Ensure non-negative
+      apy: Math.max(0, apy), // Ensure non-negative
+      calculationDetails: {
+        totalETHRewards,
+        avgETHPrice,
+        avgABCPrice,
+        rewardsUSD,
+        stakedUSD,
+        periodicReturn,
+        periodsPerYear
+      }
     };
   }
 
@@ -381,9 +435,21 @@ export class StakingDataManager {
 
   /**
    * Store APY calculation in database
+   * Enhanced: Now includes calculation details for transparency and debugging
    */
   async storeAPYCalculation(calculation) {
     const pool = getPool();
+    
+    try {
+      // First, try to add the calculation_details column if it doesn't exist
+      await pool.query(`
+        ALTER TABLE apy_calculations 
+        ADD COLUMN IF NOT EXISTS calculation_details JSONB
+      `);
+    } catch (error) {
+      // Column might already exist, continue
+      console.log('APY calculations table column check:', error.message);
+    }
     
     await pool.query(`
       INSERT INTO apy_calculations (
@@ -391,13 +457,15 @@ export class StakingDataManager {
         rewards_distributed,
         average_staked,
         calculated_apy,
+        calculation_details,
         calculation_time
-      ) VALUES ($1, $2, $3, $4, $5)
+      ) VALUES ($1, $2, $3, $4, $5, $6)
     `, [
       calculation.period,
       calculation.rewardsDistributed,
       calculation.averageStaked,
       calculation.calculatedAPY,
+      JSON.stringify(calculation.calculationDetails || {}),
       calculation.timestamp
     ]);
   }
