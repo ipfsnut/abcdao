@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { ChevronLeftIcon, ArrowTopRightOnSquareIcon, FolderIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ArrowTopRightOnSquareIcon, FolderIcon, PlusIcon, CogIcon } from '@heroicons/react/24/outline';
+import useProfileOwnership from '@/hooks/useProfileOwnership';
 
 // Simple error boundary to catch any provider issues
 function ErrorBoundary({ children }: { children: React.ReactNode }) {
@@ -91,6 +92,9 @@ function DeveloperProfileClientInner({ devname }: { devname: string }) {
   const [loading, setLoading] = useState(true);
   const [commitsLoading, setCommitsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Add ownership detection
+  const ownership = useProfileOwnership(devname);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -506,9 +510,17 @@ function DeveloperProfileClientInner({ devname }: { devname: string }) {
         {/* Repositories Tab */}
         {activeTab === 'repositories' && (
           <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 backdrop-blur-sm">
-            <h3 className="text-lg font-bold mb-4 text-green-400 matrix-glow font-mono">
-              {'>'} connected_repositories.list()
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-green-400 matrix-glow font-mono">
+                {'>'} connected_repositories.list()
+              </h3>
+              {ownership.isOwner && (
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-400 matrix-glow"></div>
+                  <span className="text-xs font-mono text-green-600">You can manage these</span>
+                </div>
+              )}
+            </div>
             
             {repositories?.premium_staker && (
               <div className="mb-4 p-3 bg-amber-950/20 border border-amber-900/50 rounded-lg">
@@ -521,6 +533,41 @@ function DeveloperProfileClientInner({ devname }: { devname: string }) {
                     <p key={index}>• {benefit}</p>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Repository Management Section - Only for owners */}
+            {ownership.isOwner && (
+              <div className="mb-6 p-4 bg-blue-950/20 border border-blue-900/50 rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <CogIcon className="w-5 h-5 text-blue-400" />
+                  <h4 className="text-blue-400 font-mono font-semibold">Repository Management</h4>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={() => {
+                      // TODO: Open add repository modal/form
+                      alert('Add repository functionality coming soon!');
+                    }}
+                    className="flex items-center gap-2 bg-blue-900/50 hover:bg-blue-900/70 text-blue-400 font-mono px-4 py-2 rounded-lg border border-blue-700/50 transition-all duration-300 hover:matrix-glow"
+                  >
+                    <PlusIcon className="w-4 h-4" />
+                    Add Repository
+                  </button>
+                  <button
+                    onClick={() => {
+                      // TODO: Open repository settings modal
+                      alert('Repository settings coming soon!');
+                    }}
+                    className="flex items-center gap-2 bg-green-900/50 hover:bg-green-900/70 text-green-400 font-mono px-4 py-2 rounded-lg border border-green-700/50 transition-all duration-300 hover:matrix-glow"
+                  >
+                    <CogIcon className="w-4 h-4" />
+                    Settings
+                  </button>
+                </div>
+                <p className="text-blue-600/70 font-mono text-xs mt-2">
+                  Authenticated as: {ownership.authMethod} • {ownership.authUser?.username || ownership.authUser?.walletAddress?.slice(0, 8) + '...'}
+                </p>
               </div>
             )}
             
