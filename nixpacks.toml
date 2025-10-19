@@ -2,7 +2,7 @@
 nixPkgs = ["nodejs_22", "npm-9_x"]
 
 [phases.install]
-cmds = ["rm -rf node_modules package-lock.json", "npm install", "cd app && npm install"]
+cmds = ["cd app && rm -rf node_modules package-lock.json", "cd app && npm install"]
 
 [start]
 cmd = "cd app && node src/index.js"
