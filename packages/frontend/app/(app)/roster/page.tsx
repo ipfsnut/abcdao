@@ -283,9 +283,24 @@ export default function RosterPage() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${
-                          dev.meta?.isActive ? 'bg-green-400 matrix-glow' : 'bg-gray-600'
-                        }`}></div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-green-950/20 border border-green-900/50 rounded-lg flex items-center justify-center flex-shrink-0">
+                            {dev.profile?.avatarUrl ? (
+                              <img 
+                                src={dev.profile.avatarUrl} 
+                                alt={dev.profile.displayName || dev.profile.farcasterUsername}
+                                className="w-full h-full object-cover rounded-lg"
+                              />
+                            ) : (
+                              <span className="text-xs text-green-400 matrix-glow">
+                                {(dev.profile?.displayName || dev.profile?.farcasterUsername || 'U').charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <div className={`w-2 h-2 rounded-full ${
+                            dev.meta?.isActive ? 'bg-green-400 matrix-glow' : 'bg-gray-600'
+                          }`}></div>
+                        </div>
                         <div>
                           <Link 
                             href={`/roster/${dev.profile?.farcasterUsername || dev.profile?.githubUsername || dev.id}`}
