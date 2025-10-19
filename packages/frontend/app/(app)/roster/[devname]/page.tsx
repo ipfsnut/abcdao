@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { ChevronLeftIcon, ExternalLinkIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import { useParams } from 'next/navigation';
 
 interface DeveloperProfile {
@@ -211,7 +211,7 @@ export default function DeveloperProfilePage() {
                 className="flex items-center gap-2 bg-green-950/10 border border-green-900/30 rounded-lg px-3 py-2 hover:bg-green-950/20 hover:border-green-700/50 transition-all duration-300 group"
               >
                 <span className="text-sm font-mono text-green-400">GitHub</span>
-                <ExternalLinkIcon className="w-4 h-4 text-green-600 group-hover:text-green-400" />
+                <ArrowTopRightOnSquareIcon className="w-4 h-4 text-green-600 group-hover:text-green-400" />
               </a>
               {profile.profile.farcasterUsername && (
                 <a
@@ -221,7 +221,7 @@ export default function DeveloperProfilePage() {
                   className="flex items-center gap-2 bg-green-950/10 border border-green-900/30 rounded-lg px-3 py-2 hover:bg-green-950/20 hover:border-green-700/50 transition-all duration-300 group"
                 >
                   <span className="text-sm font-mono text-green-400">Farcaster</span>
-                  <ExternalLinkIcon className="w-4 h-4 text-green-600 group-hover:text-green-400" />
+                  <ArrowTopRightOnSquareIcon className="w-4 h-4 text-green-600 group-hover:text-green-400" />
                 </a>
               )}
             </div>
