@@ -299,10 +299,10 @@ async function startServer() {
     const server = createServer(app);
     
     // Start server FIRST for fast health checks
-    server.listen(PORT, '0.0.0.0', () => {
+    server.listen(PORT, () => {
       console.log(`🚀 ABC DAO Backend running on port ${PORT}`);
-      console.log(`📊 Health check: http://0.0.0.0:${PORT}/health`);
-      console.log(`🔌 WebSocket endpoint: ws://0.0.0.0:${PORT}/realtime`);
+      console.log(`📊 Health check: http://localhost:${PORT}/health`);
+      console.log(`🔌 WebSocket endpoint: ws://localhost:${PORT}/realtime`);
       console.log('⏱️  Initializing background services...');
     });
     
