@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { ChevronLeftIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ArrowTopRightOnSquareIcon, FolderIcon } from '@heroicons/react/24/outline';
 
 interface DeveloperProfile {
   id: string;
@@ -33,8 +33,24 @@ interface DeveloperProfile {
   }>;
 }
 
+interface RepositoryData {
+  repositories: Array<{
+    id: number;
+    repository_name: string;
+    repository_url: string;
+    is_active: boolean;
+    added_at: string;
+  }>;
+  member_slots_used: number;
+  member_slots_remaining: number;
+  premium_staker: boolean;
+  premium_benefits?: string[];
+}
+
 export default function DeveloperProfileClient({ devname }: { devname: string }) {
   const [profile, setProfile] = useState<DeveloperProfile | null>(null);
+  const [repositories, setRepositories] = useState<RepositoryData | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'repositories'>('overview');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,6 +69,19 @@ export default function DeveloperProfileClient({ devname }: { devname: string })
         
         const data = await response.json();
         setProfile(data);
+        
+        // Also fetch repository data if we have a user ID
+        if (data.identifiers?.farcasterFid) {
+          try {
+            const repoResponse = await fetch(`/api/repositories/${data.identifiers.farcasterFid}/repositories`);
+            if (repoResponse.ok) {
+              const repoData = await repoResponse.json();
+              setRepositories(repoData);
+            }
+          } catch (repoError) {
+            console.warn('Failed to fetch repository data:', repoError);
+          }
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load profile');
       } finally {
@@ -232,6 +261,67 @@ export default function DeveloperProfileClient({ devname }: { devname: string })
           )}
         </div>
 
+        {/* Social Profile Containers */}
+        <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* GitHub Profile Container */}
+          {profile.profile.githubUsername && (
+            <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 backdrop-blur-sm">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 bg-green-950/20 border border-green-900/50 rounded flex items-center justify-center">
+                  <span className="text-xs font-mono text-green-400">GH</span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-green-400 font-mono">GitHub Profile</h3>
+                  <p className="text-xs text-green-600 font-mono">@{profile.profile.githubUsername}</p>
+                </div>
+              </div>
+              <div className="space-y-2 text-xs font-mono">
+                <div className="flex justify-between">
+                  <span className="text-green-600">Profile:</span>
+                  <a href={`https://github.com/${profile.profile.githubUsername}`} 
+                     target="_blank" rel="noopener noreferrer"
+                     className="text-green-400 hover:text-green-300 flex items-center gap-1">
+                    View Profile <ArrowTopRightOnSquareIcon className="w-3 h-3" />
+                  </a>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-green-600">Status:</span>
+                  <span className="text-green-400">Connected</span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Farcaster Profile Container */}
+          {profile.profile.farcasterUsername && (
+            <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 backdrop-blur-sm">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 bg-purple-950/20 border border-purple-900/50 rounded flex items-center justify-center">
+                  <span className="text-xs font-mono text-purple-400">FC</span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-purple-400 font-mono">Farcaster Profile</h3>
+                  <p className="text-xs text-purple-600 font-mono">@{profile.profile.farcasterUsername}</p>
+                </div>
+              </div>
+              <div className="space-y-2 text-xs font-mono">
+                <div className="flex justify-between">
+                  <span className="text-purple-600">Profile:</span>
+                  <a href={`https://warpcast.com/${profile.profile.farcasterUsername}`} 
+                     target="_blank" rel="noopener noreferrer"
+                     className="text-purple-400 hover:text-purple-300 flex items-center gap-1">
+                    View Profile <ArrowTopRightOnSquareIcon className="w-3 h-3" />
+                  </a>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-purple-600">Status:</span>
+                  <span className="text-purple-400">Connected</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Stats Grid */}
         <div className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 backdrop-blur-sm">
@@ -253,45 +343,165 @@ export default function DeveloperProfileClient({ devname }: { devname: string })
           </div>
         </div>
 
-        {/* Recent Commits */}
-        <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 backdrop-blur-sm">
-          <h3 className="text-lg font-bold mb-4 text-green-400 matrix-glow font-mono">
-            {'>'} recent_commits.list()
-          </h3>
-          
-          {profile.recentCommits && profile.recentCommits.length > 0 ? (
-            <div className="space-y-3">
-              {profile.recentCommits.slice(0, 10).map((commit) => (
-                <div
-                  key={commit.hash}
-                  className="bg-green-950/10 border border-green-900/30 rounded-lg p-3 hover:bg-green-950/20 transition-all duration-300"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-green-400 font-mono text-sm font-medium">
-                        {formatCommitMessage(commit.message)}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-green-600 font-mono">
-                        <span>{commit.repository}</span>
-                        <span>•</span>
-                        <span>{formatDate(commit.timestamp)}</span>
+        {/* Tab Navigation */}
+        <div className="mb-6">
+          <div className="flex gap-2 bg-green-950/10 border border-green-900/30 p-1 rounded-lg font-mono w-fit">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`px-4 py-2 rounded-md font-medium transition-all duration-300 text-sm ${
+                activeTab === 'overview'
+                  ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50'
+                  : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setActiveTab('repositories')}
+              className={`px-4 py-2 rounded-md font-medium transition-all duration-300 text-sm ${
+                activeTab === 'repositories'
+                  ? 'bg-green-900/50 text-green-400 matrix-glow border border-green-700/50'
+                  : 'text-green-600 hover:text-green-400 hover:bg-green-950/20'
+              }`}
+            >
+              Repositories ({repositories?.repositories?.length || 0})
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 backdrop-blur-sm">
+            <h3 className="text-lg font-bold mb-4 text-green-400 matrix-glow font-mono">
+              {'>'} recent_commits.list()
+            </h3>
+            
+            {profile.recentCommits && profile.recentCommits.length > 0 ? (
+              <div className="space-y-3">
+                {profile.recentCommits.slice(0, 10).map((commit) => (
+                  <div
+                    key={commit.hash}
+                    className="bg-green-950/10 border border-green-900/30 rounded-lg p-3 hover:bg-green-950/20 transition-all duration-300"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-green-400 font-mono text-sm font-medium">
+                          {formatCommitMessage(commit.message)}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-green-600 font-mono">
+                          <span>{commit.repository}</span>
+                          <span>•</span>
+                          <span>{formatDate(commit.timestamp)}</span>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-sm font-bold text-green-400 matrix-glow font-mono">
+                          +{commit.reward.toLocaleString()} $ABC
+                        </p>
                       </div>
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-sm font-bold text-green-400 matrix-glow font-mono">
-                        +{commit.reward.toLocaleString()} $ABC
-                      </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-green-600 font-mono">No recent commits found.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Repositories Tab */}
+        {activeTab === 'repositories' && (
+          <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 backdrop-blur-sm">
+            <h3 className="text-lg font-bold mb-4 text-green-400 matrix-glow font-mono">
+              {'>'} connected_repositories.list()
+            </h3>
+            
+            {repositories?.premium_staker && (
+              <div className="mb-4 p-3 bg-amber-950/20 border border-amber-900/50 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 rounded-full bg-amber-400"></div>
+                  <span className="text-sm font-mono text-amber-400">Premium Staker Benefits</span>
+                </div>
+                <div className="text-xs text-amber-600 font-mono space-y-1">
+                  {repositories.premium_benefits?.map((benefit, index) => (
+                    <p key={index}>• {benefit}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {repositories && repositories.repositories.length > 0 ? (
+              <div className="space-y-3">
+                {repositories.repositories.map((repo) => (
+                  <div
+                    key={repo.id}
+                    className="bg-green-950/10 border border-green-900/30 rounded-lg p-4 hover:bg-green-950/20 transition-all duration-300"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3 flex-1">
+                        <FolderIcon className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-green-400 font-mono text-sm font-medium mb-1">
+                            {repo.repository_name}
+                          </h4>
+                          <a 
+                            href={repo.repository_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs text-green-600 hover:text-green-400 font-mono flex items-center gap-1 mb-2"
+                          >
+                            {repo.repository_url} <ArrowTopRightOnSquareIcon className="w-3 h-3" />
+                          </a>
+                          <div className="flex items-center gap-4 text-xs text-green-600 font-mono">
+                            <span>Added {formatDate(repo.added_at)}</span>
+                            <span>•</span>
+                            <span className={repo.is_active ? 'text-green-400' : 'text-gray-500'}>
+                              {repo.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className={`w-2 h-2 rounded-full ${
+                          repo.is_active ? 'bg-green-400 matrix-glow' : 'bg-gray-600'
+                        }`}></div>
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <FolderIcon className="w-12 h-12 text-green-600 mx-auto mb-3 opacity-50" />
+                <p className="text-green-600 font-mono mb-2">No repositories connected</p>
+                <p className="text-green-700 font-mono text-xs">
+                  Repositories added to ABC DAO's reward stream will appear here
+                </p>
+              </div>
+            )}
+            
+            {repositories && (
+              <div className="mt-6 pt-4 border-t border-green-900/30">
+                <div className="grid grid-cols-2 gap-4 text-xs font-mono">
+                  <div>
+                    <span className="text-green-600">Slots Used:</span>
+                    <span className="text-green-400 ml-2">
+                      {repositories.member_slots_used} / {repositories.premium_staker ? '∞' : repositories.member_slots_used + repositories.member_slots_remaining}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-green-600">Status:</span>
+                    <span className="text-green-400 ml-2">
+                      {repositories.premium_staker ? 'Premium' : 'Member'}
+                    </span>
+                  </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-green-600 font-mono">No recent commits found.</p>
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
