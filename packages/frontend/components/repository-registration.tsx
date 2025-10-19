@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { config } from '@/lib/config';
+import { GitHubOAuthRepositoryManager } from './github-oauth-repository-manager';
 
 interface Repository {
   id: number;
@@ -161,11 +162,23 @@ export function RepositoryRegistration() {
 
   return (
     <div className="space-y-6">
+      {/* GitHub OAuth Repository Manager */}
+      <GitHubOAuthRepositoryManager />
+      
+      {/* Divider */}
+      <div className="flex items-center gap-4">
+        <div className="flex-1 h-px bg-green-900/50"></div>
+        <span className="text-green-600 font-mono text-sm">OR</span>
+        <div className="flex-1 h-px bg-green-900/50"></div>
+      </div>
       {/* Repository Management Header */}
       <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
         <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
-          {'>'} repository_manager()
+          {'>'} manual_repository_manager()
         </h2>
+        <p className="text-green-600 font-mono text-sm mb-4">
+          Manual registration requires webhook setup. Use GitHub OAuth above for automatic setup.
+        </p>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div className="bg-green-950/20 border border-green-700/50 rounded-lg p-3">
