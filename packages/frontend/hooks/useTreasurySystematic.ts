@@ -35,7 +35,22 @@ export function useTreasurySystematic() {
     }
   );
 
-  // Get token prices from systematic API
+  // Get comprehensive token data from systematic API
+  const { 
+    data: tokenData, 
+    error: tokenError, 
+    isLoading: tokenLoading 
+  } = useSWR(
+    `${BACKEND_URL}/api/treasury/token-data?symbol=ABC`,
+    fetcher,
+    {
+      refreshInterval: 60000, // Token data manager updates every 10min, we poll every 1min
+      revalidateOnFocus: false, // Prices don't need immediate updates on focus
+      fallbackData: null,
+    }
+  );
+
+  // Get ETH price from legacy prices endpoint (for now)
   const { 
     data: pricesData, 
     error: pricesError, 
@@ -69,18 +84,19 @@ export function useTreasurySystematic() {
   if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     console.log('Treasury Systematic Hook:', {
       treasuryData,
+      tokenData,
       pricesData,
       statsData,
-      errors: { treasuryError, pricesError, statsError },
-      loading: { treasuryLoading, pricesLoading, statsLoading }
+      errors: { treasuryError, tokenError, pricesError, statsError },
+      loading: { treasuryLoading, tokenLoading, pricesLoading, statsLoading }
     });
   }
 
   // Determine overall loading state
-  const isLoading = treasuryLoading || pricesLoading || statsLoading;
+  const isLoading = treasuryLoading || tokenLoading || pricesLoading || statsLoading;
   
   // Determine error state
-  const error = treasuryError || pricesError || statsError;
+  const error = treasuryError || tokenError || pricesError || statsError;
 
   // Extract data with fallbacks
   const treasury = treasuryData || {};
@@ -96,9 +112,9 @@ export function useTreasurySystematic() {
     lastUpdated: treasury.lastUpdated,
 
     // Token prices
-    abcPrice: prices.ABC || 0,
+    abcPrice: tokenData?.price || 0,
     ethPrice: prices.ETH || 0,
-    pricesLastUpdated: pricesData?.lastUpdated,
+    pricesLastUpdated: tokenData?.lastUpdated || pricesData?.lastUpdated,
 
     // Treasury statistics
     peakValue: stats.peakValue || 0,
