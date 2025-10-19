@@ -185,7 +185,7 @@ export default function Home() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-black/40 border border-green-900/30 rounded p-3 text-center">
                       <p className="text-green-600 font-mono text-xs mb-1">$ABC Holdings</p>
-                      <p className="text-green-400 font-mono font-bold text-sm">{parseFloat(treasuryData.abcBalance || 0).toFixed(0)} $ABC</p>
+                      <p className="text-green-400 font-mono font-bold text-sm">{parseFloat(treasuryData.treasuryBalance || 0).toFixed(0)} $ABC</p>
                     </div>
                     <div className="bg-black/40 border border-green-900/30 rounded p-3 text-center">
                       <p className="text-green-600 font-mono text-xs mb-1">ETH Distributed</p>
