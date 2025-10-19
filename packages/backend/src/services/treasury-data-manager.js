@@ -93,23 +93,24 @@ export class TreasuryDataManager {
   }
 
   /**
-   * Update token prices from external APIs
+   * Update token prices and comprehensive data from external APIs
    */
   async updateTokenPrices() {
     try {
-      console.log('💰 Updating token prices...');
+      console.log('💰 Updating token prices and market data...');
       
-      // Fetch $ABC price from DexScreener
-      const abcPrice = await this.fetchABCPrice();
+      // Fetch comprehensive $ABC data from DexScreener
+      const abcTokenData = await this.fetchABCTokenData();
       
       // Fetch ETH price from CoinGecko
       const ethPrice = await this.fetchETHPrice();
       
-      // Store prices
-      await this.storeTokenPrice('ABC', abcPrice);
+      // Store comprehensive token data
+      await this.storeTokenData('ABC', abcTokenData);
       await this.storeTokenPrice('ETH', ethPrice);
       
-      console.log(`✅ Token prices updated - $ABC: $${abcPrice.toFixed(8)}, ETH: $${ethPrice.toFixed(2)}`);
+      console.log(`✅ Token data updated - $ABC: $${abcTokenData.price.toFixed(8)}, ETH: $${ethPrice.toFixed(2)}`);
+      console.log(`   Volume 24h: $${abcTokenData.volume24h.toLocaleString()}, Liquidity: $${abcTokenData.liquidity.toLocaleString()}`);
       
     } catch (error) {
       console.error('❌ Error updating token prices:', error);
@@ -134,9 +135,10 @@ export class TreasuryDataManager {
   }
 
   /**
-   * Fetch real-time $ABC token price from DexScreener API
+   * Fetch comprehensive $ABC token data from DexScreener API
+   * Returns price, volume, liquidity, market cap, and price changes
    */
-  async fetchABCPrice() {
+  async fetchABCTokenData() {
     try {
       const response = await fetch('https://api.dexscreener.com/latest/dex/tokens/0x5c0872b790bb73e2b3a9778db6e7704095624b07');
       if (response.ok) {
@@ -145,15 +147,52 @@ export class TreasuryDataManager {
           const bestPair = data.pairs.reduce((best, current) => 
             (current.volume?.h24 || 0) > (best.volume?.h24 || 0) ? current : best
           );
+          
           if (bestPair && bestPair.priceUsd) {
-            return parseFloat(bestPair.priceUsd);
+            return {
+              price: parseFloat(bestPair.priceUsd),
+              volume24h: bestPair.volume?.h24 || 0,
+              volume6h: bestPair.volume?.h6 || 0,
+              volume1h: bestPair.volume?.h1 || 0,
+              liquidity: bestPair.liquidity?.usd || 0,
+              marketCap: bestPair.marketCap || bestPair.fdv || 0,
+              priceChange24h: bestPair.priceChange?.h24 || 0,
+              priceChange6h: bestPair.priceChange?.h6 || 0,
+              priceChange1h: bestPair.priceChange?.h1 || 0,
+              pairAddress: bestPair.pairAddress,
+              dexId: bestPair.dexId,
+              lastUpdated: new Date().toISOString()
+            };
           }
         }
       }
     } catch (e) {
-      console.warn('Failed to fetch real $ABC price:', e);
+      console.warn('Failed to fetch $ABC token data:', e);
     }
-    return 0.0000123; // Fallback price
+    
+    // Fallback data
+    return {
+      price: 0.0000123,
+      volume24h: 0,
+      volume6h: 0, 
+      volume1h: 0,
+      liquidity: 0,
+      marketCap: 1230000, // 100B supply * fallback price
+      priceChange24h: 0,
+      priceChange6h: 0,
+      priceChange1h: 0,
+      pairAddress: null,
+      dexId: 'unknown',
+      lastUpdated: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Legacy method - now calls fetchABCTokenData for backwards compatibility
+   */
+  async fetchABCPrice() {
+    const tokenData = await this.fetchABCTokenData();
+    return tokenData.price;
   }
 
   /**
@@ -217,7 +256,59 @@ export class TreasuryDataManager {
   }
 
   /**
-   * Store token price in database
+   * Store comprehensive token data in database
+   */
+  async storeTokenData(symbol, tokenData) {
+    const pool = getPool();
+    
+    await pool.query(`
+      INSERT INTO token_market_data (
+        token_symbol, 
+        price_usd, 
+        volume_24h, 
+        volume_6h, 
+        volume_1h, 
+        liquidity_usd,
+        market_cap,
+        price_change_24h,
+        price_change_6h,
+        price_change_1h,
+        pair_address,
+        dex_id,
+        updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+      ON CONFLICT (token_symbol) 
+      DO UPDATE SET 
+        price_usd = $2,
+        volume_24h = $3,
+        volume_6h = $4,
+        volume_1h = $5,
+        liquidity_usd = $6,
+        market_cap = $7,
+        price_change_24h = $8,
+        price_change_6h = $9,
+        price_change_1h = $10,
+        pair_address = $11,
+        dex_id = $12,
+        updated_at = NOW()
+    `, [
+      symbol, 
+      tokenData.price,
+      tokenData.volume24h,
+      tokenData.volume6h,
+      tokenData.volume1h,
+      tokenData.liquidity,
+      tokenData.marketCap,
+      tokenData.priceChange24h,
+      tokenData.priceChange6h,
+      tokenData.priceChange1h,
+      tokenData.pairAddress,
+      tokenData.dexId
+    ]);
+  }
+
+  /**
+   * Store token price in database (legacy method for ETH)
    */
   async storeTokenPrice(symbol, priceUsd) {
     const pool = getPool();
@@ -285,7 +376,57 @@ export class TreasuryDataManager {
   }
 
   /**
-   * Get current token prices
+   * Get comprehensive token market data
+   */
+  async getTokenMarketData(symbol = null) {
+    const pool = getPool();
+    
+    let query, params;
+    if (symbol) {
+      query = `
+        SELECT * FROM token_market_data 
+        WHERE token_symbol = $1
+        ORDER BY updated_at DESC
+        LIMIT 1
+      `;
+      params = [symbol];
+    } else {
+      query = `
+        SELECT * FROM token_market_data 
+        ORDER BY updated_at DESC
+      `;
+      params = [];
+    }
+    
+    const result = await pool.query(query, params);
+    
+    if (symbol) {
+      return result.rows[0] || null;
+    }
+    
+    const tokenData = {};
+    result.rows.forEach(row => {
+      tokenData[row.token_symbol] = {
+        price: parseFloat(row.price_usd),
+        volume24h: parseFloat(row.volume_24h || 0),
+        volume6h: parseFloat(row.volume_6h || 0),
+        volume1h: parseFloat(row.volume_1h || 0),
+        liquidity: parseFloat(row.liquidity_usd || 0),
+        marketCap: parseFloat(row.market_cap || 0),
+        priceChange24h: parseFloat(row.price_change_24h || 0),
+        priceChange6h: parseFloat(row.price_change_6h || 0),
+        priceChange1h: parseFloat(row.price_change_1h || 0),
+        pairAddress: row.pair_address,
+        dexId: row.dex_id,
+        lastUpdated: row.updated_at
+      };
+    });
+    
+    return tokenData;
+  }
+
+  /**
+   * Get current token prices (legacy method for backward compatibility)
    */
   async getCurrentTokenPrices() {
     const pool = getPool();

@@ -1,9 +1,9 @@
 'use client';
 
-import { useTokenPrice } from '@/hooks/useTokenPrice';
+import { useTokenSystematic } from '@/hooks/useTokenSystematic';
 
 export function BuyABCSection() {
-  const { priceData, loading, error, formatPrice, formatVolume, formatMarketCap } = useTokenPrice();
+  const { tokenData, isLoading, error, formatPrice, formatVolume, formatMarketCap } = useTokenSystematic('ABC');
 
   return (
     <div className="bg-gradient-to-r from-green-950/30 via-black/60 to-green-950/30 border border-green-900/50 rounded-xl p-6 backdrop-blur-sm">
@@ -17,7 +17,7 @@ export function BuyABCSection() {
       </div>
 
       {/* Price Information */}
-      {loading ? (
+      {isLoading ? (
         <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-4 mb-6">
           <div className="flex items-center justify-center gap-2">
             <div className="w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin"></div>
@@ -30,29 +30,29 @@ export function BuyABCSection() {
             ⚠️ Price data unavailable
           </p>
         </div>
-      ) : priceData ? (
+      ) : tokenData ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-4 text-center">
             <p className="text-green-600 font-mono text-xs mb-1">Current Price</p>
             <p className="text-green-400 font-mono text-lg font-bold">
-              ${formatPrice(priceData.price)}
+              ${formatPrice(tokenData.price)}
             </p>
             <p className={`font-mono text-xs mt-1 ${
-              priceData.priceChange24h >= 0 ? 'text-green-400' : 'text-red-400'
+              tokenData.priceChange24h >= 0 ? 'text-green-400' : 'text-red-400'
             }`}>
-              {priceData.priceChange24h >= 0 ? '↗' : '↘'} {Math.abs(priceData.priceChange24h).toFixed(2)}%
+              {tokenData.priceChange24h >= 0 ? '↗' : '↘'} {Math.abs(tokenData.priceChange24h).toFixed(2)}%
             </p>
           </div>
           <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-4 text-center">
             <p className="text-green-600 font-mono text-xs mb-1">24h Volume</p>
             <p className="text-green-400 font-mono text-lg font-bold">
-              {formatVolume(priceData.volume24h)}
+              {formatVolume(tokenData.volume24h)}
             </p>
           </div>
           <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-4 text-center">
             <p className="text-green-600 font-mono text-xs mb-1">Market Cap</p>
             <p className="text-green-400 font-mono text-lg font-bold">
-              {formatMarketCap(priceData.marketCap)}
+              {formatMarketCap(tokenData.marketCap)}
             </p>
           </div>
         </div>

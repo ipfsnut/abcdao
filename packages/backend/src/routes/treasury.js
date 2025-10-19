@@ -87,8 +87,58 @@ router.get('/history', async (req, res) => {
 });
 
 /**
+ * GET /api/treasury/token-data?symbol=ABC
+ * Returns comprehensive token market data including volume, liquidity, market cap
+ */
+router.get('/token-data', async (req, res) => {
+  try {
+    const symbol = req.query.symbol?.toUpperCase();
+    
+    if (symbol) {
+      // Get specific token data
+      const tokenData = await treasuryDataManager.getTokenMarketData(symbol);
+      
+      if (!tokenData) {
+        return res.status(404).json({ 
+          error: 'Token data not found',
+          message: `No market data available for ${symbol}`
+        });
+      }
+
+      res.json({
+        symbol,
+        price: parseFloat(tokenData.price_usd),
+        volume24h: parseFloat(tokenData.volume_24h || 0),
+        volume6h: parseFloat(tokenData.volume_6h || 0),
+        volume1h: parseFloat(tokenData.volume_1h || 0),
+        liquidity: parseFloat(tokenData.liquidity_usd || 0),
+        marketCap: parseFloat(tokenData.market_cap || 0),
+        priceChange24h: parseFloat(tokenData.price_change_24h || 0),
+        priceChange6h: parseFloat(tokenData.price_change_6h || 0),
+        priceChange1h: parseFloat(tokenData.price_change_1h || 0),
+        pairAddress: tokenData.pair_address,
+        dexId: tokenData.dex_id,
+        lastUpdated: tokenData.updated_at
+      });
+    } else {
+      // Get all token data
+      const allTokenData = await treasuryDataManager.getTokenMarketData();
+      
+      res.json({
+        tokens: allTokenData,
+        lastUpdated: new Date().toISOString()
+      });
+    }
+
+  } catch (error) {
+    console.error('Error fetching token market data:', error);
+    res.status(500).json({ error: 'Failed to fetch token market data' });
+  }
+});
+
+/**
  * GET /api/treasury/prices
- * Returns current token prices
+ * Returns current token prices (legacy endpoint for backward compatibility)
  */
 router.get('/prices', async (req, res) => {
   try {
