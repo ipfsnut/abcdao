@@ -34,14 +34,14 @@ export default function RosterPage() {
   const error = hasError ? (errorMessage || 'Failed to load roster data') : null;
   
   // Client-side filtering and pagination since systematic API doesn't support complex filters yet
-  const filteredDevelopers = developers.filter(dev => {
+  const filteredDevelopers = developers.filter((dev: any) => {
     if (activeFilter === 'active') return dev.meta?.isActive;
     if (activeFilter === 'inactive') return !dev.meta?.isActive;
     return true; // 'all'
   });
 
   // Client-side sorting
-  const sortedDevelopers = [...filteredDevelopers].sort((a, b) => {
+  const sortedDevelopers = [...filteredDevelopers].sort((a: any, b: any) => {
     if (sortBy === 'commits') return (b.stats?.commits || 0) - (a.stats?.commits || 0);
     if (sortBy === 'rewards') return (parseFloat(b.stats?.totalRewards) || 0) - (parseFloat(a.stats?.totalRewards) || 0);
     if (sortBy === 'joined') return new Date(b.meta?.joinedAt || b.profile?.createdAt).getTime() - new Date(a.meta?.joinedAt || a.profile?.createdAt).getTime();
