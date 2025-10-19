@@ -5,7 +5,7 @@ nixPkgs = ["nodejs_22", "npm-9_x"]
 cmds = ["rm -rf node_modules package-lock.json", "npm install"]
 
 [start]
-cmd = "node src/index.js"
+cmd = "npm start"
 
 [variables]
 NODE_ENV = "production"
