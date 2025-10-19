@@ -362,7 +362,7 @@ export class UserCommitDataManager {
             MAX(commit_timestamp) as last_commit_at,
             MIN(commit_timestamp) as first_commit_at
           FROM commits_master 
-          WHERE reward_status = 'processed'
+          WHERE reward_status IN ('pending', 'claimable', 'processed')
           GROUP BY user_id
         ) AS commit_stats
         WHERE users_master.id = commit_stats.user_id
