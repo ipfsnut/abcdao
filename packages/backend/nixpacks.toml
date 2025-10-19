@@ -4,7 +4,7 @@ nixPkgs = ["nodejs_22", "npm-9_x"]
 [phases.install]
 cmds = ["npm install"]
 
-[phases.start]
+[start]
 cmd = "npm start"
 
 [variables]
