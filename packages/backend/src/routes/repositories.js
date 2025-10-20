@@ -2,6 +2,7 @@ import express from 'express';
 import { getPool } from '../services/database.js';
 import { Octokit } from '@octokit/rest';
 import { ethers } from 'ethers';
+import githubAPIService from '../services/github-api.js';
 
 const router = express.Router();
 

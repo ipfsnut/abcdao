@@ -219,7 +219,7 @@ export default function Home() {
                     <p className="text-green-700 font-mono text-xs mt-1">abcdao.base.eth</p>
                   </div>
                   
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <Link
                       href="/treasury"
                       className="bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs text-center transition-all duration-300 matrix-button"
@@ -231,6 +231,12 @@ export default function Home() {
                       className="bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs text-center transition-all duration-300 matrix-button"
                     >
                       {'>'} Staking
+                    </Link>
+                    <Link
+                      href="/repositories"
+                      className="bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs text-center transition-all duration-300 matrix-button"
+                    >
+                      {'>'} Repos
                     </Link>
                     <Link
                       href="/supply"

@@ -130,9 +130,17 @@ export function RepositoryManager() {
 
   return (
     <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-      <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
-        {'>'} repository_manager()
-      </h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-lg sm:text-xl font-bold text-green-400 matrix-glow font-mono">
+          {'>'} repository_manager()
+        </h2>
+        <a
+          href="/repositories"
+          className="bg-green-900/30 hover:bg-green-900/50 text-green-400 border border-green-700/50 px-3 py-1 rounded text-xs font-mono transition-all duration-300"
+        >
+          View All →
+        </a>
+      </div>
       
       {loading ? (
         <div className="text-center py-8">

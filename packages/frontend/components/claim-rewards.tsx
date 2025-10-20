@@ -67,16 +67,41 @@ export function ClaimRewardsPanel() {
     }
   });
 
+  // Check contract stats including balance
+  const { data: contractStats } = useReadContract({
+    address: CONTRACTS.ABC_REWARDS.address,
+    abi: CONTRACTS.ABC_REWARDS.abi,
+    functionName: 'getContractStats',
+    query: {
+      enabled: true,
+      refetchInterval: 30000,
+    }
+  });
+
   // Use contract amount if available, fallback to backend data
   const contractClaimableTokens = contractClaimableAmount 
     ? parseFloat(formatUnits(contractClaimableAmount, 18))
+    : 0;
+
+  // Parse contract stats
+  const contractBalance = contractStats 
+    ? parseFloat(formatUnits(contractStats[2], 18)) // contractBalance is the 3rd element
+    : 0;
+  const totalAllocated = contractStats 
+    ? parseFloat(formatUnits(contractStats[0], 18)) // totalAllocated is the 1st element
+    : 0;
+  const totalClaimed = contractStats 
+    ? parseFloat(formatUnits(contractStats[1], 18)) // totalClaimed is the 2nd element
     : 0;
 
   // Show backend data in UI but use contract data for validation
   const displayClaimable = userRewards?.summary.totalClaimable || 0;
   const actualClaimable = contractClaimableTokens;
   
-  const hasClaimableRewards = actualClaimable > 0;
+  // Check if contract has enough balance to pay this user
+  const contractCanPay = contractBalance >= actualClaimable;
+  
+  const hasClaimableRewards = actualClaimable > 0 && contractCanPay;
   const claimableInTokens = actualClaimable;
 
   // Execute claim
@@ -163,15 +188,21 @@ export function ClaimRewardsPanel() {
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-400 font-mono text-xs">Raw Contract Wei:</span>
-                <span className="text-gray-300 font-mono text-xs">
-                  {contractClaimableAmount ? contractClaimableAmount.toString().slice(0, 10) + '...' : 'N/A'}
+                <span className="text-gray-400 font-mono text-xs">Contract Balance:</span>
+                <span className={`font-mono text-xs ${contractCanPay ? 'text-green-300' : 'text-red-300'}`}>
+                  {contractBalance.toFixed(2)} $ABC
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-400 font-mono text-xs">Connector:</span>
+                <span className="text-gray-400 font-mono text-xs">Can Pay:</span>
+                <span className={`font-mono text-xs ${contractCanPay ? 'text-green-300' : 'text-red-300'}`}>
+                  {contractCanPay ? '✅ Yes' : '❌ Insufficient Funds'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400 font-mono text-xs">Total Allocated:</span>
                 <span className="text-gray-300 font-mono text-xs">
-                  {connector?.name || 'None'}
+                  {totalAllocated.toFixed(0)} $ABC
                 </span>
               </div>
             </div>
@@ -241,6 +272,19 @@ export function ClaimRewardsPanel() {
                 )}
               </div>
             </div>
+
+            {/* Contract Underfunded Warning */}
+            {actualClaimable > 0 && !contractCanPay && (
+              <div className="bg-red-950/20 border border-red-700/50 rounded-lg p-4 text-center">
+                <h3 className="text-red-400 font-mono font-bold mb-2">⚠️ Contract Underfunded</h3>
+                <p className="text-red-300 font-mono text-sm mb-2">
+                  You have {actualClaimable.toFixed(2)} $ABC to claim, but the rewards contract only has {contractBalance.toFixed(2)} $ABC.
+                </p>
+                <p className="text-red-400 font-mono text-xs">
+                  The admin needs to fund the contract before you can claim your rewards.
+                </p>
+              </div>
+            )}
 
             {/* Claim Button */}
             {hasClaimableRewards && isWalletConnected && effectiveAddress ? (
