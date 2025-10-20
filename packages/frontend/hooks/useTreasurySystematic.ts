@@ -107,6 +107,7 @@ export function useTreasurySystematic() {
     // Current treasury data
     treasuryBalance: treasury.abcBalance || 0,
     ethBalance: treasury.ethBalance || 0,
+    wethBalance: treasury.wethBalance || 0,
     totalValueUSD: treasury.totalValueUSD || 0,
     stakingTVL: treasury.stakingTVL || 0,
     lastUpdated: treasury.lastUpdated,

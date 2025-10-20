@@ -1,50 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTokenPrice } from '@/hooks/useTokenPrice';
+import { useTokenSystematic } from '@/hooks/useTokenSystematic';
 import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
 export function ABCPriceWidget() {
   const { 
-    priceData, 
-    loading, 
-    error 
-  } = useTokenPrice();
+    tokenData, 
+    isLoading: loading, 
+    error, 
+    formatPrice: formatPriceSystematic 
+  } = useTokenSystematic('ABC');
 
+  // Use the systematic formatter which already has proper decimal precision
   const formatPrice = (price: number | null) => {
     if (!price) return '$0.00';
-    
-    // For very small prices (micro-cap tokens), show more decimal places
-    if (price < 0.000001) {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 8,
-        maximumFractionDigits: 12
-      }).format(price);
-    } else if (price < 0.0001) {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 6,
-        maximumFractionDigits: 8
-      }).format(price);
-    } else if (price < 0.01) {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 4,
-        maximumFractionDigits: 6
-      }).format(price);
-    } else {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 4
-      }).format(price);
-    }
+    return `$${formatPriceSystematic(price)}`;
   };
 
   const formatLargeNumber = (num: number | null) => {
@@ -64,8 +36,8 @@ export function ABCPriceWidget() {
     return `${percent >= 0 ? '+' : ''}${percent.toFixed(2)}%`;
   };
 
-  const isPriceUp = priceData?.priceChange24h && priceData.priceChange24h > 0;
-  const isPriceDown = priceData?.priceChange24h && priceData.priceChange24h < 0;
+  const isPriceUp = tokenData?.priceChange24h && tokenData.priceChange24h > 0;
+  const isPriceDown = tokenData?.priceChange24h && tokenData.priceChange24h < 0;
 
   if (error) {
     return (
@@ -114,15 +86,15 @@ export function ABCPriceWidget() {
             <p className="text-green-600 font-mono text-sm mb-1">Price</p>
             <div className="flex flex-col items-center">
               <p className="text-2xl font-bold text-green-400 matrix-glow font-mono">
-                {formatPrice(priceData?.price || 0)}
+                {formatPrice(tokenData?.price || 0)}
               </p>
-              {priceData && priceData.priceChange24h !== null && (
+              {tokenData && tokenData.priceChange24h !== null && (
                 <div className={`flex items-center gap-1 mt-1 font-mono text-sm ${
                   isPriceUp ? 'text-green-400' : isPriceDown ? 'text-red-400' : 'text-gray-400'
                 }`}>
                   {isPriceUp && <ArrowUpIcon className="w-3 h-3" />}
                   {isPriceDown && <ArrowDownIcon className="w-3 h-3" />}
-                  <span>{formatPercentage(priceData.priceChange24h)} (24h)</span>
+                  <span>{formatPercentage(tokenData.priceChange24h)} (24h)</span>
                 </div>
               )}
             </div>
@@ -132,7 +104,7 @@ export function ABCPriceWidget() {
           <div className="text-center">
             <p className="text-green-600 font-mono text-sm mb-1">Market Cap</p>
             <p className="text-xl font-bold text-green-400 font-mono">
-              {formatLargeNumber(priceData?.marketCap || 0)}
+              {formatLargeNumber(tokenData?.marketCap || 0)}
             </p>
           </div>
 
@@ -140,7 +112,7 @@ export function ABCPriceWidget() {
           <div className="text-center">
             <p className="text-green-600 font-mono text-sm mb-1">24h Volume</p>
             <p className="text-xl font-bold text-green-400 font-mono">
-              {formatLargeNumber(priceData?.volume24h || 0)}
+              {formatLargeNumber(tokenData?.volume24h || 0)}
             </p>
           </div>
         </div>

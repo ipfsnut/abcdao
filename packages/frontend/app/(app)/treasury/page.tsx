@@ -164,10 +164,10 @@ export default function TreasuryPage() {
                           <span className="text-green-600">WETH Balance:</span>
                           <div className="text-right">
                             <div className="text-green-400 font-bold">
-                              0.00 WETH
+                              {treasuryData.wethBalance ? treasuryData.wethBalance.toFixed(6) : '0.000000'} WETH
                             </div>
                             <div className="text-green-700 text-xs">
-                              $0.00
+                              ${treasuryData.wethBalance && treasuryData.ethPrice ? (treasuryData.wethBalance * treasuryData.ethPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                             </div>
                           </div>
                         </div>

@@ -39,6 +39,7 @@ router.get('/current', async (req, res) => {
       timestamp: snapshot.snapshot_time,
       ethBalance: parseFloat(snapshot.eth_balance),
       abcBalance: parseFloat(snapshot.abc_balance),
+      wethBalance: parseFloat(snapshot.weth_balance || 0),
       totalValueUSD: parseFloat(snapshot.total_value_usd),
       stakingTVL: parseFloat(snapshot.staking_tvl),
       lastUpdated: snapshot.created_at
@@ -71,6 +72,7 @@ router.get('/history', async (req, res) => {
       timestamp: snapshot.snapshot_time,
       ethBalance: parseFloat(snapshot.eth_balance),
       abcBalance: parseFloat(snapshot.abc_balance),
+      wethBalance: parseFloat(snapshot.weth_balance || 0),
       totalValueUSD: parseFloat(snapshot.total_value_usd),
       stakingTVL: parseFloat(snapshot.staking_tvl)
     }));

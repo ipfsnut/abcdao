@@ -19,6 +19,7 @@ export class TreasuryDataManager {
     this.walletAddress = process.env.PROTOCOL_WALLET_ADDRESS || '0xBE6525b767cA8D38d169C93C8120c0C0957388B8';
     this.stakingContract = process.env.STAKING_CONTRACT_ADDRESS || '0x577822396162022654D5bDc9CB58018cB53e7017';
     this.abcTokenContract = process.env.ABC_TOKEN_CONTRACT_ADDRESS || '0x5c0872b790bb73e2b3a9778db6e7704095624b07';
+    this.wethContract = '0x4200000000000000000000000000000000000006'; // WETH on Base
     this.provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
     this.updateInterval = 5 * 60 * 1000; // 5 minutes
     this.priceUpdateInterval = 10 * 60 * 1000; // 10 minutes for token prices
@@ -44,6 +45,12 @@ export class TreasuryDataManager {
     
     this.abcContract = new ethers.Contract(
       this.abcTokenContract,
+      this.erc20ABI,
+      this.provider
+    );
+    
+    this.wethContractInstance = new ethers.Contract(
+      this.wethContract,
       this.erc20ABI,
       this.provider
     );
@@ -95,16 +102,18 @@ export class TreasuryDataManager {
       // Fetch current balances
       const ethBalance = await this.provider.getBalance(this.walletAddress);
       const abcBalance = await this.getProtocolABCBalance();
+      const wethBalance = await this.getProtocolWETHBalance();
       const stakingTvl = await this.getStakingTVL();
       const tokenPrices = await this.getCurrentTokenPrices();
       
       // Calculate total value
-      const totalValueUsd = this.calculateTotalValue(ethBalance, abcBalance, stakingTvl, tokenPrices);
+      const totalValueUsd = this.calculateTotalValue(ethBalance, abcBalance, wethBalance, stakingTvl, tokenPrices);
       
       // Store snapshot
       await this.storeTreasurySnapshot({
         ethBalance: ethers.formatEther(ethBalance),
         abcBalance: parseFloat(ethers.formatEther(abcBalance)),
+        wethBalance: ethers.formatEther(wethBalance),
         totalValueUsd,
         stakingTvl,
         timestamp: new Date()
@@ -250,6 +259,20 @@ export class TreasuryDataManager {
   }
 
   /**
+   * Get protocol wallet's WETH balance
+   */
+  async getProtocolWETHBalance() {
+    try {
+      const balance = await this.wethContractInstance.balanceOf(this.walletAddress);
+      console.log(`📊 Protocol wallet WETH balance: ${ethers.formatEther(balance)} WETH`);
+      return balance;
+    } catch (error) {
+      console.warn('Failed to fetch protocol WETH balance:', error);
+      return BigInt(0); // Return 0 if can't fetch
+    }
+  }
+
+  /**
    * Get current staking TVL
    */
   async getStakingTVL() {
@@ -266,8 +289,9 @@ export class TreasuryDataManager {
   /**
    * Calculate total treasury value in USD
    */
-  calculateTotalValue(ethBalance, abcBalance, stakingTvl, tokenPrices) {
+  calculateTotalValue(ethBalance, abcBalance, wethBalance, stakingTvl, tokenPrices) {
     const ethValueUsd = parseFloat(ethers.formatEther(ethBalance)) * (tokenPrices.ETH || 3200);
+    const wethValueUsd = parseFloat(ethers.formatEther(wethBalance)) * (tokenPrices.ETH || 3200); // WETH = ETH price
     
     // Use real-time ABC price from token market data, not hardcoded fallback
     const abcPrice = tokenPrices.ABC || 0.000001; // Use actual fetched price
@@ -275,9 +299,9 @@ export class TreasuryDataManager {
     
     // Note: We only count the protocol wallet's direct holdings, not the staking TVL
     // The staking TVL represents user-staked tokens, not protocol treasury
-    console.log(`💰 Treasury calculation: ETH ${ethValueUsd.toFixed(2)} (${ethers.formatEther(ethBalance)} ETH) + ABC ${abcValueUsd.toFixed(2)} (${ethers.formatEther(abcBalance)} ABC @ $${abcPrice}) = ${(ethValueUsd + abcValueUsd).toFixed(2)} USD`);
+    console.log(`💰 Treasury calculation: ETH ${ethValueUsd.toFixed(2)} (${ethers.formatEther(ethBalance)} ETH) + WETH ${wethValueUsd.toFixed(2)} (${ethers.formatEther(wethBalance)} WETH) + ABC ${abcValueUsd.toFixed(2)} (${ethers.formatEther(abcBalance)} ABC @ $${abcPrice}) = ${(ethValueUsd + wethValueUsd + abcValueUsd).toFixed(2)} USD`);
     
-    return ethValueUsd + abcValueUsd;
+    return ethValueUsd + wethValueUsd + abcValueUsd;
   }
 
   /**
@@ -291,13 +315,15 @@ export class TreasuryDataManager {
         snapshot_time,
         eth_balance,
         abc_balance,
+        weth_balance,
         total_value_usd,
         staking_tvl
-      ) VALUES ($1, $2, $3, $4, $5)
+      ) VALUES ($1, $2, $3, $4, $5, $6)
     `, [
       snapshot.timestamp,
       snapshot.ethBalance,
       snapshot.abcBalance,
+      snapshot.wethBalance,
       snapshot.totalValueUsd,
       snapshot.stakingTvl
     ]);
