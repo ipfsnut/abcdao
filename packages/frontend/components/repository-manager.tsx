@@ -122,8 +122,8 @@ export function RepositoryManager() {
     setError('');
     
     try {
-      // First unlink current GitHub
-      const unlinkResponse = await fetch(`${config.backendUrl}/api/auth/github/unlink`, {
+      // First clear GitHub token for re-linking (allows paid members)
+      const relinkResponse = await fetch(`${config.backendUrl}/api/auth/github/relink`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -133,8 +133,8 @@ export function RepositoryManager() {
         }),
       });
 
-      if (!unlinkResponse.ok) {
-        throw new Error('Failed to unlink current GitHub account');
+      if (!relinkResponse.ok) {
+        throw new Error('Failed to prepare GitHub re-linking');
       }
 
       // Then initiate re-linking

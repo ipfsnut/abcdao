@@ -104,8 +104,8 @@ export default function RepositoriesPage() {
     setError(null);
     
     try {
-      // First unlink current GitHub
-      const unlinkResponse = await fetch(`https://abcdao-production.up.railway.app/api/auth/github/unlink`, {
+      // First clear GitHub token for re-linking (allows paid members)
+      const relinkResponse = await fetch(`https://abcdao-production.up.railway.app/api/auth/github/relink`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -115,8 +115,8 @@ export default function RepositoriesPage() {
         }),
       });
 
-      if (!unlinkResponse.ok) {
-        throw new Error('Failed to unlink current GitHub account');
+      if (!relinkResponse.ok) {
+        throw new Error('Failed to prepare GitHub re-linking');
       }
 
       // Then initiate re-linking

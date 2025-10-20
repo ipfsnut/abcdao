@@ -280,4 +280,55 @@ router.post('/github/unlink', async (req, res) => {
   }
 });
 
+// Re-link GitHub account (for token refresh - allows paid members)
+router.post('/github/relink', async (req, res) => {
+  const { farcasterFid } = req.body;
+  
+  if (!farcasterFid) {
+    return res.status(400).json({ error: 'Missing Farcaster FID' });
+  }
+  
+  try {
+    const pool = getPool();
+    
+    // Check if user exists
+    const userResult = await pool.query(`
+      SELECT farcaster_username, github_username, membership_status 
+      FROM users 
+      WHERE farcaster_fid = $1
+    `, [farcasterFid]);
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    // Clear only the GitHub token data (keep username/id for reference)
+    await pool.query(`
+      UPDATE users 
+      SET 
+        access_token = NULL,
+        updated_at = NOW()
+      WHERE farcaster_fid = $1
+    `, [farcasterFid]);
+    
+    console.log(`🔄 Cleared GitHub token for re-linking: ${user.github_username} from Farcaster ${user.farcaster_username}`);
+    
+    res.json({ 
+      success: true, 
+      message: 'GitHub token cleared for re-linking',
+      user: {
+        farcaster_username: user.farcaster_username,
+        github_username: user.github_username,
+        membership_status: user.membership_status
+      }
+    });
+    
+  } catch (error) {
+    console.error('GitHub relink error:', error);
+    res.status(500).json({ error: 'Failed to prepare GitHub re-linking' });
+  }
+});
+
 export default router;
