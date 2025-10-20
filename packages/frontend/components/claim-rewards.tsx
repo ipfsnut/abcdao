@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useConnect } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useConnect, useReadContract } from 'wagmi';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
+import { useUniversalAuth } from '@/contexts/universal-auth-context';
 import { useRewardsSystematic } from '@/hooks/useRewardsSystematic';
 import { CONTRACTS } from '@/lib/contracts';
 import { CommitTagsDocs } from './commit-tags-docs';
+import { formatUnits } from 'viem';
 
 interface RewardSummary {
   totalPending: number;
@@ -37,7 +39,8 @@ interface UserRewardsData {
 export function ClaimRewardsPanel() {
   const { address, isConnected, connector } = useAccount();
   const { connect, connectors, isPending: isConnectPending } = useConnect();
-  const { user: profile, isInMiniApp } = useFarcaster();
+  const { user: farcasterProfile, isInMiniApp } = useFarcaster();
+  const { user: universalUser } = useUniversalAuth();
   
   // Use systematic rewards data instead of reactive contract calls
   const {
@@ -47,9 +50,29 @@ export function ClaimRewardsPanel() {
     refetchUserRewards
   } = useRewardsSystematic();
 
-  // Calculate claimable amount from systematic data instead of contract calls
-  const hasClaimableRewards = userRewards && userRewards.summary.totalClaimable > 0;
-  const claimableInTokens = userRewards?.summary.totalClaimable || 0;
+  // Get actual claimable amount from contract to avoid precision issues
+  const { data: contractClaimableAmount, refetch: refetchClaimable } = useReadContract({
+    address: CONTRACTS.ABC_REWARDS.address,
+    abi: CONTRACTS.ABC_REWARDS.abi,
+    functionName: 'getClaimableAmount',
+    args: effectiveAddress ? [effectiveAddress] : undefined,
+    query: {
+      enabled: !!effectiveAddress,
+      refetchInterval: 30000, // Refetch every 30 seconds
+    }
+  });
+
+  // Use contract amount if available, fallback to backend data
+  const contractClaimableTokens = contractClaimableAmount 
+    ? parseFloat(formatUnits(contractClaimableAmount, 18))
+    : 0;
+
+  // Show backend data in UI but use contract data for validation
+  const displayClaimable = userRewards?.summary.totalClaimable || 0;
+  const actualClaimable = contractClaimableTokens;
+  
+  const hasClaimableRewards = actualClaimable > 0;
+  const claimableInTokens = actualClaimable;
 
   // Execute claim
   const { writeContract: claimRewards, data: claimTxData, isPending: isClaimPending } = useWriteContract();
@@ -64,7 +87,7 @@ export function ClaimRewardsPanel() {
 
   // Auto-connect wallet for Farcaster miniapp users
   useEffect(() => {
-    if (isInMiniApp && profile && !isConnected && connectors.length > 0) {
+    if (isInMiniApp && farcasterProfile && !isConnected && connectors.length > 0) {
       console.log('🔗 Auto-connecting Farcaster wallet for miniapp user...');
       const farcasterConnector = connectors.find(connector => 
         connector.name.toLowerCase().includes('farcaster') || 
@@ -74,7 +97,7 @@ export function ClaimRewardsPanel() {
         connect({ connector: farcasterConnector });
       }
     }
-  }, [isInMiniApp, profile, isConnected, connectors, connect]);
+  }, [isInMiniApp, farcasterProfile, isConnected, connectors, connect]);
 
   // Handle success - refetch systematic data instead of individual contract calls
 
@@ -82,15 +105,17 @@ export function ClaimRewardsPanel() {
   useEffect(() => {
     if (claimSuccess) {
       refetchUserRewards();
+      refetchClaimable();
     }
-  }, [claimSuccess, refetchUserRewards]);
+  }, [claimSuccess, refetchUserRewards, refetchClaimable]);
 
   // Enhanced wallet connection detection for Farcaster miniapp
-  const isWalletConnected = isConnected || (isInMiniApp && profile && address);
+  const isWalletConnected = isConnected || (isInMiniApp && farcasterProfile && address);
   const effectiveAddress = address;
+  const hasGithub = universalUser?.has_github || false;
 
-  // Show rewards info even without Web3 wallet if user is authenticated via Farcaster
-  if (!address && !profile) {
+  // Show rewards info if user is authenticated (either wallet or Farcaster) AND has GitHub
+  if (!universalUser || !hasGithub) {
     return (
       <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
         <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
@@ -98,7 +123,7 @@ export function ClaimRewardsPanel() {
         </h2>
         <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-4 text-center">
           <p className="text-yellow-400 font-mono text-sm">
-            Connect Farcaster account to view rewards
+            {!universalUser ? 'Authentication required' : 'Connect GitHub account to view rewards'}
           </p>
         </div>
       </div>
@@ -112,7 +137,7 @@ export function ClaimRewardsPanel() {
       </h2>
       
       <div className="space-y-4">
-        {/* Wallet Connection Status for Mini-App Debug */}
+        {/* Debug Info for Mobile */}
         {isInMiniApp && (
           <div className="bg-gray-950/20 border border-gray-700/30 rounded-lg p-3">
             <div className="space-y-2">
@@ -126,27 +151,27 @@ export function ClaimRewardsPanel() {
                 </div>
               </div>
               <div className="flex items-center justify-between">
+                <span className="text-gray-400 font-mono text-xs">Backend Claimable:</span>
+                <span className="text-gray-300 font-mono text-xs">
+                  {displayClaimable.toFixed(2)} $ABC
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400 font-mono text-xs">Contract Claimable:</span>
+                <span className="text-gray-300 font-mono text-xs">
+                  {contractClaimableAmount ? `${actualClaimable.toFixed(6)} $ABC` : 'Loading...'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400 font-mono text-xs">Raw Contract Wei:</span>
+                <span className="text-gray-300 font-mono text-xs">
+                  {contractClaimableAmount ? contractClaimableAmount.toString().slice(0, 10) + '...' : 'N/A'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
                 <span className="text-gray-400 font-mono text-xs">Connector:</span>
                 <span className="text-gray-300 font-mono text-xs">
                   {connector?.name || 'None'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400 font-mono text-xs">FC User:</span>
-                <span className="text-gray-300 font-mono text-xs">
-                  {profile ? `${profile.username} (${profile.fid})` : 'None'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400 font-mono text-xs">Connectors:</span>
-                <span className="text-gray-300 font-mono text-xs">
-                  {connectors.map(c => c.name).join(', ') || 'None'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400 font-mono text-xs">Connect Pending:</span>
-                <span className="text-gray-300 font-mono text-xs">
-                  {isConnectPending ? 'Yes' : 'No'}
                 </span>
               </div>
             </div>
@@ -204,11 +229,16 @@ export function ClaimRewardsPanel() {
                   <span className="text-green-600 font-mono text-xs">{userRewards.summary.claimableCount} commits</span>
                 </div>
                 <p className="text-green-300 font-mono text-lg font-bold">
-                  {userRewards.summary.totalClaimable.toLocaleString()} $ABC
+                  {actualClaimable > 0 ? actualClaimable.toLocaleString() : displayClaimable.toLocaleString()} $ABC
                 </p>
                 <p className="text-green-600/70 font-mono text-xs mt-1">
-                  Ready to claim on-chain
+                  {actualClaimable > 0 ? 'Contract-verified amount' : 'Ready to claim on-chain'}
                 </p>
+                {actualClaimable > 0 && Math.abs(actualClaimable - displayClaimable) > 1 && (
+                  <p className="text-yellow-400 font-mono text-xs mt-1">
+                    ⚠️ Contract: {actualClaimable.toFixed(2)} | Backend: {displayClaimable.toFixed(2)}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -229,13 +259,13 @@ export function ClaimRewardsPanel() {
                   ? '⏳ Claiming...' 
                   : isClaimPending 
                   ? '📝 Confirming...'
-                  : `🎁 CLAIM ${claimableInTokens.toLocaleString()} $ABC`
+                  : `🎁 CLAIM ${Math.floor(claimableInTokens).toLocaleString()} $ABC`
                 }
               </button>
             ) : userRewards.summary.totalClaimable > 0 ? (
               <div className="bg-blue-950/20 border border-blue-700/30 rounded-lg p-4 text-center">
                 <p className="text-blue-400 font-mono text-sm mb-3">
-                  Connect wallet to claim {userRewards.summary.totalClaimable.toLocaleString()} $ABC
+                  Connect wallet to claim {Math.floor(actualClaimable || displayClaimable).toLocaleString()} $ABC
                 </p>
                 {isInMiniApp ? (
                   <div className="space-y-3">

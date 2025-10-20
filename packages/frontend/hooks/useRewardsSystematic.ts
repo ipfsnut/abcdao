@@ -3,6 +3,7 @@
 import useSWR from 'swr';
 import { useAccount } from 'wagmi';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
+import { useUniversalAuth } from '@/contexts/universal-auth-context';
 
 interface RewardSummary {
   totalPending: number;
@@ -69,11 +70,16 @@ const fetcher = async (url: string): Promise<any> => {
  */
 export function useRewardsSystematic(): UseRewardsSystematicReturn {
   const { address } = useAccount();
-  const { user: profile } = useFarcaster();
+  const { user: farcasterProfile } = useFarcaster();
+  const { user: universalUser } = useUniversalAuth();
 
   const apiUrl = process.env.NODE_ENV === 'production' 
     ? 'https://abcdao-production.up.railway.app'
     : 'https://abcdao-production.up.railway.app'; // Always use Railway
+
+  // Determine user identifier: use FID if available, otherwise GitHub username
+  const userIdentifier = universalUser?.farcaster_fid || universalUser?.github_username;
+  const hasGithub = universalUser?.has_github || false;
 
   // Get user rewards data
   const { 
@@ -82,7 +88,7 @@ export function useRewardsSystematic(): UseRewardsSystematicReturn {
     isLoading: isUserRewardsLoading,
     mutate: refetchUserRewards
   } = useSWR<UserRewardsData>(
-    profile?.fid ? `${apiUrl}/api/rewards/user/${profile.fid}` : null,
+    (userIdentifier && hasGithub) ? `${apiUrl}/api/rewards/user/${userIdentifier}` : null,
     fetcher,
     {
       refreshInterval: 30000, // Refresh every 30 seconds
