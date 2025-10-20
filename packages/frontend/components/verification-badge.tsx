@@ -107,8 +107,8 @@ export function VerificationBadge({ isVerified, githubUsername, className = '' }
               Close
             </button>
           </div>
-        )}
-      </div>
-    );
-  }
+        </div>
+      )}
+    </div>
+  );
 }

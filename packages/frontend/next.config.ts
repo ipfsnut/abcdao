@@ -16,8 +16,16 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['@rainbow-me/rainbowkit', 'wagmi', 'viem']
   },
   webpack: (config) => {
-    // Disable webpack cache that creates huge files
+    // Disable webpack cache that causes issues with Cloudflare Pages
     config.cache = false;
+    
+    // Resolve dependency warnings for web environment
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      '@react-native-async-storage/async-storage': false,
+      'pino-pretty': false,
+    };
+    
     return config;
   }
 };

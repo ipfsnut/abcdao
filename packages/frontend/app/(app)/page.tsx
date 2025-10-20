@@ -367,7 +367,7 @@ export default function Home() {
                            text-green-400 hover:text-green-300 px-6 py-3 rounded-lg font-mono font-semibold
                            transition-all duration-300 matrix-button matrix-glow"
                 >
-                  Join the Community →
+                  {membership.isMember ? 'Dev Dashboard →' : 'Join the Community →'}
                 </a>
                 <a
                   href="/docs"
