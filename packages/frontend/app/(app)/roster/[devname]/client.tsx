@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { ChevronLeftIcon, ArrowTopRightOnSquareIcon, FolderIcon, PlusIcon, CogIcon } from '@heroicons/react/24/outline';
 import useProfileOwnership from '@/hooks/useProfileOwnership';
+import { VerificationBadge } from '@/components/verification-badge';
 
 // Simple error boundary to catch any provider issues
 function ErrorBoundary({ children }: { children: React.ReactNode }) {
@@ -47,6 +48,7 @@ interface DeveloperProfile {
     displayName: string;
     avatarUrl?: string;
     bio?: string;
+    websiteUrl?: string;
   };
   stats: {
     totalCommits: number;
@@ -186,10 +188,10 @@ function DeveloperProfileClientInner({ devname }: { devname: string }) {
   }, [devname]);
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'Unknown';
+    if (!dateString) return 'Oct 2025';
     const date = new Date(dateString);
     if (isNaN(date.getTime()) || date.getFullYear() < 2020) {
-      return 'Recently';
+      return 'Oct 2025';
     }
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -299,9 +301,19 @@ function DeveloperProfileClientInner({ devname }: { devname: string }) {
                 )}
               </div>
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-green-400 matrix-glow font-mono">
-                  {profile.profile.displayName || `@${profile.identifiers.githubUsername}`}
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl sm:text-2xl font-bold text-green-400 matrix-glow font-mono">
+                    {profile.profile.displayName || `@${profile.identifiers.githubUsername}`}
+                  </h2>
+                  <VerificationBadge 
+                    isVerified={
+                      profile.membership.status === 'paid' && 
+                      !!profile.identifiers.githubUsername &&
+                      !!profile.profile.farcasterUsername
+                    } 
+                    githubUsername={profile.identifiers.githubUsername}
+                  />
+                </div>
                 <div className="flex items-center gap-2 mt-1">
                   <div className={`w-2 h-2 rounded-full ${
                     profile.meta.isActive ? 'bg-green-400 matrix-glow' : 'bg-gray-600'
@@ -339,6 +351,17 @@ function DeveloperProfileClientInner({ devname }: { devname: string }) {
                 >
                   <span className="text-sm font-mono text-green-400">Farcaster</span>
                   <ArrowTopRightOnSquareIcon className="w-4 h-4 text-green-600 group-hover:text-green-400" />
+                </a>
+              )}
+              {profile.profile.websiteUrl && (
+                <a
+                  href={profile.profile.websiteUrl.startsWith('http') ? profile.profile.websiteUrl : `https://${profile.profile.websiteUrl}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 bg-blue-950/10 border border-blue-900/30 rounded-lg px-3 py-2 hover:bg-blue-950/20 hover:border-blue-700/50 transition-all duration-300 group"
+                >
+                  <span className="text-sm font-mono text-blue-400">Website</span>
+                  <ArrowTopRightOnSquareIcon className="w-4 h-4 text-blue-600 group-hover:text-blue-400" />
                 </a>
               )}
             </div>

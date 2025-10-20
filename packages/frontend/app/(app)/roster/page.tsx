@@ -13,7 +13,7 @@ export default function RosterPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [sortBy, setSortBy] = useState<'commits' | 'rewards' | 'joined'>('commits');
-  const { formatPrice } = useTokenPrice();
+  const { formatPrice, priceData } = useTokenPrice();
 
   // Fetch systematic leaderboard data
   const { 
@@ -95,11 +95,11 @@ export default function RosterPage() {
   }, []);
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'Unknown';
+    if (!dateString) return 'Oct 2025';
     const date = new Date(dateString);
     // Check if date is valid and not epoch (1970-01-01)
     if (isNaN(date.getTime()) || date.getFullYear() < 2020) {
-      return 'Recently';
+      return 'Oct 2025';
     }
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -312,7 +312,11 @@ export default function RosterPage() {
                                 @{dev.profile?.farcasterUsername || 'Unknown'}
                               </h4>
                               <VerificationBadge 
-                                isVerified={!!dev.meta?.verifiedAt} 
+                                isVerified={
+                                  dev.membership?.status === 'paid' && 
+                                  !!dev.profile?.githubUsername &&
+                                  !!dev.profile?.farcasterUsername
+                                } 
                                 githubUsername={dev.profile?.githubUsername}
                               />
                             </div>
@@ -330,9 +334,9 @@ export default function RosterPage() {
                         </p>
                         <div className="flex items-center gap-2 text-xs text-green-600 font-mono">
                           <div className="text-right">
-                            <span>{(parseFloat(String(dev.stats?.totalRewards)) || 0).toFixed(2)} $ABC</span>
+                            <span>{(parseFloat(String(dev.stats?.totalRewards)) || 0).toLocaleString()} $ABC</span>
                             <div className="text-green-700 text-xs">
-                              ≈ {formatPrice((parseFloat(String(dev.stats?.totalRewards)) || 0))}
+                              ≈ ${formatPrice((parseFloat(String(dev.stats?.totalRewards)) || 0) * (priceData?.price || 0.0000123))}
                             </div>
                           </div>
                           <span>•</span>

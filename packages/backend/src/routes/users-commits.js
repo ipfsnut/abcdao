@@ -55,7 +55,8 @@ router.get('/profile/:identifier', async (req, res) => {
         farcasterUsername: user.farcaster_username,
         displayName: user.display_name,
         avatarUrl: user.avatar_url,
-        bio: user.bio
+        bio: user.bio,
+        websiteUrl: user.website_url
       },
       stats: {
         totalCommits: user.total_commits,
@@ -113,9 +114,7 @@ router.get('/leaderboard', async (req, res) => {
     const leaderboard = await userCommitDataManager.getLeaderboard(timeframe, limit);
     
     const formattedLeaderboard = leaderboard.map((user, index) => {
-      // Determine if user is active based on recent commits (30 days threshold)
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      const hasRecentCommits = user.last_commit_at && new Date(user.last_commit_at) >= thirtyDaysAgo;
+      // Determine if user is active based on having any commits (1+ commits)
       const hasAnyCommits = parseInt(user.commits) > 0;
       
       return {
@@ -136,7 +135,7 @@ router.get('/leaderboard', async (req, res) => {
           status: user.membership_status
         },
         meta: {
-          isActive: hasRecentCommits || hasAnyCommits, // Active if commits in last 30 days OR any commits ever
+          isActive: hasAnyCommits, // Active if user has 1+ commits
           verifiedAt: user.verified_at,
           joinedAt: null, // Could add this from user creation date if needed
           createdAt: null  // Could add this from user creation date if needed

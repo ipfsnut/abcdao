@@ -273,9 +273,11 @@ export default function Home() {
       {/* Hero Call-to-Action Section */}
       <div className="bg-gradient-to-r from-green-950/20 to-black/40 border-b border-green-900/30">
         <div className="px-4 py-6 text-center">
-          <h2 className="text-responsive-lg font-bold text-green-400 matrix-glow mb-2 font-mono">
-            Always Be Coding
-          </h2>
+          <Link href="/roster">
+            <h2 className="text-responsive-lg font-bold text-green-400 matrix-glow mb-2 font-mono hover:text-green-300 transition-colors duration-300 cursor-pointer">
+              Always Be Coding
+            </h2>
+          </Link>
           <p className="text-responsive-xs text-green-600 mb-4 font-mono">
             Join a community of developers building FOSS projects, learning together, and creating lasting friendships.
           </p>
@@ -302,12 +304,15 @@ export default function Home() {
               <p className="text-green-600 font-mono text-xs mb-1">Pending ETH</p>
               <p className="text-green-400 font-mono font-bold">{parseFloat(stakingData.pendingRewards).toFixed(4)} ETH</p>
             </div>
-            <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-left">
-              <p className="text-green-600 font-mono text-xs mb-1">Treasury Value</p>
-              <p className="text-green-400 font-mono font-bold">
+            <Link
+              href="/treasury"
+              className="bg-green-950/10 border border-green-900/30 rounded p-3 text-left hover:bg-green-950/20 hover:border-green-800/50 transition-all duration-300 cursor-pointer group"
+            >
+              <p className="text-green-600 font-mono text-xs mb-1 group-hover:text-green-500">Treasury Value</p>
+              <p className="text-green-400 font-mono font-bold group-hover:text-green-300">
                 {treasuryData.isLoading ? '...' : formatTotalTreasuryValue()}
               </p>
-            </div>
+            </Link>
           </div>
           
           {/* Token Actions */}
