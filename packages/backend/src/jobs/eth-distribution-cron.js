@@ -154,8 +154,9 @@ class EthDistributionCron {
    */
   async announceDistribution(distribution, transactions) {
     try {
-      if (!process.env.NEYNAR_API_KEY || !process.env.NEYNAR_SIGNER_UUID) {
-        console.log('⚠️ Farcaster credentials not configured, skipping announcement');
+      const devSignerUuid = process.env.ABC_DEV_SIGNER_UUID || process.env.NEYNAR_SIGNER_UUID;
+      if (!process.env.NEYNAR_API_KEY || !devSignerUuid) {
+        console.log('⚠️ Farcaster or ABC_DEV_SIGNER_UUID not configured, skipping announcement');
         return;
       }
 
@@ -173,7 +174,8 @@ class EthDistributionCron {
         `🔗 Staking: basescan.org/tx/${stakingTxHash}\\n\\n` +
         `#ABCDAO #AutomatedETHDistribution`;
 
-      const cast = await neynar.publishCast(process.env.NEYNAR_SIGNER_UUID, castText);
+      console.log(`📢 Posting ETH distribution from @abc-dao-dev (signer: ${devSignerUuid})`);
+      const cast = await neynar.publishCast(devSignerUuid, castText);
       console.log(`✅ Distribution announced: ${cast.cast.hash}`);
       
     } catch (error) {

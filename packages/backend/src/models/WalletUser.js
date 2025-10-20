@@ -18,7 +18,7 @@ export class WalletUser {
   static async findByWallet(wallet_address) {
     const pool = getPool();
     const result = await pool.query(
-      'SELECT * FROM users WHERE wallet_address_primary = $1',
+      'SELECT * FROM users WHERE LOWER(wallet_address_primary) = LOWER($1)',
       [wallet_address]
     );
     

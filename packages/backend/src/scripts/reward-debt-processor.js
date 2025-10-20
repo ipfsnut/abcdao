@@ -158,8 +158,9 @@ class RewardDebtProcessor {
     console.log('📢 Posting reward transfer announcement...');
     
     try {
-      if (!process.env.NEYNAR_API_KEY || !process.env.NEYNAR_SIGNER_UUID) {
-        console.log('⚠️ Farcaster credentials not configured, skipping announcement');
+      const devSignerUuid = process.env.ABC_DEV_SIGNER_UUID || process.env.NEYNAR_SIGNER_UUID;
+      if (!process.env.NEYNAR_API_KEY || !devSignerUuid) {
+        console.log('⚠️ Farcaster or ABC_DEV_SIGNER_UUID not configured, skipping announcement');
         return;
       }
 
@@ -174,8 +175,9 @@ class RewardDebtProcessor {
       const castText = `💰 REWARD TRANSFER COMPLETE!\n\n${totalDebt.toLocaleString()} $ABC rewards now CLAIMABLE!\n\n🎯 ${rewardDebt.length} developers can now claim:\n${userList}${moreUsers}\n\n🔗 Transaction: basescan.org/tx/${contractTxHash}\n\n✅ Connect wallet at abc.epicdylan.com to claim your rewards!\n\n#ABCDAO #AlwaysBeCoding`;
 
       // Post cast
+      console.log(`📢 Posting reward debt announcement from @abc-dao-dev (signer: ${devSignerUuid})`);
       const cast = await neynar.publishCast(
-        process.env.NEYNAR_SIGNER_UUID,
+        devSignerUuid,
         castText
       );
 

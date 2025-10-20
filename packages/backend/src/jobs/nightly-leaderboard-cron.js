@@ -73,7 +73,8 @@ class NightlyLeaderboardJob {
       const result = await generateCustomLeaderboard();
       
       // Optionally cast to Farcaster
-      if (shouldCast && process.env.NEYNAR_API_KEY && process.env.NEYNAR_SIGNER_UUID) {
+      const devSignerUuid = process.env.ABC_DEV_SIGNER_UUID || process.env.NEYNAR_SIGNER_UUID;
+      if (shouldCast && process.env.NEYNAR_API_KEY && devSignerUuid) {
         console.log('📡 Manual casting to Farcaster...');
         
         try {

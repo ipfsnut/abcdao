@@ -151,8 +151,9 @@ class WethUnwrapCron {
    */
   async announceUnwrap(unwrapResult) {
     try {
-      if (!process.env.NEYNAR_API_KEY || !process.env.NEYNAR_SIGNER_UUID) {
-        console.log('⚠️ Farcaster credentials not configured, skipping announcement');
+      const devSignerUuid = process.env.ABC_DEV_SIGNER_UUID || process.env.NEYNAR_SIGNER_UUID;
+      if (!process.env.NEYNAR_API_KEY || !devSignerUuid) {
+        console.log('⚠️ Farcaster or ABC_DEV_SIGNER_UUID not configured, skipping announcement');
         return;
       }
 
@@ -173,7 +174,8 @@ class WethUnwrapCron {
         `🔗 Transaction: basescan.org/tx/${unwrapResult.transactionHash}\n\n` +
         `#ABCDAO #WETHUnwrap #AutomatedTreasury`;
 
-      const cast = await neynar.publishCast(process.env.NEYNAR_SIGNER_UUID, castText);
+      console.log(`📢 Posting WETH unwrap from @abc-dao-dev (signer: ${devSignerUuid})`);
+      const cast = await neynar.publishCast(devSignerUuid, castText);
       console.log(`✅ Unwrap announced: ${cast.cast.hash}`);
       
       return cast.cast.hash;

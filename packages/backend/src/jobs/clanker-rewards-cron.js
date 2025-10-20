@@ -7,8 +7,9 @@ class ClankerRewardsCron {
     this.protocolWallet = new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY, this.provider);
     this.isRunning = false;
     
-    // Clanker configuration - these would need to be set based on actual Clanker contract
-    this.clankerContractAddress = process.env.CLANKER_CONTRACT_ADDRESS;
+    // Clanker configuration
+    this.clankerContractAddress = process.env.CLANKER_CONTRACT_ADDRESS; // The $ABC token contract
+    this.clankerRewardsContractAddress = process.env.CLANKER_REWARDS_CONTRACT_ADDRESS; // The rewards distribution contract
     this.clankerRewardsAbi = [
       "function checkRewards(address account) view returns (uint256)",
       "function claimRewards() external returns (bool)",
@@ -76,8 +77,8 @@ class ClankerRewardsCron {
    * Check if there are claimable Clanker rewards (via RPC)
    */
   async checkClaimableRewards() {
-    if (!this.clankerContractAddress) {
-      console.log('⚠️ Clanker contract address not configured, skipping check');
+    if (!this.clankerRewardsContractAddress) {
+      console.log('⚠️ Clanker rewards contract address not configured, skipping check');
       return null;
     }
 
@@ -85,15 +86,15 @@ class ClankerRewardsCron {
       console.log(`🔍 Checking rewards via RPC for wallet: ${this.protocolWallet.address}`);
       
       // Use RPC calls instead of direct contract interaction for balance checks
-      const clankerContract = new ethers.Contract(
-        this.clankerContractAddress,
+      const clankerRewardsContract = new ethers.Contract(
+        this.clankerRewardsContractAddress,
         this.clankerRewardsAbi,
         this.provider
       );
       
       // Check pending rewards via RPC
-      const pendingRewards = await clankerContract.checkRewards(this.protocolWallet.address);
-      const lastClaimTime = await clankerContract.getLastClaimTime(this.protocolWallet.address);
+      const pendingRewards = await clankerRewardsContract.checkRewards(this.protocolWallet.address);
+      const lastClaimTime = await clankerRewardsContract.getLastClaimTime(this.protocolWallet.address);
       
       const rewardsEth = ethers.formatEther(pendingRewards);
       const lastClaimDate = lastClaimTime > 0 ? new Date(Number(lastClaimTime) * 1000) : null;
@@ -171,8 +172,9 @@ class ClankerRewardsCron {
    */
   async announceClaim(claimResult) {
     try {
-      if (!process.env.NEYNAR_API_KEY || !process.env.NEYNAR_SIGNER_UUID) {
-        console.log('⚠️ Farcaster credentials not configured, skipping announcement');
+      const devSignerUuid = process.env.ABC_DEV_SIGNER_UUID || process.env.NEYNAR_SIGNER_UUID;
+      if (!process.env.NEYNAR_API_KEY || !devSignerUuid) {
+        console.log('⚠️ Farcaster or ABC_DEV_SIGNER_UUID not configured, skipping announcement');
         return;
       }
 
@@ -186,7 +188,8 @@ class ClankerRewardsCron {
         `🔗 Transaction: basescan.org/tx/${claimResult.transactionHash}\n\n` +
         `#ABCDAO #ClankerRewards #AutomatedClaiming`;
 
-      const cast = await neynar.publishCast(process.env.NEYNAR_SIGNER_UUID, castText);
+      console.log(`📢 Posting Clanker rewards from @abc-dao-dev (signer: ${devSignerUuid})`);
+      const cast = await neynar.publishCast(devSignerUuid, castText);
       console.log(`✅ Claim announced: ${cast.cast.hash}`);
       
       return cast.cast.hash;
@@ -477,8 +480,9 @@ class ClankerRewardsCron {
    */
   async announceWethUnwrap(unwrapResult) {
     try {
-      if (!process.env.NEYNAR_API_KEY || !process.env.NEYNAR_SIGNER_UUID) {
-        console.log('⚠️ Farcaster credentials not configured, skipping WETH unwrap announcement');
+      const devSignerUuid = process.env.ABC_DEV_SIGNER_UUID || process.env.NEYNAR_SIGNER_UUID;
+      if (!process.env.NEYNAR_API_KEY || !devSignerUuid) {
+        console.log('⚠️ Farcaster or ABC_DEV_SIGNER_UUID not configured, skipping WETH unwrap announcement');
         return;
       }
 
@@ -496,7 +500,8 @@ class ClankerRewardsCron {
 
 #ABCDAO #WETHUnwrap #AutoTreasury`;
 
-      const cast = await neynar.publishCast(process.env.NEYNAR_SIGNER_UUID, castText);
+      console.log(`📢 Posting WETH unwrap from @abc-dao-dev (signer: ${devSignerUuid})`);
+      const cast = await neynar.publishCast(devSignerUuid, castText);
       console.log(`✅ WETH unwrap announced: ${cast.cast.hash}`);
       
     } catch (error) {

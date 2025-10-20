@@ -236,12 +236,14 @@ app.post('/api/cast/custom', async (req, res) => {
     // Use direct Neynar API instead of service
     const { NeynarAPIClient } = await import('@neynar/nodejs-sdk');
     
-    if (!process.env.NEYNAR_API_KEY || !process.env.NEYNAR_SIGNER_UUID) {
+    const devSignerUuid = process.env.ABC_DEV_SIGNER_UUID || process.env.NEYNAR_SIGNER_UUID;
+    if (!process.env.NEYNAR_API_KEY || !devSignerUuid) {
       return res.status(503).json({ error: 'Farcaster credentials not configured' });
     }
     
     const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY);
-    const cast = await neynar.publishCast(process.env.NEYNAR_SIGNER_UUID, castText);
+    console.log(`📢 Posting custom cast from @abc-dao-dev (signer: ${devSignerUuid})`);
+    const cast = await neynar.publishCast(devSignerUuid, castText);
     
     res.json({ 
       success: true, 

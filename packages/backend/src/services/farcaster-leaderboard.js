@@ -6,7 +6,7 @@ import fetch from 'node-fetch';
 class FarcasterLeaderboardService {
   constructor() {
     this.neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY);
-    this.signerUuid = process.env.NEYNAR_SIGNER_UUID;
+    this.signerUuid = process.env.ABC_DEV_SIGNER_UUID || process.env.NEYNAR_SIGNER_UUID;
   }
 
   /**
@@ -53,7 +53,7 @@ class FarcasterLeaderboardService {
   async castLeaderboard(imagePath, leaderboardData) {
     try {
       if (!this.signerUuid) {
-        throw new Error('NEYNAR_SIGNER_UUID not configured');
+        throw new Error('ABC_DEV_SIGNER_UUID or NEYNAR_SIGNER_UUID not configured');
       }
 
       // Upload image first
@@ -65,7 +65,8 @@ class FarcasterLeaderboardService {
       
       const castText = this.generateCastText(topDev, totalCommits, leaderboardData.length);
 
-      console.log('📡 Posting leaderboard cast...');
+      console.log('📡 Posting leaderboard cast from @abc-dao-dev...');
+      console.log(`Signer: ${this.signerUuid}`);
       console.log(`Text: ${castText}`);
 
       const castResponse = await this.neynar.publishCast({

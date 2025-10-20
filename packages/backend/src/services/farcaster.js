@@ -18,10 +18,10 @@ class FarcasterService {
     console.log('🔑 Initializing with API key:', process.env.NEYNAR_API_KEY.substring(0, 10) + '...');
     this.client = new NeynarAPIClient(process.env.NEYNAR_API_KEY);
 
-    this.signerUuid = process.env.NEYNAR_SIGNER_UUID;
+    this.signerUuid = process.env.ABC_DEV_SIGNER_UUID || process.env.NEYNAR_SIGNER_UUID;
 
     if (!this.signerUuid) {
-      console.warn('⚠️ NEYNAR_SIGNER_UUID not configured - Bot cannot post');
+      console.warn('⚠️ ABC_DEV_SIGNER_UUID or NEYNAR_SIGNER_UUID not configured - Bot cannot post');
     }
 
     console.log('✅ Farcaster service initialized for @abcbot');
