@@ -31,7 +31,7 @@ export default function Home() {
   const { isConnected } = useAccount();
   const membership = useMembership();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'stake' | 'dev' | 'proposals' | 'chat' | 'swap' | 'join'>(isInMiniApp ? 'stake' : 'join');
+  const [activeTab, setActiveTab] = useState<'stake' | 'dev' | 'proposals' | 'chat' | 'swap' | 'join'>(isInMiniApp ? 'stake' : 'stake');
   const stakingData = useStakingWithPrice();
   const treasuryData = useTreasurySystematic();
   const { 
@@ -571,74 +571,6 @@ export default function Home() {
                 <GitHubLinkPanel />
               </div>
             )
-          )}
-          {activeTab === 'join' && !membership.isMember && (
-            <div className="space-y-6">
-              <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-                <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
-                  {'>'} join_abc_dao()
-                </h2>
-                <p className="text-green-600 font-mono text-sm mb-6">
-                  Choose your preferred method to join the ABC DAO community
-                </p>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Farcaster Authentication */}
-                  <div className="bg-purple-950/20 border border-purple-900/50 rounded-lg p-6">
-                    <h3 className="text-lg font-bold text-purple-400 font-mono mb-3">
-                      🟣 Join with Farcaster
-                    </h3>
-                    <p className="text-purple-600 font-mono text-sm mb-4">
-                      Connect your Farcaster account for social features and easy onboarding
-                    </p>
-                    <div className="mb-4">
-                      <FarcasterAuth />
-                    </div>
-                    <ul className="text-purple-500 font-mono text-xs space-y-1">
-                      <li>• Social verification via Farcaster protocol</li>
-                      <li>• Access to community channels</li>
-                      <li>• Easy profile setup</li>
-                    </ul>
-                  </div>
-
-                  {/* Wallet Authentication */}
-                  <div className="bg-blue-950/20 border border-blue-900/50 rounded-lg p-6">
-                    <h3 className="text-lg font-bold text-blue-400 font-mono mb-3">
-                      🔗 Join with Wallet
-                    </h3>
-                    <p className="text-blue-600 font-mono text-sm mb-4">
-                      Connect your Ethereum wallet for direct blockchain interaction
-                    </p>
-                    <div className="mb-4">
-                      <WebappAuth />
-                    </div>
-                    <ul className="text-blue-500 font-mono text-xs space-y-1">
-                      <li>• Direct blockchain verification</li>
-                      <li>• No social media required</li>
-                      <li>• Full wallet integration</li>
-                    </ul>
-                  </div>
-                </div>
-                
-                <div className="mt-6 bg-green-950/20 border border-green-900/50 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <span className="text-green-400 text-lg flex-shrink-0">💎</span>
-                    <div>
-                      <p className="text-green-400 font-mono text-sm font-semibold mb-2">
-                        What You Get as a Member:
-                      </p>
-                      <ul className="text-green-600 font-mono text-xs space-y-1">
-                        <li>• Earn $ABC rewards for GitHub commits</li>
-                        <li>• Stake tokens to earn ETH from trading fees</li>
-                        <li>• Access to developer tools and repository management</li>
-                        <li>• Participate in DAO governance (coming soon)</li>
-                        <li>• Join the community of builders</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           )}
         </div>
       </div>
