@@ -39,9 +39,11 @@ application/json
 - Click **Add webhook**
 - GitHub will test the webhook and should show a green checkmark
 
-### 4. Confirm in ABC DAO
-- Return to abc.epicdylan.com → Dev Tools
+### 4. Confirm in ABC DAO (REQUIRED!)
+- Return to abc.epicdylan.com → Dev Tools  
 - Click "I've configured the webhook" next to your repository
+- **This activates the repository for ABC rewards**
+- You should see status change from "pending" to "active"
 - Start earning ABC rewards for your commits!
 
 ## Security Notes

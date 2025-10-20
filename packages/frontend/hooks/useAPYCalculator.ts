@@ -22,7 +22,7 @@ export function useAPYCalculator(): {
   getOptimalStakingAmount: (targetMonthlyUSD: number) => number;
   isLoading: boolean;
 } {
-  const { distributions, getAverageAPY } = useEthRewardsHistory();
+  const { distributions } = useEthRewardsHistory();
   const stakingData = useStakingWithPrice();
   const { priceData } = useTokenPrice();
 
@@ -58,7 +58,8 @@ export function useAPYCalculator(): {
     const currentAPY = weeklyYield * 52 * 100; // Annualized percentage yield
     
     // Calculate average APY over the last 4 weeks
-    const averageAPY = getAverageAPY(4);
+    const averageAPY = distributions.length === 0 ? 0 : 
+      distributions.slice(0, 4).reduce((sum, d) => sum + d.apy, 0) / Math.min(distributions.length, 4);
     
     // Project yearly ETH earnings for current staking amount
     const projectedYearlyETH = userStaked * weeklyETHPerABC * 52;
@@ -86,7 +87,7 @@ export function useAPYCalculator(): {
       stakingEfficiency,
       trend
     };
-  }, [distributions, stakingData, priceData, getAverageAPY]);
+  }, [distributions, stakingData, priceData]);
 
   const calculateProjectedEarnings = (stakingAmount: number, timeframe: 'week' | 'month' | 'year') => {
     if (!apyData.weeklyETHPerABC) return { eth: 0, usd: 0 };
