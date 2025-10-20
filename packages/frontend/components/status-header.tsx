@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useMembership } from '@/hooks/useMembership';
 import { useRewardsSystematic } from '@/hooks/useRewardsSystematic';
-import { useStakingSystematic } from '@/hooks/useStakingSystematic';
+import { useStakingSystematic, useStakingPosition } from '@/hooks/useStakingSystematic';
 import { useTokenSystematic } from '@/hooks/useTokenSystematic';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -72,20 +72,20 @@ export function StatusHeader() {
   const { isConnected, address } = useAccount();
   const membership = useMembership();
   const { tokenData } = useTokenSystematic('ABC');
-  const { overview: stakingData } = useStakingSystematic();
-  const { data: userRewards } = useRewardsSystematic();
+  const stakingPosition = useStakingPosition();
+  const { userRewards } = useRewardsSystematic();
 
   // Determine GitHub status
   const getGithubStatus = () => {
-    if (membership.isLoading) return 'loading';
+    if (membership.loading) return 'loading';
     if (!membership.githubUsername) return 'error';
-    if (!membership.isVerified) return 'warning';
+    if (!membership.hasGithub) return 'warning';
     return 'connected';
   };
 
   // Determine membership status
   const getMembershipStatus = () => {
-    if (membership.isLoading) return 'loading';
+    if (membership.loading) return 'loading';
     if (!membership.isMember) return 'error';
     return 'connected';
   };
@@ -104,7 +104,7 @@ export function StatusHeader() {
 
   // Get user's total earned ABC from membership data
   const abcBalance = membership.totalEarned || 0;
-  const stakedBalance = stakingData?.userPosition?.stakedAmount || 0;
+  const stakedBalance = stakingPosition?.stakedAmount || 0;
   const pendingRewards = userRewards?.summary?.totalClaimable || 0;
 
   return (
