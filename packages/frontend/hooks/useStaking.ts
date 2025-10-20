@@ -5,13 +5,11 @@ import { parseEther, formatEther } from 'viem';
 import { CONTRACTS, ERC20_ABI } from '@/lib/contracts';
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
-import { useAPYCalculator } from './useAPYCalculator';
 
 export function useStaking() {
   const { address } = useAccount();
   const [isApproving, setIsApproving] = useState(false);
   const [pendingStakeAmount, setPendingStakeAmount] = useState<string>('');
-  const { apyData } = useAPYCalculator();
   
   // Read staking info
   const { data: stakeInfo, refetch: refetchStakeInfo } = useReadContract({
@@ -266,8 +264,8 @@ export function useStaking() {
     };
   }, [allowance]);
 
-  // Use the proper APY calculator that handles weekly cycles correctly
-  const estimatedAPY = apyData.currentAPY;
+  // Note: estimatedAPY removed to break circular dependency with useAPYCalculator
+  // APY should be calculated at component level using useAPYCalculator directly
 
   return {
     // Data
@@ -277,7 +275,6 @@ export function useStaking() {
     tokenBalance: tokenBalance ? formatEther(tokenBalance as bigint) : '0',
     totalStaked: totalStaked ? formatEther(totalStaked as bigint) : '0',
     totalRewardsDistributed: totalRewardsDistributed ? formatEther(totalRewardsDistributed as bigint) : '0',
-    estimatedAPY,
     
     // State
     isApproving,
