@@ -187,35 +187,85 @@ export function RepositoryManager() {
         `;
         
         modal.innerHTML = `
-          <div style="background: #0a0a0a; border: 1px solid #00ff41; border-radius: 8px; padding: 2rem; max-width: 600px; max-height: 80vh; overflow-y: auto;">
-            <h2 style="color: #00ff41; margin-bottom: 1rem;">🔧 Webhook Setup for ${repoName}</h2>
+          <div style="background: #0a0a0a; border: 1px solid #00ff41; border-radius: 8px; padding: 1.5rem; width: 90vw; max-width: 700px; max-height: 90vh; overflow-y: auto; user-select: text; -webkit-user-select: text; -moz-user-select: text;">
+            <h2 style="color: #00ff41; margin-bottom: 1rem; font-size: 1.2rem;">🔧 Webhook Setup for ${repoName}</h2>
             
-            <div style="background: #001100; border: 1px solid #003300; border-radius: 4px; padding: 1rem; margin-bottom: 1rem;">
-              <h3 style="color: #00ff41; margin-bottom: 0.5rem;">📋 Step-by-step instructions:</h3>
-              <ol style="margin-left: 1rem; line-height: 1.6;">
-                ${instructions.instructions.steps.map((step: string, i: number) => `<li style="margin-bottom: 0.5rem;">${step}</li>`).join('')}
+            <div style="background: #001100; border: 1px solid #003300; border-radius: 4px; padding: 1rem; margin-bottom: 1rem; user-select: text;">
+              <h3 style="color: #00ff41; margin-bottom: 0.5rem; font-size: 1rem;">📋 Step-by-step instructions:</h3>
+              <ol style="margin-left: 1rem; line-height: 1.6; font-size: 0.9rem;">
+                ${instructions.instructions.steps.map((step: string, i: number) => `<li style="margin-bottom: 0.5rem; word-wrap: break-word;">${step}</li>`).join('')}
               </ol>
             </div>
             
             <div style="background: #001100; border: 1px solid #003300; border-radius: 4px; padding: 1rem; margin-bottom: 1rem;">
-              <h3 style="color: #00ff41; margin-bottom: 0.5rem;">🔑 Your Webhook Secret:</h3>
-              <code style="background: #000; padding: 0.5rem; border-radius: 4px; display: block; font-size: 0.8rem; word-break: break-all;">${instructions.webhook_setup.secret}</code>
-              <button onclick="navigator.clipboard.writeText('${instructions.webhook_setup.secret}'); this.innerText='✅ Copied!';" style="background: #003300; border: 1px solid #00ff41; color: #00ff41; padding: 0.25rem 0.5rem; border-radius: 4px; margin-top: 0.5rem; cursor: pointer;">📋 Copy Secret</button>
+              <h3 style="color: #00ff41; margin-bottom: 0.5rem; font-size: 1rem;">🔑 Your Webhook Secret:</h3>
+              <div style="background: #000; padding: 0.75rem; border-radius: 4px; border: 1px solid #333; margin-bottom: 0.5rem;">
+                <code style="font-size: 0.8rem; word-break: break-all; user-select: all; -webkit-user-select: all; -moz-user-select: all; color: #00ff41; font-family: 'Courier New', monospace;">${instructions.webhook_setup.secret}</code>
+              </div>
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button onclick="navigator.clipboard.writeText('${instructions.webhook_setup.secret}'); this.innerText='✅ Copied!';" style="background: #003300; border: 1px solid #00ff41; color: #00ff41; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">📋 Copy Secret</button>
+                <button onclick="this.parentElement.previousElementSibling.firstElementChild.select(); document.execCommand('copy'); this.innerText='✅ Selected!';" style="background: #003300; border: 1px solid #00ff41; color: #00ff41; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">📝 Select All</button>
+              </div>
             </div>
             
-            <div style="display: flex; gap: 1rem; justify-content: space-between;">
-              <a href="${instructions.webhook_setup.github_url}" target="_blank" style="background: #003300; border: 1px solid #00ff41; color: #00ff41; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none;">🔗 Open GitHub Settings</a>
-              <button onclick="this.parentElement.parentElement.parentElement.remove()" style="background: #330000; border: 1px solid #ff4141; color: #ff4141; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">❌ Close</button>
+            <div style="background: #001100; border: 1px solid #003300; border-radius: 4px; padding: 1rem; margin-bottom: 1rem;">
+              <h3 style="color: #00ff41; margin-bottom: 0.5rem; font-size: 1rem;">🔗 Quick Links:</h3>
+              <div style="background: #000; padding: 0.5rem; border-radius: 4px; border: 1px solid #333; margin-bottom: 0.5rem;">
+                <strong style="color: #00ff41; font-size: 0.85rem;">Payload URL:</strong><br>
+                <code style="font-size: 0.8rem; user-select: all; color: #00ff41;">${instructions.webhook_setup.payload_url}</code>
+              </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: space-between; flex-wrap: wrap; margin-bottom: 1rem;">
+              <a href="${instructions.webhook_setup.github_url}" target="_blank" style="background: #003300; border: 1px solid #00ff41; color: #00ff41; padding: 0.75rem 1rem; border-radius: 4px; text-decoration: none; font-size: 0.9rem; flex: 1; text-align: center; min-width: 200px;">🔗 Open GitHub Settings</a>
+            </div>
+            
+            <div style="background: #003300; border: 1px solid #00ff41; border-radius: 4px; padding: 1rem; margin-bottom: 1rem;">
+              <h3 style="color: #00ff41; margin-bottom: 0.5rem; font-size: 1rem;">✅ After setting up the webhook:</h3>
+              <p style="color: #00ff41; font-size: 0.85rem; margin-bottom: 1rem;">Once you've added the webhook to GitHub, click the button below to activate rewards for this repository.</p>
+              <button id="complete-webhook-${repoId}" onclick="window.completeWebhookSetup && window.completeWebhookSetup(${repoId})" style="background: #00ff41; border: none; color: #000; padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem; font-weight: bold; width: 100%;">🎉 I've configured the webhook - Activate rewards!</button>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+              <button onclick="this.parentElement.parentElement.parentElement.remove()" style="background: #330000; border: 1px solid #ff4141; color: #ff4141; padding: 0.75rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">❌ Close</button>
             </div>
           </div>
         `;
         
         document.body.appendChild(modal);
         
+        // Add completion function to window
+        (window as any).completeWebhookSetup = async (repoId: number) => {
+          try {
+            const response = await fetch(`${config.backendUrl}/api/repositories/${userIdentifier}/repositories/${repoId}/webhook`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                webhook_secret: 'user_configured'
+              }),
+            });
+
+            if (response.ok) {
+              modal.remove();
+              await fetchRepositories(); // Refresh the repository list
+              alert('✅ Webhook activated! Your repository is now earning $ABC rewards for commits.');
+            } else {
+              throw new Error('Failed to activate webhook');
+            }
+          } catch (error) {
+            console.error('Error completing webhook setup:', error);
+            alert('❌ Failed to activate webhook. Please try again or contact support.');
+          }
+        };
+        
         // Auto-remove modal when clicking outside
         modal.addEventListener('click', (e) => {
           if (e.target === modal) {
             modal.remove();
+            // Clean up the global function
+            delete (window as any).completeWebhookSetup;
           }
         });
         
