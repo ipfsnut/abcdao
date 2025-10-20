@@ -26,6 +26,7 @@ import githubVerificationRoutes from './routes/github-verification.js';
 import ethDistributionsRoutes from './routes/eth-distributions.js';
 import clankerClaimsRoutes from './routes/clanker-claims.js';
 import wethUnwrapsRoutes from './routes/weth-unwraps.js';
+import abcTokenStatsRoutes from './routes/abc-token-stats.js';
 import universalAuthRoutes from './routes/universal-auth.js';
 import userActionsRoutes from './routes/user-actions.js';
 import treasuryRoutes from './routes/treasury.js';
@@ -34,6 +35,7 @@ import usersCommitsRoutes from './routes/users-commits.js';
 import blockchainEventsRoutes from './routes/blockchain-events.js';
 import systemHealthRoutes from './routes/system-health.js';
 import castRoutes from './routes/cast.js';
+import treasuryTiersRoutes from './routes/treasury-tiers.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
@@ -44,6 +46,7 @@ import { PaymentMonitor } from './services/payment-monitor.js';
 import { PaymentRecoveryCron } from './jobs/payment-recovery-cron.js';
 import { EthDistributionCron } from './jobs/eth-distribution-cron.js';
 import { ABCRewardsCron } from './jobs/abc-rewards-cron.js';
+import { ABCTokenStatsCron } from './jobs/abc-token-stats-cron.js';
 // Removed: WethUnwrapCron now integrated into ABCRewardsCron
 import discordBot from './services/discord-bot.js';
 import { RealtimeBroadcastManager } from './services/realtime-broadcast.js';
@@ -183,6 +186,12 @@ app.get('/api', (req, res) => {
         'GET /api/system-health/details': 'Detailed health information',
         'GET /api/system-health/metrics': 'Performance metrics for all domains',
         'POST /api/system-health/refresh-all': 'Manually trigger refresh for all data managers'
+      },
+      'treasury-tiers': {
+        'GET /api/treasury-tiers/status': 'Current reward tier based on treasury balance',
+        'GET /api/treasury-tiers/predictions': 'Predict tier changes based on burn rate',
+        'GET /api/treasury-tiers/balance': 'Get current treasury balance',
+        'POST /api/treasury-tiers/calculate-reward': 'Test reward calculation for given parameters'
       }
     },
     websocket: {
@@ -208,6 +217,7 @@ app.use('/api/github', githubVerificationRoutes);
 app.use('/api/distributions', ethDistributionsRoutes);
 app.use('/api/clanker-claims', clankerClaimsRoutes);
 app.use('/api/weth-unwraps', wethUnwrapsRoutes);
+app.use('/api/abc-token-stats', abcTokenStatsRoutes);
 app.use('/api/universal-auth', universalAuthRoutes);
 app.use('/api/user-actions', userActionsRoutes);
 app.use('/api/treasury', treasuryRoutes);
@@ -216,6 +226,7 @@ app.use('/api/users-commits', usersCommitsRoutes);
 app.use('/api/blockchain-events', blockchainEventsRoutes);
 app.use('/api/system-health', systemHealthRoutes);
 app.use('/api/cast', castRoutes);
+app.use('/api/treasury-tiers', treasuryTiersRoutes);
 
 // Custom cast endpoint (requires admin key for security)
 app.post('/api/cast/custom', async (req, res) => {
@@ -462,6 +473,22 @@ async function initializeBackgroundServices(server) {
       console.warn('⚠️  Bot wallet not configured, skipping Clanker rewards cron');
     }
 
+    // Start ABC Token Statistics cron job
+    if (process.env.ABC_TOKEN_ADDRESS && process.env.PROTOCOL_WALLET_ADDRESS) {
+      try {
+        const abcTokenStatsCron = new ABCTokenStatsCron();
+        abcTokenStatsCron.start();
+        console.log('✅ ABC Token Statistics cron job started (runs daily at 2:00 PM UTC)');
+        
+        // Store reference for graceful shutdown
+        global.abcTokenStatsCron = abcTokenStatsCron;
+      } catch (statsCronError) {
+        console.warn('⚠️  ABC Token Statistics cron setup failed:', statsCronError.message);
+      }
+    } else {
+      console.warn('⚠️  ABC token or protocol wallet not configured, skipping Token Statistics cron');
+    }
+
     // WETH unwrapping now integrated into Clanker rewards cron job
     // No standalone WETH unwrap cron needed - it's triggered after successful claims
 
@@ -578,6 +605,11 @@ process.on('SIGINT', () => {
   // Stop Clanker rewards cron
   if (global.abcRewardsCron) {
     global.abcRewardsCron.stop();
+  }
+  
+  // Stop ABC Token Statistics cron
+  if (global.abcTokenStatsCron) {
+    global.abcTokenStatsCron.stop();
   }
   
   // Stop verification service

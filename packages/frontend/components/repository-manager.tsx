@@ -34,6 +34,7 @@ export function RepositoryManager() {
   const [newRepoUrl, setNewRepoUrl] = useState('');
   const [error, setError] = useState('');
   const [fixingWebhook, setFixingWebhook] = useState<number | null>(null);
+  const [relinkingGitHub, setRelinkingGitHub] = useState(false);
 
   // Determine user identifier based on authentication method
   const userIdentifier = universalUser?.farcaster_fid || universalUser?.github_username;
@@ -114,6 +115,56 @@ export function RepositoryManager() {
     }
   };
 
+  const relinkGitHub = async () => {
+    if (!userIdentifier) return;
+    
+    setRelinkingGitHub(true);
+    setError('');
+    
+    try {
+      // First unlink current GitHub
+      const unlinkResponse = await fetch(`${config.backendUrl}/api/auth/github/unlink`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          farcasterFid: userIdentifier,
+        }),
+      });
+
+      if (!unlinkResponse.ok) {
+        throw new Error('Failed to unlink current GitHub account');
+      }
+
+      // Then initiate re-linking
+      const linkResponse = await fetch(`${config.backendUrl}/api/auth/github/authorize`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          farcasterFid: userIdentifier,
+          farcasterUsername: farcasterProfile?.username || 'user',
+          callbackUrl: `${window.location.origin}/repositories?relink=success`,
+        }),
+      });
+
+      if (linkResponse.ok) {
+        const { authUrl } = await linkResponse.json();
+        window.location.href = authUrl;
+      } else {
+        throw new Error('Failed to initialize GitHub re-linking');
+      }
+    } catch (error) {
+      console.error('Error re-linking GitHub:', error);
+      setError('Failed to re-link GitHub. Please try again.');
+      alert('❌ Failed to re-link GitHub account. Please try again or contact support.');
+    } finally {
+      setRelinkingGitHub(false);
+    }
+  };
+
   const fixWebhook = async (repoId: number) => {
     if (!userIdentifier || !hasGithub) return;
     
@@ -136,25 +187,39 @@ export function RepositoryManager() {
         
         setError(errorMessage);
         
-        // Show specific error messages based on error code
+        // Show specific error messages with re-link option for token issues
         switch (errorCode) {
           case 'GITHUB_NOT_LINKED':
-            alert('🔗 Please link your GitHub account first to enable automated webhook setup.');
+            if (confirm('🔗 GitHub account not linked. Would you like to link it now?')) {
+              relinkGitHub();
+            }
             break;
           case 'GITHUB_TOKEN_EXPIRED':
-            alert('🔄 Your GitHub access has expired. Please re-link your GitHub account and try again.');
+            if (confirm('🔄 Your GitHub access has expired. Would you like to re-link your GitHub account now?')) {
+              relinkGitHub();
+            }
             break;
           case 'INSUFFICIENT_PERMISSIONS':
-            alert('🔑 You need admin access to this repository to create webhooks. Please check your repository permissions or try manual setup.');
+            if (confirm('🔑 You need admin access to this repository. This might be due to expired GitHub permissions. Would you like to re-link your GitHub account to refresh permissions?')) {
+              relinkGitHub();
+            } else {
+              alert('Please check your repository permissions or try manual setup.');
+            }
             break;
           case 'REPOSITORY_NOT_FOUND':
-            alert('🔍 Repository not found or you no longer have access to it. Please verify the repository still exists.');
+            if (confirm('🔍 Repository not found or access denied. This might be due to expired GitHub permissions. Would you like to re-link your GitHub account?')) {
+              relinkGitHub();
+            } else {
+              alert('Please verify the repository still exists and you have access to it.');
+            }
             break;
           case 'GITHUB_VALIDATION_ERROR':
             alert('⚠️ GitHub rejected the webhook configuration. This might be due to existing webhooks or repository settings. Please try manual setup.');
             break;
           default:
-            alert(`⚠️ Automated setup failed: ${errorMessage}\n\nPlease try the manual setup option below.`);
+            if (confirm(`⚠️ Automated setup failed: ${errorMessage}\n\nThis might be due to GitHub authentication issues. Would you like to re-link your GitHub account?`)) {
+              relinkGitHub();
+            }
         }
       }
     } catch (error) {
@@ -231,6 +296,23 @@ export function RepositoryManager() {
                 </p>
               </div>
             )}
+          </div>
+
+          {/* GitHub Connection Status */}
+          <div className="bg-blue-950/20 border border-blue-700/50 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-blue-400 font-mono text-sm">GitHub Connection</h3>
+              <button
+                onClick={relinkGitHub}
+                disabled={relinkingGitHub}
+                className="bg-blue-900/50 hover:bg-blue-900/70 text-blue-400 border border-blue-700/50 px-3 py-1 rounded text-xs font-mono transition-all duration-300 disabled:opacity-50"
+              >
+                {relinkingGitHub ? '🔄 Re-linking...' : '🔗 Re-link GitHub'}
+              </button>
+            </div>
+            <p className="text-blue-600 font-mono text-xs mb-2">
+              If you're experiencing webhook setup issues, try re-linking your GitHub account to refresh permissions.
+            </p>
           </div>
 
           {/* Add Repository */}

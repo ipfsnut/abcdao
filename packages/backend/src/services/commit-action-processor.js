@@ -1,4 +1,5 @@
 import { BaseActionProcessor, ActionProcessorUtils } from './action-processor.js';
+import adaptiveRewardCalculator from './adaptive-reward-calculator.js';
 
 /**
  * Commit Action Processor
@@ -87,8 +88,14 @@ export class CommitActionProcessor extends BaseActionProcessor {
     const currentDailyCommits = parseInt(dailyCount.rows[0].count);
     const isAtDailyLimit = currentDailyCommits >= 10;
 
-    // 4. Calculate reward amount
-    const rewardAmount = isAtDailyLimit ? 0 : this.calculateReward(tags, priority);
+    // 4. Calculate reward amount using adaptive treasury-aware system
+    let rewardAmount = 0;
+    let rewardDetails = null;
+    
+    if (!isAtDailyLimit) {
+      rewardDetails = await adaptiveRewardCalculator.calculateReward(tags, priority);
+      rewardAmount = rewardDetails.amount;
+    }
 
     // 5. Store commit
     const commitResult = await client.query(`
@@ -128,6 +135,7 @@ export class CommitActionProcessor extends BaseActionProcessor {
       commit: storedCommit,
       user: updatedUser,
       rewardAmount,
+      rewardDetails, // Include adaptive reward tier information
       isAtDailyLimit,
       currentDailyCommits: currentDailyCommits + 1,
       leaderboard: leaderboardData,
@@ -193,9 +201,10 @@ export class CommitActionProcessor extends BaseActionProcessor {
   }
 
   /**
-   * Calculate reward amount based on tags and priority
+   * Legacy reward calculation method - now replaced by adaptive treasury-aware system
+   * Kept for reference/fallback purposes
    */
-  calculateReward(tags = [], priority = 'normal') {
+  calculateRewardLegacy(tags = [], priority = 'normal') {
     // Base reward: 50k-60k ABC (95% chance)
     let baseReward;
     const rand = Math.random();
