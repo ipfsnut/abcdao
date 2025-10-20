@@ -175,7 +175,13 @@ export class TreasuryDataManager {
    */
   async fetchABCTokenData() {
     try {
-      const response = await fetch('https://api.dexscreener.com/latest/dex/tokens/0x5c0872b790bb73e2b3a9778db6e7704095624b07');
+      const response = await fetch('https://api.dexscreener.com/latest/dex/tokens/0x5c0872b790bb73e2b3a9778db6e7704095624b07', {
+        headers: {
+          'User-Agent': 'ABC-DAO-Backend/1.0',
+          'Accept': 'application/json'
+        },
+        timeout: 10000 // 10 second timeout
+      });
       if (response.ok) {
         const data = await response.json();
         if (data.pairs && data.pairs.length > 0) {
@@ -202,9 +208,11 @@ export class TreasuryDataManager {
         }
       }
     } catch (e) {
-      console.warn('Failed to fetch $ABC token data:', e);
+      console.error('❌ Failed to fetch $ABC token data from DexScreener:', e.message);
+      console.error('📋 Full DexScreener error:', e);
     }
     
+    console.log('⚠️ Using fallback ABC token data');
     // Fallback data
     return {
       price: 0.0000123,

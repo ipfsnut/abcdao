@@ -18,16 +18,17 @@ class WethUnwrapCron {
   }
 
   /**
-   * Start the cron job to check and unwrap WETH every 2 hours
-   * Runs more frequently than other jobs to keep ETH liquid for staking rewards
+   * Start the cron jobs to check and unwrap WETH
+   * - Daily at 11:00 PM for general cleanup
+   * - Event-driven after Clanker claims (handled by abc-rewards-cron)
    */
   start() {
     console.log('⏰ Starting WETH unwrap cron job...');
     
-    // Run every 2 hours - more frequent than other jobs to keep ETH liquid
-    this.cronJob = cron.schedule('0 */2 * * *', async () => {
+    // Daily check at 11:00 PM UTC - ensures any accumulated WETH gets unwrapped
+    this.dailyCronJob = cron.schedule('0 23 * * *', async () => {
       if (this.isRunning) {
-        console.log('⚠️ WETH unwrap job already running, skipping...');
+        console.log('⚠️ WETH unwrap job already running, skipping daily check...');
         return;
       }
 
@@ -35,11 +36,11 @@ class WethUnwrapCron {
       const timestamp = new Date().toISOString();
       
       try {
-        console.log(`\n🔄 [${timestamp}] Starting WETH unwrap check...`);
-        await this.processWethUnwrap();
-        console.log(`✅ [${timestamp}] WETH unwrap check completed\n`);
+        console.log(`\n🔄 [${timestamp}] Starting daily WETH unwrap check...`);
+        await this.processWethUnwrap('daily-cleanup');
+        console.log(`✅ [${timestamp}] Daily WETH unwrap check completed\n`);
       } catch (error) {
-        console.error(`❌ [${timestamp}] WETH unwrap check failed:`, error);
+        console.error(`❌ [${timestamp}] Daily WETH unwrap check failed:`, error);
       } finally {
         this.isRunning = false;
       }
@@ -48,7 +49,8 @@ class WethUnwrapCron {
     });
 
     console.log('✅ WETH unwrap cron job started');
-    console.log('   - Runs every 2 hours');
+    console.log('   - Runs daily at 11:00 PM UTC');
+    console.log('   - Also triggers automatically after Clanker claims');
     console.log('   - Automatically unwraps WETH to native ETH');
     console.log('   - Keeps treasury liquid for staking rewards\n');
   }
@@ -57,8 +59,8 @@ class WethUnwrapCron {
    * Stop the cron job
    */
   stop() {
-    if (this.cronJob) {
-      this.cronJob.stop();
+    if (this.dailyCronJob) {
+      this.dailyCronJob.stop();
       console.log('🛑 WETH unwrap cron job stopped');
     }
   }
@@ -219,8 +221,9 @@ class WethUnwrapCron {
 
   /**
    * Main WETH unwrapping processing function
+   * @param {string} triggeredBy - Source of the trigger (e.g., 'daily-cleanup', 'clanker-claim')
    */
-  async processWethUnwrap() {
+  async processWethUnwrap(triggeredBy = 'manual') {
     try {
       console.log('🔄 ABC DAO WETH Unwrap Processor');
       console.log('===============================\n');

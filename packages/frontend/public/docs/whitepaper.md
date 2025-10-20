@@ -183,7 +183,7 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 
 ### Backend Services
 1. **GitHub Webhook Service**: Processes commit events with job queue system
-2. **Neynar Bot Service**: Automated posting via @abc-bot account
+2. **Neynar Bot Service**: Automated posting via @abc-dao-dev account
 3. **Account Linker**: Secure GitHub-Farcaster OAuth flow with JWT state tokens
 4. **Reward Database**: PostgreSQL with migrations and proper indexing
 5. **Fee Splitter**: Distributes 50% of Clanker fees to Dev wallet, 50% to Protocol wallet

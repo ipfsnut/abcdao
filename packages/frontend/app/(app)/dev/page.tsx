@@ -140,7 +140,7 @@ export default function DevPage() {
 
             {/* Farcaster - Public */}
             <a
-              href="https://warpcast.com/abc-dao"
+              href="https://warpcast.com/abc-dao-dev"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-purple-950/20 border border-purple-900/50 hover:border-purple-700/70 rounded-lg p-4 transition-all duration-300 matrix-button group"
@@ -155,7 +155,7 @@ export default function DevPage() {
               </div>
               <p className="text-green-600 font-mono text-xs">Follow updates & announcements</p>
               <div className="flex items-center justify-between mt-2">
-                <span className="text-purple-500 font-mono text-xs">@abc-dao</span>
+                <span className="text-purple-500 font-mono text-xs">@abc-dao-dev</span>
                 <span className="text-purple-400">→</span>
               </div>
             </a>
