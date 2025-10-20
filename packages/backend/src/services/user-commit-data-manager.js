@@ -567,13 +567,14 @@ export class UserCommitDataManager {
         u.display_name,
         u.avatar_url,
         u.membership_status,
+        u.verified_at,
         COUNT(c.id) as commits,
         COALESCE(SUM(c.reward_amount), 0) as total_rewards,
         MAX(c.commit_timestamp) as last_commit_at
       FROM users_master u
       LEFT JOIN commits_master c ON u.id = c.user_id ${timeFilter}
       WHERE u.is_active = true
-      GROUP BY u.id, u.farcaster_username, u.github_username, u.display_name, u.avatar_url, u.membership_status
+      GROUP BY u.id, u.farcaster_username, u.github_username, u.display_name, u.avatar_url, u.membership_status, u.verified_at
       ORDER BY total_rewards DESC, commits DESC
       LIMIT $1
     `, [limit]);

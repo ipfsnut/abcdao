@@ -5,6 +5,7 @@ import { useState, useCallback } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useLeaderboardSystematic, useUsersCommitsStatsSystematic } from '@/hooks/useUsersCommitsSystematic';
 import { useTokenPrice } from '@/hooks/useTokenPrice';
+import { VerificationBadge } from '@/components/verification-badge';
 
 const DEVELOPERS_PER_PAGE = 8;
 
@@ -306,9 +307,15 @@ export default function RosterPage() {
                             href={`/roster/${dev.profile?.farcasterUsername || dev.profile?.githubUsername || dev.id}`}
                             className="group"
                           >
-                            <h4 className="font-semibold text-green-400 font-mono group-hover:text-green-300 transition-colors duration-300">
-                              @{dev.profile?.farcasterUsername || 'Unknown'}
-                            </h4>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-green-400 font-mono group-hover:text-green-300 transition-colors duration-300">
+                                @{dev.profile?.farcasterUsername || 'Unknown'}
+                              </h4>
+                              <VerificationBadge 
+                                isVerified={!!dev.meta?.verifiedAt} 
+                                githubUsername={dev.profile?.githubUsername}
+                              />
+                            </div>
                           </Link>
                           <div className="flex items-center gap-2 text-xs text-green-600 font-mono">
                             <span>GitHub: @{dev.profile?.githubUsername || 'Unknown'}</span>
@@ -395,6 +402,29 @@ export default function RosterPage() {
           )}
         </div>
 
+        {/* Verification Info Panel */}
+        <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm mb-6">
+          <h3 className="text-lg font-bold mb-3 text-green-400 matrix-glow font-mono">
+            {'>'} verification.info()
+          </h3>
+          <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-4 mb-4">
+            <div className="flex items-start gap-3">
+              <div className="text-yellow-400 text-xl mt-1">⚠️</div>
+              <div className="text-green-600 font-mono text-sm space-y-2">
+                <p className="text-green-400 font-semibold">Profile Creation Notice:</p>
+                <p>Only verified developers have full profiles that appear here. Users with ✓ badges have completed the verification process.</p>
+                <p>To create a verified profile and start earning $ABC rewards:</p>
+                <ol className="list-decimal list-inside space-y-1 mt-2 text-xs pl-4">
+                  <li>Pay 0.002 ETH membership fee</li>
+                  <li>Link your GitHub account in the ABC DAO mini-app</li>
+                  <li>Complete the verification process</li>
+                  <li>Start making commits to earn 50k-1M $ABC per commit!</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Info Panel */}
         <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
           <h3 className="text-lg font-bold mb-3 text-green-400 matrix-glow font-mono">
@@ -403,8 +433,8 @@ export default function RosterPage() {
           <div className="text-green-600 font-mono text-sm space-y-2">
             <p>• Developers are ranked by GitHub commit activity</p>
             <p>• Active status based on commits in the last 30 days</p>
-            <p>• Join the DAO by linking your GitHub and making commits</p>
-            <p>• Earn $ABC tokens for each commit (50k-1M random rewards)</p>
+            <p>• ✓ badges indicate verified developers who can earn rewards</p>
+            <p>• Click any badge to learn about the verification process</p>
           </div>
         </div>
       </div>

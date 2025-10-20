@@ -137,6 +137,7 @@ router.get('/leaderboard', async (req, res) => {
         },
         meta: {
           isActive: hasRecentCommits || hasAnyCommits, // Active if commits in last 30 days OR any commits ever
+          verifiedAt: user.verified_at,
           joinedAt: null, // Could add this from user creation date if needed
           createdAt: null  // Could add this from user creation date if needed
         }
