@@ -1,16 +1,16 @@
 import cron from 'node-cron';
 import { ethers } from 'ethers';
 
-class ClankerRewardsCron {
+class ABCRewardsCron {
   constructor() {
     this.provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
     this.protocolWallet = new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY, this.provider);
     this.isRunning = false;
     
-    // Clanker configuration
-    this.clankerContractAddress = process.env.CLANKER_CONTRACT_ADDRESS; // The $ABC token contract
-    this.clankerRewardsContractAddress = process.env.CLANKER_REWARDS_CONTRACT_ADDRESS; // The rewards distribution contract
-    this.clankerRewardsAbi = [
+    // ABC DAO configuration
+    this.abcTokenAddress = process.env.ABC_TOKEN_ADDRESS; // The $ABC token contract
+    this.rewardsContractAddress = process.env.ABC_REWARDS_CONTRACT_ADDRESS; // The ABC rewards contract
+    this.rewardsAbi = [
       "function checkRewards(address account) view returns (uint256)",
       "function claimRewards() external returns (bool)",
       "function getLastClaimTime(address account) view returns (uint256)"
@@ -31,12 +31,12 @@ class ClankerRewardsCron {
    * This runs 30 minutes before the nightly leaderboard to ensure completion
    */
   start() {
-    console.log('⏰ Starting Clanker rewards cron job...');
+    console.log('⏰ Starting ABC rewards cron job...');
     
     // Run daily at 11:30 PM UTC (30 minutes before nightly leaderboard)
     this.cronJob = cron.schedule('30 23 * * *', async () => {
       if (this.isRunning) {
-        console.log('⚠️ Clanker rewards job already running, skipping...');
+        console.log('⚠️ ABC rewards job already running, skipping...');
         return;
       }
 
@@ -45,7 +45,7 @@ class ClankerRewardsCron {
       
       try {
         console.log(`\n🪙 [${timestamp}] Starting daily Clanker rewards check...`);
-        await this.processClankerRewards();
+        await this.processABCRewards();
         console.log(`✅ [${timestamp}] Daily Clanker rewards check completed\n`);
       } catch (error) {
         console.error(`❌ [${timestamp}] Clanker rewards check failed:`, error);
@@ -56,9 +56,9 @@ class ClankerRewardsCron {
       timezone: 'UTC'
     });
 
-    console.log('✅ Clanker rewards cron job started');
+    console.log('✅ ABC rewards cron job started');
     console.log('   - Runs daily at 11:30 PM UTC');
-    console.log('   - Checks and claims accumulated Clanker rewards');
+    console.log('   - Checks and claims accumulated ABC rewards');
     console.log('   - Auto-unwraps any WETH received from claims');
     console.log('   - Executes before nightly leaderboard job\n');
   }
@@ -69,16 +69,16 @@ class ClankerRewardsCron {
   stop() {
     if (this.cronJob) {
       this.cronJob.stop();
-      console.log('🛑 Clanker rewards cron job stopped');
+      console.log('🛑 ABC rewards cron job stopped');
     }
   }
 
   /**
-   * Check if there are claimable Clanker rewards (via RPC)
+   * Check if there are claimable ABC rewards (via RPC)
    */
   async checkClaimableRewards() {
-    if (!this.clankerRewardsContractAddress) {
-      console.log('⚠️ Clanker rewards contract address not configured, skipping check');
+    if (!this.rewardsContractAddress) {
+      console.log('⚠️ ABC rewards contract address not configured, skipping check');
       return null;
     }
 
@@ -86,15 +86,15 @@ class ClankerRewardsCron {
       console.log(`🔍 Checking rewards via RPC for wallet: ${this.protocolWallet.address}`);
       
       // Use RPC calls instead of direct contract interaction for balance checks
-      const clankerRewardsContract = new ethers.Contract(
-        this.clankerRewardsContractAddress,
-        this.clankerRewardsAbi,
+      const rewardsContract = new ethers.Contract(
+        this.rewardsContractAddress,
+        this.rewardsAbi,
         this.provider
       );
       
       // Check pending rewards via RPC
-      const pendingRewards = await clankerRewardsContract.checkRewards(this.protocolWallet.address);
-      const lastClaimTime = await clankerRewardsContract.getLastClaimTime(this.protocolWallet.address);
+      const pendingRewards = await rewardsContract.checkRewards(this.protocolWallet.address);
+      const lastClaimTime = await rewardsContract.getLastClaimTime(this.protocolWallet.address);
       
       const rewardsEth = ethers.formatEther(pendingRewards);
       const lastClaimDate = lastClaimTime > 0 ? new Date(Number(lastClaimTime) * 1000) : null;
@@ -131,20 +131,20 @@ class ClankerRewardsCron {
     }
 
     try {
-      const clankerContract = new ethers.Contract(
-        this.clankerContractAddress,
-        this.clankerRewardsAbi,
+      const rewardsContract = new ethers.Contract(
+        this.rewardsContractAddress,
+        this.rewardsAbi,
         this.protocolWallet
       );
 
       console.log(`🚀 Claiming ${rewardsInfo.rewardsEth} ETH rewards...`);
       
       // Estimate gas
-      const gasEstimate = await clankerContract.claimRewards.estimateGas();
+      const gasEstimate = await rewardsContract.claimRewards.estimateGas();
       const gasLimit = gasEstimate + (gasEstimate / 10n); // Add 10% buffer
       
       // Execute claim transaction
-      const tx = await clankerContract.claimRewards({
+      const tx = await rewardsContract.claimRewards({
         gasLimit: gasLimit
       });
       
@@ -182,13 +182,13 @@ class ClankerRewardsCron {
       const config = new Configuration({ apiKey: process.env.NEYNAR_API_KEY });
       const neynar = new NeynarAPIClient(config);
 
-      const castText = `🪙 CLANKER REWARDS CLAIMED!\n\n` +
+      const castText = `🪙 ABC REWARDS CLAIMED!\n\n` +
         `💰 Amount: ${claimResult.rewardsClaimed} ETH\n` +
         `🤖 Auto-claimed by ABC DAO bot\n\n` +
         `🔗 Transaction: basescan.org/tx/${claimResult.transactionHash}\n\n` +
-        `#ABCDAO #ClankerRewards #AutomatedClaiming`;
+        `#ABCDAO #ABCRewards #AutomatedClaiming`;
 
-      console.log(`📢 Posting Clanker rewards from @abc-dao-dev (signer: ${devSignerUuid})`);
+      console.log(`📢 Posting ABC rewards from @abc-dao-dev (signer: ${devSignerUuid})`);
       const cast = await neynar.publishCast(devSignerUuid, castText);
       console.log(`✅ Claim announced: ${cast.cast.hash}`);
       
@@ -232,7 +232,7 @@ class ClankerRewardsCron {
   /**
    * Main Clanker rewards processing function
    */
-  async processClankerRewards() {
+  async processABCRewards() {
     try {
       console.log('🪙 ABC DAO Clanker Rewards Processor');
       console.log('==================================\n');
@@ -298,7 +298,7 @@ class ClankerRewardsCron {
 
     this.isRunning = true;
     try {
-      await this.processClankerRewards();
+      await this.processABCRewards();
       console.log('✅ Manual Clanker rewards check completed');
     } catch (error) {
       console.error('❌ Manual Clanker rewards check failed:', error);
@@ -511,4 +511,4 @@ class ClankerRewardsCron {
   }
 }
 
-export { ClankerRewardsCron };
+export { ABCRewardsCron };

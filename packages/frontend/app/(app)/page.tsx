@@ -31,6 +31,7 @@ export default function Home() {
   const { isConnected } = useAccount();
   const membership = useMembership();
   const router = useRouter();
+  
   const [activeTab, setActiveTab] = useState<'stake' | 'dev' | 'proposals' | 'chat' | 'swap' | 'join'>(isInMiniApp ? 'stake' : 'stake');
   const stakingData = useStakingWithPrice();
   const treasuryData = useTreasurySystematic();
@@ -460,7 +461,7 @@ export default function Home() {
           </h2>
           
           {!membership.isMember ? (
-            /* Non-Member: Show membership benefits and join CTA */
+            /* Non-Member: Show appropriate join flow based on connection type */
             <div className="space-y-4">
               <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-4">
                 <h3 className="text-green-400 font-mono font-bold mb-3">💎 Join for 0.002 ETH</h3>
@@ -483,7 +484,28 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <GitHubLinkPanel />
+              
+              {/* Show appropriate join flow based on connection status */}
+              {isConnected ? (
+                /* Wallet connected - show wallet-based join flow */
+                <WebappAuth />
+              ) : (
+                /* No wallet connected - show Farcaster flow for miniapp users, wallet prompt for web */
+                isInMiniApp ? <GitHubLinkPanel /> : (
+                  <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+                    <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
+                      {'>'} connect_wallet()
+                    </h2>
+                    <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-4 sm:p-6 text-center">
+                      <p className="text-green-600 font-mono mb-2 text-xs sm:text-sm">{"// Wallet required for web users"}</p>
+                      <p className="text-green-400 font-mono text-sm sm:text-base mb-4">Connect your wallet to join</p>
+                      <div className="flex justify-center">
+                        <ConnectButton />
+                      </div>
+                    </div>
+                  </div>
+                )
+              )}
             </div>
           ) : (
             /* Member: Show profile and member tools */

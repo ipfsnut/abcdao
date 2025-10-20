@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useUniversalAuth } from '@/contexts/universal-auth-context';
@@ -11,9 +11,14 @@ export function WebappAuth() {
   const [linkingGithub, setLinkingGithub] = useState(false);
 
   // Auto-authenticate when wallet connects
-  if (isConnected && address && !user && !isLoading) {
-    authenticateByWallet(address);
-  }
+  useEffect(() => {
+    if (isConnected && address && !user && !isLoading) {
+      console.log('WebappAuth: Auto-authenticating with wallet:', address);
+      authenticateByWallet(address).catch(err => {
+        console.error('WebappAuth: Authentication failed:', err);
+      });
+    }
+  }, [isConnected, address, user, isLoading, authenticateByWallet]);
 
   const handleGithubLink = async () => {
     setLinkingGithub(true);

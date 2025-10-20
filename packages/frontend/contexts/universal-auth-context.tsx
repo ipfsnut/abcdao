@@ -86,7 +86,13 @@ export function UniversalAuthProvider({ children }: { children: ReactNode }) {
         await authenticateByWallet(address);
       } else {
         // Try to restore from localStorage
-        await tryRestoreFromStorage();
+        const storedUser = localStorage.getItem(STORAGE_KEY);
+        if (storedUser) {
+          await tryRestoreFromStorage();
+        } else {
+          // No stored user and no wallet connected - this is normal for first time visitors
+          setEntryContext('webapp'); // Default to webapp context for web users
+        }
       }
     } catch (err) {
       console.error('Auth initialization error:', err);
@@ -137,7 +143,7 @@ export function UniversalAuthProvider({ children }: { children: ReactNode }) {
           wallet_address: walletAddress
         }),
       });
-
+      
       if (response.ok) {
         const data = await response.json();
         
@@ -145,16 +151,18 @@ export function UniversalAuthProvider({ children }: { children: ReactNode }) {
           const universalUser = mapToUniversalUser(data.user, 'webapp');
           setUser(universalUser);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(universalUser));
-        } else if (data.action === 'purchase_membership') {
+        } else if (data.action === 'purchase_membership' || data.action === 'require_membership') {
           // User needs to purchase membership
           setUser(null);
           setError('Membership purchase required');
         }
       } else {
-        throw new Error('Wallet authentication failed');
+        const errorData = await response.text();
+        console.error('UniversalAuth: API error response:', response.status, errorData);
+        throw new Error(`Wallet authentication failed: ${response.status}`);
       }
     } catch (err) {
-      console.error('Wallet auth error:', err);
+      console.error('UniversalAuth: Wallet auth error:', err);
       throw err;
     }
   };

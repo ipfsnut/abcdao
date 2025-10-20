@@ -43,8 +43,8 @@ import { NightlyLeaderboardJob } from './jobs/nightly-leaderboard-cron.js';
 import { PaymentMonitor } from './services/payment-monitor.js';
 import { PaymentRecoveryCron } from './jobs/payment-recovery-cron.js';
 import { EthDistributionCron } from './jobs/eth-distribution-cron.js';
-import { ClankerRewardsCron } from './jobs/clanker-rewards-cron.js';
-// Removed: WethUnwrapCron now integrated into ClankerRewardsCron
+import { ABCRewardsCron } from './jobs/abc-rewards-cron.js';
+// Removed: WethUnwrapCron now integrated into ABCRewardsCron
 import discordBot from './services/discord-bot.js';
 import { RealtimeBroadcastManager } from './services/realtime-broadcast.js';
 import { startVerificationService } from './services/blockchain-verification.js';
@@ -449,12 +449,12 @@ async function initializeBackgroundServices(server) {
     // Start Clanker rewards cron job
     if (process.env.BOT_WALLET_PRIVATE_KEY) {
       try {
-        const clankerRewardsCron = new ClankerRewardsCron();
-        clankerRewardsCron.start();
+        const abcRewardsCron = new ABCRewardsCron();
+        abcRewardsCron.start();
         console.log('✅ Clanker rewards cron job started (runs daily at 11:30 PM UTC)');
         
         // Store reference for graceful shutdown
-        global.clankerRewardsCron = clankerRewardsCron;
+        global.abcRewardsCron = abcRewardsCron;
       } catch (clankerCronError) {
         console.warn('⚠️  Clanker rewards cron setup failed:', clankerCronError.message);
       }
@@ -576,8 +576,8 @@ process.on('SIGINT', () => {
   }
   
   // Stop Clanker rewards cron
-  if (global.clankerRewardsCron) {
-    global.clankerRewardsCron.stop();
+  if (global.abcRewardsCron) {
+    global.abcRewardsCron.stop();
   }
   
   // Stop verification service

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
+import { useUniversalAuth } from '@/contexts/universal-auth-context';
 import { config } from '@/lib/config';
 
 interface Repository {
@@ -25,25 +26,30 @@ interface RepositoryData {
 }
 
 export function RepositoryManager() {
-  const { user: profile } = useFarcaster();
+  const { user: farcasterProfile } = useFarcaster();
+  const { user: universalUser } = useUniversalAuth();
   const [repositoryData, setRepositoryData] = useState<RepositoryData | null>(null);
   const [loading, setLoading] = useState(false);
   const [addingRepo, setAddingRepo] = useState(false);
   const [newRepoUrl, setNewRepoUrl] = useState('');
   const [error, setError] = useState('');
 
+  // Determine user identifier based on authentication method
+  const userIdentifier = universalUser?.farcaster_fid || universalUser?.github_username;
+  const hasGithub = universalUser?.has_github || false;
+
   useEffect(() => {
-    if (profile?.fid) {
+    if (userIdentifier && hasGithub) {
       fetchRepositories();
     }
-  }, [profile]);
+  }, [userIdentifier, hasGithub]);
 
   const fetchRepositories = async () => {
-    if (!profile?.fid) return;
+    if (!userIdentifier || !hasGithub) return;
     
     setLoading(true);
     try {
-      const response = await fetch(`${config.backendUrl}/api/repositories/${profile.fid}/repositories`);
+      const response = await fetch(`${config.backendUrl}/api/repositories/${userIdentifier}/repositories`);
       if (response.ok) {
         const data = await response.json();
         setRepositoryData(data);
@@ -59,7 +65,7 @@ export function RepositoryManager() {
   };
 
   const addRepository = async () => {
-    if (!profile?.fid || !newRepoUrl.trim()) return;
+    if (!userIdentifier || !hasGithub || !newRepoUrl.trim()) return;
     
     // Extract repository name from URL
     const urlMatch = newRepoUrl.match(/github\.com\/([^\/]+\/[^\/]+)/);
@@ -74,7 +80,7 @@ export function RepositoryManager() {
     setError('');
     
     try {
-      const response = await fetch(`${config.backendUrl}/api/repositories/${profile.fid}/repositories`, {
+      const response = await fetch(`${config.backendUrl}/api/repositories/${userIdentifier}/repositories`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +113,7 @@ export function RepositoryManager() {
     }
   };
 
-  if (!profile) {
+  if (!universalUser || !hasGithub) {
     return (
       <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
         <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">
@@ -115,7 +121,7 @@ export function RepositoryManager() {
         </h2>
         <div className="bg-red-950/20 border border-red-900/30 rounded-lg p-4 text-center">
           <p className="text-red-400 font-mono text-sm">
-            Connect Farcaster account first
+            {!universalUser ? 'Authentication required' : 'GitHub account not connected'}
           </p>
         </div>
       </div>
