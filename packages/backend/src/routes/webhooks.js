@@ -23,15 +23,25 @@ async function verifyGitHubSignature(req, res, next) {
   const signature = req.get('X-Hub-Signature-256');
   const payload = JSON.stringify(req.body);
   
+  console.log('🔍 WEBHOOK SIGNATURE DEBUG:');
+  console.log('Received signature:', signature);
+  console.log('Content-Type:', req.get('Content-Type'));
+  console.log('Payload length:', payload.length);
+  console.log('Payload (first 200 chars):', payload.substring(0, 200));
+  
   if (!signature) {
+    console.log('❌ Missing X-Hub-Signature-256 header');
     return res.status(401).json({ error: 'Missing signature' });
   }
   
   try {
     const repository = req.body?.repository;
     if (!repository?.full_name) {
+      console.log('❌ Missing repository information in payload');
       return res.status(400).json({ error: 'Missing repository information' });
     }
+    
+    console.log('📁 Repository:', repository.full_name);
     
     // Get repository-specific webhook secret from database
     const pool = getPool();
@@ -52,14 +62,26 @@ async function verifyGitHubSignature(req, res, next) {
       return res.status(401).json({ error: 'No webhook secret configured for repository' });
     }
     
+    console.log('🔑 Stored secret:', webhookSecret);
+    console.log('🔑 Secret length:', webhookSecret.length);
+    
     // Verify signature using repository-specific secret
     const expectedSignature = 'sha256=' + crypto
       .createHmac('sha256', webhookSecret)
       .update(payload, 'utf8')
       .digest('hex');
     
+    console.log('🔑 Expected signature:', expectedSignature);
+    console.log('🔑 Received signature:', signature);
+    console.log('🔑 Signatures match:', signature === expectedSignature);
+    
     if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
-      console.log(`⚠️ Invalid webhook signature for repository: ${repository.full_name}`);
+      console.log(`❌ Invalid webhook signature for repository: ${repository.full_name}`);
+      console.log('❌ Debug info:');
+      console.log('  - Expected length:', expectedSignature.length);
+      console.log('  - Received length:', signature.length);
+      console.log('  - Secret used:', webhookSecret);
+      console.log('  - Payload used for signing:', payload.substring(0, 500));
       return res.status(401).json({ error: 'Invalid signature' });
     }
     
