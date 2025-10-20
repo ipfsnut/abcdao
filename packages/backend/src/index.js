@@ -37,6 +37,7 @@ import blockchainEventsRoutes from './routes/blockchain-events.js';
 import systemHealthRoutes from './routes/system-health.js';
 import castRoutes from './routes/cast.js';
 import treasuryTiersRoutes from './routes/treasury-tiers.js';
+import botFollowingRoutes from './routes/bot-following.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
@@ -49,6 +50,7 @@ import { EthDistributionCron } from './jobs/eth-distribution-cron.js';
 import { ABCRewardsCron } from './jobs/abc-rewards-cron.js';
 import { ABCTokenStatsCron } from './jobs/abc-token-stats-cron.js';
 import { ABCStakingStatsCron } from './jobs/abc-staking-stats-cron.js';
+import { startBotFollowingCron } from './jobs/bot-following-cron.js';
 import { WethUnwrapCron } from './jobs/weth-unwrap-cron-v2.js';
 // Removed: WethUnwrapCron now integrated into ABCRewardsCron
 import discordBot from './services/discord-bot.js';
@@ -231,6 +233,7 @@ app.use('/api/blockchain-events', blockchainEventsRoutes);
 app.use('/api/system-health', systemHealthRoutes);
 app.use('/api/cast', castRoutes);
 app.use('/api/treasury-tiers', treasuryTiersRoutes);
+app.use('/api/bot-following', botFollowingRoutes);
 
 // Custom cast endpoint (requires admin key for security)
 app.post('/api/cast/custom', async (req, res) => {
@@ -507,6 +510,21 @@ async function initializeBackgroundServices(server) {
       }
     } else {
       console.warn('⚠️  Staking contract or ABC token not configured, skipping Staking Statistics cron');
+    }
+
+    // Bot Following Cron (automate following of ABC DAO members)
+    if (process.env.NEYNAR_API_KEY && process.env.ABC_DEV_SIGNER_UUID) {
+      try {
+        startBotFollowingCron();
+        console.log('✅ Bot following cron job started (runs daily at 3:00 PM UTC)');
+        console.log('   - Automatically follows new ABC DAO members on Farcaster');
+        console.log('   - Retries previously failed follows');
+        console.log('   - Helps build community connections');
+      } catch (botFollowingCronError) {
+        console.warn('⚠️  Bot following cron setup failed:', botFollowingCronError.message);
+      }
+    } else {
+      console.warn('⚠️  Bot following cron not started - missing Neynar API key or signer UUID');
     }
 
     // WETH Unwrap Cron (critical for treasury automation)

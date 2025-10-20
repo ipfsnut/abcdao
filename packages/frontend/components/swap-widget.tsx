@@ -118,22 +118,22 @@ export function SwapWidget() {
 
   return (
     <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-      <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono text-center">
+      <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono text-left">
         {'>'} swap_tokens()
       </h2>
       
       <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-4 mb-4">
-        <p className="text-yellow-400 font-mono text-sm mb-2 text-center">
+        <p className="text-yellow-400 font-mono text-sm mb-2 text-left">
           💱 Trade $ABC
         </p>
-        <p className="text-green-600 font-mono text-xs mb-4 text-center">
+        <p className="text-green-600 font-mono text-xs mb-4 text-left">
           {isInMiniApp ? 'Buy or sell $ABC tokens with native Farcaster wallet' : 'Buy or sell $ABC tokens on Uniswap'}
         </p>
         
         {/* Status Message */}
         {lastAction && (
           <div className="bg-green-950/30 border border-green-700/50 rounded-lg p-2 mb-4">
-            <p className="text-green-400 font-mono text-xs text-center">
+            <p className="text-green-400 font-mono text-xs text-left">
               ✅ {lastAction}
             </p>
           </div>
@@ -190,7 +190,7 @@ export function SwapWidget() {
         </div>
       </div>
       
-      <div className="text-center">
+      <div className="text-left">
         <p className="text-green-600/70 font-mono text-xs">
           {isInMiniApp ? 'Native Farcaster wallet integration. One-click swaps.' : 'Opens Uniswap for token swapping.'}
         </p>

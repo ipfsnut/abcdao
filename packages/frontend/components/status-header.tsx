@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useMembership } from '@/hooks/useMembership';
 import { useRewardsSystematic } from '@/hooks/useRewardsSystematic';
-import { useStakingSystematic, useStakingPosition } from '@/hooks/useStakingSystematic';
+import { useStakingPosition } from '@/hooks/useStakingSystematic';
 import { useTokenSystematic } from '@/hooks/useTokenSystematic';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';

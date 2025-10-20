@@ -382,15 +382,15 @@ export default function Home() {
           <div className="space-y-4">
             {/* Token Info Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-center">
+              <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-left">
                 <p className="text-green-600 font-mono text-xs mb-1">Your Balance</p>
                 <p className="text-green-400 font-mono font-bold">{parseFloat(stakingData.tokenBalance).toFixed(0)} $ABC</p>
               </div>
-              <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-center">
+              <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-left">
                 <p className="text-green-600 font-mono text-xs mb-1">Staked</p>
                 <p className="text-green-400 font-mono font-bold">{parseFloat(stakingData.stakedAmount).toFixed(0)} $ABC</p>
               </div>
-              <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-center">
+              <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-left">
                 <p className="text-green-600 font-mono text-xs mb-1">Pending ETH</p>
                 <p className="text-green-400 font-mono font-bold">{parseFloat(stakingData.pendingRewards).toFixed(4)} ETH</p>
               </div>
