@@ -10,12 +10,19 @@ class RewardDebtProcessor {
     this.botWallet = new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY, this.provider);
     
     this.abcTokenAddress = process.env.ABC_TOKEN_ADDRESS || '0x5c0872b790bb73e2b3a9778db6e7704095624b07';
-    this.rewardsContractAddress = process.env.ABC_REWARDS_CONTRACT_ADDRESS;
+    this.rewardsContractAddress = process.env.ABC_REWARDS_CONTRACT_ADDRESS || '0x03CD0F799B4C04DbC22bFAAd35A3F36751F3446c';
+    this.protocolWalletAddress = process.env.PROTOCOL_WALLET_ADDRESS || '0xBE6525b767cA8D38d169C93C8120c0C0957388B8';
     
     this.rewardsContractABI = [
       "function allocateRewardsBatch(address[] calldata users, uint256[] calldata amounts) external",
       "function getContractStats() view returns (uint256, uint256, uint256, uint256)",
       "function getUserRewardInfo(address user) view returns (uint256, uint256, uint256, uint256)"
+    ];
+    
+    this.abcTokenABI = [
+      'function balanceOf(address owner) view returns (uint256)',
+      'function transfer(address to, uint256 amount) returns (bool)',
+      'function decimals() view returns (uint8)'
     ];
   }
 
@@ -193,7 +200,7 @@ class RewardDebtProcessor {
   /**
    * Announce reward transfer on Farcaster
    */
-  async announceRewardTransfer(rewardDebt, totalDebt, contractTxHash) {
+  async announceRewardTransfer(rewardDebt, totalDebt, contractTxHash, refillResult = null) {
     console.log('📢 Posting reward transfer announcement...');
     
     try {
@@ -211,7 +218,11 @@ class RewardDebtProcessor {
       const userList = rewardDebt.slice(0, 5).map(r => `@${r.username}`).join(' ');
       const moreUsers = rewardDebt.length > 5 ? ` +${rewardDebt.length - 5} more` : '';
       
-      const castText = `💰 REWARD TRANSFER COMPLETE!\n\n${totalDebt.toLocaleString()} $ABC rewards now CLAIMABLE!\n\n🎯 ${rewardDebt.length} developers can now claim:\n${userList}${moreUsers}\n\n🔗 Transaction: basescan.org/tx/${contractTxHash}\n\n✅ Connect wallet at abc.epicdylan.com to claim your rewards!\n\n#ABCDAO #AlwaysBeCoding`;
+      // Add refill info if auto-refill occurred
+      const refillInfo = refillResult ? 
+        `\n\n🏦 Auto-refilled: ${refillResult.refillAmount.toLocaleString()} $ABC transferred to contract` : '';
+      
+      const castText = `💰 REWARD TRANSFER COMPLETE!\n\n${totalDebt.toLocaleString()} $ABC rewards now CLAIMABLE!\n\n🎯 ${rewardDebt.length} developers can now claim:\n${userList}${moreUsers}${refillInfo}\n\n🔗 Transaction: basescan.org/tx/${contractTxHash}\n\n✅ Connect wallet at abc.epicdylan.com to claim your rewards!\n\n#ABCDAO #AlwaysBeCoding`;
 
       // Post cast
       console.log(`📢 Posting reward debt announcement from @abc-dao-dev (signer: ${devSignerUuid})`);
@@ -227,6 +238,76 @@ class RewardDebtProcessor {
       console.error('❌ Failed to announce reward transfer:', error.message);
       // Don't throw - announcement failure shouldn't break the process
     }
+  }
+
+  /**
+   * Check contract ABC balance and auto-refill if needed
+   */
+  async ensureSufficientContractBalance(requiredAmount) {
+    console.log('🔍 Checking contract balance for auto-refill...');
+    
+    const abcToken = new ethers.Contract(this.abcTokenAddress, this.abcTokenABI, this.provider);
+    
+    // Check current contract balance
+    const contractBalance = await abcToken.balanceOf(this.rewardsContractAddress);
+    const contractTokens = parseFloat(ethers.formatUnits(contractBalance, 18));
+    
+    console.log(`   Contract Balance: ${contractTokens.toLocaleString()} $ABC`);
+    console.log(`   Required Amount: ${requiredAmount.toLocaleString()} $ABC`);
+    
+    if (contractTokens >= requiredAmount) {
+      console.log('✅ Sufficient contract balance, no refill needed\n');
+      return;
+    }
+    
+    // Calculate smart refill amount
+    const shortfall = requiredAmount - contractTokens;
+    const bufferMonths = 2; // 2-month runway buffer
+    const bufferAmount = requiredAmount * bufferMonths; // Estimate based on current batch
+    let refillAmount = Math.max(shortfall, bufferAmount);
+    
+    console.log(`💡 Smart Refill Calculation:`);
+    console.log(`   Shortfall: ${shortfall.toLocaleString()} $ABC`);
+    console.log(`   Buffer (${bufferMonths} months): ${bufferAmount.toLocaleString()} $ABC`);
+    console.log(`   Refill Amount: ${refillAmount.toLocaleString()} $ABC`);
+    
+    // Check protocol wallet balance
+    const protocolBalance = await abcToken.balanceOf(this.protocolWalletAddress);
+    const protocolTokens = parseFloat(ethers.formatUnits(protocolBalance, 18));
+    const safetyReserve = 100_000_000; // Keep 100M ABC in protocol wallet
+    
+    console.log(`   Protocol Balance: ${protocolTokens.toLocaleString()} $ABC`);
+    console.log(`   Safety Reserve: ${safetyReserve.toLocaleString()} $ABC`);
+    
+    if (protocolTokens - refillAmount < safetyReserve) {
+      const maxTransfer = protocolTokens - safetyReserve;
+      if (maxTransfer < shortfall) {
+        throw new Error(`Insufficient protocol wallet balance. Need ${shortfall.toLocaleString()} ABC but only ${maxTransfer.toLocaleString()} ABC available above safety reserve.`);
+      }
+      console.log(`⚠️ Reducing refill to maintain safety reserve: ${maxTransfer.toLocaleString()} $ABC`);
+      refillAmount = maxTransfer;
+    }
+    
+    // Execute the transfer
+    console.log(`\n💸 Transferring ${refillAmount.toLocaleString()} $ABC from protocol wallet to rewards contract...`);
+    
+    const abcTokenWithSigner = new ethers.Contract(this.abcTokenAddress, this.abcTokenABI, this.botWallet);
+    const transferAmount = ethers.parseUnits(refillAmount.toString(), 18);
+    
+    const tx = await abcTokenWithSigner.transfer(this.rewardsContractAddress, transferAmount);
+    console.log(`⏳ Transfer transaction: ${tx.hash}`);
+    
+    const receipt = await tx.wait();
+    console.log(`✅ Transfer confirmed in block ${receipt.blockNumber}`);
+    
+    // Verify the transfer
+    const newContractBalance = await abcToken.balanceOf(this.rewardsContractAddress);
+    const newContractTokens = parseFloat(ethers.formatUnits(newContractBalance, 18));
+    
+    console.log(`📊 New contract balance: ${newContractTokens.toLocaleString()} $ABC`);
+    console.log(`🎯 Contract now has ${Math.floor(newContractTokens / requiredAmount)}x the required amount\n`);
+    
+    return { refillAmount, txHash: tx.hash };
   }
 
   /**
@@ -256,6 +337,9 @@ class RewardDebtProcessor {
       
       console.log(`💸 Total debt to allocate: ${totalDebt.toLocaleString()} $ABC\n`);
       
+      // Smart auto-refill: Ensure contract has sufficient balance
+      const refillResult = await this.ensureSufficientContractBalance(totalDebt);
+      
       // Execute batch allocation
       const rewardsContract = new ethers.Contract(
         this.rewardsContractAddress,
@@ -273,8 +357,8 @@ class RewardDebtProcessor {
       // Mark pending rewards as claimable in database
       await this.markRewardsAsClaimable(rewardDebt, tx.hash);
       
-      // Announce the reward transfer on Farcaster
-      await this.announceRewardTransfer(rewardDebt, totalDebt, tx.hash);
+      // Enhanced announcement including refill info
+      await this.announceRewardTransfer(rewardDebt, totalDebt, tx.hash, refillResult);
       
       // Log results
       console.log('🎉 Reward Debt Processing Complete!');
@@ -284,6 +368,10 @@ class RewardDebtProcessor {
       });
       
       console.log(`\n💫 Total: ${totalDebt.toLocaleString()} $ABC now claimable by users`);
+      
+      if (refillResult) {
+        console.log(`🏦 Auto-refilled: ${refillResult.refillAmount.toLocaleString()} $ABC transferred to contract`);
+      }
       
     } catch (error) {
       console.error('❌ Reward debt processing failed:', error);

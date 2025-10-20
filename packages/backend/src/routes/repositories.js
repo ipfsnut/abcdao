@@ -344,17 +344,29 @@ router.post('/:fid/repositories/:repoId/fix-webhook', async (req, res) => {
     
     // Get repository details and verify ownership
     const repoResult = await pool.query(`
-      SELECT rr.id, rr.repository_name, rr.repository_url, rr.status
+      SELECT rr.id, rr.repository_name, rr.repository_url, rr.status, rr.webhook_configured
       FROM registered_repositories rr
       JOIN users u ON rr.registered_by_user_id = u.id
-      WHERE rr.id = $1 AND u.farcaster_fid = $2 AND rr.status = 'pending'
+      WHERE rr.id = $1 AND u.farcaster_fid = $2
     `, [repoId, fid]);
     
     if (repoResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Pending repository not found or access denied' });
+      return res.status(404).json({ 
+        error: 'Repository not found or access denied',
+        code: 'REPOSITORY_NOT_FOUND',
+        details: `No repository found with ID ${repoId} for user ${fid}`
+      });
     }
     
     const repo = repoResult.rows[0];
+    
+    console.log(`🔍 Processing webhook setup for repository:`, {
+      id: repo.id,
+      name: repo.repository_name,
+      status: repo.status,
+      webhook_configured: repo.webhook_configured,
+      fid: fid
+    });
     
     // Generate webhook URL
     const backendUrl = process.env.BACKEND_URL || 'https://abcdao-production.up.railway.app';
@@ -363,8 +375,21 @@ router.post('/:fid/repositories/:repoId/fix-webhook', async (req, res) => {
     // Extract owner/repo from repository name
     const [owner, repoName] = repo.repository_name.split('/');
     
+    if (!owner || !repoName) {
+      console.error('❌ Invalid repository name format:', repo.repository_name);
+      return res.status(400).json({ 
+        error: `Invalid repository name format: ${repo.repository_name}. Expected format: owner/repo`,
+        code: 'INVALID_REPO_FORMAT'
+      });
+    }
+    
+    console.log(`🔧 Setting up webhook for ${owner}/${repoName}`);
+    
     // Set up webhook using GitHub API
+    console.log(`🔑 Getting GitHub access token for user ${fid}...`);
     const accessToken = await githubAPIService.getUserAccessToken(fid);
+    console.log(`✅ Got access token, creating webhook...`);
+    
     await githubAPIService.createWebhook(accessToken, owner, repoName, webhookUrl);
     
     // Update repository status
