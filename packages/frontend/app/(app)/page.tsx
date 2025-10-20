@@ -43,7 +43,7 @@ export default function Home() {
   }, [isConnected, address, membership.refreshStatus]);
   const router = useRouter();
   
-  const [activeTab, setActiveTab] = useState<'dev' | 'proposals' | 'chat' | 'swap' | 'join'>('swap');
+  const [activeTab, setActiveTab] = useState<'dev' | 'proposals' | 'chat' | 'swap' | 'join'>('dev');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const stakingData = useStakingWithPrice();
   const treasuryData = useTreasurySystematic();
