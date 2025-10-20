@@ -198,6 +198,124 @@ router.post('/:fid/repositories', async (req, res) => {
   }
 });
 
+// Get manual webhook setup instructions
+router.get('/:fid/:repoId/webhook-instructions', async (req, res) => {
+  const { fid, repoId } = req.params;
+  
+  try {
+    const pool = getPool();
+    
+    // Get repository details and verify ownership
+    const repoResult = await pool.query(`
+      SELECT rr.id, rr.repository_name, rr.webhook_secret, rr.status
+      FROM registered_repositories rr
+      JOIN users u ON rr.registered_by_user_id = u.id
+      WHERE rr.id = $1 AND u.farcaster_fid = $2
+    `, [repoId, fid]);
+    
+    if (repoResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Repository not found or access denied' });
+    }
+    
+    const repo = repoResult.rows[0];
+    const webhookUrl = `${process.env.BACKEND_URL || 'https://abcdao-production.up.railway.app'}/api/webhooks/github`;
+    
+    res.json({
+      success: true,
+      repository: repo.repository_name,
+      instructions: {
+        step1: "Go to your GitHub repository settings",
+        step2: "Click 'Settings' → 'Webhooks' → 'Add webhook'",
+        step3: "Fill in the webhook configuration:",
+        webhook_config: {
+          payload_url: webhookUrl,
+          content_type: "application/json",
+          secret: repo.webhook_secret,
+          events: ["push"],
+          active: true
+        },
+        step4: "Click 'Add webhook' and verify it shows a green checkmark",
+        step5: "Return to ABC DAO and click 'I\\'ve configured the webhook'"
+      },
+      markdown_guide: `## Manual Webhook Setup for ${repo.repository_name}
+
+### 1. Go to Repository Settings
+Navigate to: https://github.com/${repo.repository_name}/settings/hooks
+
+### 2. Add New Webhook
+Click **"Add webhook"** and fill in:
+
+**Payload URL:**
+\`\`\`
+${webhookUrl}
+\`\`\`
+
+**Content type:** application/json
+
+**Secret:**
+\`\`\`
+${repo.webhook_secret}
+\`\`\`
+
+**Events:** Just the push event ✅
+
+**Active:** ✅ Enabled
+
+### 3. Test & Confirm
+- Click **"Add webhook"**
+- Should see green checkmark ✅
+- Return to ABC DAO and click "I've configured the webhook"
+
+### 4. Start Earning!
+Make commits to ${repo.repository_name} and earn ABC rewards automatically! 🎉`
+    });
+    
+  } catch (error) {
+    console.error('Error getting webhook instructions:', error);
+    res.status(500).json({ error: 'Failed to get webhook instructions' });
+  }
+});
+
+// Mark webhook as manually configured
+router.post('/:fid/:repoId/webhook-configured', async (req, res) => {
+  const { fid, repoId } = req.params;
+  
+  try {
+    const pool = getPool();
+    
+    // Verify repository ownership
+    const repoResult = await pool.query(`
+      SELECT rr.id, rr.repository_name
+      FROM registered_repositories rr
+      JOIN users u ON rr.registered_by_user_id = u.id
+      WHERE rr.id = $1 AND u.farcaster_fid = $2
+    `, [repoId, fid]);
+    
+    if (repoResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Repository not found or access denied' });
+    }
+    
+    // Mark webhook as configured
+    await pool.query(`
+      UPDATE registered_repositories 
+      SET 
+        webhook_configured = true,
+        status = 'active',
+        updated_at = NOW()
+      WHERE id = $1
+    `, [repoId]);
+    
+    res.json({
+      success: true,
+      message: `Webhook marked as configured for ${repoResult.rows[0].repository_name}. Repository is now active for rewards!`
+    });
+    
+  } catch (error) {
+    console.error('Error marking webhook as configured:', error);
+    res.status(500).json({ error: 'Failed to update webhook status' });
+  }
+});
+
 // Submit partner application
 router.post('/partner-application', async (req, res) => {
   const {
@@ -395,12 +513,23 @@ router.post('/:fid/repositories/:repoId/fix-webhook', async (req, res) => {
     
     console.log(`🔧 Setting up webhook for ${owner}/${repoName}`);
     
+    // Get the webhook secret for this repository
+    const secretResult = await pool.query(`
+      SELECT webhook_secret FROM registered_repositories WHERE id = $1
+    `, [repoId]);
+    
+    if (secretResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Repository webhook secret not found' });
+    }
+    
+    const webhookSecret = secretResult.rows[0].webhook_secret;
+    
     // Set up webhook using GitHub API
     console.log(`🔑 Getting GitHub access token for user ${fid}...`);
     const accessToken = await githubAPIService.getUserAccessToken(fid);
     console.log(`✅ Got access token, creating webhook...`);
     
-    await githubAPIService.createWebhook(accessToken, owner, repoName, webhookUrl);
+    await githubAPIService.createWebhook(accessToken, owner, repoName, webhookUrl, webhookSecret);
     
     // Update repository status
     await pool.query(`

@@ -55,18 +55,26 @@ class GitHubAPIService {
   /**
    * Create webhook for repository
    */
-  async createWebhook(accessToken, owner, repo, webhookUrl) {
+  async createWebhook(accessToken, owner, repo, webhookUrl, webhookSecret) {
     try {
       console.log(`🔧 Creating webhook for ${owner}/${repo} with URL: ${webhookUrl}`);
+      
+      const config = {
+        url: webhookUrl,
+        content_type: 'json'
+      };
+      
+      // Add secret if provided
+      if (webhookSecret) {
+        config.secret = webhookSecret;
+        console.log(`🔐 Including webhook secret for signature verification`);
+      }
       
       const response = await axios.post(`${this.baseURL}/repos/${owner}/${repo}/hooks`, {
         name: 'web',
         active: true,
         events: ['push'],
-        config: {
-          url: webhookUrl,
-          content_type: 'json'
-        }
+        config: config
       }, {
         headers: {
           'Authorization': `token ${accessToken}`,
@@ -204,7 +212,7 @@ class GitHubAPIService {
         throw new Error('You must have admin access to this repository');
       }
       
-      // Create webhook
+      // Create webhook (note: this method doesn't have access to webhook secret)
       await this.createWebhook(accessToken, owner, repoName, webhookUrl);
       
       // Register repository in database
