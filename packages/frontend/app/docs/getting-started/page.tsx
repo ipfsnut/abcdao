@@ -96,8 +96,8 @@ export default function GettingStartedPage() {
 
             <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-4">
               <p className="text-yellow-300 text-sm">
-                <strong>Note:</strong> ABC DAO only needs read access to your public repositories. 
-                We never access private repositories or modify your code.
+                <strong>Permissions:</strong> ABC DAO needs webhook write access to automatically set up commit tracking. 
+                We only access repositories you explicitly register and never modify your code.
               </p>
             </div>
           </div>
