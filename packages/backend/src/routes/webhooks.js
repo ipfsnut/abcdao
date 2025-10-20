@@ -517,17 +517,20 @@ async function postCommitCast(castData) {
       castText
     );
     
-    // Update commit record with cast URL
+    console.log('🔍 Cast API response:', JSON.stringify(cast, null, 2));
+    
+    // Update commit record with cast URL - handle different response structures
     const pool = getPool();
+    const castHash = cast?.cast?.hash || cast?.hash || 'unknown';
     await pool.query(`
       UPDATE commits 
       SET cast_url = $1
       WHERE commit_hash = $2
-    `, [cast.cast.hash, commitHash]);
+    `, [castHash, commitHash]);
     
-    console.log(`✅ Posted cast: ${cast.cast.hash}`);
+    console.log(`✅ Posted cast: ${castHash}`);
     
-    return { success: true, castHash: cast.cast.hash };
+    return { success: true, castHash };
     
   } catch (error) {
     console.error(`❌ Cast posting failed:`, error.message);
