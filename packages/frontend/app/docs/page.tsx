@@ -97,10 +97,23 @@ export default function DocsOverviewPage() {
           >
             <div className="flex items-center gap-3 mb-3">
               <span className="text-2xl">💰</span>
-              <h3 className="text-white font-semibold">Rewards & Tags</h3>
+              <h3 className="text-white font-semibold">Rewards System</h3>
             </div>
             <p className="text-gray-400 text-sm">
-              Understand reward calculations, commit tags, and optimization tips
+              Treasury-aware reward calculation and earning mechanics
+            </p>
+          </Link>
+
+          <Link
+            href="/docs/commit-tags"
+            className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 hover:border-gray-600 hover:bg-gray-800/70 transition-all group"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-2xl">🏷️</span>
+              <h3 className="text-white font-semibold">Commit Tags</h3>
+            </div>
+            <p className="text-gray-400 text-sm">
+              Master tags to multiply rewards and control commit behavior
             </p>
           </Link>
 

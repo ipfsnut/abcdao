@@ -271,20 +271,20 @@ export default function GettingStartedPage() {
               <div className="bg-gray-900/50 border border-gray-600 rounded-lg p-4">
                 <h3 className="text-white font-semibold mb-3">Reward Details:</h3>
                 <ul className="space-y-2 text-gray-300 text-sm">
-                  <li>• 50k-999k $ABC per commit (random)</li>
+                  <li>• 50k-60k $ABC base (95% of commits)</li>
+                  <li>• Rare rewards up to 999k $ABC (2.5% chance)</li>
                   <li>• Up to 10 commits per day count</li>
-                  <li>• Rewards processed every 12 hours</li>
-                  <li>• Claim anytime from the app</li>
+                  <li>• Rewards processed immediately, claimable anytime</li>
                 </ul>
               </div>
               
               <div className="bg-gray-900/50 border border-gray-600 rounded-lg p-4">
                 <h3 className="text-white font-semibold mb-3">Optimization Tips:</h3>
                 <ul className="space-y-2 text-gray-300 text-sm">
-                  <li>• Use #priority or #milestone tags for 1.5x rewards</li>
-                  <li>• Meaningful commits earn more consistently</li>
-                  <li>• Popular repositories get higher base rewards</li>
-                  <li>• Regular activity increases your score</li>
+                  <li>• Use #priority tags for 1.5x, #milestone for 1.5x rewards</li>
+                  <li>• Treasury balance affects reward tiers automatically</li>
+                  <li>• Commit consistently to hit daily limit</li>
+                  <li>• Weekly limits: 5 priority/milestone tags each</li>
                 </ul>
               </div>
             </div>
