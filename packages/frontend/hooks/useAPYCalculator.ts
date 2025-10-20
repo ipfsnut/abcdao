@@ -15,7 +15,13 @@ export interface APYData {
   trend: 'increasing' | 'decreasing' | 'stable';
 }
 
-export function useAPYCalculator() {
+export function useAPYCalculator(): {
+  apyData: APYData;
+  calculateProjectedEarnings: (stakingAmount: number, timeframe: 'week' | 'month' | 'year') => { eth: number; usd: number };
+  getAPYRange: () => { min: number; max: number };
+  getOptimalStakingAmount: (targetMonthlyUSD: number) => number;
+  isLoading: boolean;
+} {
   const { distributions, getAverageAPY } = useEthRewardsHistory();
   const stakingData = useStakingWithPrice();
   const { priceData } = useTokenPrice();
