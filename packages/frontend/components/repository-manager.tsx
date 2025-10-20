@@ -209,10 +209,12 @@ export function RepositoryManager() {
             </div>
             
             <div style="background: #001100; border: 1px solid #003300; border-radius: 4px; padding: 1rem; margin-bottom: 1rem;">
-              <h3 style="color: #00ff41; margin-bottom: 0.5rem; font-size: 1rem;">🔗 Quick Links:</h3>
-              <div style="background: #000; padding: 0.5rem; border-radius: 4px; border: 1px solid #333; margin-bottom: 0.5rem;">
-                <strong style="color: #00ff41; font-size: 0.85rem;">Payload URL:</strong><br>
-                <code style="font-size: 0.8rem; user-select: all; color: #00ff41;">${instructions.webhook_setup.payload_url}</code>
+              <h3 style="color: #00ff41; margin-bottom: 0.5rem; font-size: 1rem;">🔗 Payload URL (copy this to GitHub):</h3>
+              <div style="background: #000; padding: 0.75rem; border-radius: 4px; border: 1px solid #333; margin-bottom: 0.5rem;">
+                <code style="font-size: 0.8rem; word-break: break-all; user-select: all; -webkit-user-select: all; -moz-user-select: all; color: #00ff41; font-family: 'Courier New', monospace;">${instructions.webhook_setup.payload_url}</code>
+              </div>
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button onclick="navigator.clipboard.writeText('${instructions.webhook_setup.payload_url}'); this.innerText='✅ Copied!';" style="background: #003300; border: 1px solid #00ff41; color: #00ff41; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">📋 Copy URL</button>
               </div>
             </div>
             
