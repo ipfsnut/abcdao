@@ -1,5 +1,6 @@
 import express from 'express';
 import { getPool } from '../services/database.js';
+import { ethers } from 'ethers';
 
 const router = express.Router();
 
@@ -163,12 +164,38 @@ router.get('/user/:fid', async (req, res) => {
     
     // Calculate totals
     const pendingTotal = pendingRewards.reduce((sum, r) => sum + parseFloat(r.reward_amount), 0);
-    const claimableTotal = claimableRewards.reduce((sum, r) => sum + parseFloat(r.reward_amount), 0);
+    
+    // Get ACTUAL claimable amount from contract instead of database sum
+    let actualClaimableTotal = 0;
+    try {
+      // Get user's wallet address
+      const userResult = await pool.query('SELECT wallet_address FROM users WHERE farcaster_fid = $1', [fid]);
+      if (userResult.rows.length > 0 && userResult.rows[0].wallet_address) {
+        const walletAddress = userResult.rows[0].wallet_address;
+        
+        // Query the contract for actual claimable amount
+        const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
+        const rewardsContract = new ethers.Contract(
+          process.env.ABC_REWARDS_CONTRACT_ADDRESS || '0x03CD0F799B4C04DbC22bFAAd35A3F36751F3446c',
+          ['function getClaimableAmount(address user) view returns (uint256)'],
+          provider
+        );
+        
+        const claimableWei = await rewardsContract.getClaimableAmount(walletAddress);
+        actualClaimableTotal = parseFloat(ethers.formatEther(claimableWei));
+        
+        console.log(`✅ User ${fid} - Database claimable: ${claimableRewards.reduce((sum, r) => sum + parseFloat(r.reward_amount), 0)}, Contract claimable: ${actualClaimableTotal}`);
+      }
+    } catch (error) {
+      console.warn(`⚠️ Failed to get contract claimable amount for user ${fid}:`, error.message);
+      // Fallback to database calculation if contract query fails
+      actualClaimableTotal = claimableRewards.reduce((sum, r) => sum + parseFloat(r.reward_amount), 0);
+    }
     
     res.json({
       summary: {
         totalPending: pendingTotal,
-        totalClaimable: claimableTotal,
+        totalClaimable: actualClaimableTotal, // Use actual contract amount
         pendingCount: pendingRewards.length,
         claimableCount: claimableRewards.length
       },

@@ -121,6 +121,7 @@ class RewardDebtProcessor {
 
   /**
    * Mark pending rewards as claimable after successful contract allocation
+   * Now includes contract verification to ensure sync
    */
   async markRewardsAsClaimable(rewardDebt, contractTxHash) {
     console.log('📝 Updating database with claimable status...');
@@ -129,26 +130,64 @@ class RewardDebtProcessor {
     
     for (const user of rewardDebt) {
       try {
-        // Update all pending rewards for this user to claimable
-        const updateResult = await pool.query(`
-          UPDATE commits 
-          SET 
-            reward_status = 'claimable',
-            contract_tx_hash = $1,
-            transferred_at = NOW()
-          WHERE user_id = $2 
-            AND reward_status = 'pending'
-            AND reward_amount IS NOT NULL
-        `, [contractTxHash, user.userId]);
+        // First verify the contract actually has the allocated amount
+        let contractVerified = false;
+        if (user.walletAddress) {
+          contractVerified = await this.verifyContractAllocation(user.walletAddress, user.debtAmount);
+        }
         
-        console.log(`  ✓ @${user.username}: ${updateResult.rowCount} rewards marked as claimable`);
+        if (contractVerified) {
+          // Update all pending rewards for this user to claimable
+          const updateResult = await pool.query(`
+            UPDATE commits 
+            SET 
+              reward_status = 'claimable',
+              contract_tx_hash = $1,
+              transferred_at = NOW()
+            WHERE user_id = $2 
+              AND reward_status = 'pending'
+              AND reward_amount IS NOT NULL
+          `, [contractTxHash, user.userId]);
+          
+          console.log(`  ✓ @${user.username}: ${updateResult.rowCount} rewards marked as claimable (contract verified)`);
+        } else {
+          console.log(`  ⚠️ @${user.username}: Contract verification failed, keeping rewards as pending`);
+        }
         
       } catch (error) {
         console.error(`  ❌ Failed to update rewards for @${user.username}:`, error.message);
       }
     }
     
-    console.log('✅ Database updated successfully\n');
+    console.log('✅ Database update completed\n');
+  }
+
+  /**
+   * Verify that the contract actually has the expected allocation for a user
+   */
+  async verifyContractAllocation(walletAddress, expectedAmount) {
+    try {
+      const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
+      const rewardsContract = new ethers.Contract(
+        process.env.ABC_REWARDS_CONTRACT_ADDRESS || '0x03CD0F799B4C04DbC22bFAAd35A3F36751F3446c',
+        ['function getClaimableAmount(address user) view returns (uint256)'],
+        provider
+      );
+      
+      const claimableWei = await rewardsContract.getClaimableAmount(walletAddress);
+      const claimableAmount = parseFloat(ethers.formatEther(claimableWei));
+      
+      // Allow some tolerance for rounding differences
+      const tolerance = expectedAmount * 0.01; // 1% tolerance
+      const verified = Math.abs(claimableAmount - expectedAmount) <= tolerance;
+      
+      console.log(`    Contract check: Expected ${expectedAmount.toLocaleString()}, Got ${claimableAmount.toLocaleString()} (${verified ? 'PASS' : 'FAIL'})`);
+      
+      return verified;
+    } catch (error) {
+      console.warn(`    Contract verification failed:`, error.message);
+      return false; // Conservative approach - don't mark as claimable if we can't verify
+    }
   }
 
   /**
