@@ -18,12 +18,8 @@ const webhooks = process.env.GITHUB_WEBHOOK_SECRET ? new Webhooks({
   secret: process.env.GITHUB_WEBHOOK_SECRET
 }) : null;
 
-// Middleware to verify GitHub webhook signature
-function verifyGitHubSignature(req, res, next) {
-  if (!webhooks) {
-    return res.status(503).json({ error: 'Webhooks not configured' });
-  }
-  
+// Middleware to verify GitHub webhook signature using repository-specific secrets
+async function verifyGitHubSignature(req, res, next) {
   const signature = req.get('X-Hub-Signature-256');
   const payload = JSON.stringify(req.body);
   
@@ -31,16 +27,49 @@ function verifyGitHubSignature(req, res, next) {
     return res.status(401).json({ error: 'Missing signature' });
   }
   
-  const expectedSignature = 'sha256=' + crypto
-    .createHmac('sha256', process.env.GITHUB_WEBHOOK_SECRET)
-    .update(payload, 'utf8')
-    .digest('hex');
-  
-  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
-    return res.status(401).json({ error: 'Invalid signature' });
+  try {
+    const repository = req.body?.repository;
+    if (!repository?.full_name) {
+      return res.status(400).json({ error: 'Missing repository information' });
+    }
+    
+    // Get repository-specific webhook secret from database
+    const pool = getPool();
+    const repoResult = await pool.query(`
+      SELECT webhook_secret 
+      FROM registered_repositories 
+      WHERE repository_name = $1 AND webhook_configured = true
+    `, [repository.full_name]);
+    
+    if (repoResult.rows.length === 0) {
+      console.log(`⚠️ Webhook received for unregistered repository: ${repository.full_name}`);
+      return res.status(404).json({ error: 'Repository not registered or webhook not configured' });
+    }
+    
+    const webhookSecret = repoResult.rows[0].webhook_secret;
+    if (!webhookSecret) {
+      console.log(`⚠️ No webhook secret found for repository: ${repository.full_name}`);
+      return res.status(401).json({ error: 'No webhook secret configured for repository' });
+    }
+    
+    // Verify signature using repository-specific secret
+    const expectedSignature = 'sha256=' + crypto
+      .createHmac('sha256', webhookSecret)
+      .update(payload, 'utf8')
+      .digest('hex');
+    
+    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+      console.log(`⚠️ Invalid webhook signature for repository: ${repository.full_name}`);
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
+    
+    console.log(`✅ Webhook signature verified for repository: ${repository.full_name}`);
+    next();
+    
+  } catch (error) {
+    console.error('Error verifying webhook signature:', error);
+    return res.status(500).json({ error: 'Signature verification failed' });
   }
-  
-  next();
 }
 
 // GitHub webhook endpoint

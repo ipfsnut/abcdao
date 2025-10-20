@@ -35,6 +35,7 @@ export function RepositoryManager() {
   const [error, setError] = useState('');
   const [fixingWebhook, setFixingWebhook] = useState<number | null>(null);
   const [relinkingGitHub, setRelinkingGitHub] = useState(false);
+  const [showingInstructions, setShowingInstructions] = useState<number | null>(null);
 
   // Determine user identifier based on authentication method
   const userIdentifier = universalUser?.farcaster_fid || universalUser?.github_username;
@@ -162,6 +163,70 @@ export function RepositoryManager() {
       alert('❌ Failed to re-link GitHub account. Please try again or contact support.');
     } finally {
       setRelinkingGitHub(false);
+    }
+  };
+
+  const showWebhookInstructions = async (repoId: number, repoName: string) => {
+    if (!userIdentifier) return;
+    
+    setShowingInstructions(repoId);
+    
+    try {
+      const response = await fetch(`${config.backendUrl}/api/repositories/${userIdentifier}/repositories/${repoId}/webhook-instructions`);
+      
+      if (response.ok) {
+        const instructions = await response.json();
+        
+        // Create modal-style instructions
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+          position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+          background: rgba(0,0,0,0.8); z-index: 1000; 
+          display: flex; align-items: center; justify-content: center;
+          font-family: monospace; color: #00ff41;
+        `;
+        
+        modal.innerHTML = `
+          <div style="background: #0a0a0a; border: 1px solid #00ff41; border-radius: 8px; padding: 2rem; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+            <h2 style="color: #00ff41; margin-bottom: 1rem;">🔧 Webhook Setup for ${repoName}</h2>
+            
+            <div style="background: #001100; border: 1px solid #003300; border-radius: 4px; padding: 1rem; margin-bottom: 1rem;">
+              <h3 style="color: #00ff41; margin-bottom: 0.5rem;">📋 Step-by-step instructions:</h3>
+              <ol style="margin-left: 1rem; line-height: 1.6;">
+                ${instructions.instructions.steps.map((step: string, i: number) => `<li style="margin-bottom: 0.5rem;">${step}</li>`).join('')}
+              </ol>
+            </div>
+            
+            <div style="background: #001100; border: 1px solid #003300; border-radius: 4px; padding: 1rem; margin-bottom: 1rem;">
+              <h3 style="color: #00ff41; margin-bottom: 0.5rem;">🔑 Your Webhook Secret:</h3>
+              <code style="background: #000; padding: 0.5rem; border-radius: 4px; display: block; font-size: 0.8rem; word-break: break-all;">${instructions.webhook_setup.secret}</code>
+              <button onclick="navigator.clipboard.writeText('${instructions.webhook_setup.secret}'); this.innerText='✅ Copied!';" style="background: #003300; border: 1px solid #00ff41; color: #00ff41; padding: 0.25rem 0.5rem; border-radius: 4px; margin-top: 0.5rem; cursor: pointer;">📋 Copy Secret</button>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: space-between;">
+              <a href="${instructions.webhook_setup.github_url}" target="_blank" style="background: #003300; border: 1px solid #00ff41; color: #00ff41; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none;">🔗 Open GitHub Settings</a>
+              <button onclick="this.parentElement.parentElement.parentElement.remove()" style="background: #330000; border: 1px solid #ff4141; color: #ff4141; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">❌ Close</button>
+            </div>
+          </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Auto-remove modal when clicking outside
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            modal.remove();
+          }
+        });
+        
+      } else {
+        throw new Error('Failed to get webhook instructions');
+      }
+    } catch (error) {
+      console.error('Error getting webhook instructions:', error);
+      alert('❌ Failed to get webhook instructions. Please try again.');
+    } finally {
+      setShowingInstructions(null);
     }
   };
 
@@ -419,41 +484,10 @@ export function RepositoryManager() {
                         <p className="text-yellow-400">⚠️ Webhook not configured - rewards inactive</p>
                         <div className="flex gap-2">
                           <button
-                            onClick={() => fixWebhook(repo.id)}
-                            disabled={fixingWebhook === repo.id}
-                            className="bg-blue-900/50 hover:bg-blue-900/70 text-blue-400 border border-blue-700/50 px-2 py-1 rounded text-xs font-mono transition-all duration-300 disabled:opacity-50"
+                            onClick={() => showWebhookInstructions(repo.id, repo.repository_name)}
+                            className="bg-green-900/50 hover:bg-green-900/70 text-green-400 border border-green-700/50 px-2 py-1 rounded text-xs font-mono transition-all duration-300"
                           >
-                            {fixingWebhook === repo.id ? '🔄 Auto-setting up...' : '⚡ Auto Setup'}
-                          </button>
-                          <button
-                            onClick={() => {
-                              // Store which repo needs webhook setup
-                              const repoName = repo.repository_name;
-                              const webhookUrl = `${config.backendUrl}/api/webhooks/github`;
-                              
-                              // Create detailed setup instructions
-                              const instructions = `
-🔧 WEBHOOK SETUP FOR: ${repoName}
-
-📋 Step-by-step instructions:
-
-1. Go to: https://github.com/${repoName}/settings/hooks
-2. Click "Add webhook"
-3. Paste this URL: ${webhookUrl}
-4. Content type: application/json
-5. Events: Select "Just the push event"
-6. Active: ✅ (checked)
-7. Click "Add webhook"
-
-✅ Once added, your commits will earn $ABC rewards!
-                              `.trim();
-                              
-                              navigator.clipboard.writeText(webhookUrl);
-                              alert(instructions);
-                            }}
-                            className="bg-yellow-900/50 hover:bg-yellow-900/70 text-yellow-400 border border-yellow-700/50 px-2 py-1 rounded text-xs font-mono transition-all duration-300"
-                          >
-                            🔧 Manual Setup
+                            🔧 Setup Webhook
                           </button>
                         </div>
                       </div>

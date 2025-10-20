@@ -27,6 +27,7 @@ import ethDistributionsRoutes from './routes/eth-distributions.js';
 import clankerClaimsRoutes from './routes/clanker-claims.js';
 import wethUnwrapsRoutes from './routes/weth-unwraps.js';
 import abcTokenStatsRoutes from './routes/abc-token-stats.js';
+import abcStakingStatsRoutes from './routes/abc-staking-stats.js';
 import universalAuthRoutes from './routes/universal-auth.js';
 import userActionsRoutes from './routes/user-actions.js';
 import treasuryRoutes from './routes/treasury.js';
@@ -47,6 +48,7 @@ import { PaymentRecoveryCron } from './jobs/payment-recovery-cron.js';
 import { EthDistributionCron } from './jobs/eth-distribution-cron.js';
 import { ABCRewardsCron } from './jobs/abc-rewards-cron.js';
 import { ABCTokenStatsCron } from './jobs/abc-token-stats-cron.js';
+import { ABCStakingStatsCron } from './jobs/abc-staking-stats-cron.js';
 // Removed: WethUnwrapCron now integrated into ABCRewardsCron
 import discordBot from './services/discord-bot.js';
 import { RealtimeBroadcastManager } from './services/realtime-broadcast.js';
@@ -218,6 +220,7 @@ app.use('/api/distributions', ethDistributionsRoutes);
 app.use('/api/clanker-claims', clankerClaimsRoutes);
 app.use('/api/weth-unwraps', wethUnwrapsRoutes);
 app.use('/api/abc-token-stats', abcTokenStatsRoutes);
+app.use('/api/abc-staking-stats', abcStakingStatsRoutes);
 app.use('/api/universal-auth', universalAuthRoutes);
 app.use('/api/user-actions', userActionsRoutes);
 app.use('/api/treasury', treasuryRoutes);
@@ -489,6 +492,22 @@ async function initializeBackgroundServices(server) {
       console.warn('⚠️  ABC token or protocol wallet not configured, skipping Token Statistics cron');
     }
 
+    // Start ABC Staking Statistics cron job
+    if (process.env.STAKING_CONTRACT_ADDRESS && process.env.ABC_TOKEN_ADDRESS) {
+      try {
+        const abcStakingStatsCron = new ABCStakingStatsCron();
+        abcStakingStatsCron.start();
+        console.log('✅ ABC Staking Statistics cron job started (runs daily at 10:00 AM UTC)');
+        
+        // Store reference for graceful shutdown
+        global.abcStakingStatsCron = abcStakingStatsCron;
+      } catch (stakingStatsCronError) {
+        console.warn('⚠️  ABC Staking Statistics cron setup failed:', stakingStatsCronError.message);
+      }
+    } else {
+      console.warn('⚠️  Staking contract or ABC token not configured, skipping Staking Statistics cron');
+    }
+
     // WETH unwrapping now integrated into Clanker rewards cron job
     // No standalone WETH unwrap cron needed - it's triggered after successful claims
 
@@ -610,6 +629,11 @@ process.on('SIGINT', () => {
   // Stop ABC Token Statistics cron
   if (global.abcTokenStatsCron) {
     global.abcTokenStatsCron.stop();
+  }
+  
+  // Stop ABC Staking Statistics cron
+  if (global.abcStakingStatsCron) {
+    global.abcStakingStatsCron.stop();
   }
   
   // Stop verification service

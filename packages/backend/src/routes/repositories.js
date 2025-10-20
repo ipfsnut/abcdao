@@ -2,6 +2,7 @@ import express from 'express';
 import { getPool } from '../services/database.js';
 import { Octokit } from '@octokit/rest';
 import { ethers } from 'ethers';
+import crypto from 'crypto';
 import githubAPIService from '../services/github-api.js';
 
 const router = express.Router();
@@ -159,6 +160,9 @@ router.post('/:fid/repositories', async (req, res) => {
       }
     }
     
+    // Generate unique webhook secret for this repository
+    const webhookSecret = crypto.randomBytes(32).toString('hex');
+    
     // Register repository
     const result = await pool.query(`
       INSERT INTO registered_repositories (
@@ -166,15 +170,21 @@ router.post('/:fid/repositories', async (req, res) => {
         repository_url,
         registered_by_user_id,
         registration_type,
-        status
-      ) VALUES ($1, $2, $3, 'member', 'pending')
+        status,
+        webhook_secret
+      ) VALUES ($1, $2, $3, 'member', 'pending', $4)
       RETURNING *
-    `, [repository_name, repository_url, user.id]);
+    `, [repository_name, repository_url, user.id, webhookSecret]);
     
     res.json({
       success: true,
       repository: result.rows[0],
       message: 'Repository registered successfully. Configure webhook to activate rewards.',
+      webhook_setup: {
+        url: `${process.env.BACKEND_URL || 'https://abcdao-production.up.railway.app'}/api/webhooks/github`,
+        secret: webhookSecret,
+        repository_id: result.rows[0].id
+      },
       premium_staker: isPremiumStaker,
       limits_bypassed: isPremiumStaker
     });
@@ -460,6 +470,80 @@ router.post('/:fid/repositories/:repoId/fix-webhook', async (req, res) => {
       details: error.message,
       code: 'WEBHOOK_SETUP_FAILED'
     });
+  }
+});
+
+// Get webhook setup instructions for a specific repository
+router.get('/:fid/repositories/:repoId/webhook-instructions', async (req, res) => {
+  const { fid, repoId } = req.params;
+  
+  try {
+    const pool = getPool();
+    
+    // Get repository details and verify ownership
+    const repoResult = await pool.query(`
+      SELECT rr.id, rr.repository_name, rr.webhook_secret, rr.webhook_configured, rr.status
+      FROM registered_repositories rr
+      JOIN users u ON rr.registered_by_user_id = u.id
+      WHERE rr.id = $1 AND u.farcaster_fid = $2
+    `, [repoId, fid]);
+    
+    if (repoResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Repository not found or access denied' });
+    }
+    
+    const repo = repoResult.rows[0];
+    
+    // Generate new secret if one doesn't exist
+    let webhookSecret = repo.webhook_secret;
+    if (!webhookSecret) {
+      webhookSecret = crypto.randomBytes(32).toString('hex');
+      await pool.query(`
+        UPDATE registered_repositories 
+        SET webhook_secret = $1, updated_at = NOW()
+        WHERE id = $2
+      `, [webhookSecret, repoId]);
+    }
+    
+    const backendUrl = process.env.BACKEND_URL || 'https://abcdao-production.up.railway.app';
+    const [owner, repoName] = repo.repository_name.split('/');
+    
+    res.json({
+      success: true,
+      repository: {
+        id: repo.id,
+        name: repo.repository_name,
+        owner,
+        repo: repoName,
+        webhook_configured: repo.webhook_configured,
+        status: repo.status
+      },
+      webhook_setup: {
+        github_url: `https://github.com/${repo.repository_name}/settings/hooks`,
+        payload_url: `${backendUrl}/api/webhooks/github`,
+        content_type: 'application/json',
+        secret: webhookSecret,
+        events: ['push'],
+        active: true
+      },
+      instructions: {
+        steps: [
+          `Go to https://github.com/${repo.repository_name}/settings/hooks`,
+          'Click "Add webhook"',
+          `Set Payload URL to: ${backendUrl}/api/webhooks/github`,
+          'Set Content type to: application/json',
+          `Set Secret to: ${webhookSecret}`,
+          'Select "Just the push event"',
+          'Make sure "Active" is checked',
+          'Click "Add webhook"',
+          'Come back here and click "I\'ve configured the webhook"'
+        ]
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error getting webhook instructions:', error);
+    res.status(500).json({ error: 'Failed to get webhook instructions' });
   }
 });
 
