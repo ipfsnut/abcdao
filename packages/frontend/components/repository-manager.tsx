@@ -33,6 +33,7 @@ export function RepositoryManager() {
   const [addingRepo, setAddingRepo] = useState(false);
   const [newRepoUrl, setNewRepoUrl] = useState('');
   const [error, setError] = useState('');
+  const [fixingWebhook, setFixingWebhook] = useState<number | null>(null);
 
   // Determine user identifier based on authentication method
   const userIdentifier = universalUser?.farcaster_fid || universalUser?.github_username;
@@ -110,6 +111,57 @@ export function RepositoryManager() {
       setError('Error connecting to backend');
     } finally {
       setAddingRepo(false);
+    }
+  };
+
+  const fixWebhook = async (repoId: number) => {
+    if (!userIdentifier || !hasGithub) return;
+    
+    setFixingWebhook(repoId);
+    setError('');
+    
+    try {
+      const response = await fetch(`${config.backendUrl}/api/repositories/${userIdentifier}/repositories/${repoId}/fix-webhook`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        await fetchRepositories(); // Refresh list
+        alert('✅ Webhook configured successfully! Repository is now active for rewards.');
+      } else {
+        const errorData = await response.json();
+        const errorMessage = errorData.error || 'Failed to configure webhook automatically';
+        const errorCode = errorData.code;
+        
+        setError(errorMessage);
+        
+        // Show specific error messages based on error code
+        switch (errorCode) {
+          case 'GITHUB_NOT_LINKED':
+            alert('🔗 Please link your GitHub account first to enable automated webhook setup.');
+            break;
+          case 'GITHUB_TOKEN_EXPIRED':
+            alert('🔄 Your GitHub access has expired. Please re-link your GitHub account and try again.');
+            break;
+          case 'INSUFFICIENT_PERMISSIONS':
+            alert('🔑 You need admin access to this repository to create webhooks. Please check your repository permissions or try manual setup.');
+            break;
+          case 'REPOSITORY_NOT_FOUND':
+            alert('🔍 Repository not found or you no longer have access to it. Please verify the repository still exists.');
+            break;
+          case 'GITHUB_VALIDATION_ERROR':
+            alert('⚠️ GitHub rejected the webhook configuration. This might be due to existing webhooks or repository settings. Please try manual setup.');
+            break;
+          default:
+            alert(`⚠️ Automated setup failed: ${errorMessage}\n\nPlease try the manual setup option below.`);
+        }
+      }
+    } catch (error) {
+      console.error('Error fixing webhook:', error);
+      setError('Error connecting to backend. Please try manual setup.');
+    } finally {
+      setFixingWebhook(null);
     }
   };
 
@@ -281,16 +333,24 @@ export function RepositoryManager() {
                     </div>
                     
                     {!repo.webhook_configured && (
-                      <div className="mt-2">
+                      <div className="mt-2 space-y-2">
                         <p className="text-yellow-400">⚠️ Webhook not configured - rewards inactive</p>
-                        <button
-                          onClick={() => {
-                            // Store which repo needs webhook setup
-                            const repoName = repo.repository_name;
-                            const webhookUrl = `${config.backendUrl}/api/webhooks/github`;
-                            
-                            // Create detailed setup instructions
-                            const instructions = `
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => fixWebhook(repo.id)}
+                            disabled={fixingWebhook === repo.id}
+                            className="bg-blue-900/50 hover:bg-blue-900/70 text-blue-400 border border-blue-700/50 px-2 py-1 rounded text-xs font-mono transition-all duration-300 disabled:opacity-50"
+                          >
+                            {fixingWebhook === repo.id ? '🔄 Auto-setting up...' : '⚡ Auto Setup'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Store which repo needs webhook setup
+                              const repoName = repo.repository_name;
+                              const webhookUrl = `${config.backendUrl}/api/webhooks/github`;
+                              
+                              // Create detailed setup instructions
+                              const instructions = `
 🔧 WEBHOOK SETUP FOR: ${repoName}
 
 📋 Step-by-step instructions:
@@ -304,15 +364,16 @@ export function RepositoryManager() {
 7. Click "Add webhook"
 
 ✅ Once added, your commits will earn $ABC rewards!
-                            `.trim();
-                            
-                            navigator.clipboard.writeText(webhookUrl);
-                            alert(instructions);
-                          }}
-                          className="mt-1 text-yellow-600 hover:text-yellow-400 underline"
-                        >
-                          🔧 Setup Webhook
-                        </button>
+                              `.trim();
+                              
+                              navigator.clipboard.writeText(webhookUrl);
+                              alert(instructions);
+                            }}
+                            className="bg-yellow-900/50 hover:bg-yellow-900/70 text-yellow-400 border border-yellow-700/50 px-2 py-1 rounded text-xs font-mono transition-all duration-300"
+                          >
+                            🔧 Manual Setup
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>

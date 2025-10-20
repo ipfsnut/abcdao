@@ -158,9 +158,36 @@ export default function RepositoriesPage() {
           const data = await refreshResponse.json();
           setRegisteredRepos(data);
         }
+        
+        // Show success message
+        alert('✅ Webhook configured successfully! Repository is now active for rewards.');
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Failed to fix webhook');
+        const errorMessage = errorData.error || 'Failed to fix webhook';
+        const errorCode = errorData.code;
+        
+        setError(errorMessage);
+        
+        // Show specific error messages based on error code
+        switch (errorCode) {
+          case 'GITHUB_NOT_LINKED':
+            alert('🔗 Please link your GitHub account first to enable automated webhook setup.');
+            break;
+          case 'GITHUB_TOKEN_EXPIRED':
+            alert('🔄 Your GitHub access has expired. Please re-link your GitHub account and try again.');
+            break;
+          case 'INSUFFICIENT_PERMISSIONS':
+            alert('🔑 You need admin access to this repository to create webhooks. Please check your repository permissions or try manual setup.');
+            break;
+          case 'REPOSITORY_NOT_FOUND':
+            alert('🔍 Repository not found or you no longer have access to it. Please verify the repository still exists.');
+            break;
+          case 'GITHUB_VALIDATION_ERROR':
+            alert('⚠️ GitHub rejected the webhook configuration. This might be due to existing webhooks or repository settings. Please try manual setup.');
+            break;
+          default:
+            alert(`⚠️ Automated setup failed: ${errorMessage}\n\nPlease try the manual setup option below.`);
+        }
       }
     } catch (error) {
       console.error('Error fixing webhook:', error);
@@ -319,19 +346,45 @@ export default function RepositoriesPage() {
                       </div>
                     </div>
                     
-                    <div className="text-right">
+                    <div className="text-right space-y-2">
                       {repo.webhook_configured ? (
                         <div className="text-green-400 font-mono text-sm">
                           ✅ Webhook Active
                         </div>
                       ) : (
-                        <button
-                          onClick={() => fixWebhook(repo.id, repo.repository_name)}
-                          disabled={registering === repo.repository_name}
-                          className="bg-yellow-900/50 hover:bg-yellow-900/70 text-yellow-400 border border-yellow-700/50 px-3 py-1 rounded text-sm font-mono transition-all duration-300 disabled:opacity-50"
-                        >
-                          {registering === repo.repository_name ? '🔄 Setting up...' : '🔧 Setup Webhook'}
-                        </button>
+                        <div className="space-y-2">
+                          <button
+                            onClick={() => fixWebhook(repo.id, repo.repository_name)}
+                            disabled={registering === repo.repository_name}
+                            className="w-full bg-blue-900/50 hover:bg-blue-900/70 text-blue-400 border border-blue-700/50 px-3 py-1 rounded text-sm font-mono transition-all duration-300 disabled:opacity-50"
+                          >
+                            {registering === repo.repository_name ? '🔄 Auto-setting up...' : '⚡ Auto Setup'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              const webhookUrl = `https://abcdao-production.up.railway.app/api/webhooks/github`;
+                              const instructions = `🔧 MANUAL WEBHOOK SETUP FOR: ${repo.repository_name}
+
+📋 Step-by-step instructions:
+
+1. Go to: https://github.com/${repo.repository_name}/settings/hooks
+2. Click "Add webhook"
+3. Paste this URL: ${webhookUrl}
+4. Content type: application/json
+5. Events: Select "Just the push event"
+6. Active: ✅ (checked)
+7. Click "Add webhook"
+
+✅ Once added, your commits will earn $ABC rewards!`;
+                              
+                              navigator.clipboard.writeText(webhookUrl);
+                              alert(instructions);
+                            }}
+                            className="w-full bg-yellow-900/50 hover:bg-yellow-900/70 text-yellow-400 border border-yellow-700/50 px-3 py-1 rounded text-sm font-mono transition-all duration-300"
+                          >
+                            🔧 Manual Setup
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>

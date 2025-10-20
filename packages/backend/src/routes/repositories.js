@@ -386,10 +386,55 @@ router.post('/:fid/repositories/:repoId/fix-webhook', async (req, res) => {
     console.error('Error fixing webhook:', error);
     
     if (error.message === 'User not found or GitHub not linked') {
-      return res.status(401).json({ error: 'GitHub account not linked. Please link your GitHub account first.' });
+      return res.status(401).json({ 
+        error: 'GitHub account not linked. Please link your GitHub account first.',
+        code: 'GITHUB_NOT_LINKED'
+      });
     }
     
-    res.status(500).json({ error: 'Failed to configure webhook: ' + error.message });
+    // Handle specific GitHub API errors with user-friendly messages
+    if (error.message.includes('access token is invalid')) {
+      return res.status(401).json({ 
+        error: 'Your GitHub access has expired. Please re-link your GitHub account.',
+        code: 'GITHUB_TOKEN_EXPIRED'
+      });
+    }
+    
+    if (error.message.includes('Insufficient permissions')) {
+      return res.status(403).json({ 
+        error: 'You need admin access to this repository to set up webhooks. Please check your repository permissions.',
+        code: 'INSUFFICIENT_PERMISSIONS'
+      });
+    }
+    
+    if (error.message.includes('Repository not found')) {
+      return res.status(404).json({ 
+        error: 'Repository not found or you no longer have access to it.',
+        code: 'REPOSITORY_NOT_FOUND'
+      });
+    }
+    
+    if (error.message.includes('GitHub validation error')) {
+      return res.status(422).json({ 
+        error: 'GitHub rejected the webhook configuration. ' + error.message,
+        code: 'GITHUB_VALIDATION_ERROR'
+      });
+    }
+    
+    // Log the full error for debugging but return a generic message
+    console.error('Full webhook setup error:', {
+      repository: repo?.repository_name,
+      fid,
+      repoId,
+      error: error.message,
+      stack: error.stack
+    });
+    
+    res.status(500).json({ 
+      error: 'Failed to configure webhook automatically. Please try the manual setup option.',
+      details: error.message,
+      code: 'WEBHOOK_SETUP_FAILED'
+    });
   }
 });
 

@@ -57,6 +57,8 @@ class GitHubAPIService {
    */
   async createWebhook(accessToken, owner, repo, webhookUrl) {
     try {
+      console.log(`🔧 Creating webhook for ${owner}/${repo} with URL: ${webhookUrl}`);
+      
       const response = await axios.post(`${this.baseURL}/repos/${owner}/${repo}/hooks`, {
         name: 'web',
         active: true,
@@ -71,20 +73,60 @@ class GitHubAPIService {
           'Accept': 'application/vnd.github.v3+json'
         }
       });
+      
+      console.log(`✅ Webhook created successfully for ${owner}/${repo}`);
       return response.data;
+      
     } catch (error) {
-      console.error('Error creating webhook:', error);
+      console.error(`❌ Error creating webhook for ${owner}/${repo}:`, {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
+      
+      // Handle specific GitHub API errors
       if (error.response?.status === 422) {
-        // Webhook might already exist
-        const existingHooks = await this.getWebhooks(accessToken, owner, repo);
-        const existingHook = existingHooks.find(hook => 
-          hook.config.url === webhookUrl
-        );
-        if (existingHook) {
-          return existingHook;
+        console.log(`🔍 Checking for existing webhooks (422 error)...`);
+        
+        try {
+          const existingHooks = await this.getWebhooks(accessToken, owner, repo);
+          console.log(`📋 Found ${existingHooks.length} existing webhooks`);
+          
+          const existingHook = existingHooks.find(hook => 
+            hook.config.url === webhookUrl
+          );
+          
+          if (existingHook) {
+            console.log(`✅ Webhook already exists for ${owner}/${repo}`);
+            return existingHook;
+          } else {
+            // 422 but no matching webhook found - likely validation error
+            const errorMessage = error.response?.data?.message || 'Validation failed';
+            throw new Error(`GitHub validation error: ${errorMessage}`);
+          }
+        } catch (hookError) {
+          console.error(`❌ Error checking existing webhooks:`, hookError);
+          throw new Error(`Failed to verify existing webhooks: ${hookError.message}`);
         }
       }
-      throw new Error('Failed to create webhook');
+      
+      // Handle other specific error codes
+      if (error.response?.status === 401) {
+        throw new Error('GitHub access token is invalid or expired. Please re-link your GitHub account.');
+      }
+      
+      if (error.response?.status === 403) {
+        throw new Error('Insufficient permissions. You need admin access to this repository to create webhooks.');
+      }
+      
+      if (error.response?.status === 404) {
+        throw new Error('Repository not found or you do not have access to it.');
+      }
+      
+      // Generic error with GitHub response details
+      const errorDetails = error.response?.data?.message || error.message;
+      throw new Error(`GitHub API error (${error.response?.status || 'unknown'}): ${errorDetails}`);
     }
   }
 
