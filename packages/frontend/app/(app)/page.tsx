@@ -437,21 +437,23 @@ export default function Home() {
             {/* Token Actions */}
             <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={() => setActiveTab('stake')}
-                className={`p-3 rounded-lg border font-mono font-medium transition-all duration-300 ${
-                  activeTab === 'stake' 
-                    ? 'bg-green-900/50 text-green-400 border-green-700/50 matrix-glow' 
-                    : 'bg-green-950/20 text-green-600 border-green-900/30 hover:text-green-400 hover:border-green-700/50'
-                }`}
+                onClick={() => router.push('/staking')}
+                className="p-3 rounded-lg border font-mono font-medium transition-all duration-300 bg-green-950/20 text-green-600 border-green-900/30 hover:text-green-400 hover:border-green-700/50 hover:bg-green-900/30"
               >
                 🏦 Stake & Earn
               </button>
               <button
-                onClick={() => setActiveTab('swap')}
+                onClick={() => {
+                  if (isInMiniApp) {
+                    setActiveTab('swap');
+                  } else {
+                    window.open('https://app.uniswap.org/swap?outputCurrency=0x8dE276BCE40244eb8Dc2A0a5d83D5dA5aD95F3B6&chain=base', '_blank');
+                  }
+                }}
                 className={`p-3 rounded-lg border font-mono font-medium transition-all duration-300 ${
-                  activeTab === 'swap' 
+                  activeTab === 'swap' && isInMiniApp
                     ? 'bg-green-900/50 text-green-400 border-green-700/50 matrix-glow' 
-                    : 'bg-green-950/20 text-green-600 border-green-900/30 hover:text-green-400 hover:border-green-700/50'
+                    : 'bg-green-950/20 text-green-600 border-green-900/30 hover:text-green-400 hover:border-green-700/50 hover:bg-green-900/30'
                 }`}
               >
                 🔄 Buy/Sell

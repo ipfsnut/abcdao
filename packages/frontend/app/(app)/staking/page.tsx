@@ -72,11 +72,11 @@ export default function StakingPage() {
               </div>
               
               <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
-                <h3 className="text-green-600 text-responsive-xs font-mono mb-1">Weekly APY</h3>
+                <h3 className="text-green-600 text-responsive-xs font-mono mb-1">Current Weekly APY</h3>
                 <p className="text-responsive-lg font-bold text-green-400 matrix-glow">
                   {stakingData.estimatedAPY ? stakingData.estimatedAPY.toFixed(1) : '0.0'}%
                 </p>
-                <p className="text-green-500 text-xs font-mono mt-1">Live calculation</p>
+                <p className="text-green-500 text-xs font-mono mt-1">Resets weekly</p>
               </div>
             </>
           )}
@@ -181,7 +181,7 @@ export default function StakingPage() {
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-green-600">Estimated APY:</span>
+                        <span className="text-green-600">Current Weekly APY:</span>
                         <span className="text-green-400">
                           {stakingData.estimatedAPY ? stakingData.estimatedAPY.toFixed(1) : '0.0'}%
                         </span>

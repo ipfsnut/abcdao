@@ -105,6 +105,19 @@ export default function DocsOverviewPage() {
           </Link>
 
           <Link
+            href="/docs/weekly-apy-estimate"
+            className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 hover:border-gray-600 hover:bg-gray-800/70 transition-all group"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-2xl">📊</span>
+              <h3 className="text-white font-semibold">Weekly APY Estimate</h3>
+            </div>
+            <p className="text-gray-400 text-sm">
+              How we calculate and display APY based on weekly distribution cycles
+            </p>
+          </Link>
+
+          <Link
             href="/docs/api-reference"
             className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 hover:border-gray-600 hover:bg-gray-800/70 transition-all group"
           >

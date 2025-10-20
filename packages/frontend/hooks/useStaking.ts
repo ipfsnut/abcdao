@@ -5,11 +5,13 @@ import { parseEther, formatEther } from 'viem';
 import { CONTRACTS, ERC20_ABI } from '@/lib/contracts';
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
+import { useAPYCalculator } from './useAPYCalculator';
 
 export function useStaking() {
   const { address } = useAccount();
   const [isApproving, setIsApproving] = useState(false);
   const [pendingStakeAmount, setPendingStakeAmount] = useState<string>('');
+  const { apyData } = useAPYCalculator();
   
   // Read staking info
   const { data: stakeInfo, refetch: refetchStakeInfo } = useReadContract({
@@ -264,35 +266,8 @@ export function useStaking() {
     };
   }, [allowance]);
 
-  // Calculate estimated APY based on recent distribution patterns
-  const estimatedAPY = useMemo(() => {
-    if (!totalStaked || !totalRewardsDistributed) return 0;
-    
-    const totalStakedABC = parseFloat(formatEther(totalStaked as bigint)); // $ABC tokens staked
-    const totalRewardsETH = parseFloat(formatEther(totalRewardsDistributed as bigint)); // ETH rewards distributed
-    
-    if (totalStakedABC === 0 || totalRewardsETH === 0) return 0;
-    
-    // Estimate APY based on total rewards distributed
-    // Simple calculation: assume rewards are distributed over 30 days (adjust as needed)
-    const assumedDaysActive = 30;
-    const dailyRewardRate = totalRewardsETH / assumedDaysActive;
-    const annualRewards = dailyRewardRate * 365;
-    
-    // Price estimates for APY calculation
-    const ethPriceUSD = 2500; // ~ETH price
-    const abcPriceUSD = 0.001; // Rough $ABC price estimate
-    
-    const totalStakedUSD = totalStakedABC * abcPriceUSD;
-    const annualRewardsUSD = annualRewards * ethPriceUSD;
-    
-    if (totalStakedUSD === 0) return 0;
-    
-    const apy = (annualRewardsUSD / totalStakedUSD) * 100;
-    
-    // Cap at reasonable maximum to avoid display issues
-    return Math.min(Math.max(apy, 0), 1000);
-  }, [totalStaked, totalRewardsDistributed]);
+  // Use the proper APY calculator that handles weekly cycles correctly
+  const estimatedAPY = apyData.currentAPY;
 
   return {
     // Data

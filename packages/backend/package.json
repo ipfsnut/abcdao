@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@neynar/nodejs-sdk": "^1.27.0",
+    "@octokit/app": "^16.1.1",
+    "@octokit/auth-app": "^8.1.1",
     "@octokit/rest": "^22.0.0",
     "@octokit/webhooks": "^12.0.10",
     "axios": "^1.6.0",

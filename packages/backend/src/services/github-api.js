@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getPool } from './database.js';
+import githubAppService from './github-app.js';
 
 class GitHubAPIService {
   constructor() {
@@ -49,6 +50,35 @@ class GitHubAPIService {
     } catch (error) {
       console.error('Error fetching repository details:', error);
       throw new Error('Failed to fetch repository details');
+    }
+  }
+
+  /**
+   * Create webhook for repository with GitHub App fallback
+   */
+  async createWebhookWithFallback(owner, repo, webhookUrl, webhookSecret, userAccessToken = null) {
+    // Try GitHub App first if configured
+    if (githubAppService.isConfigured()) {
+      try {
+        console.log(`🤖 Attempting webhook creation using GitHub App for ${owner}/${repo}...`);
+        return await githubAppService.createWebhookAsApp(owner, repo, webhookUrl, webhookSecret);
+      } catch (appError) {
+        console.log(`⚠️ GitHub App failed: ${appError.message}`);
+        
+        // Fall back to user OAuth if available
+        if (userAccessToken) {
+          console.log(`🔄 Falling back to user OAuth for ${owner}/${repo}...`);
+          return await this.createWebhook(userAccessToken, owner, repo, webhookUrl, webhookSecret);
+        } else {
+          throw new Error(`GitHub App failed and no user OAuth token available: ${appError.message}`);
+        }
+      }
+    } else if (userAccessToken) {
+      // No GitHub App configured, use user OAuth
+      console.log(`👤 Using user OAuth for ${owner}/${repo} (GitHub App not configured)...`);
+      return await this.createWebhook(userAccessToken, owner, repo, webhookUrl, webhookSecret);
+    } else {
+      throw new Error('Neither GitHub App nor user OAuth token available for webhook creation');
     }
   }
 

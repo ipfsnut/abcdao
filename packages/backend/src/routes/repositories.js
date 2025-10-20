@@ -524,12 +524,18 @@ router.post('/:fid/repositories/:repoId/fix-webhook', async (req, res) => {
     
     const webhookSecret = secretResult.rows[0].webhook_secret;
     
-    // Set up webhook using GitHub API
-    console.log(`🔑 Getting GitHub access token for user ${fid}...`);
-    const accessToken = await githubAPIService.getUserAccessToken(fid);
-    console.log(`✅ Got access token, creating webhook...`);
+    // Set up webhook using GitHub App with OAuth fallback
+    console.log(`🔧 Setting up webhook with GitHub App/OAuth fallback...`);
     
-    await githubAPIService.createWebhook(accessToken, owner, repoName, webhookUrl, webhookSecret);
+    let userAccessToken = null;
+    try {
+      userAccessToken = await githubAPIService.getUserAccessToken(fid);
+      console.log(`✅ Got user OAuth token for fallback`);
+    } catch (tokenError) {
+      console.log(`⚠️ No user OAuth token available: ${tokenError.message}`);
+    }
+    
+    await githubAPIService.createWebhookWithFallback(owner, repoName, webhookUrl, webhookSecret, userAccessToken);
     
     // Update repository status
     await pool.query(`
