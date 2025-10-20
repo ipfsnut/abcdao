@@ -39,14 +39,14 @@ class RewardDebtProcessor {
       SELECT 
         u.id as user_id,
         u.farcaster_username,
-        u.wallet_address,
+        u.wallet_address_primary as wallet_address,
         COALESCE(SUM(CASE WHEN c.reward_status = 'pending' THEN c.reward_amount ELSE 0 END), 0) as pending_rewards,
         COALESCE(SUM(c.reward_amount), 0) as total_earned
       FROM users u
       LEFT JOIN commits c ON u.id = c.user_id
-      WHERE u.wallet_address IS NOT NULL
+      WHERE u.wallet_address_primary IS NOT NULL
         AND u.membership_status != 'free'
-      GROUP BY u.id, u.farcaster_username, u.wallet_address
+      GROUP BY u.id, u.farcaster_username, u.wallet_address_primary
       HAVING COALESCE(SUM(CASE WHEN c.reward_status = 'pending' THEN c.reward_amount ELSE 0 END), 0) > 0
       ORDER BY pending_rewards DESC
     `);
