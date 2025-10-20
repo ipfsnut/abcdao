@@ -49,6 +49,7 @@ import { EthDistributionCron } from './jobs/eth-distribution-cron.js';
 import { ABCRewardsCron } from './jobs/abc-rewards-cron.js';
 import { ABCTokenStatsCron } from './jobs/abc-token-stats-cron.js';
 import { ABCStakingStatsCron } from './jobs/abc-staking-stats-cron.js';
+import { WethUnwrapCron } from './jobs/weth-unwrap-cron-v2.js';
 // Removed: WethUnwrapCron now integrated into ABCRewardsCron
 import discordBot from './services/discord-bot.js';
 import { RealtimeBroadcastManager } from './services/realtime-broadcast.js';
@@ -508,8 +509,27 @@ async function initializeBackgroundServices(server) {
       console.warn('⚠️  Staking contract or ABC token not configured, skipping Staking Statistics cron');
     }
 
-    // WETH unwrapping now integrated into Clanker rewards cron job
-    // No standalone WETH unwrap cron needed - it's triggered after successful claims
+    // WETH Unwrap Cron (critical for treasury automation)
+    if (process.env.BOT_WALLET_PRIVATE_KEY) {
+      try {
+        const wethUnwrapCron = new WethUnwrapCron();
+        await wethUnwrapCron.initialize();
+        wethUnwrapCron.start();
+        console.log('✅ WETH unwrap cron job started (runs daily at 11:00 PM UTC)');
+        console.log('   - Ensures any accumulated WETH gets unwrapped to ETH');
+        console.log('   - Critical for maintaining treasury liquidity');
+        console.log('   - Complements event-driven unwrapping after Clanker claims');
+        
+        // Store reference for graceful shutdown and health checks
+        global.wethUnwrapCron = wethUnwrapCron;
+      } catch (wethUnwrapCronError) {
+        console.error('❌ Failed to start WETH unwrap cron:', wethUnwrapCronError.message);
+        console.error('⚠️  This may impact treasury automation!');
+      }
+    } else {
+      console.warn('⚠️  WETH unwrap cron not started - missing BOT_WALLET_PRIVATE_KEY');
+      console.warn('⚠️  Treasury automation may be incomplete without this service!');
+    }
 
     // Initialize Real-time WebSocket Broadcasting
     try {
@@ -634,6 +654,12 @@ process.on('SIGINT', () => {
   // Stop ABC Staking Statistics cron
   if (global.abcStakingStatsCron) {
     global.abcStakingStatsCron.stop();
+  }
+  
+  // Stop WETH Unwrap cron
+  if (global.wethUnwrapCron) {
+    global.wethUnwrapCron.stop();
+    console.log('👋 WETH unwrap cron stopped');
   }
   
   // Stop verification service

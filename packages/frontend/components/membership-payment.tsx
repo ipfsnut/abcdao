@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { config } from '@/lib/config';
 import { TransactionValidator } from './transaction-validator';
+import { useMembership } from '@/hooks/useMembership';
 
 // Protocol wallet address for receiving membership payments
 const PROTOCOL_WALLET_ADDRESS = process.env.NEXT_PUBLIC_PROTOCOL_WALLET_ADDRESS as `0x${string}` || '0xBE6525b767cA8D38d169C93C8120c0C0957388B8' as `0x${string}`;
@@ -20,6 +21,7 @@ interface MembershipPaymentPanelProps {
 export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentPanelProps) {
   const { address, isConnected } = useAccount();
   const { user: profile, isInMiniApp } = useFarcaster();
+  const membership = useMembership();
   const [hasGithub, setHasGithub] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -95,6 +97,8 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
       if (response.ok) {
         setIsPaid(true);
         toast.success('Membership payment verified! Welcome to ABC DAO!');
+        // Refresh membership status to update header indicators
+        membership.refreshStatus();
         onPaymentComplete?.();
       } else {
         const error = await response.json();
@@ -181,6 +185,8 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
             if (hasGithub) {
               clearInterval(checkInterval);
               toast.success('GitHub account linked successfully!');
+              // Refresh membership status to update header indicators
+              membership.refreshStatus();
             }
           }
         }, 3000);

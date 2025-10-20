@@ -13,7 +13,7 @@ import { WebappAuth } from '@/components/webapp-auth';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStakingWithPrice } from '@/hooks/useStakingWithPrice';
 import { useTreasurySystematic } from '@/hooks/useTreasurySystematic';
 import { useUsersCommitsStatsSystematic } from '@/hooks/useUsersCommitsSystematic';
@@ -23,16 +23,28 @@ import { StatsSkeleton, TabContentSkeleton } from '@/components/skeleton-loader'
 import { CollapsibleStatCard, TreasuryRewardsCard } from '@/components/collapsible-stat-card';
 import { EthRewardsHistory } from '@/components/eth-rewards-history';
 import { ABCPriceWidget } from '@/components/abc-price-widget';
+import { CollapsibleSection } from '@/components/collapsible-section';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function Home() {
   const { isInMiniApp } = useFarcaster();
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const membership = useMembership();
+  
+  // Refresh membership status when wallet connection changes
+  useEffect(() => {
+    if (isConnected && address) {
+      // Small delay to ensure wallet connection is fully established
+      setTimeout(() => {
+        membership.refreshStatus();
+      }, 1000);
+    }
+  }, [isConnected, address, membership.refreshStatus]);
   const router = useRouter();
   
-  const [activeTab, setActiveTab] = useState<'stake' | 'dev' | 'proposals' | 'chat' | 'swap' | 'join'>(isInMiniApp ? 'stake' : 'stake');
+  const [activeTab, setActiveTab] = useState<'dev' | 'proposals' | 'chat' | 'swap' | 'join'>('swap');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const stakingData = useStakingWithPrice();
   const treasuryData = useTreasurySystematic();
   const { 
@@ -65,35 +77,42 @@ export default function Home() {
           {isInMiniApp ? (
             /* Miniapp Header: Centered Layout */
             <>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex-1" />
-                <div className="flex flex-col items-center text-center">
-                  <div className="flex items-center gap-3 mb-2">
-                    <img 
-                      src="/abc-logo.png" 
-                      alt="ABC Logo" 
-                      className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
-                    />
-                    <h1 className="text-responsive-xl font-bold matrix-glow">
-                      {'>'} ABC_DAO
-                    </h1>
-                  </div>
-                  <p className="text-responsive-xs text-green-600 font-mono mb-2">
-                    Ship code. Earn rewards.
-                  </p>
-                  <div className="bg-green-950/20 border border-green-900/50 rounded-lg px-3 py-2 mb-2">
-                    <p className="text-green-600 text-xs font-mono text-center">Your Balance</p>
-                    <p className="text-sm font-bold text-green-400 matrix-glow text-center">{parseFloat(stakingData.tokenBalance).toFixed(0)} $ABC</p>
-                  </div>
-                  {/* Wallet connection status for miniapp */}
-                  <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="flex flex-col items-center text-center mb-3">
+                <div className="mb-2">
+                  <h1 className="text-responsive-xl font-bold matrix-glow">
+                    {'>'} ABC_DAO
+                  </h1>
+                </div>
+                <p className="text-responsive-xs text-green-600 font-mono mb-2">
+                  Ship code. Earn rewards.
+                </p>
+                <div className="bg-green-950/20 border border-green-900/50 rounded-lg px-3 py-2 mb-2">
+                  <p className="text-green-600 text-xs font-mono text-center">Your Balance</p>
+                  <p className="text-sm font-bold text-green-400 matrix-glow text-center">{parseFloat(stakingData.tokenBalance).toFixed(0)} $ABC</p>
+                </div>
+                {/* Status indicators for miniapp */}
+                <div className="flex items-center justify-center gap-3 mb-2">
+                  {/* Wallet Status */}
+                  <div className="flex items-center gap-1">
                     <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-yellow-400'} animate-pulse`} />
-                    <p className="text-xs font-mono text-green-600">
-                      {isConnected ? 'Wallet Connected' : 'Connecting Wallet...'}
-                    </p>
+                    <p className="text-xs font-mono text-green-600">Wallet</p>
+                  </div>
+                  
+                  {/* GitHub Status */}
+                  <div className="flex items-center gap-1">
+                    <div className={`w-2 h-2 rounded-full ${
+                      membership.hasGithub ? 'bg-green-400' : 'bg-yellow-400'
+                    }`} />
+                    <p className="text-xs font-mono text-green-600">GitHub</p>
+                  </div>
+                  
+                  {/* Membership Status */}
+                  <div className="flex items-center gap-1">
+                    <div className={`w-2 h-2 rounded-full ${membership.isMember ? 'bg-green-400' : 'bg-yellow-400'}`} />
+                    <p className="text-xs font-mono text-green-600">Member</p>
                   </div>
                 </div>
-                <div className="flex-1 flex justify-end">
+                <div className="flex justify-center">
                   <a
                     href="/docs"
                     className="bg-green-900/30 hover:bg-green-800/40 border border-green-700/50 hover:border-green-600/70 
@@ -109,28 +128,68 @@ export default function Home() {
             /* Web Header: Original Layout */
             <>
               <div className="flex items-center justify-between">
-                {/* Logo and Title - Compact on Mobile */}
-                <div className="flex items-center gap-2">
-                  <img 
-                    src="/abc-logo.png" 
-                    alt="ABC Logo" 
-                    className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
-                  />
-                  <div>
-                    <h1 className="text-responsive-xl font-bold matrix-glow">
-                      {'>'} ABC_DAO
-                    </h1>
-                    <p className="hidden sm:block text-xs text-green-600 font-mono">
-                      Ship code. Earn rewards.
-                    </p>
+                {/* Status indicators - better responsive behavior */}
+                <div className="flex flex-col items-start gap-1 min-w-0 flex-shrink-0">
+                  {/* Compact status dots for mobile, full labels for larger screens */}
+                  <div className="flex items-center gap-2">
+                    {/* GitHub Status */}
+                    <div className="flex items-center gap-1">
+                      <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${
+                        membership.hasGithub ? 'bg-green-400' : 'bg-yellow-400'
+                      }`} />
+                      <span className="hidden md:inline text-xs font-mono text-green-600">
+                        GitHub
+                      </span>
+                    </div>
+                    
+                    {/* Membership Status */}
+                    <div className="flex items-center gap-1">
+                      <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${
+                        membership.isMember ? 'bg-green-400' : 'bg-yellow-400'
+                      }`} />
+                      <span className="hidden md:inline text-xs font-mono text-green-600">
+                        Member
+                      </span>
+                    </div>
                   </div>
+                  
+                  {/* ABC Balance - only show on larger screens */}
+                  {parseFloat(stakingData.tokenBalance) > 0 && (
+                    <div className="hidden lg:block text-left">
+                      <span className="text-xs font-mono text-green-600">$ABC: </span>
+                      <span className="text-xs font-mono text-green-400 font-bold">
+                        {(parseFloat(stakingData.tokenBalance) / 1000000).toFixed(1)}M
+                      </span>
+                    </div>
+                  )}
                 </div>
                 
-                {/* Mobile-Optimized Actions */}
-                <div className="flex items-center gap-2">
+                {/* Centered Title */}
+                <div className="flex-1 text-center px-4">
+                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold matrix-glow">
+                    {'>'} ABC_DAO
+                  </h1>
+                  <p className="hidden sm:block text-xs text-green-600 font-mono">
+                    Ship code. Earn rewards.
+                  </p>
+                </div>
+                
+                {/* Actions - responsive sizing */}
+                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                  {/* Hamburger menu for small screens */}
+                  <button
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="sm:hidden p-2 text-green-400 hover:text-green-300 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                  </button>
+                  
+                  {/* Desktop actions */}
                   <a
                     href="/docs"
-                    className="bg-green-900/30 hover:bg-green-800/40 border border-green-700/50 hover:border-green-600/70 
+                    className="hidden sm:block bg-green-900/30 hover:bg-green-800/40 border border-green-700/50 hover:border-green-600/70 
                                text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs
                                transition-all duration-200 matrix-button"
                   >
@@ -153,6 +212,49 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Mobile Menu Dropdown */}
+      {isMobileMenuOpen && !isInMiniApp && (
+        <div className="sm:hidden bg-black/95 border-b border-green-900/30 backdrop-blur-sm sticky top-16 z-40">
+          <div className="px-4 py-3 space-y-3">
+            {/* Status indicators for mobile */}
+            <div className="flex items-center justify-center gap-4 py-2 border-b border-green-900/30">
+              <div className="flex items-center gap-1">
+                <div className={`w-2 h-2 rounded-full ${membership.hasGithub ? 'bg-green-400' : 'bg-yellow-400'}`} />
+                <span className="text-xs font-mono text-green-600">GitHub</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className={`w-2 h-2 rounded-full ${membership.isMember ? 'bg-green-400' : 'bg-yellow-400'}`} />
+                <span className="text-xs font-mono text-green-600">Member</span>
+              </div>
+              {parseFloat(stakingData.tokenBalance) > 0 && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs font-mono text-green-600">$ABC:</span>
+                  <span className="text-xs font-mono text-green-400 font-bold">
+                    {(parseFloat(stakingData.tokenBalance) / 1000000).toFixed(1)}M
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            {/* Mobile menu actions */}
+            <div className="space-y-2">
+              <a
+                href="/docs"
+                className="block w-full text-center bg-green-900/30 hover:bg-green-800/40 border border-green-700/50 hover:border-green-600/70 
+                           text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs
+                           transition-all duration-200 matrix-button"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Docs
+              </a>
+              <div className="flex justify-center">
+                <FarcasterAuth />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mini-app Prompt */}
       <MiniAppPrompt />
 
@@ -168,150 +270,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Smart Header Stats - 2 Expandable Containers */}
-      <div className="bg-black/80 border-b border-green-900/30 backdrop-blur-sm">
-        <div className="px-4 py-4">
-          {isDataLoading ? (
-            <StatsSkeleton />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-6xl mx-auto">
-              
-              {/* Treasury & Rewards Container */}
-              <CollapsibleStatCard
-                title="💰 Treasury & Rewards"
-                value={formatTotalTreasuryValue()}
-                description="Total treasury value (ETH + $ABC)"
-                href="/treasury"
-              >
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-black/40 border border-green-900/30 rounded p-3 text-center">
-                      <p className="text-green-600 font-mono text-xs mb-1">$ABC Holdings</p>
-                      <p className="text-green-400 font-mono font-bold text-sm">{parseFloat(treasuryData.treasuryBalance || 0).toFixed(0)} $ABC</p>
-                    </div>
-                    <div className="bg-black/40 border border-green-900/30 rounded p-3 text-center">
-                      <p className="text-green-600 font-mono text-xs mb-1">ETH Distributed</p>
-                      <p className="text-green-400 font-mono font-bold text-sm">{parseFloat(stakingData.totalRewardsDistributed).toFixed(3)} ETH</p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-green-600 font-mono text-xs">Total Staked:</span>
-                      <span className="text-green-400 font-mono text-sm">{parseFloat(stakingData.totalStaked).toFixed(0)} $ABC</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-green-600 font-mono text-xs">Staking APY:</span>
-                      <span className="text-green-400 font-mono text-sm">Variable</span>
-                    </div>
-                  </div>
-
-                  <div className="bg-green-950/10 border border-green-900/30 rounded-lg p-3">
-                    <p className="text-green-600 font-mono text-xs mb-2">Protocol Treasury:</p>
-                    <a 
-                      href="https://basescan.org/address/0xBE6525b767cA8D38d169C93C8120c0C0957388B8"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-green-400 hover:text-green-300 font-mono text-xs underline break-all"
-                    >
-                      0xBE6525b767cA8D38d169C93C8120c0C0957388B8
-                    </a>
-                    <p className="text-green-700 font-mono text-xs mt-1">abcdao.base.eth</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <Link
-                      href="/treasury"
-                      className="bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs text-center transition-all duration-300 matrix-button"
-                    >
-                      {'>'} Treasury
-                    </Link>
-                    <Link
-                      href="/staking"
-                      className="bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs text-center transition-all duration-300 matrix-button"
-                    >
-                      {'>'} Staking
-                    </Link>
-                    <Link
-                      href="/repositories"
-                      className="bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs text-center transition-all duration-300 matrix-button"
-                    >
-                      {'>'} Repos
-                    </Link>
-                    <Link
-                      href="/supply"
-                      className="bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs text-center transition-all duration-300 matrix-button"
-                    >
-                      {'>'} Supply
-                    </Link>
-                  </div>
-                </div>
-              </CollapsibleStatCard>
-
-              {/* Total Developers Container */}
-              <CollapsibleStatCard
-                title="👥 DAO Members"
-                value={(totalDevelopers || 0).toString()}
-                description="Verified contributors"
-                href="/roster"
-              >
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-black/40 border border-green-900/30 rounded p-3 text-center">
-                      <p className="text-green-600 font-mono text-xs mb-1">Active Members</p>
-                      <p className="text-green-400 font-mono font-bold text-sm">{totalDevelopers || 0}</p>
-                    </div>
-                    <div className="bg-black/40 border border-green-900/30 rounded p-3 text-center">
-                      <p className="text-green-600 font-mono text-xs mb-1">Total Commits</p>
-                      <p className="text-green-400 font-mono font-bold text-sm">{totalCommits || 0}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-green-600 font-mono text-xs">Rewards Paid:</span>
-                      <span className="text-green-400 font-mono text-sm">{totalRewards || 0} $ABC</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-green-600 font-mono text-xs">Membership Fee:</span>
-                      <span className="text-green-400 font-mono text-sm">0.002 ETH</span>
-                    </div>
-                  </div>
-                  
-                  {!membership.isMember ? (
-                    <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-3">
-                      <p className="text-green-400 font-mono text-xs mb-2 text-center">💎 Join the DAO</p>
-                      <p className="text-green-600 font-mono text-xs mb-2 text-center">Get access to dev tools, rewards, and community</p>
-                      <Link
-                        href="/dev"
-                        className="block bg-green-900/50 hover:bg-green-800/60 text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs text-center transition-all duration-300 matrix-button"
-                      >
-                        Join for 0.002 ETH →
-                      </Link>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-2">
-                      <Link
-                        href="/roster"
-                        className="bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs text-center transition-all duration-300 matrix-button"
-                      >
-                        {'>'} Roster
-                      </Link>
-                      <Link
-                        href="/dev"
-                        className="bg-green-950/20 hover:bg-green-900/30 border border-green-900/50 hover:border-green-700/50 text-green-400 hover:text-green-300 px-3 py-2 rounded-lg font-mono text-xs text-center transition-all duration-300 matrix-button"
-                      >
-                        {'>'} Dev Tools
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              </CollapsibleStatCard>
-
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* $ABC Price Widget */}
       <div className="bg-black/80 border-b border-green-900/30 backdrop-blur-sm">
@@ -375,7 +333,15 @@ export default function Home() {
                            text-green-600 hover:text-green-300 px-6 py-3 rounded-lg font-mono 
                            transition-all duration-300 matrix-button"
                 >
-                  Learn More
+                  Docs
+                </a>
+                <a
+                  href="/staking"
+                  className="bg-black/40 hover:bg-green-950/30 border border-green-900/50 hover:border-green-600 
+                           text-green-600 hover:text-green-300 px-6 py-3 rounded-lg font-mono 
+                           transition-all duration-300 matrix-button"
+                >
+                  🏦 Stake ABC
                 </a>
               </div>
               
@@ -411,12 +377,8 @@ export default function Home() {
 
       {/* Streamlined Two-Container Layout */}
       <div className="px-4 mt-6 space-y-6">
-        {/* $ABC Token Container */}
-        <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-          <h2 className="text-lg sm:text-xl font-bold mb-4 text-green-400 matrix-glow font-mono">
-            {'>'} $ABC Token
-          </h2>
-          
+        {/* $ABC Token Container - Collapsible */}
+        <CollapsibleSection title="$ABC Token" defaultOpen={false}>
           <div className="space-y-4">
             {/* Token Info Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -460,13 +422,10 @@ export default function Home() {
               </button>
             </div>
           </div>
-        </div>
+        </CollapsibleSection>
 
-        {/* DAO Member Container */}
-        <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-          <h2 className="text-lg sm:text-xl font-bold mb-4 text-green-400 matrix-glow font-mono">
-            {'>'} DAO Membership
-          </h2>
+        {/* DAO Member Container - Collapsible */}
+        <CollapsibleSection title="DAO Membership" defaultOpen={false}>
           
           {!membership.isMember ? (
             /* Non-Member: Show appropriate join flow based on connection type */
@@ -579,13 +538,10 @@ export default function Home() {
               </div>
             </div>
           )}
-        </div>
+        </CollapsibleSection>
         
         {/* Content Display Area */}
         <div>
-          {activeTab === 'stake' && (
-            isDataLoading ? <TabContentSkeleton /> : <StakePanel stakingData={stakingData} />
-          )}
           {activeTab === 'swap' && <SwapWidget />}
           {activeTab === 'proposals' && membership.isMember && membership.hasGithub && (
             <ClaimRewardsPanel />
@@ -605,14 +561,18 @@ export default function Home() {
         </div>
       </div>
       
-      {/* Blog Section */}
+      {/* Blog Section - Collapsible */}
       <div className="px-4 mt-8">
-        <BlogSection />
+        <CollapsibleSection title="Latest from Dylan's Blog" defaultOpen={false}>
+          <BlogSection />
+        </CollapsibleSection>
       </div>
       
-      {/* ETH Rewards History - Recent Activity */}
+      {/* ETH Rewards History - Collapsible */}
       <div className="px-4 mt-8">
-        <EthRewardsHistory />
+        <CollapsibleSection title="ETH Rewards History" defaultOpen={false}>
+          <EthRewardsHistory />
+        </CollapsibleSection>
       </div>
       
       <ContractAddressesFooter />

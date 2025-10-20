@@ -229,6 +229,7 @@ class WethUnwrapCron {
       console.log('===============================\n');
       
       console.log('📋 Configuration:');
+      console.log(`- Triggered by: ${triggeredBy}`);
       console.log(`- Wallet: ${this.protocolWallet.address}`);
       console.log(`- WETH Contract: ${this.wethAddress}`);
       console.log(`- Network: Base Mainnet\n`);

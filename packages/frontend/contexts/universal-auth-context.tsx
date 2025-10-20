@@ -76,26 +76,31 @@ export function UniversalAuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     setError(null);
 
+
     try {
       // Determine entry context
       if (isInMiniApp && farcasterUser) {
+        console.log('📱 Using Farcaster authentication');
         setEntryContext('farcaster');
         await authenticateViaFarcaster();
       } else if (address) {
+        console.log('💰 Using Wallet authentication');
         setEntryContext('webapp');
         await authenticateByWallet(address);
       } else {
+        console.log('💾 Trying to restore from localStorage');
         // Try to restore from localStorage
         const storedUser = localStorage.getItem(STORAGE_KEY);
         if (storedUser) {
           await tryRestoreFromStorage();
         } else {
+          console.log('🆕 No stored user, no wallet - setting default webapp context');
           // No stored user and no wallet connected - this is normal for first time visitors
           setEntryContext('webapp'); // Default to webapp context for web users
         }
       }
     } catch (err) {
-      console.error('Auth initialization error:', err);
+      console.error('❌ Auth initialization error:', err);
       setError(err instanceof Error ? err.message : 'Authentication failed');
     } finally {
       setIsLoading(false);
@@ -103,7 +108,12 @@ export function UniversalAuthProvider({ children }: { children: ReactNode }) {
   };
 
   const authenticateViaFarcaster = async () => {
-    if (!farcasterUser) return;
+    if (!farcasterUser) {
+      console.log('❌ No Farcaster user available');
+      return;
+    }
+
+    console.log('📱 Authenticating via Farcaster:', { fid: farcasterUser.fid });
 
     try {
       const response = await fetch(`${config.backendUrl}/api/universal-auth/farcaster`, {
@@ -116,23 +126,31 @@ export function UniversalAuthProvider({ children }: { children: ReactNode }) {
         }),
       });
 
+      console.log('📱 Farcaster auth response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('📱 Farcaster auth success:', data);
         if (data.user) {
           const universalUser = mapToUniversalUser(data.user, 'farcaster');
+          console.log('📱 Mapped Farcaster user:', universalUser);
           setUser(universalUser);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(universalUser));
         }
       } else {
+        const errorData = await response.text();
+        console.error('📱 Farcaster auth failed:', errorData);
         throw new Error('Farcaster authentication failed');
       }
     } catch (err) {
-      console.error('Farcaster auth error:', err);
+      console.error('❌ Farcaster auth error:', err);
       throw err;
     }
   };
 
   const authenticateByWallet = async (walletAddress: string) => {
+    console.log('💰 Authenticating via Wallet:', walletAddress);
+    
     try {
       const response = await fetch(`${config.backendUrl}/api/universal-auth/wallet`, {
         method: 'POST',
@@ -144,8 +162,11 @@ export function UniversalAuthProvider({ children }: { children: ReactNode }) {
         }),
       });
       
+      console.log('💰 Wallet auth response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('💰 Wallet auth success:', data);
         
         if (data.action === 'authenticated' && data.user) {
           const universalUser = mapToUniversalUser(data.user, 'webapp');
@@ -308,10 +329,10 @@ export function UniversalAuthProvider({ children }: { children: ReactNode }) {
       farcaster_username: backendUser.farcaster_username,
       github_username: backendUser.github_username,
       discord_username: backendUser.discord_username,
-      is_member: !!backendUser.membership_tx_hash,
-      has_github: !!backendUser.github_username,
-      has_farcaster: !!backendUser.farcaster_fid,
-      has_discord: !!backendUser.discord_id,
+      is_member: backendUser.has_membership || backendUser.membership_status === 'paid' || !!backendUser.membership_tx_hash,
+      has_github: backendUser.has_github || !!backendUser.github_username,
+      has_farcaster: backendUser.has_farcaster || !!backendUser.farcaster_fid,
+      has_discord: backendUser.has_discord || !!backendUser.discord_id,
       can_earn_rewards: !!backendUser.github_username && !!backendUser.membership_tx_hash,
       membership_tx_hash: backendUser.membership_tx_hash,
       joined_at: backendUser.joined_at,
