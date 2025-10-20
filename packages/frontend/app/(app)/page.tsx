@@ -78,7 +78,12 @@ export default function Home() {
             /* Miniapp Header: Centered Layout */
             <>
               <div className="flex flex-col items-center text-center mb-3">
-                <div className="mb-2">
+                <div className="flex items-center gap-3 mb-2">
+                  <img 
+                    src="/ABC_DAO_LOGO.png" 
+                    alt="ABC DAO" 
+                    className="w-8 h-8 sm:w-10 sm:h-10"
+                  />
                   <h1 className="text-responsive-xl font-bold matrix-glow">
                     {'>'} ABC_DAO
                   </h1>
@@ -165,10 +170,17 @@ export default function Home() {
                 </div>
                 
                 {/* Centered Title */}
-                <div className="flex-1 text-center px-4">
-                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold matrix-glow">
-                    {'>'} ABC_DAO
-                  </h1>
+                <div className="flex-1 flex flex-col items-center px-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <img 
+                      src="/ABC_DAO_LOGO.png" 
+                      alt="ABC DAO" 
+                      className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8"
+                    />
+                    <h1 className="text-lg sm:text-xl md:text-2xl font-bold matrix-glow">
+                      {'>'} ABC_DAO
+                    </h1>
+                  </div>
                   <p className="hidden sm:block text-xs text-green-600 font-mono">
                     Ship code. Earn rewards.
                   </p>
@@ -271,10 +283,58 @@ export default function Home() {
       </div>
 
 
-      {/* $ABC Price Widget */}
+      {/* $ABC Price Widget & Token Info */}
       <div className="bg-black/80 border-b border-green-900/30 backdrop-blur-sm">
-        <div className="px-4 py-6">
+        <div className="px-4 py-6 space-y-6">
           <ABCPriceWidget />
+          
+          {/* Token Info Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-left">
+              <p className="text-green-600 font-mono text-xs mb-1">Your Balance</p>
+              <p className="text-green-400 font-mono font-bold">{parseFloat(stakingData.tokenBalance).toFixed(0)} $ABC</p>
+            </div>
+            <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-left">
+              <p className="text-green-600 font-mono text-xs mb-1">Staked</p>
+              <p className="text-green-400 font-mono font-bold">{parseFloat(stakingData.stakedAmount).toFixed(0)} $ABC</p>
+            </div>
+            <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-left">
+              <p className="text-green-600 font-mono text-xs mb-1">Pending ETH</p>
+              <p className="text-green-400 font-mono font-bold">{parseFloat(stakingData.pendingRewards).toFixed(4)} ETH</p>
+            </div>
+            <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-left">
+              <p className="text-green-600 font-mono text-xs mb-1">Treasury Value</p>
+              <p className="text-green-400 font-mono font-bold">
+                {treasuryData.isLoading ? '...' : formatTotalTreasuryValue()}
+              </p>
+            </div>
+          </div>
+          
+          {/* Token Actions */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => router.push('/staking')}
+              className="p-3 rounded-lg border font-mono font-medium transition-all duration-300 bg-green-950/20 text-green-600 border-green-900/30 hover:text-green-400 hover:border-green-700/50 hover:bg-green-900/30"
+            >
+              🏦 Stake & Earn
+            </button>
+            <button
+              onClick={() => {
+                if (isInMiniApp) {
+                  setActiveTab('swap');
+                } else {
+                  window.open('https://app.uniswap.org/swap?outputCurrency=0x8dE276BCE40244eb8Dc2A0a5d83D5dA5aD95F3B6&chain=base', '_blank');
+                }
+              }}
+              className={`p-3 rounded-lg border font-mono font-medium transition-all duration-300 ${
+                activeTab === 'swap' && isInMiniApp
+                  ? 'bg-green-900/50 text-green-400 border-green-700/50 matrix-glow' 
+                  : 'bg-green-950/20 text-green-600 border-green-900/30 hover:text-green-400 hover:border-green-700/50 hover:bg-green-900/30'
+              }`}
+            >
+              🔄 Buy/Sell
+            </button>
+          </div>
         </div>
       </div>
 
@@ -377,53 +437,6 @@ export default function Home() {
 
       {/* Streamlined Two-Container Layout */}
       <div className="px-4 mt-6 space-y-6">
-        {/* $ABC Token Container - Collapsible */}
-        <CollapsibleSection title="$ABC Token" defaultOpen={false}>
-          <div className="space-y-4">
-            {/* Token Info Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-left">
-                <p className="text-green-600 font-mono text-xs mb-1">Your Balance</p>
-                <p className="text-green-400 font-mono font-bold">{parseFloat(stakingData.tokenBalance).toFixed(0)} $ABC</p>
-              </div>
-              <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-left">
-                <p className="text-green-600 font-mono text-xs mb-1">Staked</p>
-                <p className="text-green-400 font-mono font-bold">{parseFloat(stakingData.stakedAmount).toFixed(0)} $ABC</p>
-              </div>
-              <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-left">
-                <p className="text-green-600 font-mono text-xs mb-1">Pending ETH</p>
-                <p className="text-green-400 font-mono font-bold">{parseFloat(stakingData.pendingRewards).toFixed(4)} ETH</p>
-              </div>
-            </div>
-            
-            {/* Token Actions */}
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => router.push('/staking')}
-                className="p-3 rounded-lg border font-mono font-medium transition-all duration-300 bg-green-950/20 text-green-600 border-green-900/30 hover:text-green-400 hover:border-green-700/50 hover:bg-green-900/30"
-              >
-                🏦 Stake & Earn
-              </button>
-              <button
-                onClick={() => {
-                  if (isInMiniApp) {
-                    setActiveTab('swap');
-                  } else {
-                    window.open('https://app.uniswap.org/swap?outputCurrency=0x8dE276BCE40244eb8Dc2A0a5d83D5dA5aD95F3B6&chain=base', '_blank');
-                  }
-                }}
-                className={`p-3 rounded-lg border font-mono font-medium transition-all duration-300 ${
-                  activeTab === 'swap' && isInMiniApp
-                    ? 'bg-green-900/50 text-green-400 border-green-700/50 matrix-glow' 
-                    : 'bg-green-950/20 text-green-600 border-green-900/30 hover:text-green-400 hover:border-green-700/50 hover:bg-green-900/30'
-                }`}
-              >
-                🔄 Buy/Sell
-              </button>
-            </div>
-          </div>
-        </CollapsibleSection>
-
         {/* DAO Member Container - Collapsible */}
         <CollapsibleSection title="DAO Membership" defaultOpen={false}>
           

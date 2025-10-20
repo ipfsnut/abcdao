@@ -22,6 +22,14 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "ABC DAO - Ship Code, Earn Rewards",
   description: "Stake $ABC, link GitHub, earn crypto for every commit. Built for Farcaster developers.",
+  icons: {
+    icon: [
+      { url: "/ABC_DAO_LOGO.png", sizes: "32x32", type: "image/png" },
+      { url: "/ABC_DAO_LOGO.png", sizes: "16x16", type: "image/png" }
+    ],
+    shortcut: "/ABC_DAO_LOGO.png",
+    apple: "/ABC_DAO_LOGO.png",
+  },
   openGraph: {
     title: "ABC DAO - Ship Code, Earn Rewards",
     description: "Stake $ABC, link GitHub, earn crypto for every commit. Built for Farcaster developers.",
@@ -50,7 +58,7 @@ export const metadata: Metadata = {
       frame: {
         name: "ABC_DAO",
         version: "1",
-        iconUrl: "https://abc.epicdylan.com/abc-logo.png",
+        iconUrl: "https://abc.epicdylan.com/ABC_DAO_LOGO.png",
         homeUrl: "https://abc.epicdylan.com",
         imageUrl: "https://abc.epicdylan.com/image.png",
         buttonTitle: "Open",
@@ -62,9 +70,9 @@ export const metadata: Metadata = {
         primaryCategory: "social",
         tags: ["social", "dev", "community", "crypto", "dao"],
         tagline: "Always. Be. Coding.",
-        heroImageUrl: "https://abc.epicdylan.com/abc-logo.png",
+        heroImageUrl: "https://abc.epicdylan.com/ABC_DAO_LOGO.png",
         screenshotUrls: ["https://abc.epicdylan.com/abc-icon-1024.png"],
-        ogImageUrl: "https://abc.epicdylan.com/abc-logo.png",
+        ogImageUrl: "https://abc.epicdylan.com/ABC_DAO_LOGO.png",
         ogTitle: "Always. Be. Coding.",
         ogDescription: "Always. Be. Coding.",
         castShareUrl: "https://abc.epicdylan.com"

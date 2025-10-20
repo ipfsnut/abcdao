@@ -77,14 +77,64 @@ export function ContractAddressesFooter() {
 
   return (
     <footer className="bg-black/80 border-t border-green-900/30 backdrop-blur-sm mt-8">
-      <div className="px-4 py-3">
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full flex items-center justify-between text-green-600 hover:text-green-400 transition-colors font-mono text-xs"
-        >
-          <span>Contract Addresses {isExpanded ? '▼' : '▶'}</span>
-          <span className="text-green-800">Base Mainnet</span>
-        </button>
+      <div className="px-4 py-6">
+        {/* Navigation Links */}
+        <div className="mb-6">
+          <div className="flex flex-col items-center space-y-4">
+            {/* Main Navigation */}
+            <nav className="flex flex-wrap justify-center gap-4 sm:gap-6">
+              <a 
+                href="/roster"
+                className="text-green-400 hover:text-green-300 font-mono text-sm transition-colors matrix-button"
+              >
+                👥 Roster
+              </a>
+              <a 
+                href="/treasury"
+                className="text-green-400 hover:text-green-300 font-mono text-sm transition-colors matrix-button"
+              >
+                💰 Treasury
+              </a>
+              <a 
+                href="/support"
+                className="text-green-400 hover:text-green-300 font-mono text-sm transition-colors matrix-button"
+              >
+                💬 Support
+              </a>
+              <a 
+                href="/privacy"
+                className="text-green-400 hover:text-green-300 font-mono text-sm transition-colors matrix-button"
+              >
+                🔒 Privacy
+              </a>
+            </nav>
+            
+            {/* Brand & Copyright */}
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <img 
+                  src="/ABC_DAO_LOGO.png" 
+                  alt="ABC DAO" 
+                  className="w-4 h-4"
+                />
+                <span className="text-green-400 font-mono font-bold">ABC DAO</span>
+              </div>
+              <p className="text-green-700 font-mono text-xs">
+                Always. Be. Coding.
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Contract Addresses Section */}
+        <div className="border-t border-green-900/30 pt-4">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full flex items-center justify-between text-green-600 hover:text-green-400 transition-colors font-mono text-xs"
+          >
+            <span>Contract Addresses {isExpanded ? '▼' : '▶'}</span>
+            <span className="text-green-800">Base Mainnet</span>
+          </button>
         
         {isExpanded && (
           <div className="mt-3 space-y-2">
@@ -131,6 +181,7 @@ export function ContractAddressesFooter() {
             </div>
           </div>
         )}
+        </div>
       </div>
     </footer>
   );
