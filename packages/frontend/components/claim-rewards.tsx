@@ -50,6 +50,11 @@ export function ClaimRewardsPanel() {
     refetchUserRewards
   } = useRewardsSystematic();
 
+  // Enhanced wallet connection detection for Farcaster miniapp
+  const isWalletConnected = isConnected || (isInMiniApp && farcasterProfile && address);
+  const effectiveAddress = address;
+  const hasGithub = universalUser?.has_github || false;
+
   // Get actual claimable amount from contract to avoid precision issues
   const { data: contractClaimableAmount, refetch: refetchClaimable } = useReadContract({
     address: CONTRACTS.ABC_REWARDS.address,
@@ -108,11 +113,6 @@ export function ClaimRewardsPanel() {
       refetchClaimable();
     }
   }, [claimSuccess, refetchUserRewards, refetchClaimable]);
-
-  // Enhanced wallet connection detection for Farcaster miniapp
-  const isWalletConnected = isConnected || (isInMiniApp && farcasterProfile && address);
-  const effectiveAddress = address;
-  const hasGithub = universalUser?.has_github || false;
 
   // Show rewards info if user is authenticated (either wallet or Farcaster) AND has GitHub
   if (!universalUser || !hasGithub) {
