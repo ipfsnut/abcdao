@@ -563,7 +563,7 @@ export default function Home() {
       
       {/* Blog Section - Collapsible */}
       <div className="px-4 mt-8">
-        <CollapsibleSection title="Latest from Dylan's Blog" defaultOpen={false}>
+        <CollapsibleSection title="EpicDylan's Blog" defaultOpen={false}>
           <BlogSection />
         </CollapsibleSection>
       </div>
