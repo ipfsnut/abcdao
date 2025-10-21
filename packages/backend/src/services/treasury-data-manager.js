@@ -106,8 +106,11 @@ export class TreasuryDataManager {
       const stakingTvl = await this.getStakingTVL();
       const tokenPrices = await this.getCurrentTokenPrices();
       
-      // Calculate total value
-      const totalValueUsd = await this.calculateTotalValue(ethBalance, abcBalance, wethBalance, stakingTvl, tokenPrices);
+      // Get fresh ABC market data for calculation
+      const abcMarketData = await this.fetchABCTokenData();
+      
+      // Calculate total value using fresh market data
+      const totalValueUsd = this.calculateTotalValueWithMarketData(ethBalance, abcBalance, wethBalance, stakingTvl, tokenPrices, abcMarketData);
       
       // Store snapshot
       await this.storeTreasurySnapshot({
@@ -295,7 +298,25 @@ export class TreasuryDataManager {
   }
 
   /**
-   * Calculate total treasury value in USD
+   * Calculate total treasury value in USD using fresh market data
+   */
+  calculateTotalValueWithMarketData(ethBalance, abcBalance, wethBalance, stakingTvl, tokenPrices, abcMarketData) {
+    const ethValueUsd = parseFloat(ethers.formatEther(ethBalance)) * (tokenPrices.ETH || 3200);
+    const wethValueUsd = parseFloat(ethers.formatEther(wethBalance)) * (tokenPrices.ETH || 3200); // WETH = ETH price
+    
+    // Use fresh ABC market data price
+    const abcPrice = abcMarketData.price || 0.000001; // Fallback price
+    const abcValueUsd = parseFloat(ethers.formatEther(abcBalance)) * abcPrice;
+    
+    // Note: We only count the protocol wallet's direct holdings, not the staking TVL
+    // The staking TVL represents user-staked tokens, not protocol treasury
+    console.log(`💰 Treasury calculation: ETH ${ethValueUsd.toFixed(2)} (${ethers.formatEther(ethBalance)} ETH) + WETH ${wethValueUsd.toFixed(2)} (${ethers.formatEther(wethBalance)} WETH) + ABC ${abcValueUsd.toFixed(2)} (${ethers.formatEther(abcBalance)} ABC @ $${abcPrice.toFixed(8)}) = ${(ethValueUsd + wethValueUsd + abcValueUsd).toFixed(2)} USD`);
+    
+    return ethValueUsd + wethValueUsd + abcValueUsd;
+  }
+
+  /**
+   * Calculate total treasury value in USD (legacy method for backward compatibility)
    */
   async calculateTotalValue(ethBalance, abcBalance, wethBalance, stakingTvl, tokenPrices) {
     const ethValueUsd = parseFloat(ethers.formatEther(ethBalance)) * (tokenPrices.ETH || 3200);
