@@ -107,7 +107,7 @@ export class TreasuryDataManager {
       const tokenPrices = await this.getCurrentTokenPrices();
       
       // Calculate total value
-      const totalValueUsd = this.calculateTotalValue(ethBalance, abcBalance, wethBalance, stakingTvl, tokenPrices);
+      const totalValueUsd = await this.calculateTotalValue(ethBalance, abcBalance, wethBalance, stakingTvl, tokenPrices);
       
       // Store snapshot
       await this.storeTreasurySnapshot({
@@ -297,17 +297,26 @@ export class TreasuryDataManager {
   /**
    * Calculate total treasury value in USD
    */
-  calculateTotalValue(ethBalance, abcBalance, wethBalance, stakingTvl, tokenPrices) {
+  async calculateTotalValue(ethBalance, abcBalance, wethBalance, stakingTvl, tokenPrices) {
     const ethValueUsd = parseFloat(ethers.formatEther(ethBalance)) * (tokenPrices.ETH || 3200);
     const wethValueUsd = parseFloat(ethers.formatEther(wethBalance)) * (tokenPrices.ETH || 3200); // WETH = ETH price
     
-    // Use real-time ABC price from token market data, not hardcoded fallback
-    const abcPrice = tokenPrices.ABC || 0.000001; // Use actual fetched price
+    // Get real-time ABC price from market data instead of legacy prices
+    let abcPrice = 0.000001; // Fallback price
+    try {
+      const abcMarketData = await this.getTokenMarketData('ABC');
+      if (abcMarketData && abcMarketData.price_usd) {
+        abcPrice = parseFloat(abcMarketData.price_usd);
+      }
+    } catch (error) {
+      console.warn('Failed to get ABC market price, using fallback:', error);
+    }
+    
     const abcValueUsd = parseFloat(ethers.formatEther(abcBalance)) * abcPrice;
     
     // Note: We only count the protocol wallet's direct holdings, not the staking TVL
     // The staking TVL represents user-staked tokens, not protocol treasury
-    console.log(`💰 Treasury calculation: ETH ${ethValueUsd.toFixed(2)} (${ethers.formatEther(ethBalance)} ETH) + WETH ${wethValueUsd.toFixed(2)} (${ethers.formatEther(wethBalance)} WETH) + ABC ${abcValueUsd.toFixed(2)} (${ethers.formatEther(abcBalance)} ABC @ $${abcPrice}) = ${(ethValueUsd + wethValueUsd + abcValueUsd).toFixed(2)} USD`);
+    console.log(`💰 Treasury calculation: ETH ${ethValueUsd.toFixed(2)} (${ethers.formatEther(ethBalance)} ETH) + WETH ${wethValueUsd.toFixed(2)} (${ethers.formatEther(wethBalance)} WETH) + ABC ${abcValueUsd.toFixed(2)} (${ethers.formatEther(abcBalance)} ABC @ $${abcPrice.toFixed(8)}) = ${(ethValueUsd + wethValueUsd + abcValueUsd).toFixed(2)} USD`);
     
     return ethValueUsd + wethValueUsd + abcValueUsd;
   }
