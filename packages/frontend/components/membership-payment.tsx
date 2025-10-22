@@ -119,13 +119,13 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
     }
 
     if (!profile) {
-      toast.error('Please connect your Farcaster account first');
+      toast.error('Please connect your Farcaster account first - this is required for payment tracking');
       return;
     }
 
+    // GitHub linking is recommended but not required for payment
     if (!hasGithub) {
-      toast.error('Please link your GitHub account first');
-      return;
+      console.log('⚠️ User paying without GitHub linked - they can link later');
     }
 
     // Double-check payment status before sending transaction
@@ -349,12 +349,45 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
           </p>
         </div>
 
-        {/* Payment Button */}
+        {/* Payment Button - Always show payment option */}
         {!hasGithub ? (
-          <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-3">
-            <p className="text-yellow-400 font-mono text-sm text-center">
-              ⚠️ Link GitHub first
-            </p>
+          <div className="space-y-4">
+            <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-3">
+              <p className="text-yellow-400 font-mono text-sm text-center mb-2">
+                ⚠️ GitHub not linked yet
+              </p>
+              <p className="text-yellow-600 font-mono text-xs text-center">
+                You can pay now and link GitHub later to start earning
+              </p>
+            </div>
+            
+            {!isConnected ? (
+              <button
+                onClick={handlePayment}
+                disabled={isSending || isConfirming || verifying || !profile}
+                className="w-full bg-blue-900/50 hover:bg-blue-900/70 text-blue-400 font-mono py-2.5 sm:py-3 rounded-lg 
+                         border border-blue-700/50 transition-all duration-300 hover:matrix-glow
+                         disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-bold"
+              >
+                {isSending ? '// Connecting & Sending...' : 
+                 isConfirming ? '// Confirming...' :
+                 verifying ? '// Verifying...' :
+                 `CONNECT & PAY ${MEMBERSHIP_FEE} ETH`}
+              </button>
+            ) : (
+              <button
+                onClick={handlePayment}
+                disabled={isSending || isConfirming || verifying || !profile}
+                className="w-full bg-yellow-900/50 hover:bg-yellow-900/70 text-yellow-400 font-mono py-2.5 sm:py-3 rounded-lg 
+                         border border-yellow-700/50 transition-all duration-300 hover:matrix-glow
+                         disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-bold"
+              >
+                {isSending ? '// Sending...' : 
+                 isConfirming ? '// Confirming...' :
+                 verifying ? '// Verifying...' :
+                 `PAY ${MEMBERSHIP_FEE} ETH (Complete Setup Later)`}
+              </button>
+            )}
           </div>
         ) : !isConnected ? (
           <div className="bg-blue-950/20 border border-blue-700/30 rounded-lg p-4">
@@ -421,13 +454,26 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
           </div>
         )}
 
+        {/* Debug Info for Missing Button Issues */}
+        {!profile && (
+          <div className="bg-red-950/20 border border-red-900/30 rounded-lg p-3">
+            <p className="text-red-400 font-mono text-xs mb-2">{"// Missing Requirements:"}</p>
+            <p className="text-red-400 font-mono text-xs">
+              ❌ Farcaster account not connected - payment button disabled
+            </p>
+            <p className="text-red-600 font-mono text-xs mt-1">
+              Please connect your Farcaster account to enable payments
+            </p>
+          </div>
+        )}
+
         {/* What Happens Next */}
         <div className="bg-black/40 border border-green-900/30 rounded-lg p-3">
           <p className="text-green-600 font-mono text-xs mb-2">{"// After payment:"}</p>
           <ol className="space-y-1 text-green-500 font-mono text-xs">
             <li>1. Transaction verified on-chain</li>
             <li>2. Membership activated</li>
-            <li>3. Start earning $ABC for commits</li>
+            <li>3. {hasGithub ? 'Start earning $ABC for commits' : 'Link GitHub to start earning'}</li>
             <li>4. Access to DAO governance</li>
           </ol>
         </div>
