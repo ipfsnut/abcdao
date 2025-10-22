@@ -103,19 +103,19 @@ class PaymentMonitor {
         return;
       }
 
-      // Extract payment info from transaction data
+      // Try to extract payment info from transaction data first
       const paymentInfo = this.extractPaymentInfoFromData(tx.data);
-      if (!paymentInfo.fid && !paymentInfo.walletAddress) {
-        console.log(`   ❌ No valid FID or wallet address found in transaction data`);
-        return;
-      }
-
+      
       if (paymentInfo.fid) {
         console.log(`   ✅ Valid payment for FID: ${paymentInfo.fid}`);
         await this.updateUserMembershipByFID(paymentInfo.fid, tx.hash, paymentAmount, tx.from);
-      } else {
+      } else if (paymentInfo.walletAddress) {
         console.log(`   ✅ Valid payment for wallet: ${paymentInfo.walletAddress}`);
         await this.updateUserMembershipByWallet(paymentInfo.walletAddress, tx.hash, paymentAmount, tx.from);
+      } else {
+        // No transaction data - use sender's wallet address for tracking
+        console.log(`   ✅ Valid payment from wallet: ${tx.from} (no transaction data)`);
+        await this.updateUserMembershipByWallet(tx.from, tx.hash, paymentAmount, tx.from);
       }
 
     } catch (error) {

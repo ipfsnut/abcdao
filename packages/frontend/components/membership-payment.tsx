@@ -145,16 +145,21 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
     }
 
     try {
-      // Create transaction data - prefer FID if available, otherwise use wallet address
-      const paymentData = profile?.fid 
-        ? `ABC_DAO_MEMBERSHIP_FID:${profile.fid}`
-        : `ABC_DAO_MEMBERSHIP_WALLET:${address}`;
+      console.log('Sending payment transaction...');
+      console.log('To:', PROTOCOL_WALLET_ADDRESS);
+      console.log('Amount:', MEMBERSHIP_FEE, 'ETH');
+      console.log('From:', address);
       
+      // Send simple ETH transfer without data for now to avoid RPC issues
+      // We'll track the payment by from address and amount
       sendTransaction({
         to: PROTOCOL_WALLET_ADDRESS,
         value: parseEther(MEMBERSHIP_FEE),
-        data: `0x${Buffer.from(paymentData).toString('hex')}` as `0x${string}`,
+        // Remove data field temporarily to avoid RPC error
+        // data: `0x${Buffer.from(paymentData).toString('hex')}` as `0x${string}`,
       });
+      
+      console.log('Transaction sent successfully');
     } catch (error) {
       console.error('Transaction error:', error);
       toast.error('Failed to send payment transaction');
