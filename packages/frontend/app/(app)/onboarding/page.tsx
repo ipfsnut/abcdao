@@ -6,6 +6,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { useMembership } from '@/hooks/useMembership';
+import { MembershipPaymentPanel } from '@/components/membership-payment';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
@@ -259,20 +260,8 @@ function OnboardingContent() {
                 </div>
               </div>
 
-              {user && !membership.isMember && (
-                <div className="text-center">
-                  <a
-                    href="/"
-                    className="inline-block bg-green-900/30 hover:bg-green-800/40 border border-green-700/50 hover:border-green-600/70 
-                               text-green-400 hover:text-green-300 px-6 py-3 rounded-lg font-mono text-sm
-                               transition-all duration-200 matrix-button"
-                  >
-                    💰 Go to Main App to Pay Fee
-                  </a>
-                  <p className="text-green-600 font-mono text-xs mt-2">
-                    Complete payment in the main ABC DAO application
-                  </p>
-                </div>
+              {!membership.isMember && (
+                <MembershipPaymentPanel />
               )}
             </div>
           )}
