@@ -103,17 +103,20 @@ class PaymentMonitor {
         return;
       }
 
-      // Extract FID from transaction data
-      const fid = this.extractFIDFromData(tx.data);
-      if (!fid) {
-        console.log(`   ❌ No valid FID found in transaction data`);
+      // Extract payment info from transaction data
+      const paymentInfo = this.extractPaymentInfoFromData(tx.data);
+      if (!paymentInfo.fid && !paymentInfo.walletAddress) {
+        console.log(`   ❌ No valid FID or wallet address found in transaction data`);
         return;
       }
 
-      console.log(`   ✅ Valid payment for FID: ${fid}`);
-
-      // Update user membership status
-      await this.updateUserMembership(fid, tx.hash, paymentAmount, tx.from);
+      if (paymentInfo.fid) {
+        console.log(`   ✅ Valid payment for FID: ${paymentInfo.fid}`);
+        await this.updateUserMembershipByFID(paymentInfo.fid, tx.hash, paymentAmount, tx.from);
+      } else {
+        console.log(`   ✅ Valid payment for wallet: ${paymentInfo.walletAddress}`);
+        await this.updateUserMembershipByWallet(paymentInfo.walletAddress, tx.hash, paymentAmount, tx.from);
+      }
 
     } catch (error) {
       console.error(`❌ Error processing payment transaction ${tx.hash}:`, error.message);
@@ -121,11 +124,11 @@ class PaymentMonitor {
   }
 
   /**
-   * Extract Farcaster ID from transaction data
+   * Extract payment info (FID or wallet address) from transaction data
    */
-  extractFIDFromData(data) {
+  extractPaymentInfoFromData(data) {
     try {
-      if (!data || data === '0x') return null;
+      if (!data || data === '0x') return { fid: null, walletAddress: null };
 
       // Remove 0x prefix and convert hex to string
       const hexString = data.slice(2);
@@ -134,18 +137,28 @@ class PaymentMonitor {
 
       // Look for FID pattern: ABC_DAO_MEMBERSHIP_FID:123456
       const fidMatch = dataString.match(/ABC_DAO_MEMBERSHIP_FID:(\d+)/);
-      return fidMatch ? parseInt(fidMatch[1]) : null;
+      if (fidMatch) {
+        return { fid: parseInt(fidMatch[1]), walletAddress: null };
+      }
+
+      // Look for wallet pattern: ABC_DAO_MEMBERSHIP_WALLET:0x1234...
+      const walletMatch = dataString.match(/ABC_DAO_MEMBERSHIP_WALLET:(0x[a-fA-F0-9]{40})/);
+      if (walletMatch) {
+        return { fid: null, walletAddress: walletMatch[1] };
+      }
+
+      return { fid: null, walletAddress: null };
 
     } catch (error) {
-      console.error('Error extracting FID from data:', error.message);
-      return null;
+      console.error('Error extracting payment info from data:', error.message);
+      return { fid: null, walletAddress: null };
     }
   }
 
   /**
-   * Update user membership status in database
+   * Update user membership status in database (FID-based)
    */
-  async updateUserMembership(fid, txHash, amount, fromAddress) {
+  async updateUserMembershipByFID(fid, txHash, amount, fromAddress) {
     try {
       const pool = getPool();
       
@@ -201,6 +214,83 @@ class PaymentMonitor {
 
     } catch (error) {
       console.error(`❌ Database error updating FID ${fid}:`, error.message);
+      return false;
+    }
+  }
+
+  /**
+   * Update user membership status in database (wallet-based)
+   */
+  async updateUserMembershipByWallet(walletAddress, txHash, amount, fromAddress) {
+    try {
+      const pool = getPool();
+      
+      console.log(`📝 Creating/updating membership for wallet ${walletAddress}...`);
+
+      // Check if user exists by wallet address
+      let userResult = await pool.query(
+        'SELECT id, display_name, farcaster_username FROM users WHERE wallet_address = $1 OR wallet_address_primary = $1',
+        [walletAddress]
+      );
+
+      let user;
+      if (userResult.rows.length === 0) {
+        console.log(`   👤 Creating new user for wallet: ${walletAddress}`);
+        
+        // Create new user with wallet-only information
+        const createResult = await pool.query(`
+          INSERT INTO users (
+            wallet_address, 
+            wallet_address_primary,
+            display_name,
+            membership_status,
+            membership_paid_at,
+            membership_tx_hash,
+            membership_amount,
+            entry_context,
+            can_earn_rewards,
+            created_at,
+            updated_at
+          ) VALUES ($1, $2, $3, 'paid', NOW(), $4, $5, 'wallet_payment', false, NOW(), NOW())
+          RETURNING id, display_name
+        `, [walletAddress, walletAddress, `User-${walletAddress.slice(-6)}`, txHash, ethers.formatEther(amount)]);
+
+        user = createResult.rows[0];
+        console.log(`   ✅ Created new user with ID: ${user.id}`);
+      } else {
+        user = userResult.rows[0];
+        console.log(`   👤 Found existing user: ${user.display_name || user.farcaster_username || `User-${user.id}`}`);
+
+        // Update existing user's membership status
+        await pool.query(`
+          UPDATE users 
+          SET 
+            membership_status = 'paid',
+            membership_paid_at = NOW(),
+            membership_tx_hash = $1,
+            membership_amount = $2,
+            updated_at = NOW()
+          WHERE id = $3
+        `, [txHash, ethers.formatEther(amount), user.id]);
+      }
+
+      // Insert membership record
+      await pool.query(`
+        INSERT INTO memberships (user_id, payment_tx_hash, amount_eth, paid_at, status, payment_method)
+        VALUES ($1, $2, $3, NOW(), 'active', 'ethereum')
+        ON CONFLICT (payment_tx_hash) DO NOTHING
+      `, [user.id, txHash, ethers.formatEther(amount)]);
+
+      console.log(`   ✅ Membership activated for wallet ${walletAddress}`);
+      console.log(`   Transaction: ${txHash}`);
+      console.log(`   Amount: ${ethers.formatEther(amount)} ETH`);
+      console.log(`   💡 User can link Farcaster/GitHub later to start earning rewards`);
+      console.log('');
+
+      return true;
+
+    } catch (error) {
+      console.error(`❌ Database error updating wallet ${walletAddress}:`, error.message);
       return false;
     }
   }

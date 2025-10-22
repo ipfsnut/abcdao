@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useUniversalAuth } from '@/contexts/universal-auth-context';
+import { MembershipPaymentPanel } from './membership-payment';
 
 export function WebappAuth() {
   const { address, isConnected } = useAccount();
@@ -33,15 +34,6 @@ export function WebappAuth() {
     }
   };
 
-  const handleMembershipPurchase = async () => {
-    try {
-      // In a real implementation, this would handle the ETH payment transaction
-      // For now, we'll show a placeholder
-      alert('Membership purchase flow would start here. This requires implementing ETH payment transaction.');
-    } catch (error) {
-      console.error('Membership purchase failed:', error);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -67,24 +59,7 @@ export function WebappAuth() {
   }
 
   if (error && error.includes('Membership purchase required')) {
-    return (
-      <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 backdrop-blur-sm text-center">
-        <h2 className="text-responsive-lg font-bold mb-4 text-green-400 matrix-glow font-mono">
-          {'>'} purchase_membership()
-        </h2>
-        <p className="text-green-600 font-mono text-sm mb-6">
-          Join ABC DAO by purchasing a membership for 0.002 ETH to start earning rewards.
-        </p>
-        <button
-          onClick={handleMembershipPurchase}
-          className="bg-green-900/50 hover:bg-green-800/60 border border-green-700/50 hover:border-green-600 
-                     text-green-400 hover:text-green-300 px-6 py-3 rounded-lg font-mono font-semibold
-                     transition-all duration-300 matrix-button matrix-glow"
-        >
-          Purchase Membership (0.002 ETH)
-        </button>
-      </div>
-    );
+    return <MembershipPaymentPanel />;
   }
 
   if (user && !user.has_github) {

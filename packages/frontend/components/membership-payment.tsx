@@ -118,9 +118,9 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
       return;
     }
 
+    // Farcaster is helpful but not required for payment
     if (!profile) {
-      toast.error('Please connect your Farcaster account first - this is required for payment tracking');
-      return;
+      console.log('⚠️ User paying without Farcaster - using wallet address for tracking');
     }
 
     // GitHub linking is recommended but not required for payment
@@ -135,18 +135,25 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
     }
 
     // Recheck membership status to prevent race conditions
-    await checkMembershipStatus(profile.fid);
-    if (isPaid) {
-      toast.error('Payment already processed! Refreshing page...');
-      setTimeout(() => window.location.reload(), 2000);
-      return;
+    if (profile) {
+      await checkMembershipStatus(profile.fid);
+      if (isPaid) {
+        toast.error('Payment already processed! Refreshing page...');
+        setTimeout(() => window.location.reload(), 2000);
+        return;
+      }
     }
 
     try {
+      // Create transaction data - prefer FID if available, otherwise use wallet address
+      const paymentData = profile?.fid 
+        ? `ABC_DAO_MEMBERSHIP_FID:${profile.fid}`
+        : `ABC_DAO_MEMBERSHIP_WALLET:${address}`;
+      
       sendTransaction({
         to: PROTOCOL_WALLET_ADDRESS,
         value: parseEther(MEMBERSHIP_FEE),
-        data: `0x${Buffer.from(`ABC_DAO_MEMBERSHIP_FID:${profile.fid}`).toString('hex')}` as `0x${string}`,
+        data: `0x${Buffer.from(paymentData).toString('hex')}` as `0x${string}`,
       });
     } catch (error) {
       console.error('Transaction error:', error);
@@ -364,7 +371,7 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
             {!isConnected ? (
               <button
                 onClick={handlePayment}
-                disabled={isSending || isConfirming || verifying || !profile}
+                disabled={isSending || isConfirming || verifying}
                 className="w-full bg-blue-900/50 hover:bg-blue-900/70 text-blue-400 font-mono py-2.5 sm:py-3 rounded-lg 
                          border border-blue-700/50 transition-all duration-300 hover:matrix-glow
                          disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-bold"
@@ -377,7 +384,7 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
             ) : (
               <button
                 onClick={handlePayment}
-                disabled={isSending || isConfirming || verifying || !profile}
+                disabled={isSending || isConfirming || verifying}
                 className="w-full bg-yellow-900/50 hover:bg-yellow-900/70 text-yellow-400 font-mono py-2.5 sm:py-3 rounded-lg 
                          border border-yellow-700/50 transition-all duration-300 hover:matrix-glow
                          disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-bold"
@@ -404,7 +411,7 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
             </div>
             <button
               onClick={handlePayment}
-              disabled={isSending || isConfirming || verifying || !profile}
+              disabled={isSending || isConfirming || verifying}
               className="w-full mt-3 bg-blue-900/50 hover:bg-blue-900/70 text-blue-400 font-mono py-2.5 sm:py-3 rounded-lg 
                        border border-blue-700/50 transition-all duration-300 hover:matrix-glow
                        disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-bold"
@@ -454,15 +461,15 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
           </div>
         )}
 
-        {/* Debug Info for Missing Button Issues */}
+        {/* Info about optional Farcaster connection */}
         {!profile && (
-          <div className="bg-red-950/20 border border-red-900/30 rounded-lg p-3">
-            <p className="text-red-400 font-mono text-xs mb-2">{"// Missing Requirements:"}</p>
-            <p className="text-red-400 font-mono text-xs">
-              ❌ Farcaster account not connected - payment button disabled
+          <div className="bg-blue-950/20 border border-blue-700/30 rounded-lg p-3">
+            <p className="text-blue-400 font-mono text-xs mb-2">{"// Optional Enhancement:"}</p>
+            <p className="text-blue-400 font-mono text-xs">
+              💡 Connect Farcaster for reward announcements and community access
             </p>
-            <p className="text-red-600 font-mono text-xs mt-1">
-              Please connect your Farcaster account to enable payments
+            <p className="text-blue-600 font-mono text-xs mt-1">
+              You can pay now and connect Farcaster later for the full experience
             </p>
           </div>
         )}
