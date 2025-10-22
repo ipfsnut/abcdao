@@ -182,3 +182,7 @@ ToDo*.txt
 plans/
 temp/
 migrations/add-extended-treasury-schema.sql
+
+# Experimental development directories
+app/
+steakdao/
