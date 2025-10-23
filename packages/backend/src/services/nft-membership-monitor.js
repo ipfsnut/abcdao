@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import { getPool } from './database.js';
 import { farcasterService } from './farcaster.js';
+import { NFTMetadataGenerator } from './nft-metadata-generator.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -40,6 +41,13 @@ const MEMBERSHIP_NFT_ABI = [
     "type": "function"
   },
   {
+    "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+    "name": "ownerOf",
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "totalSupply",
     "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
@@ -58,8 +66,9 @@ const MEMBERSHIP_NFT_ABI = [
 class NFTMembershipMonitor {
   constructor() {
     this.provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
-    this.contractAddress = process.env.MEMBERSHIP_NFT_CONTRACT_ADDRESS || '0x9B790111758CB7C666e742814b86CF8185792f6E';
+    this.contractAddress = process.env.MEMBERSHIP_NFT_CONTRACT_ADDRESS || '0x52986d25082E8D040743017ED2d25bD1aD94c5cD';
     this.contract = new ethers.Contract(this.contractAddress, MEMBERSHIP_NFT_ABI, this.provider);
+    this.metadataGenerator = new NFTMetadataGenerator();
     this.isMonitoring = false;
     this.lastCheckedBlock = null;
   }
@@ -138,8 +147,27 @@ class NFTMembershipMonitor {
       console.log(`   Transaction: ${event.transactionHash}`);
       console.log(`   Block: ${event.blockNumber}`);
 
+      // Get transaction timestamp for metadata
+      const block = await this.provider.getBlock(event.blockNumber);
+      const mintTimestamp = block.timestamp * 1000; // Convert to milliseconds
+
+      // Generate and upload unique metadata for this token
+      console.log(`🎨 Generating unique metadata for token #${tokenId.toString()}...`);
+      const metadataResult = await this.metadataGenerator.processTokenMetadata(
+        tokenId.toString(),
+        member,
+        mintTimestamp
+      );
+
+      if (metadataResult.success) {
+        console.log(`✅ Metadata generated and uploaded for token #${tokenId.toString()}`);
+        console.log(`   IPFS URL: ${metadataResult.gatewayUrl}`);
+      } else {
+        console.error(`❌ Failed to generate metadata for token #${tokenId.toString()}:`, metadataResult.error);
+      }
+
       // Try to find existing user and update membership
-      await this.updateUserMembership(member, tokenId.toString(), event.transactionHash);
+      await this.updateUserMembership(member, tokenId.toString(), event.transactionHash, metadataResult);
 
     } catch (error) {
       console.error(`❌ Error processing NFT mint:`, error.message);
@@ -151,7 +179,7 @@ class NFTMembershipMonitor {
    * Note: Membership is tied to the original minter (walletAddress), 
    * NOT to current NFT holder. NFT transfers don't affect membership.
    */
-  async updateUserMembership(walletAddress, tokenId, txHash) {
+  async updateUserMembership(walletAddress, tokenId, txHash, metadataResult = null) {
     try {
       const pool = getPool();
       
@@ -337,6 +365,57 @@ Link your GitHub to start earning $ABC for commits 🚀`;
     } catch (error) {
       console.error('❌ Failed to get contract stats:', error.message);
       return null;
+    }
+  }
+
+  /**
+   * Fix existing tokens by generating metadata retroactively
+   * This creates metadata for tokens that were minted before the dynamic system
+   */
+  async fixExistingTokens() {
+    try {
+      console.log('🔧 Fixing existing tokens with dynamic metadata...');
+      
+      const totalSupply = await this.contract.totalSupply();
+      const tokenCount = parseInt(totalSupply.toString());
+      
+      console.log(`   Found ${tokenCount} existing tokens to process`);
+      
+      for (let tokenId = 0; tokenId < tokenCount; tokenId++) {
+        try {
+          console.log(`🎨 Processing token #${tokenId}...`);
+          
+          // Get the token owner to use as original minter
+          const owner = await this.contract.ownerOf(tokenId);
+          
+          // Use current timestamp as fallback for mint time
+          // In a real system, you'd look up the actual mint transaction
+          const currentTime = Date.now();
+          
+          const metadataResult = await this.metadataGenerator.processTokenMetadata(
+            tokenId.toString(),
+            owner,
+            currentTime
+          );
+          
+          if (metadataResult.success) {
+            console.log(`✅ Fixed metadata for token #${tokenId}`);
+            console.log(`   Owner: ${owner}`);
+            console.log(`   IPFS URL: ${metadataResult.gatewayUrl}`);
+          } else {
+            console.error(`❌ Failed to fix token #${tokenId}:`, metadataResult.error);
+          }
+          
+        } catch (tokenError) {
+          console.error(`❌ Error processing token #${tokenId}:`, tokenError.message);
+        }
+      }
+      
+      console.log('🎉 Finished fixing existing tokens!');
+      console.log('💡 Note: You may need to update the contract baseURI to point to the IPFS folder');
+      
+    } catch (error) {
+      console.error('❌ Failed to fix existing tokens:', error.message);
     }
   }
 }

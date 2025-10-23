@@ -3,3 +3,9 @@ test-adaptive-rewards.js
 test-commit-with-adaptive-rewards.js
 fix-external-repo-webhooks.js
 generate-test-webhook.js
+get-members-for-airdrop.js
+test-nft-investigation.js
+test-specific-tx.js
+test-nft-verification.js
+test-nft-payment-flow.js
+check-production-schema.js

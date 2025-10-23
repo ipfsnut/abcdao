@@ -30,10 +30,57 @@ function FarcasterAuthContent() {
     
     setIsInFrame(inFrame);
     
-    if (fid) {
+    // Handle Neynar OAuth callback
+    const neynarCode = searchParams.get('code');
+    const neynarState = searchParams.get('state');
+    
+    if (neynarCode && !user) {
+      handleNeynarCallback(neynarCode, neynarState);
+    } else if (fid) {
       fetchUserData(parseInt(fid));
     }
-  }, [searchParams]);
+  }, [searchParams, user]);
+
+  const handleNeynarCallback = async (code: string, state: string | null) => {
+    setLoading(true);
+    try {
+      console.log('Processing Neynar OAuth callback...');
+      
+      // Call backend to exchange code for user data
+      const response = await fetch('/api/auth/farcaster/callback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code, state }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.user) {
+          const userData = {
+            fid: data.user.fid,
+            username: data.user.username,
+            displayName: data.user.displayName || data.user.username,
+            pfpUrl: data.user.pfpUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${data.user.username}`
+          };
+          login(userData);
+          
+          // Clean up URL by removing OAuth params
+          const url = new URL(window.location.href);
+          url.searchParams.delete('code');
+          url.searchParams.delete('state');
+          window.history.replaceState({}, '', url.toString());
+        }
+      } else {
+        console.error('Neynar OAuth failed:', await response.text());
+      }
+    } catch (error) {
+      console.error('Neynar callback error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchUserData = async (fid: number) => {
     setLoading(true);
@@ -63,9 +110,55 @@ function FarcasterAuthContent() {
     window.location.href = authUrl;
   };
 
-  // In browser mode, don't show Farcaster auth at all
+  // Handle both browser and frame modes
   if (!isInFrame) {
-    return null;
+    // Browser mode - show connect button if no user
+    if (user) {
+      return (
+        <div className="flex items-center gap-3 bg-purple-900/20 border border-purple-700/50 rounded-lg px-4 py-3">
+          <img 
+            src={user.pfpUrl} 
+            alt={user.displayName}
+            className="w-10 h-10 rounded-full border border-purple-600/50"
+          />
+          <div className="flex-1">
+            <div className="font-semibold text-purple-300 font-mono">{user.displayName}</div>
+            <div className="text-purple-500 font-mono text-sm">@{user.username}</div>
+          </div>
+          <div className="text-green-400 font-mono text-sm">✓ Connected</div>
+        </div>
+      );
+    }
+
+    // Show connect button for web users
+    return (
+      <div className="space-y-4">
+        <div className="bg-purple-950/20 border border-purple-900/30 rounded-lg p-4">
+          <p className="text-purple-400 font-mono text-sm mb-3">
+            Connect your Farcaster account to enable social features and community announcements.
+          </p>
+          <button
+            onClick={handleSignIn}
+            disabled={loading}
+            className="w-full bg-purple-900/50 hover:bg-purple-800/70 text-purple-400 font-mono py-2.5 rounded-lg 
+                     border border-purple-700/50 transition-all duration-300 hover:matrix-glow
+                     disabled:opacity-50 disabled:cursor-not-allowed text-sm font-bold"
+          >
+            {loading ? '// Connecting...' : 'Connect Farcaster Account'}
+          </button>
+        </div>
+        
+        <div className="bg-black/40 border border-purple-900/30 rounded-lg p-3">
+          <p className="text-purple-600 font-mono text-xs mb-2">{"// Benefits of connecting:"}</p>
+          <ul className="space-y-1 text-purple-500 font-mono text-xs">
+            <li>→ Social proof of your contributions</li>
+            <li>→ Automatic achievement announcements</li>
+            <li>→ Community recognition and leaderboards</li>
+            <li>→ Access to exclusive ABC DAO channels</li>
+          </ul>
+        </div>
+      </div>
+    );
   }
 
   // In frame mode, show loading or user info (never a sign-in button)

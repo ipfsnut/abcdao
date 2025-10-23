@@ -42,7 +42,7 @@ router.post('/check-recent', async (req, res) => {
   }
 });
 
-// Record NFT mint notification (called by frontend after successful mint)
+// Process NFT mint and update membership (called by frontend after successful mint)
 // This replaces the old /api/membership/verify endpoint for NFT-based membership
 router.post('/nft-mint', async (req, res) => {
   try {
@@ -57,17 +57,63 @@ router.post('/nft-mint', async (req, res) => {
     console.log(`   TX Hash: ${txHash}`);
     console.log(`   Farcaster FID: ${farcasterFid || 'N/A'}`);
     
-    // The actual processing will be handled by the event monitor
-    // This endpoint is just for frontend notification/analytics
+    // Immediately process the NFT mint to update membership
+    const monitor = new NFTMembershipMonitor();
     
-    res.json({
-      success: true,
-      message: 'NFT mint notification received',
-      note: 'Membership will be processed automatically via blockchain events'
-    });
+    // Get the transaction details to extract token ID
+    const provider = monitor.provider;
+    const receipt = await provider.getTransactionReceipt(txHash);
+    
+    if (!receipt) {
+      return res.status(400).json({ error: 'Transaction not found or not confirmed' });
+    }
+    
+    // Parse the MembershipMinted event from the receipt
+    const contract = monitor.contract;
+    const membershipMintedTopic = contract.interface.getEventTopic('MembershipMinted');
+    
+    const mintEvent = receipt.logs.find(log => 
+      log.address.toLowerCase() === contract.target.toLowerCase() && 
+      log.topics[0] === membershipMintedTopic
+    );
+    
+    if (!mintEvent) {
+      return res.status(400).json({ error: 'No MembershipMinted event found in transaction' });
+    }
+    
+    // Decode the event
+    const decoded = contract.interface.parseLog(mintEvent);
+    const tokenId = decoded.args.tokenId.toString();
+    const member = decoded.args.member;
+    
+    if (member.toLowerCase() !== walletAddress.toLowerCase()) {
+      return res.status(400).json({ error: 'Wallet address mismatch' });
+    }
+    
+    // Process the membership
+    const success = await monitor.updateUserMembership(member, tokenId, txHash);
+    
+    if (success) {
+      res.json({
+        success: true,
+        message: 'NFT membership processed successfully',
+        data: {
+          tokenId,
+          walletAddress: member,
+          txHash,
+          farcasterFid
+        }
+      });
+    } else {
+      res.status(500).json({ error: 'Failed to update user membership' });
+    }
+    
   } catch (error) {
-    console.error('Error processing NFT mint notification:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Error processing NFT mint:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message
+    });
   }
 });
 

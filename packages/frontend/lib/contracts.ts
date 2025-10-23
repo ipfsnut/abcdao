@@ -99,9 +99,9 @@ export const CONTRACTS = {
     ] as const
   },
   
-  // ABC Membership NFT contract (October 2025)
+  // ABC Membership NFT contract (October 2025) - Fixed Version
   ABC_MEMBERSHIP: {
-    address: '0x9B790111758CB7C666e742814b86CF8185792f6E' as `0x${string}`,
+    address: '0x52986d25082E8D040743017ED2d25bD1aD94c5cD' as `0x${string}`,
     abi: [
       {
         "inputs": [],
@@ -142,6 +142,13 @@ export const CONTRACTS = {
         "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
         "name": "tokenURI",
         "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+        "name": "ownerOf",
+        "outputs": [{"internalType": "address", "name": "", "type": "address"}],
         "stateMutability": "view",
         "type": "function"
       }

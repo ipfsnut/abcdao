@@ -5,7 +5,7 @@ import { useAccount } from 'wagmi';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { config, isInFrame, getCallbackUrl } from '@/lib/config';
 import { useMembership } from '@/hooks/useMembership';
-import { MembershipPaymentPanel } from '@/components/membership-payment';
+import { MembershipNFTPayment } from '@/components/membership-nft-payment';
 
 
 export function GitHubLinkPanel() {
@@ -189,7 +189,7 @@ export function GitHubLinkPanel() {
         >
           {'<'} Back
         </button>
-        <MembershipPaymentPanel 
+        <MembershipNFTPayment 
           onPaymentComplete={() => {
             setShowPayment(false);
             membership.refreshStatus();

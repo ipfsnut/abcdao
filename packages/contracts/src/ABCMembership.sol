@@ -2,39 +2,39 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title ABC DAO Membership NFT - October 2025
- * @dev ERC721 NFT representing ABC DAO membership for October 2025
- * Simple mint-for-ETH contract with funds sent directly to treasury
+ * @dev Fixed ERC721 NFT with proper metadata handling for OpenSea compatibility
+ * Each token has unique metadata but all use the same artwork (for now)
  */
-contract ABCMembership is ERC721, ERC721Enumerable, Ownable, Pausable, ReentrancyGuard {
+contract ABCMembership is ERC721, Ownable, Pausable, ReentrancyGuard {
     
     // Constants
     uint256 public constant MINT_PRICE = 0.002 ether;
     address public constant TREASURY = 0xBE6525b767cA8D38d169C93C8120c0C0957388B8;
     
     // State variables
-    string private _baseTokenURI;
+    string private _metadataBaseURI;
     uint256 private _tokenIdCounter;
     
     // Events
     event MembershipMinted(address indexed member, uint256 indexed tokenId);
-    event BaseURIUpdated(string newBaseURI);
+    event MetadataBaseURIUpdated(string newBaseURI);
     
     /**
-     * @dev Constructor sets name, symbol, and metadata URI
-     * All tokens point to the same October 2025 membership metadata
+     * @dev Constructor sets name, symbol, and metadata base URI
+     * Base URI should point to folder containing individual token metadata files
      */
     constructor() 
         ERC721("ABC DAO Membership October 2025", "ABCMEM") 
         Ownable(msg.sender) 
     {
-        _baseTokenURI = "https://crimson-bright-wallaby-267.mypinata.cloud/ipfs/bafkreigh6utl4k5vecx5zlmst63im3mdzowcihkawmdu7ghwfestje74q4";
+        // This will be updated to point to our IPFS folder with individual metadata files
+        _metadataBaseURI = "https://crimson-bright-wallaby-267.mypinata.cloud/ipfs/";
     }
     
     /**
@@ -57,43 +57,24 @@ contract ABCMembership is ERC721, ERC721Enumerable, Ownable, Pausable, Reentranc
     }
     
     /**
-     * @dev Returns the base URI for token metadata
+     * @dev Returns the token URI for a given token ID
+     * This is the key fix - returns individual metadata files
+     * tokenURI(0) -> baseURI + "0"
+     * tokenURI(1) -> baseURI + "1"
      */
-    function _baseURI() internal view override returns (string memory) {
-        return _baseTokenURI;
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        _requireOwned(tokenId); // Ensure token exists
+        
+        string memory baseURI = _metadataBaseURI;
+        return bytes(baseURI).length > 0 ? 
+            string(abi.encodePacked(baseURI, _toString(tokenId))) : "";
     }
     
     /**
-     * @dev Override required by Solidity for multiple inheritance
+     * @dev Get total number of tokens minted
      */
-    function _update(address to, uint256 tokenId, address auth)
-        internal
-        override(ERC721, ERC721Enumerable)
-        returns (address)
-    {
-        return super._update(to, tokenId, auth);
-    }
-
-    /**
-     * @dev Override required by Solidity for multiple inheritance  
-     */
-    function _increaseBalance(address account, uint128 value)
-        internal
-        override(ERC721, ERC721Enumerable)
-    {
-        super._increaseBalance(account, value);
-    }
-
-    /**
-     * @dev Override required by Solidity for multiple inheritance
-     */
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC721, ERC721Enumerable)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
+    function totalSupply() external view returns (uint256) {
+        return _tokenIdCounter;
     }
     
     /**
@@ -106,24 +87,39 @@ contract ABCMembership is ERC721, ERC721Enumerable, Ownable, Pausable, Reentranc
     }
     
     /**
-     * @dev Get the token ID for a member's first NFT
-     * @param member Address to check
-     * @return tokenId of first NFT owned (0 if none owned)
+     * @dev Get the token ID for a member (if they own one)
+     * Returns the first token they own, or reverts if they don't own any
      */
     function getMemberTokenId(address member) external view returns (uint256) {
         require(balanceOf(member) > 0, "Not a member");
-        return tokenOfOwnerByIndex(member, 0);
+        
+        // Find first token owned by this member
+        for (uint256 i = 0; i < _tokenIdCounter; i++) {
+            if (_ownerOf(i) == member) {
+                return i;
+            }
+        }
+        
+        revert("No token found"); // Should never reach here if balanceOf > 0
     }
     
     // === ADMIN FUNCTIONS ===
     
     /**
-     * @dev Update base URI for token metadata (owner only)
-     * @param newBaseURI New base URI
+     * @dev Update metadata base URI (owner only)
+     * This should point to IPFS folder containing individual token metadata
+     * @param newBaseURI New base URI (should end with /)
      */
-    function setBaseURI(string calldata newBaseURI) external onlyOwner {
-        _baseTokenURI = newBaseURI;
-        emit BaseURIUpdated(newBaseURI);
+    function setMetadataBaseURI(string calldata newBaseURI) external onlyOwner {
+        _metadataBaseURI = newBaseURI;
+        emit MetadataBaseURIUpdated(newBaseURI);
+    }
+    
+    /**
+     * @dev Get current metadata base URI (for transparency)
+     */
+    function getMetadataBaseURI() external view returns (string memory) {
+        return _metadataBaseURI;
     }
     
     /**
@@ -174,5 +170,27 @@ contract ABCMembership is ERC721, ERC721Enumerable, Ownable, Pausable, Reentranc
             _mint(recipients[i], tokenId);
             emit MembershipMinted(recipients[i], tokenId);
         }
+    }
+    
+    /**
+     * @dev Convert uint256 to string (internal utility)
+     */
+    function _toString(uint256 value) internal pure returns (string memory) {
+        if (value == 0) {
+            return "0";
+        }
+        uint256 temp = value;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
+        }
+        return string(buffer);
     }
 }

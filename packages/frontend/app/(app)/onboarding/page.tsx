@@ -25,24 +25,27 @@ function OnboardingContent() {
     }
   }, [searchParams]);
 
-  // Auto-advance steps based on completion
+  // Auto-advance steps based on completion (new flow: Wallet → NFT → GitHub → Farcaster)
   useEffect(() => {
     if (isConnected && currentStep === 1) {
       setCurrentStep(2);
     }
-    if (user && currentStep === 2) {
+    if (membership.isMember && currentStep === 2) {
       setCurrentStep(3);
     }
-    if (membership.isMember && currentStep === 3) {
-      setCurrentStep(4);
-    }
-  }, [isConnected, user, membership.isMember, currentStep]);
+    // GitHub linking auto-advance will be added when implemented
+    // For now, users manually proceed from step 3 to 4
+    // if (user && currentStep === 4) {
+    //   setCurrentStep(5);
+    // }
+  }, [isConnected, membership.isMember, user, currentStep]);
 
   const steps = [
     { id: 1, title: 'Connect Wallet', completed: isConnected },
-    { id: 2, title: 'Connect Farcaster', completed: !!user },
-    { id: 3, title: 'Pay Membership Fee', completed: membership.isMember },
-    { id: 4, title: 'Start Earning', completed: membership.isMember }
+    { id: 2, title: 'Mint Membership NFT', completed: membership.isMember },
+    { id: 3, title: 'Link GitHub Account', completed: false }, // TODO: Add GitHub status check
+    { id: 4, title: 'Connect Farcaster', completed: !!user },
+    { id: 5, title: 'Start Earning', completed: membership.isMember && user }
   ];
 
   return (
@@ -102,21 +105,6 @@ function OnboardingContent() {
             Complete the steps below to start earning $ABC tokens for your code contributions
           </p>
           
-          {/* New Improved Onboarding Notice */}
-          <div className="bg-blue-950/20 border border-blue-700/50 rounded-lg p-4 mb-4">
-            <h3 className="text-blue-400 font-mono font-semibold mb-2">🆕 Try Our Improved Onboarding!</h3>
-            <p className="text-blue-300 font-mono text-xs mb-3">
-              GitHub-first verification • Earnings preview • Auto repository setup
-            </p>
-            <a
-              href="/onboarding-v2"
-              className="inline-block bg-blue-900/50 hover:bg-blue-800/40 border border-blue-700/50 hover:border-blue-600/70 
-                         text-blue-400 hover:text-blue-300 px-4 py-2 rounded-lg font-mono text-xs
-                         transition-all duration-200 matrix-button"
-            >
-              🚀 Try Improved Onboarding
-            </a>
-          </div>
         </div>
 
         {/* Progress Bar */}
@@ -174,68 +162,14 @@ function OnboardingContent() {
             </div>
           )}
 
-          {/* Step 2: Connect Farcaster */}
+          {/* Step 2: Mint Membership NFT */}
           {currentStep === 2 && (
             <div className="bg-black/40 border border-green-900/50 rounded-xl p-6">
               <h3 className="text-xl font-semibold text-green-400 mb-4 font-mono">
-                Step 2: Connect Your Farcaster Account (Recommended)
+                Step 2: Mint Membership NFT
               </h3>
               <p className="text-green-300 font-mono text-sm mb-6">
-                Link your Farcaster account to enable social verification and announcements of your achievements. This step is recommended but optional.
-              </p>
-              
-              {/* Farcaster signup option */}
-              <div className="bg-purple-950/20 border border-purple-900/30 rounded-lg p-4 mb-6">
-                <h4 className="text-purple-400 font-mono text-sm font-semibold mb-2">New to Farcaster?</h4>
-                <p className="text-purple-300 font-mono text-xs mb-3">
-                  Farcaster is a decentralized social network. Create your account to get the full ABC DAO experience.
-                </p>
-                <a
-                  href="https://farcaster.xyz/~/code/PB4OR7"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block bg-purple-900/50 hover:bg-purple-800/40 border border-purple-700/50 hover:border-purple-600/70 
-                           text-purple-400 hover:text-purple-300 px-4 py-2 rounded-lg font-mono text-xs
-                           transition-all duration-200 matrix-button"
-                >
-                  🆕 Create Farcaster Account
-                </a>
-              </div>
-              
-              <div className="bg-blue-950/20 border border-blue-900/30 rounded-lg p-4 mb-6">
-                <h4 className="text-blue-400 font-mono text-sm font-semibold mb-2">Benefits of Farcaster Integration:</h4>
-                <ul className="space-y-1 text-blue-300 text-xs">
-                  <li>• Automated announcements when you earn rewards</li>
-                  <li>• Social proof of your development contributions</li>
-                  <li>• Community recognition and leaderboards</li>
-                  <li>• Access to exclusive ABC DAO channels</li>
-                </ul>
-              </div>
-              <div className="space-y-4">
-                <div className="flex justify-center">
-                  <FarcasterAuth />
-                </div>
-                
-                <div className="text-center">
-                  <button
-                    onClick={() => setCurrentStep(3)}
-                    className="text-green-600 hover:text-green-400 font-mono text-sm transition-colors underline"
-                  >
-                    Skip for now (you can connect Farcaster later)
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Pay Membership Fee */}
-          {currentStep === 3 && (
-            <div className="bg-black/40 border border-green-900/50 rounded-xl p-6">
-              <h3 className="text-xl font-semibold text-green-400 mb-4 font-mono">
-                Step 3: Pay Membership Fee
-              </h3>
-              <p className="text-green-300 font-mono text-sm mb-6">
-                Pay a one-time membership fee of 0.002 ETH to join ABC DAO and start earning $ABC rewards.
+                Mint your membership NFT for 0.002 ETH to join ABC DAO and get your wallet address registered in our system.
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -266,8 +200,116 @@ function OnboardingContent() {
             </div>
           )}
 
-          {/* Step 4: Success */}
+          {/* Step 3: Link GitHub Account */}
+          {currentStep === 3 && (
+            <div className="bg-black/40 border border-green-900/50 rounded-xl p-6">
+              <h3 className="text-xl font-semibold text-green-400 mb-4 font-mono">
+                Step 3: Link GitHub Account
+              </h3>
+              <p className="text-green-300 font-mono text-sm mb-6">
+                Connect your GitHub account to start earning $ABC tokens for your code contributions.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-4">
+                  <h4 className="text-green-400 font-mono text-sm font-semibold mb-2">Why link GitHub?</h4>
+                  <ul className="space-y-1 text-green-600 text-xs">
+                    <li>• Earn up to 999k $ABC per commit</li>
+                    <li>• Track your development contributions</li>
+                    <li>• Daily reward opportunities (10/day)</li>
+                    <li>• Priority tag bonuses (1.5x multiplier)</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-blue-950/20 border border-blue-900/30 rounded-lg p-4">
+                  <h4 className="text-blue-400 font-mono text-sm font-semibold mb-2">How it works:</h4>
+                  <ul className="space-y-1 text-blue-300 text-xs">
+                    <li>• Install ABC DAO GitHub App</li>
+                    <li>• Your commits are automatically tracked</li>
+                    <li>• Rewards calculated based on impact</li>
+                    <li>• Claim rewards on main app</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-4 mb-6">
+                <p className="text-yellow-400 font-mono text-sm mb-3">
+                  🚧 GitHub linking integration coming soon! For now, you can proceed to connect Farcaster.
+                </p>
+                <p className="text-yellow-600 font-mono text-xs">
+                  You can set up GitHub rewards later via the main app.
+                </p>
+              </div>
+              
+              <div className="text-center">
+                <button
+                  onClick={() => setCurrentStep(4)}
+                  className="bg-green-900/50 hover:bg-green-800/70 text-green-400 font-mono py-2.5 px-6 rounded-lg 
+                           border border-green-700/50 transition-all duration-300 hover:matrix-glow text-sm font-bold"
+                >
+                  Continue to Farcaster →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Connect Farcaster */}
           {currentStep === 4 && (
+            <div className="bg-black/40 border border-green-900/50 rounded-xl p-6">
+              <h3 className="text-xl font-semibold text-green-400 mb-4 font-mono">
+                Step 4: Connect Farcaster (Recommended)
+              </h3>
+              <p className="text-green-300 font-mono text-sm mb-6">
+                Link your Farcaster account to enable social verification and announcements of your achievements.
+              </p>
+              
+              {/* Farcaster signup option */}
+              <div className="bg-purple-950/20 border border-purple-900/30 rounded-lg p-4 mb-6">
+                <h4 className="text-purple-400 font-mono text-sm font-semibold mb-2">New to Farcaster?</h4>
+                <p className="text-purple-300 font-mono text-xs mb-3">
+                  Farcaster is a decentralized social network. Create your account to get the full ABC DAO experience.
+                </p>
+                <a
+                  href="https://farcaster.xyz/~/code/PB4OR7"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block bg-purple-900/50 hover:bg-purple-800/40 border border-purple-700/50 hover:border-purple-600/70 
+                           text-purple-400 hover:text-purple-300 px-4 py-2 rounded-lg font-mono text-xs
+                           transition-all duration-200 matrix-button"
+                >
+                  🆕 Create Farcaster Account
+                </a>
+              </div>
+              
+              <div className="bg-blue-950/20 border border-blue-900/30 rounded-lg p-4 mb-6">
+                <h4 className="text-blue-400 font-mono text-sm font-semibold mb-2">Benefits of Farcaster Integration:</h4>
+                <ul className="space-y-1 text-blue-300 text-xs">
+                  <li>• Automated announcements when you earn rewards</li>
+                  <li>• Social proof of your development contributions</li>
+                  <li>• Community recognition and leaderboards</li>
+                  <li>• Access to exclusive ABC DAO channels</li>
+                </ul>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex justify-center">
+                  <FarcasterAuth />
+                </div>
+                
+                <div className="text-center">
+                  <button
+                    onClick={() => setCurrentStep(5)}
+                    className="text-green-600 hover:text-green-400 font-mono text-sm transition-colors underline"
+                  >
+                    Skip for now (you can connect Farcaster later)
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 5: Success */}
+          {currentStep === 5 && (
             <div className="bg-black/40 border border-green-900/50 rounded-xl p-6 text-center">
               <div className="text-6xl mb-4">🎉</div>
               <h3 className="text-2xl font-semibold text-green-400 mb-4 font-mono matrix-glow">

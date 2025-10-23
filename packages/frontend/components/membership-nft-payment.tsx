@@ -74,7 +74,7 @@ export function MembershipNFTPayment({ onPaymentComplete }: MembershipNFTPayment
   // Update paid status based on NFT ownership
   useEffect(() => {
     if (hasMembershipNFT !== undefined) {
-      setIsPaid(hasMembershipNFT);
+      setIsPaid(hasMembershipNFT === true);
     }
   }, [hasMembershipNFT]);
 
@@ -91,7 +91,7 @@ export function MembershipNFTPayment({ onPaymentComplete }: MembershipNFTPayment
         setHasGithub(hasGithubLinked);
         
         // For NFT membership, check both database and on-chain
-        const hasMembership = hasPayment || hasMembershipNFT;
+        const hasMembership = hasPayment || (hasMembershipNFT === true);
         setIsPaid(hasMembership);
         
         // Detect users who have paid but need to link GitHub
@@ -114,35 +114,47 @@ export function MembershipNFTPayment({ onPaymentComplete }: MembershipNFTPayment
     
     setVerifying(true);
     try {
-      // For NFT membership, we don't need backend verification since 
-      // ownership is verifiable on-chain. Just notify success.
-      setIsPaid(true);
-      toast.success('Membership NFT minted! Welcome to ABC DAO!');
-      
-      // Refresh membership status to update header indicators
-      membership.refreshStatus();
-      onPaymentComplete?.();
-      
-      // Still notify backend about the mint for analytics/welcome casts
-      try {
-        await fetch(`${config.backendUrl}/api/nft-membership/nft-mint`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            farcasterFid: profile.fid,
-            txHash: hash,
-            walletAddress: address,
-          }),
-        });
-      } catch (backendError) {
-        // Backend notification failure shouldn't block success
-        console.log('Backend notification failed (non-critical):', backendError);
+      // Process the NFT mint with the backend to update membership
+      const response = await fetch(`${config.backendUrl}/api/nft-membership/nft-mint`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          farcasterFid: profile.fid,
+          txHash: hash,
+          walletAddress: address,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ NFT membership processed:', data);
+        
+        setIsPaid(true);
+        toast.success(`Membership NFT #${data.data?.tokenId || 'Unknown'} minted! Welcome to ABC DAO!`);
+        
+        // Refresh membership status to update header indicators
+        membership.refreshStatus();
+        onPaymentComplete?.();
+      } else {
+        const error = await response.json();
+        console.error('❌ Backend processing failed:', error);
+        
+        // Still show success for the NFT mint but warn about profile update
+        setIsPaid(true);
+        toast.warning('NFT minted successfully but membership update failed. Please refresh the page.');
+        membership.refreshStatus();
+        onPaymentComplete?.();
       }
     } catch (error) {
       console.error('Error processing NFT mint:', error);
-      toast.error('NFT minted but failed to update profile. Please refresh.');
+      
+      // NFT is minted but backend processing failed
+      setIsPaid(true);
+      toast.warning('NFT minted successfully but failed to update profile. Please refresh the page.');
+      membership.refreshStatus();
+      onPaymentComplete?.();
     } finally {
       setVerifying(false);
     }
@@ -160,7 +172,7 @@ export function MembershipNFTPayment({ onPaymentComplete }: MembershipNFTPayment
     }
 
     // Check if already has NFT
-    if (hasMembershipNFT) {
+    if (hasMembershipNFT === true) {
       toast.error('You already own a membership NFT!');
       return;
     }
@@ -301,7 +313,7 @@ export function MembershipNFTPayment({ onPaymentComplete }: MembershipNFTPayment
     );
   }
 
-  if (isPaid || hasMembershipNFT) {
+  if (isPaid || hasMembershipNFT === true) {
     return (
       <div className="bg-black/40 border border-green-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
         <h2 className="text-lg sm:text-xl font-bold mb-3 text-green-400 matrix-glow font-mono">

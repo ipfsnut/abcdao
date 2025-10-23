@@ -331,4 +331,73 @@ router.post('/github/relink', async (req, res) => {
   }
 });
 
+// Neynar OAuth callback handler for Farcaster authentication
+router.post('/farcaster/callback', async (req, res) => {
+  const { code, state } = req.body;
+  
+  if (!code) {
+    return res.status(400).json({ error: 'Missing authorization code' });
+  }
+  
+  try {
+    console.log('🎭 Processing Neynar OAuth callback...');
+    
+    // Exchange code for access token with Neynar
+    const tokenResponse = await axios.post('https://api.neynar.com/v2/oauth/token', {
+      client_id: process.env.NEYNAR_CLIENT_ID,
+      client_secret: process.env.NEYNAR_CLIENT_SECRET,
+      grant_type: 'authorization_code',
+      code: code,
+      redirect_uri: process.env.FRONTEND_URL || 'http://localhost:3002'
+    }, {
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+    
+    const { access_token } = tokenResponse.data;
+    
+    if (!access_token) {
+      return res.status(400).json({ error: 'Failed to get access token from Neynar' });
+    }
+    
+    // Get Farcaster user info using the access token
+    const userResponse = await axios.get('https://api.neynar.com/v2/user/me', {
+      headers: { 
+        'Authorization': `Bearer ${access_token}`,
+        'Accept': 'application/json'
+      }
+    });
+    
+    const neynarUser = userResponse.data;
+    console.log('🎭 Neynar user data:', { fid: neynarUser.fid, username: neynarUser.username });
+    
+    // Return user data for frontend to handle
+    res.json({ 
+      success: true,
+      user: {
+        fid: neynarUser.fid,
+        username: neynarUser.username,
+        displayName: neynarUser.display_name || neynarUser.username,
+        pfpUrl: neynarUser.pfp_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${neynarUser.username}`,
+        bio: neynarUser.profile?.bio?.text
+      },
+      message: 'Farcaster authentication successful'
+    });
+    
+  } catch (error) {
+    console.error('Neynar OAuth error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    res.status(500).json({ 
+      error: 'Farcaster OAuth failed',
+      ...(process.env.NODE_ENV === 'development' && { details: error.message })
+    });
+  }
+});
+
 export default router;

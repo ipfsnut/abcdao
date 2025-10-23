@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useUniversalAuth } from '@/contexts/universal-auth-context';
-import { MembershipPaymentPanel } from './membership-payment';
+import { MembershipNFTPayment } from './membership-nft-payment';
 
 export function WebappAuth() {
   const { address, isConnected } = useAccount();
@@ -59,7 +59,7 @@ export function WebappAuth() {
   }
 
   if (error && error.includes('Membership purchase required')) {
-    return <MembershipPaymentPanel />;
+    return <MembershipNFTPayment />;
   }
 
   if (user && !user.has_github) {
