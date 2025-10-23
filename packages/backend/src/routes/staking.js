@@ -93,6 +93,10 @@ router.get('/leaderboard', async (req, res) => {
     // Get active stakers from the staking service (uses subgraph if available)
     const activeStakers = await stakingService.getActiveStakers();
     
+    // Get the authoritative total from the blockchain contract (same as overview)
+    const stakingOverview = await stakingService.getStakingOverview();
+    const authoritativeTotalStaked = stakingOverview.totalStaked;
+    
     // Sort by current stake amount (descending) and paginate
     const sortedStakers = activeStakers
       .sort((a, b) => b.currentStake - a.currentStake)
@@ -110,14 +114,14 @@ router.get('/leaderboard', async (req, res) => {
       firstStakeTime: staker.firstStakeTime,
       lastStakeTime: staker.lastStakeTime,
       lastUnstakeTime: staker.lastUnstakeTime || null,
-      // Calculate staking percentage of total
-      percentageOfTotal: activeStakers.length > 0 ? 
-        (staker.currentStake / activeStakers.reduce((sum, s) => sum + s.currentStake, 0)) * 100 : 0
+      // Calculate staking percentage of authoritative total (not just sum of known stakers)
+      percentageOfTotal: authoritativeTotalStaked > 0 ? 
+        (staker.currentStake / authoritativeTotalStaked) * 100 : 0
     }));
 
-    // Get summary statistics
-    const totalCurrentStaked = activeStakers.reduce((sum, staker) => sum + staker.currentStake, 0);
-    const averageStake = activeStakers.length > 0 ? totalCurrentStaked / activeStakers.length : 0;
+    // Use authoritative total from blockchain contract for summary
+    const knownStakersSum = activeStakers.reduce((sum, staker) => sum + staker.currentStake, 0);
+    const averageStake = activeStakers.length > 0 ? knownStakersSum / activeStakers.length : 0;
 
     res.json({
       leaderboard,
@@ -129,10 +133,14 @@ router.get('/leaderboard', async (req, res) => {
       },
       summary: {
         totalActiveStakers: activeStakers.length,
-        totalCurrentStaked,
+        totalCurrentStaked: authoritativeTotalStaked, // Use blockchain contract total
         averageStake,
         largestStake: activeStakers.length > 0 ? Math.max(...activeStakers.map(s => s.currentStake)) : 0,
-        smallestStake: activeStakers.length > 0 ? Math.min(...activeStakers.map(s => s.currentStake)) : 0
+        smallestStake: activeStakers.length > 0 ? Math.min(...activeStakers.map(s => s.currentStake)) : 0,
+        // Add note about data completeness
+        dataNote: knownStakersSum !== authoritativeTotalStaked ? 
+          `Showing ${activeStakers.length} known stakers (${knownStakersSum.toFixed(0)} ABC). Total includes all on-chain stakers.` : 
+          null
       },
       lastUpdated: new Date().toISOString()
     });

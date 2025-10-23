@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useStaking } from '@/hooks/useStaking';
+import { useStakingSystematic } from '@/hooks/useStakingSystematic';
 import { useUnbonding } from '@/hooks/useUnbonding';
 import { useAPYCalculator } from '@/hooks/useAPYCalculator';
 import { ContractAddressesFooter } from '@/components/contract-addresses-footer';
@@ -12,13 +13,18 @@ import Link from 'next/link';
 
 export default function StakingPage() {
   const stakingData = useStaking();
+  const systematicStaking = useStakingSystematic();
   const unbondingData = useUnbonding();
   const { apyData } = useAPYCalculator();
   const [activeTab, setActiveTab] = useState<'overview' | 'stake' | 'unbonding' | 'rewards'>('overview');
   const [amount, setAmount] = useState('');
   const [isStaking, setIsStaking] = useState(true);
 
-  const isLoading = !stakingData.tokenBalance || !stakingData.totalStaked;
+  // Use systematic API for total staked (consistent with leaderboard) but keep user-specific data from blockchain
+  const totalStaked = systematicStaking.totalStaked || stakingData.totalStaked;
+  const currentAPY = systematicStaking.currentAPY || apyData.currentAPY || 0;
+
+  const isLoading = !stakingData.tokenBalance || !totalStaked;
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
@@ -69,7 +75,7 @@ export default function StakingPage() {
               <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
                 <h3 className="text-green-600 text-responsive-xs font-mono mb-1">Total Staked</h3>
                 <p className="text-responsive-lg font-bold text-green-400 matrix-glow">
-                  {parseFloat(stakingData.totalStaked).toFixed(0)} $ABC
+                  {parseFloat(totalStaked).toFixed(0)} $ABC
                 </p>
                 <p className="text-green-500 text-xs font-mono mt-1">Community wide</p>
               </div>
@@ -77,7 +83,7 @@ export default function StakingPage() {
               <div className="bg-green-950/20 border border-green-900/50 rounded-lg p-4 matrix-button">
                 <h3 className="text-green-600 text-responsive-xs font-mono mb-1">Current Weekly APY</h3>
                 <p className="text-responsive-lg font-bold text-green-400 matrix-glow">
-                  {apyData.currentAPY ? apyData.currentAPY.toFixed(1) : '0.0'}%
+                  {currentAPY ? currentAPY.toFixed(1) : '0.0'}%
                 </p>
                 <p className="text-green-500 text-xs font-mono mt-1">Resets weekly</p>
               </div>
@@ -183,8 +189,8 @@ export default function StakingPage() {
                       <div className="flex justify-between">
                         <span className="text-green-600">Staking Ratio:</span>
                         <span className="text-green-400">
-                          {stakingData.totalStaked && parseFloat(stakingData.totalStaked) > 0 
-                            ? ((parseFloat(stakingData.stakedAmount) / parseFloat(stakingData.totalStaked)) * 100).toFixed(2)
+                          {totalStaked && parseFloat(totalStaked) > 0 
+                            ? ((parseFloat(stakingData.stakedAmount) / parseFloat(totalStaked)) * 100).toFixed(2)
                             : '0.00'
                           }%
                         </span>
@@ -192,7 +198,7 @@ export default function StakingPage() {
                       <div className="flex justify-between">
                         <span className="text-green-600">Current Weekly APY:</span>
                         <span className="text-green-400">
-                          {apyData.currentAPY ? apyData.currentAPY.toFixed(1) : '0.0'}%
+                          {currentAPY ? currentAPY.toFixed(1) : '0.0'}%
                         </span>
                       </div>
                     </div>
@@ -406,8 +412,8 @@ export default function StakingPage() {
                       {parseFloat(stakingData.stakedAmount).toFixed(2)} $ABC
                     </p>
                     <p className="text-green-500 text-xs font-mono mt-1">
-                      {stakingData.totalStaked && parseFloat(stakingData.totalStaked) > 0 
-                        ? ((parseFloat(stakingData.stakedAmount) / parseFloat(stakingData.totalStaked)) * 100).toFixed(2)
+                      {totalStaked && parseFloat(totalStaked) > 0 
+                        ? ((parseFloat(stakingData.stakedAmount) / parseFloat(totalStaked)) * 100).toFixed(2)
                         : '0.00'
                       }% of total
                     </p>
