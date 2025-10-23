@@ -259,9 +259,6 @@ export default function Home() {
               >
                 Docs
               </a>
-              <div className="flex justify-center">
-                <FarcasterAuth />
-              </div>
             </div>
           </div>
         </div>

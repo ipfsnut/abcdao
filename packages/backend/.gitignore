@@ -9,3 +9,5 @@ test-specific-tx.js
 test-nft-verification.js
 test-nft-payment-flow.js
 check-production-schema.js
+test-production-endpoints.js
+verify-production-contract.js
