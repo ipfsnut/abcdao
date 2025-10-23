@@ -1,11 +1,11 @@
 # ABC DAO WHITEPAPER
-## Ship Code, Earn Rewards - The Live Action Developer Game for Farcaster
+## Ship Code, Earn Rewards - The Developer Community for Web3 Builders
 
 ---
 
 ## ABSTRACT
 
-ABC DAO gamifies open-source development by rewarding developers who ship code with $ABC tokens and social recognition on Farcaster. By combining staking mechanics with automatic commit recognition, ABC creates a sustainable ecosystem where developers are incentivized to build in public while earning crypto rewards and growing their reputation.
+ABC DAO creates a sustainable developer community where contributors earn $ABC tokens for their code commits while stakers earn ETH rewards from protocol activity. With wallet-first onboarding and automated reward distribution, ABC DAO simplifies Web3 development incentives through transparent, automated systems built on Base.
 
 ## 1. INTRODUCTION
 
@@ -39,13 +39,14 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 
 ## 3. THE DEVELOPER GAME
 
-### How to Play
-1. **Join ABC DAO**: Pay 0.002 ETH membership fee to protocol wallet
-2. **Link GitHub**: Connect your GitHub account via Farcaster miniapp
-3. **Buy $ABC**: Purchase tokens on Base (Clanker v4 token)
-4. **Stake tokens**: Lock $ABC to unlock commit rewards
-5. **Ship code**: Code normally - all public commits count
-6. **Earn rewards**: Get $ABC for commits + ETH from staking
+### How to Join
+1. **Connect Wallet**: Connect any Web3 wallet (MetaMask, Rainbow, Coinbase, etc.)
+2. **Pay Membership Fee**: One-time 0.002 ETH payment to protocol wallet
+3. **Optional Enhancements**: 
+   - Link GitHub account to start earning $ABC for commits
+   - Link Farcaster for community announcements and social features
+   - Buy & stake $ABC tokens to earn ETH rewards from protocol fees
+4. **Start Contributing**: All registered developers earn rewards for code contributions
 
 ### Staking Benefits
 - **Earn $ETH from Clanker trading fees** (primary reward stream)
@@ -174,39 +175,92 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
    - Emergency pause functionality for security
 
 ### Membership System
-**Payment Method**: Direct wallet transfer (no smart contract needed)
+**Payment Method**: Direct wallet transfer with automatic verification
 - **Fee**: 0.002 ETH one-time payment
-- **Protocol Wallet**: `0xBE6525b767cA8D38d169C93C8120c0C0957388B8`
-- **Process**: Pay protocol wallet → Submit transaction hash → Backend verification
-- **Benefits**: Lifetime membership + GitHub commit rewards eligibility
-- **Revenue Flow**: ETH to staking contract for rewards distribution
+- **Protocol Wallet**: `0xBE6525b767cA8D38d169C93C8120c0C0957388B8` (abcdao.base.eth)
+- **Payment Processing**: 
+  - Wallet-only payments: Tracked by sender address and amount
+  - Farcaster-enhanced: Transaction data includes FID for enhanced features
+  - Automatic verification: Backend monitors protocol wallet for incoming payments
+  - Instant activation: Membership activated within minutes of payment confirmation
+- **Benefits**: Lifetime membership with optional GitHub/Farcaster linking for enhanced features
+- **User Experience**: Simplified onboarding - wallet connection is the only requirement
 
 ### Backend Services
-1. **GitHub Webhook Service**: Processes commit events with job queue system
-2. **Neynar Bot Service**: Automated posting via @abc-dao-dev account
-3. **Account Linker**: Secure GitHub-Farcaster OAuth flow with JWT state tokens
-4. **Reward Database**: PostgreSQL with migrations and proper indexing
-5. **Fee Splitter**: Distributes 50% of Clanker fees to Dev wallet, 50% to Protocol wallet
-6. **Job Queue System**: Bull/Redis for reliable commit and cast processing
-7. **Cast Processing**: Automated reward announcements with commit URLs
-8. **WETH Unwrapper**: Automatically converts WETH to ETH for reward distribution
-9. **ETH Forwarder**: Transfers Protocol wallet's ETH (fees + membership) to staking contract
-10. **Future: Smart Contract Integration**: Claimable rewards system (pending)
+1. **Payment Monitor**: Real-time monitoring of protocol wallet for membership payments
+   - Supports both wallet-only and Farcaster-enhanced payments
+   - Automatic user creation and membership activation
+   - Dual payment processing: FID-based and wallet address-based tracking
+2. **GitHub Webhook Service**: Processes commit events with job queue system
+3. **Neynar Bot Service**: Automated posting via @abc-dao-commits and @abc-dao-dev accounts
+4. **Treasury Automation**: 
+   - Automated Clanker rewards claiming (daily at 11:30 PM UTC)
+   - Automatic WETH unwrapping for seamless ETH distribution
+   - Daily token statistics posting for transparency
+   - Daily staking statistics and APY updates
+5. **Reward Database**: PostgreSQL with comprehensive user and commit tracking
+6. **Cast Processing**: Automated reward announcements with commit URLs
+7. **WETH Unwrapper**: Event-driven WETH to ETH conversion after Clanker claims
+8. **Social Media Automation**: Daily transparency posts about protocol metrics
+
+### Automated Treasury Operations
+
+**Daily Automation Schedule:**
+- **10:00 AM UTC**: Staking statistics and APY updates posted to social media
+- **2:00 PM UTC**: Token statistics and transparency metrics posted 
+- **11:30 PM UTC**: Automated Clanker rewards claiming with immediate WETH unwrapping
+
+**Transparency Features:**
+- **Real-time protocol metrics**: Live treasury value, staking APY, token distribution
+- **Automated social posting**: Daily transparency updates via @abc-dao-dev
+- **Public dashboards**: All protocol metrics visible on main application
+- **Transaction announcements**: All treasury operations posted with transaction links
+
+**Treasury Management:**
+- **Automated Clanker claims**: Daily claiming of creator rewards from Clanker protocol
+- **Event-driven WETH unwrapping**: Immediate conversion of WETH to ETH after claims
+- **Protocol fee distribution**: Automated distribution to staking contract and treasury
+- **Gas optimization**: Intelligent batching and threshold-based operations
 
 ### Security Measures
 - **Smart Contract Security**: OpenZeppelin v5.2 libraries (ReentrancyGuard, Pausable, Ownable)
-- **Architecture**: Synthetix-inspired reward calculation (audited by Trail of Bits 2025)
-- **Payment Verification**: On-chain transaction validation for membership fees
-- **Rate limiting** on reward claims
+- **Architecture**: Synthetix-inspired reward calculation with proven security patterns
+- **Payment Verification**: Dual-mode payment tracking (wallet-based and FID-enhanced)
+- **Automated monitoring**: Real-time protocol wallet monitoring for all transactions
+- **Rate limiting** on reward claims and user actions
 - **Commit verification** to prevent spoofing
 - **Emergency controls**: Pause functionality for critical situations
-- **Battle-tested patterns**: Following the "beaten path" for minimal security risk
+- **Battle-tested patterns**: Following established DeFi security practices
 
-## 8. CONCLUSION
+## 8. FUTURE ROADMAP
 
-ABC DAO strips Web3 devrel to its essential elements: **ship code, earn rewards**. By focusing on the Farcaster community and maintaining radical simplicity, we create a sustainable funding mechanism for the builders who will define the future of decentralized social networks.
+### Planned Enhancements
+1. **NFT Membership Migration**: Transform database membership to NFT-based system
+   - One-click joining via Farcaster frames
+   - Transferable and programmable membership NFTs
+   - Viral social sharing and discovery mechanisms
+   - Secondary marketplace for membership trading
 
-The best DAOs don't need complex mechanisms. They need clear purpose, aligned incentives, and committed communities. ABC DAO provides exactly that—nothing more, nothing less.
+2. **User Clanker Token Claims**: Enable users to claim rewards from their own Clanker tokens
+   - Integration with Clanker LP Locker V2 contract
+   - User dashboard for managing multiple token rewards
+   - Automated claiming services with fee structure
+
+3. **Enhanced Social Integration**: 
+   - Discord bot integration for community management
+   - Automated newsletter generation from protocol activity
+   - Enhanced Farcaster frame interactions
+
+### Technical Evolution
+- Migration from centralized membership to decentralized NFT ownership
+- Enhanced automation for treasury management and reward distribution
+- Improved user experience through social-first onboarding
+
+## 9. CONCLUSION
+
+ABC DAO represents a new paradigm in developer incentives: **wallet-first, code-driven, socially amplified**. By reducing barriers to entry while maintaining meaningful rewards, we create a sustainable ecosystem where developers can focus on building while being automatically recognized and rewarded for their contributions.
+
+The protocol's automated systems ensure transparency and reliability, while optional social features enhance community engagement without creating dependencies. This approach attracts both solo developers seeking simple reward mechanisms and teams looking for comprehensive community integration.
 
 ---
 
@@ -218,7 +272,7 @@ The best DAOs don't need complex mechanisms. They need clear purpose, aligned in
 
 ## Automated ETH Distribution
 
-The ABC DAO protocol wallet automatically distributes incoming ETH every 6 hours according to the following allocation:
+The ABC DAO protocol wallet automatically distributes incoming ETH daily at noon UTC according to the following allocation:
 
 **Distribution Breakdown:**
 - **25% → Staking Contract** (`0x577822396162022654D5bDc9CB58018cB53e7017`) - Rewards for $ABC stakers
@@ -226,11 +280,11 @@ The ABC DAO protocol wallet automatically distributes incoming ETH every 6 hours
 - **50% → Protocol Operations** (`0xBE6525b767cA8D38d169C93C8120c0C0957388B8`) - Retained for gas, operations, and future distributions
 
 **Automation Details:**
-- **Frequency**: Every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)
+- **Frequency**: Daily at 12:00 PM UTC
 - **Minimum Threshold**: 0.01 ETH (prevents gas-inefficient micro-distributions)
 - **Gas Reserve**: 0.005 ETH maintained for transaction fees
 - **Transparency**: All distributions announced on Farcaster with transaction links
 
 This automated system ensures sustainable funding for both staker rewards and community development while maintaining operational efficiency.
 
-*Version 1.0 | October 2025*
+*Version 2.0 | October 2025 - Updated for wallet-first architecture and automated treasury operations*
