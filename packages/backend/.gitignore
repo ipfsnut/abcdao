@@ -17,3 +17,4 @@ check-blockchain-staking.js
 discover-stakers-from-events.js
 test-subgraph-integration.js
 test-leaderboard-api.js
+test-production-leaderboard.js

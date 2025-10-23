@@ -106,8 +106,17 @@ export class TreasuryDataManager {
       const stakingTvl = await this.getStakingTVL();
       const tokenPrices = await this.getCurrentTokenPrices();
       
-      // Get fresh ABC market data for calculation
-      const abcMarketData = await this.fetchABCTokenData();
+      // Get fresh ABC market data for calculation - prioritize pool data
+      let abcMarketData;
+      try {
+        const poolData = await this.fetchABCPriceFromPool();
+        abcMarketData = { price: poolData.priceUSD, source: 'uniswap-pool' };
+        console.log(`📊 Using Uniswap pool price for treasury calculation: $${poolData.priceUSD.toFixed(10)}`);
+      } catch (poolError) {
+        console.warn('⚠️ Pool price unavailable, using DexScreener fallback:', poolError.message);
+        abcMarketData = await this.fetchABCTokenData();
+        abcMarketData.source = 'dexscreener-fallback';
+      }
       
       // Calculate total value using fresh market data
       const totalValueUsd = this.calculateTotalValueWithMarketData(ethBalance, abcBalance, wethBalance, stakingTvl, tokenPrices, abcMarketData);
@@ -131,24 +140,49 @@ export class TreasuryDataManager {
   }
 
   /**
-   * Update token prices and comprehensive data from external APIs
+   * Update token prices using on-chain Uniswap pool data
    */
   async updateTokenPrices() {
     try {
-      console.log('💰 Updating token prices and market data...');
-      
-      // Fetch comprehensive $ABC data from DexScreener
-      const abcTokenData = await this.fetchABCTokenData();
+      console.log('💰 Updating token prices using on-chain data...');
       
       // Fetch ETH price from CoinGecko
       const ethPrice = await this.fetchETHPrice();
       
+      // Calculate ABC price from Uniswap pool
+      let abcTokenData;
+      try {
+        const poolData = await this.fetchABCPriceFromPool();
+        abcTokenData = {
+          price: poolData.priceUSD,
+          volume24h: 0, // Pool data doesn't include volume
+          volume6h: 0,
+          volume1h: 0,
+          liquidity: 0, // Could calculate from pool balances
+          marketCap: poolData.priceUSD * 100000000000, // 100B total supply
+          priceChange24h: 0,
+          priceChange6h: 0,
+          priceChange1h: 0,
+          pairAddress: poolData.poolData.poolAddress,
+          dexId: 'uniswap-v4',
+          lastUpdated: new Date().toISOString(),
+          source: 'uniswap-pool'
+        };
+        console.log(`✅ ABC price from Uniswap pool: $${abcTokenData.price.toFixed(10)}`);
+      } catch (poolError) {
+        console.error('❌ Failed to fetch ABC price from pool, falling back to DexScreener:', poolError.message);
+        // Fallback to DexScreener if pool calculation fails
+        abcTokenData = await this.fetchABCTokenData();
+        abcTokenData.source = 'dexscreener-fallback';
+      }
+      
       // Store comprehensive token data
       await this.storeTokenData('ABC', abcTokenData);
       await this.storeTokenPrice('ETH', ethPrice);
+      await this.storeTokenPrice('ABC', abcTokenData.price); // Also store in legacy prices table
       
-      console.log(`✅ Token data updated - $ABC: $${abcTokenData.price.toFixed(8)}, ETH: $${ethPrice.toFixed(2)}`);
-      console.log(`   Volume 24h: $${abcTokenData.volume24h.toLocaleString()}, Liquidity: $${abcTokenData.liquidity.toLocaleString()}`);
+      console.log(`✅ Token data updated - $ABC: $${abcTokenData.price.toFixed(10)}, ETH: $${ethPrice.toFixed(2)}`);
+      console.log(`   Source: ${abcTokenData.source}, Market Cap: $${abcTokenData.marketCap.toLocaleString()}`);
       
     } catch (error) {
       console.error('❌ Error updating token prices:', error);
@@ -239,6 +273,74 @@ export class TreasuryDataManager {
   async fetchABCPrice() {
     const tokenData = await this.fetchABCTokenData();
     return tokenData.price;
+  }
+
+  /**
+   * Fetch ABC price using Uniswap pool ratio + ETH USD price
+   * More reliable than external APIs, uses on-chain data
+   */
+  async fetchABCPriceFromPool() {
+    try {
+      // ABC/WETH Uniswap V4 pool on Base
+      const poolAddress = '0xc8038588bed93021fe8bffb0c9310da825a9a00faabab4a907f3b8328fa9f610';
+      
+      // ERC-20 ABI for getting balances
+      const erc20ABI = [
+        {
+          "type": "function",
+          "name": "balanceOf",
+          "inputs": [{"name": "account", "type": "address"}],
+          "outputs": [{"name": "", "type": "uint256"}],
+          "stateMutability": "view"
+        }
+      ];
+      
+      // Contract instances
+      const abcContract = new ethers.Contract(this.abcTokenContract, erc20ABI, this.provider);
+      const wethContract = new ethers.Contract(this.wethContract, erc20ABI, this.provider);
+      
+      // Get pool balances
+      const [abcBalance, wethBalance] = await Promise.all([
+        abcContract.balanceOf(poolAddress),
+        wethContract.balanceOf(poolAddress)
+      ]);
+      
+      // Calculate ETH/ABC ratio
+      const abcBalanceFormatted = parseFloat(ethers.formatEther(abcBalance));
+      const wethBalanceFormatted = parseFloat(ethers.formatEther(wethBalance));
+      
+      if (abcBalanceFormatted === 0) {
+        throw new Error('ABC balance in pool is zero');
+      }
+      
+      // ETH price in USD
+      const ethPriceUSD = await this.fetchETHPrice();
+      
+      // Calculate ABC price: (WETH in pool / ABC in pool) * ETH USD price
+      const abcPriceInETH = wethBalanceFormatted / abcBalanceFormatted;
+      const abcPriceUSD = abcPriceInETH * ethPriceUSD;
+      
+      console.log(`📊 Uniswap Pool Calculation:`);
+      console.log(`   ABC in pool: ${abcBalanceFormatted.toLocaleString()} ABC`);
+      console.log(`   WETH in pool: ${wethBalanceFormatted.toFixed(4)} WETH`);
+      console.log(`   ETH price: $${ethPriceUSD}`);
+      console.log(`   ABC price: $${abcPriceUSD.toFixed(10)} (${abcPriceInETH.toFixed(12)} ETH)`);
+      
+      return {
+        priceUSD: abcPriceUSD,
+        priceETH: abcPriceInETH,
+        poolData: {
+          abcBalance: abcBalanceFormatted,
+          wethBalance: wethBalanceFormatted,
+          ethPriceUSD,
+          poolAddress
+        }
+      };
+      
+    } catch (error) {
+      console.error('❌ Failed to fetch ABC price from Uniswap pool:', error.message);
+      throw error;
+    }
   }
 
   /**
