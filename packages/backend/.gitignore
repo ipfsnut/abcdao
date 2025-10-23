@@ -11,3 +11,9 @@ test-nft-payment-flow.js
 check-production-schema.js
 test-production-endpoints.js
 verify-production-contract.js
+debug-stakers-count.js
+force-staking-refresh.js
+check-blockchain-staking.js
+discover-stakers-from-events.js
+test-subgraph-integration.js
+test-leaderboard-api.js

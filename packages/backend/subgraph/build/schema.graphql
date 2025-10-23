@@ -1,0 +1,50 @@
+type Staker @entity(immutable: false) {
+  id: ID! # wallet address
+  address: Bytes!
+  totalStaked: BigInt!
+  totalUnstaked: BigInt!
+  currentStake: BigInt!
+  totalRewardsClaimed: BigInt!
+  isActive: Boolean!
+  firstStakeTime: BigInt!
+  lastStakeTime: BigInt!
+  lastUnstakeTime: BigInt
+  stakeEvents: [StakeEvent!]! @derivedFrom(field: "staker")
+  unstakeEvents: [UnstakeEvent!]! @derivedFrom(field: "staker")
+  rewardsClaimedEvents: [RewardsClaimedEvent!]! @derivedFrom(field: "staker")
+}
+
+type StakeEvent @entity(immutable: true) {
+  id: ID! # transaction hash + log index
+  staker: Staker!
+  amount: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type UnstakeEvent @entity(immutable: true) {
+  id: ID! # transaction hash + log index
+  staker: Staker!
+  amount: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type RewardsClaimedEvent @entity(immutable: true) {
+  id: ID! # transaction hash + log index
+  staker: Staker!
+  amount: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type StakingStats @entity(immutable: false) {
+  id: ID! # "global"
+  totalStakers: BigInt!
+  totalStaked: BigInt!
+  totalRewardsDistributed: BigInt!
+  lastUpdated: BigInt!
+}

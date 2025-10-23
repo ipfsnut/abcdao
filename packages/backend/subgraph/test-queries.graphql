@@ -1,0 +1,163 @@
+# Test Queries for ABC Staking Subgraph
+
+# 1. Get all active stakers with their current positions
+query GetActiveStakers {
+  stakers(
+    where: { isActive: true }
+    orderBy: currentStake
+    orderDirection: desc
+    first: 100
+  ) {
+    id
+    address
+    currentStake
+    totalStaked
+    totalUnstaked
+    totalRewardsClaimed
+    isActive
+    firstStakeTime
+    lastStakeTime
+    lastUnstakeTime
+  }
+}
+
+# 2. Get staking overview statistics
+query GetStakingOverview {
+  stakingStats(id: "global") {
+    totalStakers
+    totalStaked
+    totalRewardsDistributed
+    lastUpdated
+  }
+  
+  # Also get current active stakers for real-time count
+  stakers(where: { isActive: true }) {
+    id
+    currentStake
+  }
+}
+
+# 3. Get recent staking events (last 50)
+query GetRecentStakingEvents {
+  stakeEvents(
+    first: 25
+    orderBy: timestamp
+    orderDirection: desc
+  ) {
+    id
+    staker {
+      id
+      address
+    }
+    amount
+    timestamp
+    blockNumber
+    transactionHash
+  }
+  
+  unstakeEvents(
+    first: 25
+    orderBy: timestamp
+    orderDirection: desc
+  ) {
+    id
+    staker {
+      id
+      address
+    }
+    amount
+    timestamp
+    blockNumber
+    transactionHash
+  }
+}
+
+# 4. Get details for a specific staker (replace with actual address)
+query GetStakerDetails($address: String!) {
+  staker(id: $address) {
+    id
+    address
+    currentStake
+    totalStaked
+    totalUnstaked
+    totalRewardsClaimed
+    isActive
+    firstStakeTime
+    lastStakeTime
+    lastUnstakeTime
+    
+    # Recent stake events
+    stakeEvents(
+      first: 10
+      orderBy: timestamp
+      orderDirection: desc
+    ) {
+      id
+      amount
+      timestamp
+      blockNumber
+      transactionHash
+    }
+    
+    # Recent unstake events
+    unstakeEvents(
+      first: 10
+      orderBy: timestamp
+      orderDirection: desc
+    ) {
+      id
+      amount
+      timestamp
+      blockNumber
+      transactionHash
+    }
+    
+    # Recent rewards claimed
+    rewardsClaimedEvents(
+      first: 10
+      orderBy: timestamp
+      orderDirection: desc
+    ) {
+      id
+      amount
+      timestamp
+      blockNumber
+      transactionHash
+    }
+  }
+}
+
+# 5. Get top 10 stakers by current stake amount
+query GetTopStakers {
+  stakers(
+    first: 10
+    where: { isActive: true }
+    orderBy: currentStake
+    orderDirection: desc
+  ) {
+    id
+    address
+    currentStake
+    totalStaked
+    totalRewardsClaimed
+    firstStakeTime
+    lastStakeTime
+  }
+}
+
+# 6. Get subgraph metadata and sync status
+query GetSubgraphMeta {
+  _meta {
+    block {
+      number
+      timestamp
+    }
+    deployment
+    hasIndexingErrors
+  }
+}
+
+# Example variables for GetStakerDetails query:
+# {
+#   "address": "0xbe6525b767ca8d38d169c93c8120c0c0957388b8"
+# }

@@ -8,6 +8,7 @@ import { ContractAddressesFooter } from '@/components/contract-addresses-footer'
 import { BackNavigation } from '@/components/back-navigation';
 import { Skeleton } from '@/components/skeleton-loader';
 import { EthRewardsHistory } from '@/components/eth-rewards-history';
+import Link from 'next/link';
 
 export default function StakingPage() {
   const stakingData = useStaking();
@@ -126,6 +127,12 @@ export default function StakingPage() {
           >
             ./unbonding
           </button>
+          <Link
+            href="/staking/leaderboard"
+            className="flex-1 px-4 py-3 rounded-md font-medium transition-all duration-300 text-responsive-sm min-h-[44px] whitespace-nowrap text-green-600 hover:text-green-400 hover:bg-green-950/20 flex items-center justify-center gap-1"
+          >
+            🏆 ./leaderboard
+          </Link>
         </div>
 
         {/* Tab Content */}

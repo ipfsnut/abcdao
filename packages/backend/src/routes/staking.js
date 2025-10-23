@@ -1,5 +1,6 @@
 import express from 'express';
 import { stakingDataManager } from '../services/staking-data-manager.js';
+import { stakingService } from '../services/staking-service.js';
 
 const router = express.Router();
 
@@ -25,26 +26,35 @@ router.get('/test', (req, res) => {
  */
 router.get('/overview', async (req, res) => {
   try {
-    const overview = await stakingDataManager.getStakingOverview();
+    // Try new staking service first (supports subgraph + blockchain)
+    const stakingOverview = await stakingService.getStakingOverview();
     
-    if (!overview.currentSnapshot) {
-      return res.status(404).json({ 
-        error: 'No staking data available',
-        message: 'Staking data manager may still be initializing'
-      });
+    // Get APY data from the original staking data manager (if available)
+    let apyBreakdown = [];
+    let currentAPY = 0;
+    let rewardsPoolBalance = 0;
+    
+    try {
+      const dataManagerOverview = await stakingDataManager.getStakingOverview();
+      if (dataManagerOverview.currentSnapshot) {
+        currentAPY = parseFloat(dataManagerOverview.currentSnapshot.current_apy) || 0;
+        rewardsPoolBalance = parseFloat(dataManagerOverview.currentSnapshot.rewards_pool_balance) || 0;
+        apyBreakdown = dataManagerOverview.apyBreakdown || [];
+      }
+    } catch (dataManagerError) {
+      console.warn('APY data not available from data manager:', dataManagerError.message);
     }
 
-    const snapshot = overview.currentSnapshot;
-    const apyBreakdown = overview.apyBreakdown;
-
     res.json({
-      // Current staking metrics
-      totalStaked: parseFloat(snapshot.total_staked),
-      totalStakers: parseInt(snapshot.total_stakers),
-      rewardsPoolBalance: parseFloat(snapshot.rewards_pool_balance),
-      totalRewardsDistributed: parseFloat(snapshot.total_rewards_distributed),
-      currentAPY: parseFloat(snapshot.current_apy),
-      lastUpdated: snapshot.snapshot_time,
+      // Current staking metrics from new service
+      totalStaked: stakingOverview.totalStaked,
+      totalStakers: stakingOverview.totalStakers,
+      totalRewardsDistributed: stakingOverview.totalRewardsDistributed,
+      lastUpdated: stakingOverview.lastUpdated,
+      
+      // APY and rewards pool from data manager (when available)
+      currentAPY,
+      rewardsPoolBalance,
       
       // APY breakdown by period
       apyBreakdown: apyBreakdown.map(apy => ({
@@ -61,6 +71,75 @@ router.get('/overview', async (req, res) => {
   } catch (error) {
     console.error('Error fetching staking overview:', error);
     res.status(500).json({ error: 'Failed to fetch staking overview' });
+  }
+});
+
+/**
+ * GET /api/staking/leaderboard
+ * Returns staking leaderboard with top stakers
+ */
+router.get('/leaderboard', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 100;
+    const offset = parseInt(req.query.offset) || 0;
+    
+    if (limit < 1 || limit > 1000) {
+      return res.status(400).json({ 
+        error: 'Invalid limit parameter',
+        message: 'Limit must be between 1 and 1000'
+      });
+    }
+
+    // Get active stakers from the staking service (uses subgraph if available)
+    const activeStakers = await stakingService.getActiveStakers();
+    
+    // Sort by current stake amount (descending) and paginate
+    const sortedStakers = activeStakers
+      .sort((a, b) => b.currentStake - a.currentStake)
+      .slice(offset, offset + limit);
+
+    // Format for frontend consumption
+    const leaderboard = sortedStakers.map((staker, index) => ({
+      rank: offset + index + 1,
+      address: staker.address,
+      currentStake: staker.currentStake,
+      totalStaked: staker.totalStaked || staker.currentStake,
+      totalUnstaked: staker.totalUnstaked || 0,
+      totalRewardsClaimed: staker.totalRewardsClaimed || staker.totalEthEarned || 0,
+      pendingRewards: staker.pendingEth || 0,
+      firstStakeTime: staker.firstStakeTime,
+      lastStakeTime: staker.lastStakeTime,
+      lastUnstakeTime: staker.lastUnstakeTime || null,
+      // Calculate staking percentage of total
+      percentageOfTotal: activeStakers.length > 0 ? 
+        (staker.currentStake / activeStakers.reduce((sum, s) => sum + s.currentStake, 0)) * 100 : 0
+    }));
+
+    // Get summary statistics
+    const totalCurrentStaked = activeStakers.reduce((sum, staker) => sum + staker.currentStake, 0);
+    const averageStake = activeStakers.length > 0 ? totalCurrentStaked / activeStakers.length : 0;
+
+    res.json({
+      leaderboard,
+      pagination: {
+        limit,
+        offset,
+        total: activeStakers.length,
+        hasMore: offset + limit < activeStakers.length
+      },
+      summary: {
+        totalActiveStakers: activeStakers.length,
+        totalCurrentStaked,
+        averageStake,
+        largestStake: activeStakers.length > 0 ? Math.max(...activeStakers.map(s => s.currentStake)) : 0,
+        smallestStake: activeStakers.length > 0 ? Math.min(...activeStakers.map(s => s.currentStake)) : 0
+      },
+      lastUpdated: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Error fetching staking leaderboard:', error);
+    res.status(500).json({ error: 'Failed to fetch staking leaderboard' });
   }
 });
 

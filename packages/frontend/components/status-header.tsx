@@ -174,7 +174,7 @@ export function StatusHeader() {
                 status="connected"
                 label="Staked"
                 value={formatBalance(stakedBalance)}
-                href="/staking"
+                href="/staking/leaderboard"
               />
             )}
             <div className="flex justify-center pt-2">
@@ -261,7 +261,7 @@ export function StatusHeader() {
               status="connected"
               label="Staked"
               value={formatBalance(stakedBalance)}
-              href="/staking"
+              href="/staking/leaderboard"
             />
           )}
           {pendingRewards > 0 && (
