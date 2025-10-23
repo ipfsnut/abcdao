@@ -1,7 +1,6 @@
 'use client';
 
 import { ContractAddressesFooter } from '@/components/contract-addresses-footer';
-import { FarcasterAuth } from '@/components/farcaster-auth';
 import { GitHubLinkPanel } from '@/components/github-link';
 import { SwapWidget } from '@/components/swap-widget';
 import { ClaimRewardsPanel } from '@/components/claim-rewards';
@@ -207,9 +206,6 @@ export default function Home() {
                   >
                     Docs
                   </a>
-                  <div className="hidden sm:block">
-                    <FarcasterAuth />
-                  </div>
                   {/* Only show ConnectButton for web users, miniapp uses auto-connection */}
                   {!isInMiniApp && <ConnectButton />}
                 </div>
