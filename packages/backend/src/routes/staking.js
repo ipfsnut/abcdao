@@ -279,44 +279,6 @@ router.get('/apy/historical', async (req, res) => {
   }
 });
 
-/**
- * GET /api/staking/leaderboard?limit=20
- * Returns top stakers leaderboard
- */
-router.get('/leaderboard', async (req, res) => {
-  try {
-    const limit = parseInt(req.query.limit) || 20;
-    
-    if (limit < 1 || limit > 100) {
-      return res.status(400).json({ 
-        error: 'Invalid limit parameter',
-        message: 'Limit must be between 1 and 100'
-      });
-    }
-
-    const topStakers = await stakingDataManager.getTopStakers(limit);
-    
-    const formattedStakers = topStakers.map((staker, index) => ({
-      rank: index + 1,
-      walletAddress: staker.wallet_address,
-      stakedAmount: parseFloat(staker.staked_amount),
-      rewardsEarned: parseFloat(staker.rewards_earned),
-      pendingRewards: parseFloat(staker.pending_rewards),
-      lastStakeTime: staker.last_stake_time,
-      lastUpdated: staker.updated_at
-    }));
-
-    res.json({
-      leaderboard: formattedStakers,
-      count: formattedStakers.length,
-      limit
-    });
-
-  } catch (error) {
-    console.error('Error fetching staking leaderboard:', error);
-    res.status(500).json({ error: 'Failed to fetch staking leaderboard' });
-  }
-});
 
 /**
  * GET /api/staking/stats

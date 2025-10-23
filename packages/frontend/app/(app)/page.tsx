@@ -288,10 +288,13 @@ export default function Home() {
               <p className="text-green-600 font-mono text-xs mb-1">Your Balance</p>
               <p className="text-green-400 font-mono font-bold">{parseFloat(stakingData.tokenBalance).toFixed(0)} $ABC</p>
             </div>
-            <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-left">
-              <p className="text-green-600 font-mono text-xs mb-1">Staked</p>
-              <p className="text-green-400 font-mono font-bold">{parseFloat(stakingData.stakedAmount).toFixed(0)} $ABC</p>
-            </div>
+            <Link
+              href="/staking/leaderboard"
+              className="bg-green-950/10 border border-green-900/30 rounded p-3 text-left hover:bg-green-950/20 hover:border-green-800/50 transition-all duration-300 cursor-pointer group"
+            >
+              <p className="text-green-600 font-mono text-xs mb-1 group-hover:text-green-500">Staked 🏆</p>
+              <p className="text-green-400 font-mono font-bold group-hover:text-green-300">{parseFloat(stakingData.stakedAmount).toFixed(0)} $ABC</p>
+            </Link>
             <div className="bg-green-950/10 border border-green-900/30 rounded p-3 text-left">
               <p className="text-green-600 font-mono text-xs mb-1">Pending ETH</p>
               <p className="text-green-400 font-mono font-bold">{parseFloat(stakingData.pendingRewards).toFixed(4)} ETH</p>
