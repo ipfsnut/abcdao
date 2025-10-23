@@ -1,100 +1,178 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract ABCMembership is ReentrancyGuard, Ownable, Pausable {
-    
-    // Membership tracking
-    mapping(address => bool) public isMember;
-    uint256 public totalMembers;
-    
-    // Staking contract to receive ETH
-    address payable public stakingContract;
+/**
+ * @title ABC DAO Membership NFT - October 2025
+ * @dev ERC721 NFT representing ABC DAO membership for October 2025
+ * Simple mint-for-ETH contract with funds sent directly to treasury
+ */
+contract ABCMembership is ERC721, ERC721Enumerable, Ownable, Pausable, ReentrancyGuard {
     
     // Constants
-    uint256 public constant MEMBERSHIP_FEE = 0.002 ether; // ~$5 at current ETH prices
+    uint256 public constant MINT_PRICE = 0.002 ether;
+    address public constant TREASURY = 0xBE6525b767cA8D38d169C93C8120c0C0957388B8;
+    
+    // State variables
+    string private _baseTokenURI;
+    uint256 private _tokenIdCounter;
     
     // Events
-    event MembershipPurchased(address indexed member);
-    event StakingContractUpdated(address indexed newContract);
-    event FundsForwarded(uint256 amount);
+    event MembershipMinted(address indexed member, uint256 indexed tokenId);
+    event BaseURIUpdated(string newBaseURI);
     
-    constructor(address payable _stakingContract) Ownable(msg.sender) {
-        stakingContract = _stakingContract;
+    /**
+     * @dev Constructor sets name, symbol, and metadata URI
+     * All tokens point to the same October 2025 membership metadata
+     */
+    constructor() 
+        ERC721("ABC DAO Membership October 2025", "ABCMEM") 
+        Ownable(msg.sender) 
+    {
+        _baseTokenURI = "https://crimson-bright-wallaby-267.mypinata.cloud/ipfs/bafkreigh6utl4k5vecx5zlmst63im3mdzowcihkawmdu7ghwfestje74q4";
     }
     
-    // Purchase lifetime membership with ETH
-    function purchaseMembership() external payable nonReentrant whenNotPaused {
-        require(msg.value >= MEMBERSHIP_FEE, "Insufficient payment");
-        require(!isMember[msg.sender], "Already a member");
+    /**
+     * @dev Mint membership NFT for 0.002 ETH
+     * Sends payment directly to treasury wallet
+     */
+    function mint() external payable nonReentrant whenNotPaused {
+        require(msg.value == MINT_PRICE, "Incorrect payment amount");
         
-        // Grant membership
-        isMember[msg.sender] = true;
-        totalMembers++;
+        uint256 tokenId = _tokenIdCounter;
+        _tokenIdCounter++;
         
-        // Forward ETH to staking contract for distribution to stakers
-        stakingContract.transfer(msg.value);
+        // Mint NFT to sender
+        _mint(msg.sender, tokenId);
         
-        emit MembershipPurchased(msg.sender);
-        emit FundsForwarded(msg.value);
+        // Send payment to treasury
+        payable(TREASURY).transfer(msg.value);
+        
+        emit MembershipMinted(msg.sender, tokenId);
     }
     
-    // Grant free membership (owner only)
-    function grantMembership(address _member) external onlyOwner {
-        require(!isMember[_member], "Already a member");
-        
-        isMember[_member] = true;
-        totalMembers++;
-        
-        emit MembershipPurchased(_member);
+    /**
+     * @dev Returns the base URI for token metadata
+     */
+    function _baseURI() internal view override returns (string memory) {
+        return _baseTokenURI;
     }
     
-    // Batch grant memberships
-    function grantMembershipBatch(address[] calldata _members) external onlyOwner {
-        for (uint256 i = 0; i < _members.length; i++) {
-            if (!isMember[_members[i]]) {
-                isMember[_members[i]] = true;
-                totalMembers++;
-                emit MembershipPurchased(_members[i]);
-            }
-        }
+    /**
+     * @dev Override required by Solidity for multiple inheritance
+     */
+    function _update(address to, uint256 tokenId, address auth)
+        internal
+        override(ERC721, ERC721Enumerable)
+        returns (address)
+    {
+        return super._update(to, tokenId, auth);
+    }
+
+    /**
+     * @dev Override required by Solidity for multiple inheritance  
+     */
+    function _increaseBalance(address account, uint128 value)
+        internal
+        override(ERC721, ERC721Enumerable)
+    {
+        super._increaseBalance(account, value);
+    }
+
+    /**
+     * @dev Override required by Solidity for multiple inheritance
+     */
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721, ERC721Enumerable)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
     }
     
-    // Update staking contract address
-    function updateStakingContract(address payable _newStakingContract) external onlyOwner {
-        require(_newStakingContract != address(0), "Invalid address");
-        stakingContract = _newStakingContract;
-        emit StakingContractUpdated(_newStakingContract);
+    /**
+     * @dev Check if an address owns a membership NFT
+     * @param member Address to check
+     * @return true if address owns at least one membership NFT
+     */
+    function isMember(address member) external view returns (bool) {
+        return balanceOf(member) > 0;
     }
     
-    // Emergency functions
+    /**
+     * @dev Get the token ID for a member's first NFT
+     * @param member Address to check
+     * @return tokenId of first NFT owned (0 if none owned)
+     */
+    function getMemberTokenId(address member) external view returns (uint256) {
+        require(balanceOf(member) > 0, "Not a member");
+        return tokenOfOwnerByIndex(member, 0);
+    }
+    
+    // === ADMIN FUNCTIONS ===
+    
+    /**
+     * @dev Update base URI for token metadata (owner only)
+     * @param newBaseURI New base URI
+     */
+    function setBaseURI(string calldata newBaseURI) external onlyOwner {
+        _baseTokenURI = newBaseURI;
+        emit BaseURIUpdated(newBaseURI);
+    }
+    
+    /**
+     * @dev Pause minting (owner only)
+     * Used when transitioning to next month's membership NFT
+     */
     function pause() external onlyOwner {
         _pause();
     }
     
+    /**
+     * @dev Unpause minting (owner only)
+     */
     function unpause() external onlyOwner {
         _unpause();
     }
     
-    // Emergency withdrawal (only if staking contract fails)
+    /**
+     * @dev Emergency withdrawal of any stuck ETH (owner only)
+     * Should not be needed since payments go directly to treasury
+     */
     function emergencyWithdraw() external onlyOwner {
-        require(paused(), "Must be paused for emergency withdrawal");
+        require(address(this).balance > 0, "No funds to withdraw");
         payable(owner()).transfer(address(this).balance);
     }
     
-    // View functions
-    function getMembershipStatus(address _address) external view returns (bool) {
-        return isMember[_address];
+    /**
+     * @dev Grant free membership NFT (owner only)
+     * @param to Address to receive NFT
+     */
+    function grantMembership(address to) external onlyOwner {
+        uint256 tokenId = _tokenIdCounter;
+        _tokenIdCounter++;
+        
+        _mint(to, tokenId);
+        emit MembershipMinted(to, tokenId);
     }
     
-    function getTotalMembers() external view returns (uint256) {
-        return totalMembers;
-    }
-    
-    function getMembershipFee() external pure returns (uint256) {
-        return MEMBERSHIP_FEE;
+    /**
+     * @dev Batch grant free memberships (owner only)
+     * @param recipients Array of addresses to receive NFTs
+     */
+    function grantMembershipBatch(address[] calldata recipients) external onlyOwner {
+        for (uint256 i = 0; i < recipients.length; i++) {
+            uint256 tokenId = _tokenIdCounter;
+            _tokenIdCounter++;
+            
+            _mint(recipients[i], tokenId);
+            emit MembershipMinted(recipients[i], tokenId);
+        }
     }
 }

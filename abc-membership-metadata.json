@@ -1,0 +1,29 @@
+{
+  "name": "ABC DAO Membership - October 2025",
+  "description": "Always Be Coding - Exclusive developer community membership NFT for October 2025. Ship code, earn $ABC rewards, and build the future with ABC DAO.",
+  "image": "https://arweave.net/XGJ9ps9OtQDSRi7ff36KVlvb4W6U7qJVjVPETwzGLhs",
+  "external_url": "https://abc.epicdylan.com",
+  "attributes": [
+    {
+      "trait_type": "Membership",
+      "value": "Green Hat Member"
+    },
+    {
+      "trait_type": "Month",
+      "value": "October 2025"
+    },
+    {
+      "trait_type": "Collection",
+      "value": "ABC DAO Genesis"
+    }
+  ],
+  "properties": {
+    "category": "Membership",
+    "creators": [
+      {
+        "address": "0xBE6525b767cA8D38d169C93C8120c0C0957388B8",
+        "share": 100
+      }
+    ]
+  }
+}

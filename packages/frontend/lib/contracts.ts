@@ -99,6 +99,55 @@ export const CONTRACTS = {
     ] as const
   },
   
+  // ABC Membership NFT contract (October 2025)
+  ABC_MEMBERSHIP: {
+    address: '0x9B790111758CB7C666e742814b86CF8185792f6E' as `0x${string}`,
+    abi: [
+      {
+        "inputs": [],
+        "name": "mint",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "MINT_PRICE",
+        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [{"internalType": "address", "name": "member", "type": "address"}],
+        "name": "isMember",
+        "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [{"internalType": "address", "name": "owner", "type": "address"}],
+        "name": "balanceOf",
+        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "totalSupply",
+        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+        "name": "tokenURI",
+        "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ] as const
+  },
+
   // ABC Rewards contract for claimable commit rewards (V2 - FIXED)
   ABC_REWARDS: {
     address: '0x03CD0F799B4C04DbC22bFAAd35A3F36751F3446c' as `0x${string}`,

@@ -6,7 +6,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { useMembership } from '@/hooks/useMembership';
-import { MembershipPaymentPanel } from '@/components/membership-payment';
+import { MembershipNFTPayment } from '@/components/membership-nft-payment';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
@@ -261,7 +261,7 @@ function OnboardingContent() {
               </div>
 
               {!membership.isMember && (
-                <MembershipPaymentPanel />
+                <MembershipNFTPayment />
               )}
             </div>
           )}

@@ -6,7 +6,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { useMembership } from '@/hooks/useMembership';
 import { FarcasterAuth } from '@/components/farcaster-auth';
-import { MembershipPaymentPanel } from '@/components/membership-payment';
+import { MembershipNFTPayment } from '@/components/membership-nft-payment';
 import { config } from '@/lib/config';
 import { BackNavigation } from '@/components/back-navigation';
 
@@ -617,7 +617,7 @@ export function ImprovedOnboarding() {
                 </div>
               )}
 
-              <MembershipPaymentPanel onPaymentComplete={handlePaymentComplete} />
+              <MembershipNFTPayment onPaymentComplete={handlePaymentComplete} />
             </div>
           )}
 

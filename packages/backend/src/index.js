@@ -38,6 +38,7 @@ import systemHealthRoutes from './routes/system-health.js';
 import castRoutes from './routes/cast.js';
 import treasuryTiersRoutes from './routes/treasury-tiers.js';
 import botFollowingRoutes from './routes/bot-following.js';
+import nftMembershipRoutes from './routes/nft-membership.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
@@ -45,6 +46,7 @@ import { setupQueues } from './services/queue.js';
 import { RewardDebtCron } from './jobs/reward-debt-cron.js';
 import { NightlyLeaderboardJob } from './jobs/nightly-leaderboard-cron.js';
 import { PaymentMonitor } from './services/payment-monitor.js';
+import { NFTMembershipMonitor } from './services/nft-membership-monitor.js';
 import { PaymentRecoveryCron } from './jobs/payment-recovery-cron.js';
 import { EthDistributionCron } from './jobs/eth-distribution-cron.js';
 import { ABCRewardsCron } from './jobs/abc-rewards-cron.js';
@@ -234,6 +236,7 @@ app.use('/api/system-health', systemHealthRoutes);
 app.use('/api/cast', castRoutes);
 app.use('/api/treasury-tiers', treasuryTiersRoutes);
 app.use('/api/bot-following', botFollowingRoutes);
+app.use('/api/nft-membership', nftMembershipRoutes);
 
 // Custom cast endpoint (requires admin key for security)
 app.post('/api/cast/custom', async (req, res) => {
@@ -434,6 +437,18 @@ async function initializeBackgroundServices(server) {
       }
     } else {
       console.warn('⚠️  Bot wallet address not configured, skipping payment monitor');
+    }
+
+    // Start NFT membership monitor
+    try {
+      const nftMembershipMonitor = new NFTMembershipMonitor();
+      await nftMembershipMonitor.startMonitoring();
+      console.log('✅ NFT membership monitor started');
+      
+      // Store reference for graceful shutdown
+      global.nftMembershipMonitor = nftMembershipMonitor;
+    } catch (nftMonitorError) {
+      console.warn('⚠️  NFT membership monitor setup failed:', nftMonitorError.message);
     }
 
     // Start payment recovery cron (always run)
@@ -647,6 +662,11 @@ process.on('SIGINT', () => {
   // Stop payment monitor
   if (global.paymentMonitor) {
     global.paymentMonitor.stopMonitoring();
+  }
+  
+  // Stop NFT membership monitor
+  if (global.nftMembershipMonitor) {
+    global.nftMembershipMonitor.stopMonitoring();
   }
   
   // Stop payment recovery cron
