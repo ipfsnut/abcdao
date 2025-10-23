@@ -32,6 +32,13 @@ interface LeaderboardData {
     averageStake: number;
     largestStake: number;
     smallestStake: number;
+    dataNote?: string;
+  };
+  unbonding?: {
+    totalUnbonding: number;
+    totalWithdrawable: number;
+    totalPendingSell: number;
+    stakersWithUnbonding: number;
   };
   lastUpdated: string;
 }
@@ -142,6 +149,9 @@ export default function StakingLeaderboard() {
           <div className="bg-gray-900 border border-green-500 rounded p-4">
             <div className="text-green-300 text-sm">Total Staked</div>
             <div className="text-xl font-bold">{formatABC(data.summary.totalCurrentStaked)} ABC</div>
+            {data.summary.dataNote && (
+              <div className="text-yellow-400 text-xs mt-1">ⓘ {data.summary.dataNote}</div>
+            )}
           </div>
           <div className="bg-gray-900 border border-green-500 rounded p-4">
             <div className="text-green-300 text-sm">Average Stake</div>
@@ -152,6 +162,43 @@ export default function StakingLeaderboard() {
             <div className="text-xl font-bold">{data.summary.totalActiveStakers}</div>
           </div>
         </div>
+
+        {/* Unbonding Statistics */}
+        {data.unbonding && (data.unbonding.totalPendingSell > 0 || data.unbonding.stakersWithUnbonding > 0) && (
+          <div className="mb-8 bg-yellow-950/20 border border-yellow-500/50 rounded p-4">
+            <h3 className="text-yellow-300 text-lg font-bold mb-4">
+              📊 Market Impact - Unbonding Queue
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-yellow-900/20 border border-yellow-600/30 rounded p-3">
+                <div className="text-yellow-200 text-sm">In Unbonding (7-day cooldown)</div>
+                <div className="text-lg font-bold text-yellow-300">
+                  {formatABC(data.unbonding.totalUnbonding)} ABC
+                </div>
+                <div className="text-yellow-400 text-xs">Locked, cannot sell yet</div>
+              </div>
+              <div className="bg-red-900/20 border border-red-600/30 rounded p-3">
+                <div className="text-red-200 text-sm">Ready to Sell</div>
+                <div className="text-lg font-bold text-red-300">
+                  {formatABC(data.unbonding.totalWithdrawable)} ABC
+                </div>
+                <div className="text-red-400 text-xs">Can hit market anytime</div>
+              </div>
+              <div className="bg-orange-900/20 border border-orange-600/30 rounded p-3">
+                <div className="text-orange-200 text-sm">Total Potential Sell Pressure</div>
+                <div className="text-lg font-bold text-orange-300">
+                  {formatABC(data.unbonding.totalPendingSell)} ABC
+                </div>
+                <div className="text-orange-400 text-xs">
+                  {data.unbonding.stakersWithUnbonding} staker(s) unbonding
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 text-xs text-yellow-500">
+              💡 This data provides transparency about potential selling pressure on $ABC token
+            </div>
+          </div>
+        )}
 
         {/* Leaderboard Table */}
         <div className="bg-gray-900 border border-green-500 rounded overflow-hidden">

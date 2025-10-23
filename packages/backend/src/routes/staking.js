@@ -97,6 +97,9 @@ router.get('/leaderboard', async (req, res) => {
     const stakingOverview = await stakingService.getStakingOverview();
     const authoritativeTotalStaked = stakingOverview.totalStaked;
     
+    // Get unbonding data for market transparency
+    const unbondingOverview = await stakingService.getUnbondingOverview();
+    
     // Sort by current stake amount (descending) and paginate
     const sortedStakers = activeStakers
       .sort((a, b) => b.currentStake - a.currentStake)
@@ -141,6 +144,12 @@ router.get('/leaderboard', async (req, res) => {
         dataNote: knownStakersSum !== authoritativeTotalStaked ? 
           `Showing ${activeStakers.length} known stakers (${knownStakersSum.toFixed(0)} ABC). Total includes all on-chain stakers.` : 
           null
+      },
+      unbonding: {
+        totalUnbonding: unbondingOverview.totalUnbonding,
+        totalWithdrawable: unbondingOverview.totalWithdrawable,
+        totalPendingSell: unbondingOverview.totalPendingSell,
+        stakersWithUnbonding: unbondingOverview.stakersWithUnbonding
       },
       lastUpdated: new Date().toISOString()
     });
@@ -332,6 +341,35 @@ router.get('/stats', async (req, res) => {
   } catch (error) {
     console.error('Error fetching staking stats:', error);
     res.status(500).json({ error: 'Failed to fetch staking statistics' });
+  }
+});
+
+/**
+ * GET /api/staking/unbonding
+ * Returns aggregate unbonding data across all known stakers
+ */
+router.get('/unbonding', async (req, res) => {
+  try {
+    const unbondingData = await stakingService.getUnbondingOverview();
+    
+    res.json({
+      unbonding: {
+        totalUnbonding: unbondingData.totalUnbonding,
+        totalWithdrawable: unbondingData.totalWithdrawable,
+        totalPendingSell: unbondingData.totalPendingSell,
+        stakersWithUnbonding: unbondingData.stakersWithUnbonding,
+        lastUpdated: unbondingData.lastUpdated
+      },
+      marketImpact: {
+        description: "Tokens that could potentially be sold",
+        inUnbondingPeriod: unbondingData.totalUnbonding,
+        readyToSell: unbondingData.totalWithdrawable
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching unbonding overview:', error);
+    res.status(500).json({ error: 'Failed to fetch unbonding overview' });
   }
 });
 

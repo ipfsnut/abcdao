@@ -35,6 +35,28 @@ export class StakingService {
           {"name": "pendingEth", "type": "uint256", "internalType": "uint256"}
         ],
         "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "getUnbondingInfo",
+        "inputs": [{"name": "_user", "type": "address", "internalType": "address"}],
+        "outputs": [{
+          "name": "", 
+          "type": "tuple[]", 
+          "internalType": "struct ABCStakingV2.UnbondingInfo[]",
+          "components": [
+            {"name": "amount", "type": "uint256", "internalType": "uint256"},
+            {"name": "releaseTime", "type": "uint256", "internalType": "uint256"}
+          ]
+        }],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "getWithdrawableAmount",
+        "inputs": [{"name": "_user", "type": "address", "internalType": "address"}],
+        "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+        "stateMutability": "view"
       }
     ];
     
@@ -316,6 +338,96 @@ export class StakingService {
       return health.isHealthy;
     } catch (error) {
       return false;
+    }
+  }
+
+  /**
+   * Get aggregate unbonding data across all known stakers
+   */
+  async getUnbondingOverview() {
+    try {
+      // Get all known stakers (including those who may have unstaked)
+      const pool = getPool();
+      const allKnownStakers = [];
+      
+      // Get stakers from database
+      try {
+        const stakersResult = await pool.query(`
+          SELECT DISTINCT wallet_address 
+          FROM staker_positions 
+          ORDER BY wallet_address
+        `);
+        allKnownStakers.push(...stakersResult.rows.map(row => row.wallet_address));
+      } catch (dbError) {
+        console.warn('Could not get stakers from database:', dbError.message);
+      }
+      
+      // Add hardcoded known addresses (in case database is incomplete)
+      const knownWallets = [
+        process.env.PROTOCOL_WALLET_ADDRESS || (process.env.BOT_WALLET_PRIVATE_KEY && new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY).address),
+        '0xBE6525b767cA8D38d169C93C8120c0C0957388B8', // Protocol wallet
+        '0x3427b4716B90C11F9971e43999a48A47Cf5B571E', // Another known address
+        // Discovered addresses from populate script
+        '0x18A85ad341b2D6A2bd67fbb104B4827B922a2A3c',
+        '0x7E02c2dA4910531B7D6E8b6bDaFb69d13C71dB1d', 
+        '0xB6754E53Ce15dF43269F59f21C9c235F1f673d67',
+        '0xbF7dBd0313C9C185292feaF528a977BB7954062C',
+        '0xC2771d8De241fCc2304d4c0e4574b1F41B388527',
+        '0xc634E11751d3c154bf23D2965ef76C41B832C156'
+      ].filter(Boolean);
+      
+      // Combine and deduplicate
+      const uniqueStakers = [...new Set([...allKnownStakers, ...knownWallets])];
+      
+      let totalUnbonding = 0;
+      let totalWithdrawable = 0;
+      let stakersWithUnbonding = 0;
+      
+      console.log(`Checking unbonding status for ${uniqueStakers.length} known stakers...`);
+      
+      for (const address of uniqueStakers) {
+        try {
+          // Get unbonding info
+          const unbondingInfo = await this.contract.getUnbondingInfo(address);
+          const withdrawableAmount = await this.contract.getWithdrawableAmount(address);
+          
+          if (unbondingInfo && Array.isArray(unbondingInfo) && unbondingInfo.length > 0) {
+            const stakerUnbonding = unbondingInfo.reduce((sum, info) => {
+              return sum + parseFloat(ethers.formatEther(info.amount));
+            }, 0);
+            
+            if (stakerUnbonding > 0) {
+              totalUnbonding += stakerUnbonding;
+              stakersWithUnbonding++;
+            }
+          }
+          
+          if (withdrawableAmount && withdrawableAmount > 0) {
+            totalWithdrawable += parseFloat(ethers.formatEther(withdrawableAmount));
+          }
+          
+        } catch (contractError) {
+          console.warn(`Error checking unbonding for ${address}:`, contractError.message);
+        }
+      }
+      
+      return {
+        totalUnbonding,
+        totalWithdrawable,
+        stakersWithUnbonding,
+        totalPendingSell: totalUnbonding + totalWithdrawable, // Total that could hit market
+        lastUpdated: new Date()
+      };
+      
+    } catch (error) {
+      console.error('Error getting unbonding overview:', error);
+      return {
+        totalUnbonding: 0,
+        totalWithdrawable: 0,
+        stakersWithUnbonding: 0,
+        totalPendingSell: 0,
+        lastUpdated: new Date()
+      };
     }
   }
 
