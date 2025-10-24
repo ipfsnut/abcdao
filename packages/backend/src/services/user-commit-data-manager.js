@@ -532,16 +532,16 @@ export class UserCommitDataManager {
     let query, params;
     
     if (identifier.startsWith('0x')) {
-      // Wallet address
-      query = 'SELECT * FROM users_master WHERE wallet_address = $1';
+      // Wallet address - look in original users table
+      query = 'SELECT * FROM users WHERE wallet_address = $1';
       params = [identifier];
     } else if (!isNaN(identifier)) {
-      // Farcaster FID
-      query = 'SELECT * FROM users_master WHERE farcaster_fid = $1';
+      // Farcaster FID - look in original users table
+      query = 'SELECT * FROM users WHERE farcaster_fid = $1';
       params = [parseInt(identifier)];
     } else {
-      // String identifier - check if it's a GitHub username OR Farcaster username
-      query = 'SELECT * FROM users_master WHERE github_username = $1 OR farcaster_username = $1';
+      // String identifier - check if it's a GitHub username OR Farcaster username in original users table
+      query = 'SELECT * FROM users WHERE github_username = $1 OR farcaster_username = $1';
       params = [identifier];
     }
     
