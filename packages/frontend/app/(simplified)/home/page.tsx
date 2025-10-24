@@ -16,6 +16,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useWalletFirstAuth } from '@/hooks/useWalletFirstAuth';
+import { useUsersCommitsStatsSystematic } from '@/hooks/useUsersCommitsSystematic';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
@@ -39,7 +40,21 @@ export default function ConsolidatedDashboard() {
     addFarcasterIntegration 
   } = useWalletFirstAuth();
 
+  // Get real statistics for hero section
+  const systemStats = useUsersCommitsStatsSystematic();
+
   const [activeSection, setActiveSection] = useState<string>('overview');
+
+  // Format large numbers for display
+  const formatLargeNumber = (num: number) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    }
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'K';
+    }
+    return num.toString();
+  };
 
   if (!isConnected) {
     return (
@@ -60,15 +75,21 @@ export default function ConsolidatedDashboard() {
           {/* Hero Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6">
-              <div className="text-3xl font-bold text-green-400 mb-2">1,234</div>
+              <div className="text-3xl font-bold text-green-400 mb-2">
+                {systemStats.isLoading ? '...' : systemStats.totalUsers.toLocaleString()}
+              </div>
               <div className="text-sm text-green-600 font-mono">Active Developers</div>
             </div>
             <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6">
-              <div className="text-3xl font-bold text-green-400 mb-2">50M+</div>
+              <div className="text-3xl font-bold text-green-400 mb-2">
+                {systemStats.isLoading ? '...' : formatLargeNumber(systemStats.totalRewardsDistributed)}
+              </div>
               <div className="text-sm text-green-600 font-mono">$ABC Distributed</div>
             </div>
             <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6">
-              <div className="text-3xl font-bold text-green-400 mb-2">15k+</div>
+              <div className="text-3xl font-bold text-green-400 mb-2">
+                {systemStats.isLoading ? '...' : formatLargeNumber(systemStats.totalCommits)}
+              </div>
               <div className="text-sm text-green-600 font-mono">Commits Rewarded</div>
             </div>
           </div>
