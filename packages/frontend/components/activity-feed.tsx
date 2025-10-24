@@ -38,81 +38,19 @@ export function ActivityFeed({ walletAddress }: ActivityFeedProps) {
   const loadActivityFeed = async () => {
     setIsLoading(true);
     
-    // Simulate API call - replace with actual API
-    setTimeout(() => {
-      const mockActivities: ActivityItem[] = [
-        {
-          id: '1',
-          type: 'commit',
-          title: 'Commit Rewarded',
-          description: 'Added new feature to abc-dao frontend',
-          timestamp: '2 hours ago',
-          amount: '75,000 $ABC',
-          repository: 'abc-dao/frontend',
-          hash: 'a1b2c3d',
-          icon: '💰',
-          link: '/developers'
-        },
-        {
-          id: '2',
-          type: 'stake',
-          title: 'Tokens Staked',
-          description: 'Staked ABC tokens for ETH rewards',
-          timestamp: '1 day ago',
-          amount: '2.5M $ABC',
-          icon: '🏦',
-          link: '/staking'
-        },
-        {
-          id: '3',
-          type: 'reward',
-          title: 'ETH Rewards Claimed',
-          description: 'Claimed staking rewards',
-          timestamp: '2 days ago',
-          amount: '0.0156 ETH',
-          icon: '🎁',
-          link: '/staking'
-        },
-        {
-          id: '4',
-          type: 'commit',
-          title: 'Bug Fix Rewarded',
-          description: 'Fixed critical authentication bug',
-          timestamp: '3 days ago',
-          amount: '150,000 $ABC',
-          repository: 'abc-dao/backend',
-          hash: 'x9y8z7w',
-          icon: '🐛',
-          link: '/developers'
-        },
-        {
-          id: '5',
-          type: 'achievement',
-          title: 'Achievement Unlocked',
-          description: 'Earned "First Commit" badge',
-          timestamp: '1 week ago',
-          icon: '🏆',
-          link: '/profile'
-        },
-        {
-          id: '6',
-          type: 'social',
-          title: 'Discord Connected',
-          description: 'Joined the ABC DAO community server',
-          timestamp: '1 week ago',
-          icon: '💬',
-          link: '/community'
-        }
-      ];
+    try {
+      // TODO: Replace with actual API call to get user activity
+      // const response = await fetch(`${config.backendUrl}/api/users-commits/activity/${walletAddress}`);
+      // const data = await response.json();
       
-      // Filter activities if needed
-      const filtered = filter === 'all' 
-        ? mockActivities 
-        : mockActivities.filter(activity => activity.type === filter);
-      
-      setActivities(filtered);
+      // For now, show empty state encouraging users to start activity
+      setActivities([]);
       setIsLoading(false);
-    }, 500);
+    } catch (error) {
+      console.error('Failed to load activity feed:', error);
+      setActivities([]);
+      setIsLoading(false);
+    }
   };
 
   const getActivityTypeColor = (type: string) => {

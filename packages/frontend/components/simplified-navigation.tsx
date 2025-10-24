@@ -89,7 +89,7 @@ export function SimplifiedNavigation({ user, isAuthenticated }: SimplifiedNaviga
 
   const userMenuItems = [
     {
-      href: `/profile/${user?.wallet_address}`,
+      href: '/home',
       label: 'Profile',
       icon: '👤',
       show: isAuthenticated

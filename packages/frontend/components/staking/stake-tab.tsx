@@ -7,6 +7,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useStaking } from '@/hooks/useStaking';
 
 interface StakeTabProps {
   stakingData: {
@@ -24,6 +25,15 @@ interface StakeTabProps {
 export function StakeTab({ stakingData, user, onDataUpdate }: StakeTabProps) {
   const [stakeAmount, setStakeAmount] = useState('');
   const [unstakeAmount, setUnstakeAmount] = useState('');
+  
+  // Use real staking functions
+  const { 
+    handleStake: stakeTokens, 
+    handleUnstake: unstakeTokens, 
+    handleClaimRewards, 
+    isApproving,
+    needsApproval 
+  } = useStaking();
   const [isStaking, setIsStaking] = useState(false);
   const [isUnstaking, setIsUnstaking] = useState(false);
   const [activeOperation, setActiveOperation] = useState<'stake' | 'unstake'>('stake');
@@ -32,26 +42,28 @@ export function StakeTab({ stakingData, user, onDataUpdate }: StakeTabProps) {
     if (!stakeAmount || parseFloat(stakeAmount) <= 0) return;
     
     setIsStaking(true);
-    
-    // Simulate staking transaction
-    setTimeout(() => {
-      setIsStaking(false);
+    try {
+      await stakeTokens(stakeAmount);
       setStakeAmount('');
-      onDataUpdate();
-    }, 3000);
+    } catch (error) {
+      console.error('Staking failed:', error);
+    } finally {
+      setIsStaking(false);
+    }
   };
 
   const handleUnstake = async () => {
     if (!unstakeAmount || parseFloat(unstakeAmount) <= 0) return;
     
     setIsUnstaking(true);
-    
-    // Simulate unstaking transaction
-    setTimeout(() => {
-      setIsUnstaking(false);
+    try {
+      await unstakeTokens(unstakeAmount);
       setUnstakeAmount('');
-      onDataUpdate();
-    }, 3000);
+    } catch (error) {
+      console.error('Unstaking failed:', error);
+    } finally {
+      setIsUnstaking(false);
+    }
   };
 
   const calculateProjectedRewards = (amount: string) => {

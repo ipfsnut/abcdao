@@ -26,19 +26,29 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
   });
 
   useEffect(() => {
-    // Simulate loading metrics
-    setTimeout(() => {
+    loadMetrics();
+  }, [user]);
+
+  const loadMetrics = async () => {
+    try {
+      // TODO: Replace with actual API calls to get real metrics
+      // const response = await fetch(`${config.backendUrl}/api/users-commits/metrics/${user.wallet_address}`);
+      
+      // For now, use available user data and show 0 for unavailable metrics
       setMetrics({
         tokenBalance: ((user.total_earned_tokens || 0) / 1000000).toFixed(1),
         stakedAmount: ((user.total_staked_tokens || 0) / 1000000).toFixed(1),
-        pendingRewards: '0.0024',
+        pendingRewards: '0', // Will be updated when staking metrics API is available
         totalEarned: ((user.total_earned_tokens || 0) / 1000000).toFixed(1),
         commitCount: user.total_commits || 0,
-        stakingAPY: '12.5'
+        stakingAPY: '0' // Will be updated when staking APY API is available
       });
       setIsLoading(false);
-    }, 1000);
-  }, [user]);
+    } catch (error) {
+      console.error('Failed to load metrics:', error);
+      setIsLoading(false);
+    }
+  };
 
   if (isLoading) {
     return (

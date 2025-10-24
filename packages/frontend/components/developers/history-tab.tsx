@@ -7,6 +7,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { config } from '@/lib/config';
 
 interface CommitRecord {
   id: string;
@@ -42,132 +43,69 @@ export function HistoryTab({ user, totalCommits }: HistoryTabProps) {
   const loadCommitHistory = async () => {
     setIsLoading(true);
     
-    // Simulate API call - replace with actual commit history API
-    setTimeout(() => {
-      const mockCommits: CommitRecord[] = [
-        {
-          id: '1',
-          hash: 'a1b2c3d',
-          message: 'feat: implement user authentication system with JWT tokens',
-          repository: 'my-awesome-project',
-          timestamp: '2 hours ago',
-          reward: '85000',
-          tags: ['feature', 'authentication', 'security'],
-          branch: 'main',
-          linesAdded: 245,
-          linesRemoved: 12,
-          filesChanged: 8,
-          status: 'rewarded'
-        },
-        {
-          id: '2',
-          hash: 'b2c3d4e',
-          message: 'fix: resolve memory leak in data processing pipeline',
-          repository: 'python-data-analyzer',
-          timestamp: '1 day ago',
-          reward: '72000',
-          tags: ['bugfix', 'performance', 'memory'],
-          branch: 'main',
-          linesAdded: 67,
-          linesRemoved: 23,
-          filesChanged: 3,
-          status: 'rewarded'
-        },
-        {
-          id: '3',
-          hash: 'c3d4e5f',
-          message: 'refactor: optimize database queries and improve response times',
-          repository: 'blockchain-explorer',
-          timestamp: '2 days ago',
-          reward: '68000',
-          tags: ['refactor', 'database', 'performance'],
-          branch: 'main',
-          linesAdded: 134,
-          linesRemoved: 89,
-          filesChanged: 5,
-          status: 'rewarded'
-        },
-        {
-          id: '4',
-          hash: 'd4e5f6g',
-          message: 'docs: update API documentation with new endpoints',
-          repository: 'blockchain-explorer',
-          timestamp: '3 days ago',
-          reward: '45000',
-          tags: ['documentation', 'api'],
-          branch: 'main',
-          linesAdded: 156,
-          linesRemoved: 34,
-          filesChanged: 12,
-          status: 'rewarded'
-        },
-        {
-          id: '5',
-          hash: 'e5f6g7h',
-          message: 'feat: add real-time websocket notifications',
-          repository: 'my-awesome-project',
-          timestamp: '4 days ago',
-          reward: '92000',
-          tags: ['feature', 'websocket', 'realtime'],
-          branch: 'feature/notifications',
-          linesAdded: 312,
-          linesRemoved: 45,
-          filesChanged: 15,
-          status: 'rewarded'
-        },
-        {
-          id: '6',
-          hash: 'f6g7h8i',
-          message: 'test: add comprehensive unit tests for payment module',
-          repository: 'my-awesome-project',
-          timestamp: '5 days ago',
-          reward: '0',
-          tags: ['testing', 'unit-tests'],
-          branch: 'main',
-          linesAdded: 189,
-          linesRemoved: 12,
-          filesChanged: 6,
-          status: 'pending'
-        },
-        {
-          id: '7',
-          hash: 'g7h8i9j',
-          message: 'chore: update dependencies to latest versions',
-          repository: 'python-data-analyzer',
-          timestamp: '1 week ago',
-          reward: '0',
-          tags: ['maintenance', 'dependencies'],
-          branch: 'main',
-          linesAdded: 45,
-          linesRemoved: 67,
-          filesChanged: 3,
-          status: 'rejected'
-        }
-      ];
-      
-      let filteredCommits = mockCommits;
-      
-      // Apply status filter
-      if (filter !== 'all') {
-        filteredCommits = filteredCommits.filter(commit => commit.status === filter);
+    try {
+      if (!user?.wallet_address) {
+        setCommits([]);
+        setIsLoading(false);
+        return;
       }
+
+      // Fetch real commit history from backend API
+      const response = await fetch(`${config.backendUrl}/api/users-commits/commits/user/${user.wallet_address}`);
       
-      // Apply sorting
-      filteredCommits.sort((a, b) => {
-        switch (sortBy) {
-          case 'reward':
-            return parseInt(b.reward) - parseInt(a.reward);
-          case 'impact':
-            return (b.linesAdded + b.linesRemoved) - (a.linesAdded + a.linesRemoved);
-          case 'date':
-          default:
-            return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+      if (response.ok) {
+        const data = await response.json();
+        let commitsData = data.commits || [];
+        
+        // Transform backend data to CommitRecord format
+        const transformedCommits: CommitRecord[] = commitsData.map((commit: any) => ({
+          id: commit.id?.toString() || commit.hash,
+          hash: commit.hash || commit.sha || 'unknown',
+          message: commit.message || commit.commit_message || 'No message',
+          repository: commit.repository || commit.repo_name || 'Unknown repo',
+          timestamp: commit.timestamp || commit.commit_date || commit.created_at || 'Unknown date',
+          reward: commit.reward?.toString() || commit.abc_earned?.toString() || '0',
+          tags: commit.tags || commit.categories || ['general'],
+          branch: commit.branch || 'main',
+          linesAdded: commit.lines_added || commit.additions || 0,
+          linesRemoved: commit.lines_removed || commit.deletions || 0,
+          filesChanged: commit.files_changed || commit.changed_files || 0,
+          status: commit.status || (parseInt(commit.reward || '0') > 0 ? 'rewarded' : 'pending')
+        }));
+        
+        // Apply status filter
+        let filteredCommits = transformedCommits;
+        if (filter !== 'all') {
+          filteredCommits = filteredCommits.filter(commit => commit.status === filter);
         }
-      });
-      
-      setCommits(filteredCommits);
+        
+        // Apply sorting
+        filteredCommits.sort((a, b) => {
+          switch (sortBy) {
+            case 'reward':
+              return parseInt(b.reward) - parseInt(a.reward);
+            case 'impact':
+              return (b.linesAdded + b.linesRemoved) - (a.linesAdded + a.linesRemoved);
+            case 'date':
+            default:
+              // Parse timestamps if they're strings, otherwise use as-is
+              const aTime = typeof a.timestamp === 'string' ? new Date(a.timestamp).getTime() : 0;
+              const bTime = typeof b.timestamp === 'string' ? new Date(b.timestamp).getTime() : 0;
+              return bTime - aTime;
+          }
+        });
+        
+        setCommits(filteredCommits);
+      } else {
+        console.error('Failed to fetch commit history:', response.status);
+        setCommits([]);
+      }
+    } catch (error) {
+      console.error('Error loading commit history:', error);
+      setCommits([]);
+    } finally {
       setIsLoading(false);
-    }, 800);
+    }
   };
 
   const getStatusColor = (status: string) => {

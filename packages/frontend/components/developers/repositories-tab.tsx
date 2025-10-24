@@ -7,6 +7,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { config } from '@/lib/config';
 
 interface Repository {
   id: string;
@@ -46,111 +47,88 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
   const loadRepositories = async () => {
     setIsLoading(true);
     
-    // Simulate API call - replace with actual repositories API
-    setTimeout(() => {
-      const mockRepositories: Repository[] = [
-        {
-          id: '1',
-          name: 'my-awesome-project',
-          fullName: 'username/my-awesome-project',
-          description: 'A React-based web application with TypeScript',
-          language: 'TypeScript',
-          stars: 45,
-          forks: 12,
-          isEnabled: true,
-          isPrivate: false,
-          lastCommit: '2 days ago',
-          commits: 127,
-          totalEarned: '2.4M',
-          score: 85,
-          url: 'https://github.com/username/my-awesome-project'
-        },
-        {
-          id: '2',
-          name: 'blockchain-explorer',
-          fullName: 'username/blockchain-explorer',
-          description: 'Ethereum blockchain explorer and analytics dashboard',
-          language: 'JavaScript',
-          stars: 67,
-          forks: 23,
-          isEnabled: true,
-          isPrivate: false,
-          lastCommit: '3 days ago',
-          commits: 201,
-          totalEarned: '3.8M',
-          score: 92,
-          url: 'https://github.com/username/blockchain-explorer'
-        },
-        {
-          id: '3',
-          name: 'python-data-analyzer',
-          fullName: 'username/python-data-analyzer',
-          description: 'Data analysis tool for processing large datasets',
-          language: 'Python',
-          stars: 23,
-          forks: 8,
-          isEnabled: true,
-          isPrivate: false,
-          lastCommit: '1 week ago',
-          commits: 89,
-          totalEarned: '1.6M',
-          score: 78,
-          url: 'https://github.com/username/python-data-analyzer'
-        },
-        {
-          id: '4',
-          name: 'mobile-app-flutter',
-          fullName: 'username/mobile-app-flutter',
-          description: 'Cross-platform mobile application built with Flutter',
-          language: 'Dart',
-          stars: 12,
-          forks: 3,
-          isEnabled: false,
-          isPrivate: false,
-          lastCommit: '2 weeks ago',
-          commits: 56,
-          totalEarned: '0',
-          score: 65,
-          url: 'https://github.com/username/mobile-app-flutter'
-        },
-        {
-          id: '5',
-          name: 'personal-website',
-          fullName: 'username/personal-website',
-          description: 'Personal portfolio website and blog',
-          language: 'HTML',
-          stars: 5,
-          forks: 1,
-          isEnabled: false,
-          isPrivate: false,
-          lastCommit: '1 month ago',
-          commits: 34,
-          totalEarned: '0',
-          score: 42,
-          url: 'https://github.com/username/personal-website'
-        }
-      ];
+    try {
+      if (!user?.wallet_address) {
+        setRepositories([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Fetch real repositories from backend API
+      const response = await fetch(`${config.backendUrl}/api/users-commits/repositories/${user.wallet_address}`);
       
-      setRepositories(mockRepositories);
+      if (response.ok) {
+        const data = await response.json();
+        const repositoriesData = data.repositories || [];
+        
+        // Transform backend data to Repository format
+        const transformedRepos: Repository[] = repositoriesData.map((repo: any) => ({
+          id: repo.id?.toString() || repo.full_name,
+          name: repo.name || repo.repo_name || 'Unknown Repository',
+          fullName: repo.full_name || repo.repository || repo.name || 'Unknown',
+          description: repo.description || 'No description available',
+          language: repo.language || repo.primary_language || 'Unknown',
+          stars: repo.stargazers_count || repo.stars || 0,
+          forks: repo.forks_count || repo.forks || 0,
+          isEnabled: repo.is_enabled || repo.enabled || false,
+          isPrivate: repo.private || repo.is_private || false,
+          lastCommit: repo.updated_at ? new Date(repo.updated_at).toLocaleDateString() : 'Unknown',
+          commits: repo.commits_count || repo.total_commits || 0,
+          totalEarned: repo.total_earned?.toString() || repo.abc_earned?.toString() || '0',
+          score: repo.score || repo.earning_score || 0,
+          url: repo.html_url || repo.url || `https://github.com/${repo.full_name || repo.name}`
+        }));
+        
+        setRepositories(transformedRepos);
+      } else {
+        console.error('Failed to fetch repositories:', response.status);
+        setRepositories([]);
+      }
+    } catch (error) {
+      console.error('Error loading repositories:', error);
+      setRepositories([]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleToggleRepository = async (repoId: string) => {
     setIsToggling(repoId);
     
-    // Simulate toggle operation
-    setTimeout(() => {
-      setRepositories(repos => 
-        repos.map(repo => 
-          repo.id === repoId 
-            ? { ...repo, isEnabled: !repo.isEnabled }
-            : repo
-        )
-      );
+    try {
+      const repo = repositories.find(r => r.id === repoId);
+      if (!repo) return;
+
+      // Toggle repository status via API
+      const endpoint = repo.isEnabled ? 'disable' : 'enable';
+      const response = await fetch(`${config.backendUrl}/api/users-commits/repositories/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          wallet_address: user?.wallet_address,
+          repository: repo.fullName || repo.name,
+          repository_id: repoId
+        })
+      });
+      
+      if (response.ok) {
+        // Update local state
+        setRepositories(repos => 
+          repos.map(r => 
+            r.id === repoId 
+              ? { ...r, isEnabled: !r.isEnabled }
+              : r
+          )
+        );
+        onRepoUpdate();
+      } else {
+        console.error('Failed to toggle repository:', response.status);
+      }
+    } catch (error) {
+      console.error('Error toggling repository:', error);
+    } finally {
       setIsToggling(null);
-      onRepoUpdate();
-    }, 1500);
+    }
   };
 
   const getFilteredRepositories = () => {

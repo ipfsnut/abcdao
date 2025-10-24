@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { config } from '@/lib/config';
 
 interface EarningTabProps {
   developerData: {
@@ -44,53 +45,80 @@ export function EarningTab({ developerData, user, onDataUpdate }: EarningTabProp
   const loadSuggestedRepos = async () => {
     setIsLoadingSuggestions(true);
     
-    // Simulate API call for repository suggestions
-    setTimeout(() => {
-      const mockSuggestions: SuggestedRepo[] = [
-        {
-          name: 'my-awesome-project',
-          description: 'A React-based web application with TypeScript',
-          language: 'TypeScript',
-          stars: 45,
-          commits: 127,
-          lastActivity: '2 days ago',
-          estimatedEarning: '95000'
-        },
-        {
-          name: 'python-data-analyzer',
-          description: 'Data analysis tool for processing large datasets',
-          language: 'Python',
-          stars: 23,
-          commits: 89,
-          lastActivity: '1 week ago',
-          estimatedEarning: '75000'
-        },
-        {
-          name: 'blockchain-explorer',
-          description: 'Ethereum blockchain explorer and analytics dashboard',
-          language: 'JavaScript',
-          stars: 67,
-          commits: 201,
-          lastActivity: '3 days ago',
-          estimatedEarning: '120000'
-        }
-      ];
+    try {
+      if (!user?.wallet_address) {
+        setSuggestedRepos([]);
+        setIsLoadingSuggestions(false);
+        return;
+      }
+
+      // Get user profile which includes GitHub info
+      const response = await fetch(`${config.backendUrl}/api/users-commits/profile/${user.wallet_address}`);
+      const data = await response.json();
       
-      setSuggestedRepos(mockSuggestions);
+      if (response.ok && data.user && data.user.github_connected) {
+        // Fetch repositories that could be enabled for earning
+        try {
+          const reposResponse = await fetch(`${config.backendUrl}/api/users-commits/repositories/suggestions/${user.wallet_address}`);
+          if (reposResponse.ok) {
+            const reposData = await reposResponse.json();
+            const transformedRepos: SuggestedRepo[] = (reposData.repositories || []).map((repo: any) => ({
+              name: repo.name || repo.full_name || 'Unknown Repository',
+              description: repo.description || 'No description available',
+              language: repo.language || 'Unknown',
+              stars: repo.stargazers_count || repo.stars || 0,
+              commits: repo.recent_commits_count || repo.commits || 0,
+              lastActivity: repo.updated_at ? new Date(repo.updated_at).toLocaleDateString() : 'Unknown',
+              estimatedEarning: repo.estimated_earning?.toString() || '50000'
+            }));
+            setSuggestedRepos(transformedRepos);
+          } else {
+            setSuggestedRepos([]);
+          }
+        } catch (repoError) {
+          console.error('Failed to fetch repository suggestions:', repoError);
+          setSuggestedRepos([]);
+        }
+      } else {
+        setSuggestedRepos([]);
+      }
+      
       setIsLoadingSuggestions(false);
-    }, 800);
+    } catch (error) {
+      console.error('Failed to load repository suggestions:', error);
+      setSuggestedRepos([]);
+      setIsLoadingSuggestions(false);
+    }
   };
 
   const handleEnableRepo = async (repoName: string) => {
     setIsEnablingRepo(repoName);
     
-    // Simulate enabling repository
-    setTimeout(() => {
+    try {
+      // Enable repository for rewards via API
+      const response = await fetch(`${config.backendUrl}/api/users-commits/repositories/enable`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          wallet_address: user?.wallet_address, 
+          repository: repoName,
+          github_username: user?.github_username
+        })
+      });
+      
+      if (response.ok) {
+        // Remove from suggestions list as it's now enabled
+        setSuggestedRepos(suggestedRepos.filter(repo => repo.name !== repoName));
+        onDataUpdate();
+      } else {
+        console.error('Failed to enable repository:', response.status);
+      }
+      
       setIsEnablingRepo(null);
-      onDataUpdate();
-      // Remove from suggestions after enabling
-      setSuggestedRepos(suggestedRepos.filter(repo => repo.name !== repoName));
-    }, 2000);
+    } catch (error) {
+      console.error('Failed to enable repository:', error);
+      setIsEnablingRepo(null);
+    }
   };
 
   const getLanguageColor = (language: string) => {
@@ -375,31 +403,19 @@ export function EarningTab({ developerData, user, onDataUpdate }: EarningTabProp
             href="#history"
             className="text-sm font-mono text-green-600 hover:text-green-400 transition-colors"
           >
-            View all →
+            View History →
           </Link>
         </div>
         
-        <div className="space-y-3">
-          {[
-            { commit: 'feat: add user authentication system', repo: 'my-awesome-project', reward: '85K', time: '2 hours ago' },
-            { commit: 'fix: resolve memory leak in data processor', repo: 'python-data-analyzer', reward: '72K', time: '1 day ago' },
-            { commit: 'docs: update API documentation', repo: 'blockchain-explorer', reward: '45K', time: '2 days ago' }
-          ].map((activity, i) => (
-            <div key={i} className="flex items-center gap-4 p-3 bg-green-950/10 border border-green-900/20 rounded-lg">
-              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-              <div className="flex-1">
-                <div className="text-sm font-mono text-green-400 mb-1">
-                  {activity.commit}
-                </div>
-                <div className="text-xs text-green-600">
-                  {activity.repo} • {activity.time}
-                </div>
-              </div>
-              <div className="text-sm font-mono font-bold text-green-300">
-                +{activity.reward} $ABC
-              </div>
-            </div>
-          ))}
+        <div className="text-center py-8">
+          <div className="text-4xl mb-3">📝</div>
+          <h5 className="text-lg font-bold text-green-400 mb-2">Start Earning</h5>
+          <p className="text-sm text-green-600 font-mono mb-4">
+            Enable repositories and start making commits to see your activity here
+          </p>
+          <div className="text-xs text-green-700">
+            Your commit history and rewards will appear once you start coding
+          </div>
         </div>
       </div>
     </div>

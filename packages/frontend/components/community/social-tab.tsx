@@ -7,6 +7,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTreasury } from '@/hooks/useTreasury';
 
 interface SocialUpdate {
   id: string;
@@ -31,6 +32,9 @@ export function SocialTab({ user, discordMembers }: SocialTabProps) {
   const [updates, setUpdates] = useState<SocialUpdate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'announcements' | 'achievements' | 'events'>('all');
+  
+  // Get real treasury data for ABC distributed
+  const { totalAbcDistributed } = useTreasury();
 
   useEffect(() => {
     loadSocialUpdates();
@@ -200,22 +204,28 @@ export function SocialTab({ user, discordMembers }: SocialTabProps) {
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-black/40 border border-green-900/30 rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-green-400">{discordMembers.toLocaleString()}</div>
-            <div className="text-sm text-green-600 font-mono">Discord Members</div>
+            <div className="text-2xl font-bold text-green-400">
+              {discordMembers > 0 ? discordMembers.toLocaleString() : 'TBD'}
+            </div>
+            <div className="text-sm text-green-600 font-mono">
+              Discord Members{discordMembers === 0 ? ' (Coming Soon)' : ''}
+            </div>
           </div>
           
           <div className="bg-black/40 border border-blue-900/30 rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-blue-400">847</div>
+            <div className="text-2xl font-bold text-blue-400">TBD</div>
             <div className="text-sm text-green-600 font-mono">Active Developers</div>
           </div>
           
           <div className="bg-black/40 border border-purple-900/30 rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-purple-400">10.2M</div>
+            <div className="text-2xl font-bold text-purple-400">
+              {totalAbcDistributed ? `${(parseFloat(totalAbcDistributed) / 1e6).toFixed(1)}M` : 'TBD'}
+            </div>
             <div className="text-sm text-green-600 font-mono">ABC Distributed</div>
           </div>
           
           <div className="bg-black/40 border border-yellow-900/30 rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-yellow-400">1,247</div>
+            <div className="text-2xl font-bold text-yellow-400">TBD</div>
             <div className="text-sm text-green-600 font-mono">Total Commits</div>
           </div>
         </div>
