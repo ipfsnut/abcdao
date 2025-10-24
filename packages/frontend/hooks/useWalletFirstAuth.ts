@@ -12,12 +12,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount } from 'wagmi';
 import { config } from '@/lib/config';
+import { createPublicClient, http, formatEther } from 'viem';
+import { base } from 'viem/chains';
+import { CONTRACTS } from '@/lib/contracts';
 
 interface UserProfile {
   wallet_address: string;
   display_name?: string;
   bio?: string;
   avatar_url?: string;
+  website_url?: string;
   
   // Membership
   is_member: boolean;
@@ -72,6 +76,31 @@ interface AuthState {
   error: string | null;
 }
 
+// Helper function to fetch user's staked amount
+const fetchUserStakedAmount = async (walletAddress: string): Promise<number> => {
+  try {
+    const client = createPublicClient({
+      chain: base,
+      transport: http()
+    });
+
+    const stakeInfo = await client.readContract({
+      address: CONTRACTS.ABC_STAKING.address,
+      abi: CONTRACTS.ABC_STAKING.abi,
+      functionName: 'getStakeInfo',
+      args: [walletAddress as `0x${string}`]
+    });
+
+    if (stakeInfo && Array.isArray(stakeInfo) && stakeInfo[0]) {
+      return parseFloat(formatEther(stakeInfo[0] as bigint));
+    }
+    return 0;
+  } catch (error) {
+    console.warn('Failed to fetch staking data:', error);
+    return 0;
+  }
+};
+
 export function useWalletFirstAuth() {
   const { address, isConnected } = useAccount();
   
@@ -119,6 +148,9 @@ export function useWalletFirstAuth() {
 
       if (profileResponse.ok && profileData.id) {
         // User exists, set up authentication state - transform API response to expected format
+        // Fetch staking data
+        const stakedAmount = await fetchUserStakedAmount(walletAddress);
+        
         const user = {
           wallet_address: profileData.identifiers.walletAddress,
           display_name: profileData.profile.displayName,
@@ -127,12 +159,20 @@ export function useWalletFirstAuth() {
           github_connected: !!profileData.identifiers.githubUsername,
           farcaster_connected: !!profileData.identifiers.farcasterFid,
           discord_connected: false, // Not in current API response
+          discord_username: undefined,
           is_member: profileData.membership.status === 'paid',
+          membership_tier: profileData.membership.status === 'paid' ? 'member' as const : 'free' as const,
+          can_earn_rewards: !!profileData.identifiers.githubUsername,
+          community_access: true,
+          social_features: !!profileData.identifiers.farcasterFid,
+          premium_features: profileData.membership.status === 'paid',
           total_commits: profileData.stats.totalCommits,
-          total_rewards_earned: profileData.stats.totalRewardsEarned,
-          membership_status: profileData.membership.status,
-          verified_at: profileData.meta.verifiedAt,
-          is_active: profileData.meta.isActive
+          total_earned_tokens: profileData.stats.totalRewardsEarned,
+          total_staked_tokens: stakedAmount,
+          last_active_at: new Date().toISOString(),
+          bio: profileData.profile.bio,
+          avatar_url: profileData.profile.avatarUrl,
+          website_url: profileData.profile.websiteUrl
         };
         const features = {
           token_operations: true,
@@ -181,11 +221,17 @@ export function useWalletFirstAuth() {
         const newUser = {
           wallet_address: walletAddress,
           display_name: displayName,
+          bio: undefined,
+          avatar_url: undefined,
+          website_url: undefined,
           is_member: false,
           membership_tier: 'free' as const,
           github_connected: false,
+          github_username: undefined,
           discord_connected: false,
+          discord_username: undefined,
           farcaster_connected: false,
+          farcaster_username: undefined,
           can_earn_rewards: false,
           community_access: true,
           social_features: false,
@@ -259,6 +305,9 @@ export function useWalletFirstAuth() {
 
       if (response.ok && data.id) {
         // Transform API response to expected format
+        // Fetch staking data
+        const stakedAmount = await fetchUserStakedAmount(authState.token);
+        
         const user = {
           wallet_address: data.identifiers.walletAddress,
           display_name: data.profile.displayName,
@@ -267,12 +316,20 @@ export function useWalletFirstAuth() {
           github_connected: !!data.identifiers.githubUsername,
           farcaster_connected: !!data.identifiers.farcasterFid,
           discord_connected: false, // Not in current API response
+          discord_username: undefined,
           is_member: data.membership.status === 'paid',
+          membership_tier: data.membership.status === 'paid' ? 'member' as const : 'free' as const,
+          can_earn_rewards: !!data.identifiers.githubUsername,
+          community_access: true,
+          social_features: !!data.identifiers.farcasterFid,
+          premium_features: data.membership.status === 'paid',
           total_commits: data.stats.totalCommits,
-          total_rewards_earned: data.stats.totalRewardsEarned,
-          membership_status: data.membership.status,
-          verified_at: data.meta.verifiedAt,
-          is_active: data.meta.isActive
+          total_earned_tokens: data.stats.totalRewardsEarned,
+          total_staked_tokens: stakedAmount,
+          last_active_at: new Date().toISOString(),
+          bio: data.profile.bio,
+          avatar_url: data.profile.avatarUrl,
+          website_url: data.profile.websiteUrl
         };
         const features = {
           token_operations: true,
