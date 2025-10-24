@@ -42,7 +42,8 @@ import notificationsRoutes from './routes/notifications.js';
 import supportRoutes from './routes/support.js';
 import botFollowingRoutes from './routes/bot-following.js';
 import nftMembershipRoutes from './routes/nft-membership.js';
-import walletFirstAuthRoutes from './routes/wallet-first-auth.js';
+// Temporarily disabled - causes startup crash due to database initialization order
+// import walletFirstAuthRoutes from './routes/wallet-first-auth.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
@@ -244,7 +245,8 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/bot-following', botFollowingRoutes);
 app.use('/api/nft-membership', nftMembershipRoutes);
-app.use('/api/auth', walletFirstAuthRoutes);
+// Temporarily disabled - causes startup crash due to database initialization order
+// app.use('/api/auth', walletFirstAuthRoutes);
 
 // Custom cast endpoint (requires admin key for security)
 app.post('/api/cast/custom', async (req, res) => {
