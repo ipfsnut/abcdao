@@ -27,9 +27,11 @@ interface RewardsTabProps {
   };
   user: any;
   onClaimSuccess: () => void;
+  onClaimRewards?: () => Promise<void>;
+  isClaimLoading?: boolean;
 }
 
-export function RewardsTab({ stakingData, user, onClaimSuccess }: RewardsTabProps) {
+export function RewardsTab({ stakingData, user, onClaimSuccess, onClaimRewards, isClaimLoading }: RewardsTabProps) {
   const [isClaiming, setIsClaiming] = useState(false);
   const [rewardsHistory, setRewardsHistory] = useState<RewardTransaction[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
@@ -87,24 +89,18 @@ export function RewardsTab({ stakingData, user, onClaimSuccess }: RewardsTabProp
   };
 
   const handleClaimRewards = async () => {
-    if (parseFloat(stakingData.pendingRewards) <= 0) return;
+    if (parseFloat(stakingData.pendingRewards) <= 0 || !onClaimRewards) return;
     
-    setIsClaiming(true);
-    
-    // Simulate claim transaction
-    setTimeout(() => {
-      setIsClaiming(false);
+    try {
+      setIsClaiming(true);
+      await onClaimRewards();
+      // onClaimSuccess and data refresh will be handled by the useStaking hook
       onClaimSuccess();
-      // Add new claim to history
-      const newClaim: RewardTransaction = {
-        id: Date.now().toString(),
-        type: 'claim',
-        amount: stakingData.pendingRewards,
-        timestamp: 'Just now',
-        txHash: '0x' + Math.random().toString(16).slice(2, 42)
-      };
-      setRewardsHistory([newClaim, ...rewardsHistory]);
-    }, 3000);
+    } catch (error) {
+      console.error('Failed to claim rewards:', error);
+    } finally {
+      setIsClaiming(false);
+    }
   };
 
   const formatTxHash = (hash: string) => {
@@ -119,8 +115,9 @@ export function RewardsTab({ stakingData, user, onClaimSuccess }: RewardsTabProp
     return type === 'claim' ? 'text-green-400' : 'text-blue-400';
   };
 
-  const canClaim = parseFloat(stakingData.pendingRewards) > 0;
+  const canClaim = parseFloat(stakingData.pendingRewards) > 0 && !!onClaimRewards;
   const estimatedValue = parseFloat(stakingData.pendingRewards) * 3000; // Assume $3000 ETH price
+  const isCurrentlyClaiming = isClaiming || isClaimLoading;
 
   return (
     <div className="space-y-6">
@@ -169,14 +166,14 @@ export function RewardsTab({ stakingData, user, onClaimSuccess }: RewardsTabProp
 
         <button
           onClick={handleClaimRewards}
-          disabled={!canClaim || isClaiming}
+          disabled={!canClaim || isCurrentlyClaiming}
           className={`w-full py-4 rounded-lg font-mono font-bold text-lg transition-all duration-200 ${
-            canClaim && !isClaiming
+            canClaim && !isCurrentlyClaiming
               ? 'bg-green-900/50 text-green-400 hover:bg-green-800/60 hover:matrix-glow'
               : 'bg-gray-900/50 text-gray-500 cursor-not-allowed'
           }`}
         >
-          {isClaiming ? '🔄 Claiming Rewards...' : 
+          {isCurrentlyClaiming ? '🔄 Claiming Rewards...' : 
            canClaim ? '🎁 Claim ETH Rewards' : 
            '⏳ No Rewards Available'}
         </button>

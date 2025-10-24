@@ -37,7 +37,8 @@ export default function UnifiedStakingPage() {
     isApproveLoading,
     isStakeLoading,
     isUnstakeLoading,
-    isClaimLoading
+    isClaimLoading,
+    handleClaimRewards
   } = useStaking();
 
   // Transform blockchain data to display format
@@ -232,6 +233,8 @@ export default function UnifiedStakingPage() {
                 stakingData={stakingData}
                 user={user}
                 onClaimSuccess={() => {}} // Data auto-updates from staking hook
+                onClaimRewards={handleClaimRewards}
+                isClaimLoading={isClaimLoading}
               />
             )}
             
