@@ -100,7 +100,8 @@ export default function UnifiedCommunityHub() {
       icon: '🔗',
       description: 'Join Discord and connect Farcaster',
       count: communityData.socialConnections < 2 ? '!' : null,
-      priority: communityData.socialConnections < 2
+      priority: communityData.socialConnections < 2,
+      disabled: false
     },
     {
       id: 'support' as TabId,
@@ -108,7 +109,8 @@ export default function UnifiedCommunityHub() {
       icon: '🛟',
       description: 'Get help and find documentation',
       count: communityData.supportTickets > 0 ? communityData.supportTickets.toString() : null,
-      priority: false
+      priority: false,
+      disabled: false
     },
     {
       id: 'social' as TabId,
@@ -116,7 +118,8 @@ export default function UnifiedCommunityHub() {
       icon: '📢',
       description: 'Community updates and activity',
       count: null,
-      priority: false
+      priority: false,
+      disabled: false
     }
   ];
 
