@@ -15,6 +15,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useWalletFirstAuth } from '@/hooks/useWalletFirstAuth';
 import { useUsersCommitsStatsSystematic } from '@/hooks/useUsersCommitsSystematic';
 import { useAccount } from 'wagmi';
@@ -44,6 +45,8 @@ export default function ConsolidatedDashboard() {
   const systemStats = useUsersCommitsStatsSystematic();
 
   const [activeSection, setActiveSection] = useState<string>('overview');
+  const [farcasterAvatar, setFarcasterAvatar] = useState<string | null>(null);
+  const [avatarLoading, setAvatarLoading] = useState(false);
 
   // Format large numbers for display
   const formatLargeNumber = (num: number) => {
@@ -55,6 +58,50 @@ export default function ConsolidatedDashboard() {
     }
     return num.toString();
   };
+
+  // Fetch Farcaster profile picture
+  useEffect(() => {
+    const fetchFarcasterAvatar = async () => {
+      if (!user?.farcaster_username || !user?.farcaster_connected) return;
+      
+      setAvatarLoading(true);
+      try {
+        // Try Neynar API if available
+        const apiKey = process.env.NEXT_PUBLIC_NEYNAR_API_KEY;
+        
+        if (apiKey && user.farcaster_fid) {
+          const response = await fetch(`https://api.neynar.com/v2/farcaster/user/bulk?fids=${user.farcaster_fid}`, {
+            headers: {
+              'Accept': 'application/json',
+              'api_key': apiKey
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const fcUser = data.users?.[0];
+            if (fcUser?.pfp_url) {
+              setFarcasterAvatar(fcUser.pfp_url);
+              return;
+            }
+          }
+        }
+        
+        // Fallback: Try Warpcast profile URL pattern
+        const fallbackUrl = `https://res.cloudinary.com/merkle-manufactory/image/fetch/c_fill,f_png,w_256/${encodeURIComponent(`https://warpcast.com/~/profile-picture?username=${user.farcaster_username}`)}`;
+        setFarcasterAvatar(fallbackUrl);
+      } catch (error) {
+        console.log('Failed to fetch Farcaster avatar:', error);
+        setFarcasterAvatar(null);
+      } finally {
+        setAvatarLoading(false);
+      }
+    };
+
+    if (user && !isLoading) {
+      fetchFarcasterAvatar();
+    }
+  }, [user, isLoading]);
 
   if (!isConnected) {
     return (
@@ -194,18 +241,53 @@ export default function ConsolidatedDashboard() {
         {/* Welcome Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-green-400 matrix-glow">
-                Welcome back, {user.display_name || 'Developer'}!
-              </h1>
-              <p className="text-green-600 font-mono text-sm">
-                {user.wallet_address.slice(0, 8)}...{user.wallet_address.slice(-6)}
-                {user.is_member && (
-                  <span className="ml-3 px-2 py-1 bg-green-900/50 text-green-400 rounded text-xs">
-                    {user.membership_tier.toUpperCase()} MEMBER
-                  </span>
-                )}
-              </p>
+            <div className="flex items-center gap-4">
+              {/* Farcaster Profile Picture */}
+              {user.farcaster_connected && (
+                <div className="flex-shrink-0">
+                  {farcasterAvatar ? (
+                    <div className="relative w-16 h-16">
+                      <Image
+                        src={farcasterAvatar}
+                        alt={`${user.farcaster_username || 'User'}'s profile`}
+                        fill
+                        className="rounded-full border-2 border-green-400/50 object-cover"
+                        sizes="64px"
+                        onError={() => setFarcasterAvatar(null)}
+                      />
+                    </div>
+                  ) : avatarLoading ? (
+                    <div className="w-16 h-16 rounded-full border-2 border-green-400/30 bg-green-950/20 animate-pulse flex items-center justify-center">
+                      <span className="text-green-600 text-xs">...</span>
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 rounded-full border-2 border-green-400/30 bg-green-950/20 flex items-center justify-center">
+                      <span className="text-2xl">🎭</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              <div>
+                <h1 className="text-3xl font-bold text-green-400 matrix-glow">
+                  Welcome back, {user.display_name || 'Developer'}!
+                </h1>
+                <div className="space-y-1">
+                  <p className="text-green-600 font-mono text-sm">
+                    {user.wallet_address.slice(0, 8)}...{user.wallet_address.slice(-6)}
+                    {user.is_member && (
+                      <span className="ml-3 px-2 py-1 bg-green-900/50 text-green-400 rounded text-xs">
+                        {user.membership_tier.toUpperCase()} MEMBER
+                      </span>
+                    )}
+                  </p>
+                  {user.farcaster_connected && user.farcaster_username && (
+                    <p className="text-purple-400 font-mono text-sm">
+                      🎭 @{user.farcaster_username}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
             
             {/* Quick Profile Status */}

@@ -121,7 +121,7 @@ export function SimplifiedNavigation({ user, isAuthenticated }: SimplifiedNaviga
           {/* Logo */}
           <Link href="/home" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <img src="/ABC_DAO_LOGO.png" alt="ABC DAO" className="w-8 h-8" />
-            <span className="text-xl font-bold matrix-glow">ABC_DAO</span>
+            <span className="text-xl font-bold matrix-glow">{`> ABC_DAO`}</span>
           </Link>
 
           {/* Main Navigation */}
@@ -205,7 +205,7 @@ export function SimplifiedNavigation({ user, isAuthenticated }: SimplifiedNaviga
             {/* Mobile Logo */}
             <Link href="/home" className="flex items-center gap-2">
               <img src="/ABC_DAO_LOGO.png" alt="ABC DAO" className="w-6 h-6" />
-              <span className="text-lg font-bold matrix-glow">ABC_DAO</span>
+              <span className="text-lg font-bold matrix-glow">{`> ABC_DAO`}</span>
             </Link>
 
             {/* Mobile Menu Button */}
