@@ -2,7 +2,7 @@
  * Unified Staking Page (/staking)
  * 
  * Consolidates previous /staking and /staking/leaderboard into single tabbed interface:
- * - Stake Tab: Staking operations, APY calculator
+ * - Stake Tab: Staking operations
  * - Leaderboard Tab: Top stakers, rankings  
  * - Rewards Tab: Claim rewards, history
  * - Analytics Tab: Personal staking analytics
@@ -46,7 +46,6 @@ export default function UnifiedStakingPage() {
     stakedAmount: stakedAmount ? (Number(stakedAmount) / 1e6).toFixed(1) : '0',
     pendingRewards: pendingRewards ? Number(pendingRewards).toFixed(4) : '0',
     totalEarned: totalEarned ? Number(totalEarned).toFixed(4) : '0',
-    currentAPY: '0', // We'll add APY calculation later
     isLoading: isApproveLoading || isStakeLoading || isUnstakeLoading || isClaimLoading
   };
 
@@ -112,7 +111,7 @@ export default function UnifiedStakingPage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-green-400">✓</span>
-                  Current APY: ~12.5%
+                  Passive rewards
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-green-400">✓</span>
@@ -164,11 +163,11 @@ export default function UnifiedStakingPage() {
               </div>
               
               <div className="bg-purple-950/20 border border-purple-900/30 rounded-lg p-4">
-                <div className="text-sm font-mono text-purple-600 mb-1">Current APY</div>
+                <div className="text-sm font-mono text-purple-600 mb-1">Total Earned</div>
                 <div className="text-2xl font-bold text-purple-400">
-                  {stakingData.currentAPY}%
+                  {stakingData.totalEarned}
                 </div>
-                <div className="text-xs text-purple-700">Annual return</div>
+                <div className="text-xs text-purple-700">ETH lifetime</div>
               </div>
             </div>
           </div>
@@ -176,12 +175,12 @@ export default function UnifiedStakingPage() {
           {/* Tab Navigation */}
           <div className="mb-8">
             <div className="border-b border-green-900/30">
-              <nav className="flex space-x-1">
+              <nav className="flex space-x-1 overflow-x-auto scrollbar-hide">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`relative px-6 py-4 font-mono text-sm font-medium transition-all duration-200 ${
+                    className={`relative px-4 sm:px-6 py-4 font-mono text-sm font-medium transition-all duration-200 min-w-fit whitespace-nowrap ${
                       activeTab === tab.id
                         ? 'text-green-400 border-b-2 border-green-400 bg-green-950/20'
                         : 'text-green-600 hover:text-green-400 hover:bg-green-950/10'

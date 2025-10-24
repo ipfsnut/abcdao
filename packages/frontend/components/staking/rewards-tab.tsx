@@ -23,7 +23,6 @@ interface RewardsTabProps {
     stakedAmount: string;
     pendingRewards: string;
     totalEarned: string;
-    currentAPY: string;
     isLoading: boolean;
   };
   user: any;
@@ -161,9 +160,9 @@ export function RewardsTab({ stakingData, user, onClaimSuccess }: RewardsTabProp
           </div>
           
           <div className="bg-black/40 border border-purple-900/30 rounded-lg p-4">
-            <div className="text-sm font-mono text-purple-600 mb-1">Current APY</div>
+            <div className="text-sm font-mono text-purple-600 mb-1">Total Earned</div>
             <div className="text-lg font-bold text-purple-400">
-              {stakingData.currentAPY}%
+              {stakingData.totalEarned} ETH
             </div>
           </div>
         </div>
@@ -222,8 +221,8 @@ export function RewardsTab({ stakingData, user, onClaimSuccess }: RewardsTabProp
             <h5 className="text-sm font-mono text-green-600 mb-3">Yield Information</h5>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-green-700">Effective APY:</span>
-                <span className="text-sm font-mono text-green-400">{stakingData.currentAPY}%</span>
+                <span className="text-sm text-green-700">Total Earned:</span>
+                <span className="text-sm font-mono text-green-400">{stakingData.totalEarned} ETH</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-green-700">Compounding:</span>

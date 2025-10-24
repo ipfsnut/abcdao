@@ -19,7 +19,6 @@ interface DeveloperAnalytics {
     averageRewardPerCommit: number;
     commitFrequency: number;
     codeQualityScore: number;
-    consistencyScore: number;
     totalCodeImpact: number;
   };
   repositoryBreakdown: {
@@ -75,7 +74,6 @@ export function AnalyticsTab({ developerData, user }: AnalyticsTabProps) {
             averageRewardPerCommit: parseInt(developerData.averageReward) || 0,
             commitFrequency: 0,
             codeQualityScore: 0,
-            consistencyScore: 0,
             totalCodeImpact: 0
           },
           repositoryBreakdown: [],
@@ -99,7 +97,6 @@ export function AnalyticsTab({ developerData, user }: AnalyticsTabProps) {
               averageRewardPerCommit: parseInt(developerData.averageReward) || 0,
               commitFrequency: 0,
               codeQualityScore: 50,
-              consistencyScore: 50,
               totalCodeImpact: 0
             },
             repositoryBreakdown: [],
@@ -126,7 +123,6 @@ export function AnalyticsTab({ developerData, user }: AnalyticsTabProps) {
           averageRewardPerCommit: data.performanceMetrics.averageRewardPerCommit,
           commitFrequency: data.performanceMetrics.commitFrequency,
           codeQualityScore: data.performanceMetrics.codeQualityScore,
-          consistencyScore: data.performanceMetrics.consistencyScore,
           totalCodeImpact: data.performanceMetrics.totalCodeImpact
         },
         repositoryBreakdown: data.repositoryBreakdown.map((repo: any) => ({
@@ -161,7 +157,6 @@ export function AnalyticsTab({ developerData, user }: AnalyticsTabProps) {
           averageRewardPerCommit: parseInt(developerData.averageReward) || 0,
           commitFrequency: 0,
           codeQualityScore: 50,
-          consistencyScore: 50,
           totalCodeImpact: 0
         },
         repositoryBreakdown: [],
@@ -257,7 +252,7 @@ export function AnalyticsTab({ developerData, user }: AnalyticsTabProps) {
             <div className="text-xs text-green-600 font-mono">Quality Score</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-purple-400">{analytics.performanceMetrics.consistencyScore}%</div>
+            <div className="text-2xl font-bold text-purple-400">{analytics.performanceMetrics.totalCodeImpact}</div>
             <div className="text-xs text-green-600 font-mono">Consistency</div>
           </div>
           <div className="text-center">

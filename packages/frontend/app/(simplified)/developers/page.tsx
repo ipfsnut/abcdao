@@ -253,12 +253,12 @@ export default function UnifiedDeveloperHub() {
           {/* Tab Navigation */}
           <div className="mb-8">
             <div className="border-b border-green-900/30">
-              <nav className="flex space-x-1">
+              <nav className="flex space-x-1 overflow-x-auto scrollbar-hide">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`relative px-6 py-4 font-mono text-sm font-medium transition-all duration-200 ${
+                    className={`relative px-4 sm:px-6 py-4 font-mono text-sm font-medium transition-all duration-200 min-w-fit whitespace-nowrap ${
                       activeTab === tab.id
                         ? 'text-green-400 border-b-2 border-green-400 bg-green-950/20'
                         : 'text-green-600 hover:text-green-400 hover:bg-green-950/10'

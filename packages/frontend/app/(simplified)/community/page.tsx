@@ -207,13 +207,13 @@ export default function UnifiedCommunityHub() {
           {/* Tab Navigation */}
           <div className="mb-8">
             <div className="border-b border-green-900/30">
-              <nav className="flex space-x-1">
+              <nav className="flex space-x-1 overflow-x-auto scrollbar-hide">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => !tab.disabled && setActiveTab(tab.id)}
                     disabled={tab.disabled}
-                    className={`relative px-6 py-4 font-mono text-sm font-medium transition-all duration-200 ${
+                    className={`relative px-4 sm:px-6 py-4 font-mono text-sm font-medium transition-all duration-200 min-w-fit whitespace-nowrap ${
                       tab.disabled
                         ? 'text-green-800 cursor-not-allowed opacity-50'
                         : activeTab === tab.id

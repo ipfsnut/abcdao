@@ -366,7 +366,7 @@ export default function ProfilePage() {
           {/* Tab Navigation */}
           <div className="mb-8">
             <div className="border-b border-green-900/30">
-              <nav className="flex space-x-1">
+              <nav className="flex space-x-1 overflow-x-auto scrollbar-hide">
                 {[
                   { id: 'overview', label: 'Overview', icon: '📊' },
                   { id: 'activity', label: 'Activity', icon: '📈' },
@@ -375,7 +375,7 @@ export default function ProfilePage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`px-6 py-4 font-mono text-sm font-medium transition-all duration-200 ${
+                    className={`relative px-4 sm:px-6 py-4 font-mono text-sm font-medium transition-all duration-200 min-w-fit whitespace-nowrap ${
                       activeTab === tab.id
                         ? 'text-green-400 border-b-2 border-green-400 bg-green-950/20'
                         : 'text-green-600 hover:text-green-400 hover:bg-green-950/10'

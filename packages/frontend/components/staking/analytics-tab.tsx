@@ -15,7 +15,6 @@ interface AnalyticsData {
     averageDailyReward: string;
     bestDay: string;
     stakingDays: number;
-    effectiveAPY: string;
   };
   portfolioBreakdown: {
     stakedPercentage: number;
@@ -35,7 +34,6 @@ interface AnalyticsTabProps {
     stakedAmount: string;
     pendingRewards: string;
     totalEarned: string;
-    currentAPY: string;
     isLoading: boolean;
   };
   user: any;
@@ -64,7 +62,6 @@ export function AnalyticsTab({ stakingData, user }: AnalyticsTabProps) {
             averageDailyReward: (parseFloat(stakingData.totalEarned) / 30).toFixed(6),
             bestDay: '0.0000',
             stakingDays: 1,
-            effectiveAPY: stakingData.currentAPY
           },
           portfolioBreakdown: {
             stakedPercentage: totalTokens > 0 ? (parseFloat(stakingData.stakedAmount) / totalTokens) * 100 : 0,
@@ -96,8 +93,7 @@ export function AnalyticsTab({ stakingData, user }: AnalyticsTabProps) {
               averageDailyReward: '0.000000',
               bestDay: '0.000000',
               stakingDays: 1,
-              effectiveAPY: stakingData.currentAPY
-            },
+              },
             portfolioBreakdown: {
               stakedPercentage: totalTokens > 0 ? (parseFloat(stakingData.stakedAmount) / totalTokens) * 100 : 0,
               availablePercentage: totalTokens > 0 ? (parseFloat(stakingData.tokenBalance) / totalTokens) * 100 : 0,
@@ -126,7 +122,6 @@ export function AnalyticsTab({ stakingData, user }: AnalyticsTabProps) {
           averageDailyReward: data.stakingPerformance.averageDailyReward,
           bestDay: data.stakingPerformance.bestDay,
           stakingDays: data.stakingPerformance.stakingDays,
-          effectiveAPY: data.stakingPerformance.effectiveAPY
         },
         portfolioBreakdown: {
           stakedPercentage: data.portfolioBreakdown.stakedPercentage,
@@ -154,7 +149,6 @@ export function AnalyticsTab({ stakingData, user }: AnalyticsTabProps) {
           averageDailyReward: '0.000000',
           bestDay: '0.000000',
           stakingDays: 1,
-          effectiveAPY: stakingData.currentAPY
         },
         portfolioBreakdown: {
           stakedPercentage: totalTokens > 0 ? (parseFloat(stakingData.stakedAmount) / totalTokens) * 100 : 0,
@@ -248,11 +242,11 @@ export function AnalyticsTab({ stakingData, user }: AnalyticsTabProps) {
           </div>
           
           <div className="bg-black/40 border border-purple-900/30 rounded-lg p-4">
-            <div className="text-sm font-mono text-purple-600 mb-1">Effective APY</div>
+            <div className="text-sm font-mono text-purple-600 mb-1">Staking Days</div>
             <div className="text-2xl font-bold text-purple-400">
-              {analytics.stakingPerformance.effectiveAPY}%
+              {analytics.stakingPerformance.stakingDays}
             </div>
-            <div className="text-xs text-purple-700">Including compounding</div>
+            <div className="text-xs text-purple-700">Days staking</div>
           </div>
         </div>
       </div>
@@ -286,7 +280,7 @@ export function AnalyticsTab({ stakingData, user }: AnalyticsTabProps) {
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-sm text-green-600">Consistency Score:</span>
+              <span className="text-sm text-green-600">Total Days:</span>
               <span className="font-mono text-green-400 font-bold">
                 94.2%
               </span>
@@ -422,7 +416,7 @@ export function AnalyticsTab({ stakingData, user }: AnalyticsTabProps) {
                 <span className="text-blue-400">📊</span>
                 <div className="text-xs">
                   <div className="text-blue-400 font-mono">Above Average Returns</div>
-                  <div className="text-green-600">Your effective APY is {((parseFloat(analytics.stakingPerformance.effectiveAPY) - parseFloat(stakingData.currentAPY)) * 100 / parseFloat(stakingData.currentAPY)).toFixed(1)}% higher than base APY</div>
+                  <div className="text-green-600">Consistent staking performance across all timeframes</div>
                 </div>
               </div>
             </div>

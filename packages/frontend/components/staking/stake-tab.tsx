@@ -1,7 +1,7 @@
 /**
  * Stake Tab Component
  * 
- * Main staking interface with APY calculator and staking operations
+ * Main staking interface with staking operations
  */
 
 'use client';
@@ -15,7 +15,6 @@ interface StakeTabProps {
     stakedAmount: string;
     pendingRewards: string;
     totalEarned: string;
-    currentAPY: string;
     isLoading: boolean;
   };
   user: any;
@@ -66,52 +65,9 @@ export function StakeTab({ stakingData, user, onDataUpdate }: StakeTabProps) {
     }
   };
 
-  const calculateProjectedRewards = (amount: string) => {
-    if (!amount || parseFloat(amount) <= 0) return '0';
-    const amountNum = parseFloat(amount);
-    const apy = parseFloat(stakingData.currentAPY) / 100;
-    const dailyReward = (amountNum * apy) / 365;
-    return dailyReward.toFixed(6);
-  };
 
   return (
     <div className="space-y-6">
-      {/* Staking Calculator */}
-      <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-green-400 mb-4">💡 APY Calculator</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-mono text-green-600 mb-2">Stake Amount</label>
-            <input
-              type="number"
-              placeholder="1000000"
-              className="w-full bg-black/40 border border-green-900/50 rounded-lg px-3 py-2 text-green-400 font-mono focus:outline-none focus:border-green-700/50"
-              onChange={(e) => {
-                const value = e.target.value;
-                setStakeAmount(value);
-              }}
-            />
-            <div className="text-xs text-green-700 mt-1">$ABC tokens</div>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-mono text-green-600 mb-2">Current APY</label>
-            <div className="bg-black/40 border border-green-900/50 rounded-lg px-3 py-2 text-green-400 font-mono">
-              {stakingData.currentAPY}%
-            </div>
-            <div className="text-xs text-green-700 mt-1">Annual yield</div>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-mono text-green-600 mb-2">Daily Rewards</label>
-            <div className="bg-green-950/30 border border-green-700/50 rounded-lg px-3 py-2 text-green-300 font-mono font-bold">
-              {calculateProjectedRewards(stakeAmount)} ETH
-            </div>
-            <div className="text-xs text-green-700 mt-1">Projected daily</div>
-          </div>
-        </div>
-      </div>
 
       {/* Operation Tabs */}
       <div className="bg-black/40 border border-green-900/30 rounded-xl p-6">
