@@ -205,7 +205,7 @@ export function QuickActionsPanel({ user, features, onSectionChange }: QuickActi
             >
               <div className="text-xl mb-2">{action.icon}</div>
               <div className="text-xs font-mono">{action.title}</div>
-              {action.setupRequired && (
+              {'setupRequired' in action && action.setupRequired && (
                 <div className="text-xs text-yellow-400 mt-1">
                   ⚠️
                 </div>
