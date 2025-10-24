@@ -2,4 +2,9 @@
 # Farcaster manifest redirect to hosted version
 /.well-known/farcaster.json https://api.farcaster.xyz/miniapps/hosted-manifest/0199dbae-b76f-de43-c4ad-5a49fc250ac6 307
 
-/*    /index.html   200
+# Serve static assets directly (don't redirect to index.html)
+/_next/static/* /_next/static/:splat 200
+/favicon.ico /favicon.ico 200
+
+# SPA fallback for all other routes (excluding static assets)
+/* /index.html 200
