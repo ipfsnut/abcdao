@@ -1,6 +1,7 @@
 import express from 'express';
 import UniversalAuthService from '../services/universal-auth.js';
 import { WalletUser } from '../models/WalletUser.js';
+import { getPool } from '../services/database.js';
 
 const router = express.Router();
 
@@ -11,6 +12,63 @@ const router = express.Router();
 // ============================================================================
 // WALLET-FIRST AUTHENTICATION (Primary Flow)
 // ============================================================================
+
+/**
+ * Create basic user profile (development helper)
+ * POST /api/universal-auth/create-basic-user
+ */
+router.post('/create-basic-user', async (req, res) => {
+  try {
+    const { wallet_address, display_name } = req.body;
+    
+    if (!wallet_address) {
+      return res.status(400).json({ error: 'Wallet address is required' });
+    }
+
+    const pool = getPool();
+    
+    // Check if user already exists
+    const existingUser = await pool.query(`
+      SELECT * FROM users WHERE wallet_address = $1
+    `, [wallet_address.toLowerCase()]);
+    
+    if (existingUser.rows.length > 0) {
+      return res.json({ 
+        user: existingUser.rows[0], 
+        message: 'User already exists' 
+      });
+    }
+    
+    // Create basic user with a generated FID (negative to avoid conflicts)
+    const fakeFid = -Math.floor(Math.random() * 1000000);
+    const result = await pool.query(`
+      INSERT INTO users (
+        farcaster_fid, 
+        farcaster_username, 
+        wallet_address,
+        membership_status,
+        verified_at,
+        created_at,
+        updated_at
+      ) VALUES ($1, $2, $3, $4, NOW(), NOW(), NOW())
+      RETURNING *
+    `, [
+      fakeFid,
+      display_name || `wallet_${wallet_address.slice(2, 8)}`,
+      wallet_address.toLowerCase(),
+      'free'
+    ]);
+    
+    res.json({ 
+      user: result.rows[0], 
+      message: 'Basic user created successfully' 
+    });
+
+  } catch (error) {
+    console.error('Create basic user error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 /**
  * Authenticate by wallet address
