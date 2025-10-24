@@ -36,7 +36,7 @@ interface GovernanceTabProps {
 export function GovernanceTab({ user, activeProposals, canVote }: GovernanceTabProps) {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'active' | 'passed' | 'rejected'>('all');
+  const [filter, setFilter] = useState<'all' | 'active' | 'passed' | 'rejected' | 'draft' | 'executed'>('all');
   const [isVoting, setIsVoting] = useState<string | null>(null);
   
   // Get real staking data for governance power

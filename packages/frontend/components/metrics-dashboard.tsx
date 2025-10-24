@@ -31,21 +31,49 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
 
   const loadMetrics = async () => {
     try {
-      // TODO: Replace with actual API calls to get real metrics
-      // const response = await fetch(`${config.backendUrl}/api/users-commits/metrics/${user.wallet_address}`);
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app';
+      const response = await fetch(`${backendUrl}/api/users-commits/metrics/${user.wallet_address}`);
       
-      // For now, use available user data and show 0 for unavailable metrics
+      if (!response.ok) {
+        if (response.status === 404) {
+          // User not found - use fallback data
+          setMetrics({
+            tokenBalance: ((user.total_earned_tokens || 0) / 1000000).toFixed(1),
+            stakedAmount: ((user.total_staked_tokens || 0) / 1000000).toFixed(1),
+            pendingRewards: '0',
+            totalEarned: ((user.total_earned_tokens || 0) / 1000000).toFixed(1),
+            commitCount: user.total_commits || 0,
+            stakingAPY: '0'
+          });
+          setIsLoading(false);
+          return;
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      const metrics = data.metrics;
+      
       setMetrics({
-        tokenBalance: ((user.total_earned_tokens || 0) / 1000000).toFixed(1),
-        stakedAmount: ((user.total_staked_tokens || 0) / 1000000).toFixed(1),
-        pendingRewards: '0', // Will be updated when staking metrics API is available
-        totalEarned: ((user.total_earned_tokens || 0) / 1000000).toFixed(1),
-        commitCount: user.total_commits || 0,
-        stakingAPY: '0' // Will be updated when staking APY API is available
+        tokenBalance: metrics.tokenBalance,
+        stakedAmount: metrics.stakedAmount,
+        pendingRewards: metrics.pendingRewards,
+        totalEarned: metrics.totalEarned,
+        commitCount: metrics.commitCount,
+        stakingAPY: metrics.stakingAPY
       });
       setIsLoading(false);
     } catch (error) {
       console.error('Failed to load metrics:', error);
+      // Fallback to user data if API fails
+      setMetrics({
+        tokenBalance: ((user.total_earned_tokens || 0) / 1000000).toFixed(1),
+        stakedAmount: ((user.total_staked_tokens || 0) / 1000000).toFixed(1),
+        pendingRewards: '0',
+        totalEarned: ((user.total_earned_tokens || 0) / 1000000).toFixed(1),
+        commitCount: user.total_commits || 0,
+        stakingAPY: '0'
+      });
       setIsLoading(false);
     }
   };

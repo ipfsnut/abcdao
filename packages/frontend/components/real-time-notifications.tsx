@@ -1,7 +1,7 @@
 /**
- * Real-Time Notifications Component
+ * Real-time Notifications Component
  * 
- * Displays real-time notifications for earning rewards, commits, and other activities
+ * Provides real-time notifications for user activity using polling
  */
 
 'use client';
@@ -32,19 +32,16 @@ export function RealTimeNotifications({ user, isEnabled = true }: RealTimeNotifi
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastFetchRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (isEnabled && user) {
+    if (isEnabled && user?.wallet_address) {
       initializeNotifications();
-      connectWebSocket();
+      startPolling();
       
       return () => {
-        disconnectWebSocket();
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-        }
+        stopPolling();
       };
     }
   }, [isEnabled, user]);
@@ -53,386 +50,324 @@ export function RealTimeNotifications({ user, isEnabled = true }: RealTimeNotifi
     setUnreadCount(notifications.filter(n => !n.isRead).length);
   }, [notifications]);
 
-  const initializeNotifications = () => {
-    // Load initial notifications (replace with actual API call)
-    const initialNotifications: Notification[] = [
-      {
-        id: '1',
-        type: 'commit_reward',
-        title: 'Commit Rewarded!',
-        message: 'Your commit "feat: implement user authentication" earned rewards',
-        amount: '85,000 $ABC',
-        timestamp: new Date(Date.now() - 2 * 60 * 1000),
-        isRead: false,
-        actionUrl: '/developers#history',
-        actionText: 'View Details',
-        icon: '💰',
-        priority: 'high'
-      },
-      {
-        id: '2',
-        type: 'milestone',
-        title: 'Milestone Reached!',
-        message: 'You\'ve earned over 1M $ABC tokens total',
-        timestamp: new Date(Date.now() - 30 * 60 * 1000),
-        isRead: false,
-        actionUrl: '/developers#analytics',
-        actionText: 'View Analytics',
-        icon: '🏆',
-        priority: 'medium'
-      },
-      {
-        id: '3',
-        type: 'staking_reward',
-        title: 'Staking Rewards Available',
-        message: 'You have 0.0156 ETH ready to claim',
-        amount: '0.0156 ETH',
-        timestamp: new Date(Date.now() - 60 * 60 * 1000),
-        isRead: true,
-        actionUrl: '/staking#rewards',
-        actionText: 'Claim Now',
-        icon: '🎁',
-        priority: 'medium'
-      }
-    ];
-    
-    setNotifications(initialNotifications);
-  };
-
-  const connectWebSocket = () => {
+  const initializeNotifications = async () => {
     if (!user?.wallet_address) return;
     
     try {
-      // In production, replace with actual WebSocket URL
-      const wsUrl = `wss://abcdao-production.up.railway.app/ws/notifications/${user.wallet_address}`;
-      wsRef.current = new WebSocket(wsUrl);
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app';
+      const response = await fetch(`${backendUrl}/api/notifications/${user.wallet_address}?limit=10`);
       
-      wsRef.current.onopen = () => {
-        setIsConnected(true);
-        console.log('🔗 Notifications WebSocket connected');
-      };
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
       
-      wsRef.current.onmessage = (event) => {
-        try {
-          const notification: Notification = JSON.parse(event.data);
-          handleNewNotification(notification);
-        } catch (error) {
-          console.error('Failed to parse notification:', error);
-        }
-      };
+      const data = await response.json();
       
-      wsRef.current.onclose = () => {
-        setIsConnected(false);
-        console.log('📡 Notifications WebSocket disconnected');
-        
-        // Attempt to reconnect after 5 seconds
-        setTimeout(() => {
-          if (isEnabled) connectWebSocket();
-        }, 5000);
-      };
+      // Transform API response to match component interface
+      const transformedNotifications: Notification[] = data.notifications.map((notification: any) => ({
+        id: notification.id,
+        type: notification.type as 'commit_reward' | 'milestone' | 'achievement' | 'staking_reward' | 'repo_suggestion' | 'system',
+        title: notification.title,
+        message: notification.message,
+        amount: notification.amount,
+        timestamp: new Date(notification.timestamp),
+        isRead: notification.isRead,
+        actionUrl: notification.actionUrl,
+        actionText: notification.actionText,
+        icon: notification.icon,
+        priority: notification.priority as 'low' | 'medium' | 'high'
+      }));
       
-      wsRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setIsConnected(false);
-      };
+      setNotifications(transformedNotifications);
+      setIsConnected(true);
       
+      // Set last fetch timestamp for polling
+      lastFetchRef.current = new Date().toISOString();
     } catch (error) {
-      console.error('Failed to connect WebSocket:', error);
+      console.error('Failed to load notifications:', error);
       
-      // Fallback to polling for notifications
-      startPolling();
+      // Fallback to welcome notification
+      const fallbackNotifications: Notification[] = [
+        {
+          id: 'welcome',
+          type: 'system',
+          title: 'Welcome to ABC DAO!',
+          message: 'Start making commits to earn ABC tokens and receive notifications about your rewards.',
+          timestamp: new Date(),
+          isRead: false,
+          actionUrl: '/developers',
+          actionText: 'Get Started',
+          icon: '👋',
+          priority: 'medium'
+        }
+      ];
+      
+      setNotifications(fallbackNotifications);
+      setIsConnected(false);
     }
-  };
-
-  const disconnectWebSocket = () => {
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-    setIsConnected(false);
   };
 
   const startPolling = () => {
-    if (intervalRef.current) return;
-    
-    intervalRef.current = setInterval(async () => {
-      try {
-        // Simulate polling for new notifications
-        if (Math.random() < 0.1) { // 10% chance of new notification
-          const mockNotification: Notification = {
-            id: Date.now().toString(),
-            type: 'commit_reward',
-            title: 'New Commit Rewarded!',
-            message: 'Your latest commit earned ABC tokens',
-            amount: `${Math.floor(Math.random() * 50000 + 25000).toLocaleString()} $ABC`,
-            timestamp: new Date(),
-            isRead: false,
-            actionUrl: '/developers#history',
-            actionText: 'View Details',
-            icon: '💰',
-            priority: 'high'
-          };
-          handleNewNotification(mockNotification);
-        }
-      } catch (error) {
-        console.error('Polling error:', error);
-      }
-    }, 30000); // Poll every 30 seconds
+    // Poll for new notifications every 30 seconds
+    intervalRef.current = setInterval(() => {
+      pollForNewNotifications();
+    }, 30000);
   };
 
-  const handleNewNotification = (notification: Notification) => {
-    setNotifications(prev => [notification, ...prev.slice(0, 49)]); // Keep last 50 notifications
+  const stopPolling = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
+  const pollForNewNotifications = async () => {
+    if (!user?.wallet_address || !lastFetchRef.current) return;
     
-    // Show browser notification if permission granted
-    if (Notification.permission === 'granted') {
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app';
+      const response = await fetch(
+        `${backendUrl}/api/notifications/${user.wallet_address}?since=${lastFetchRef.current}&limit=5`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.notifications.length > 0) {
+        // Transform and add new notifications
+        const newNotifications: Notification[] = data.notifications.map((notification: any) => ({
+          id: notification.id,
+          type: notification.type as 'commit_reward' | 'milestone' | 'achievement' | 'staking_reward' | 'repo_suggestion' | 'system',
+          title: notification.title,
+          message: notification.message,
+          amount: notification.amount,
+          timestamp: new Date(notification.timestamp),
+          isRead: notification.isRead,
+          actionUrl: notification.actionUrl,
+          actionText: notification.actionText,
+          icon: notification.icon,
+          priority: notification.priority as 'low' | 'medium' | 'high'
+        }));
+        
+        // Add new notifications to the beginning of the list
+        setNotifications(prev => [...newNotifications, ...prev].slice(0, 20)); // Keep max 20 notifications
+        
+        // Update last fetch timestamp
+        lastFetchRef.current = new Date().toISOString();
+        
+        // Show notification if high priority
+        newNotifications.forEach(notification => {
+          if (notification.priority === 'high') {
+            showBrowserNotification(notification);
+          }
+        });
+      }
+      
+      setIsConnected(true);
+    } catch (error) {
+      console.error('Failed to poll for notifications:', error);
+      setIsConnected(false);
+    }
+  };
+
+  const showBrowserNotification = (notification: Notification) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
       new Notification(notification.title, {
         body: notification.message,
-        icon: '/icons/abc-logo.png',
-        badge: '/icons/abc-badge.png',
+        icon: '/favicon.ico',
         tag: notification.id
       });
     }
-    
-    // Play notification sound for high priority notifications
-    if (notification.priority === 'high') {
-      playNotificationSound();
-    }
-    
-    // Auto-open panel for high priority notifications
-    if (notification.priority === 'high' && !isOpen) {
-      setIsOpen(true);
-      // Auto-close after 5 seconds
-      setTimeout(() => setIsOpen(false), 5000);
-    }
-  };
-
-  const playNotificationSound = () => {
-    try {
-      const audio = new Audio('/sounds/notification.mp3');
-      audio.volume = 0.3;
-      audio.play().catch(e => console.log('Could not play notification sound:', e));
-    } catch (error) {
-      console.log('Notification sound not available');
-    }
-  };
-
-  const markAsRead = (notificationId: string) => {
-    setNotifications(prev =>
-      prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
-    );
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-  };
-
-  const clearNotification = (notificationId: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
-  };
-
-  const clearAllNotifications = () => {
-    setNotifications([]);
   };
 
   const requestNotificationPermission = async () => {
     if ('Notification' in window && Notification.permission === 'default') {
-      const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
-        console.log('✅ Notification permission granted');
-      }
+      await Notification.requestPermission();
     }
   };
 
-  const getNotificationColor = (type: string) => {
-    const colorMap = {
-      'commit_reward': 'text-green-400 bg-green-950/20 border-green-700/50',
-      'milestone': 'text-yellow-400 bg-yellow-950/20 border-yellow-700/50',
-      'achievement': 'text-purple-400 bg-purple-950/20 border-purple-700/50',
-      'staking_reward': 'text-blue-400 bg-blue-950/20 border-blue-700/50',
-      'repo_suggestion': 'text-cyan-400 bg-cyan-950/20 border-cyan-700/50',
-      'system': 'text-gray-400 bg-gray-950/20 border-gray-700/50'
-    };
-    return colorMap[type as keyof typeof colorMap] || colorMap.system;
+  const markAsRead = async (notificationId: string) => {
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app';
+      await fetch(`${backendUrl}/api/notifications/${user.wallet_address}/${notificationId}/read`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      setNotifications(prev =>
+        prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
+      );
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app';
+      await fetch(`${backendUrl}/api/notifications/${user.wallet_address}/mark-all-read`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      setNotifications(prev =>
+        prev.map(n => ({ ...n, isRead: true }))
+      );
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
+    }
   };
 
   const formatTimestamp = (timestamp: Date) => {
     const now = new Date();
     const diff = now.getTime() - timestamp.getTime();
     const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
     
     if (minutes < 1) return 'Just now';
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
-    return `${days}d ago`;
+    if (days < 7) return `${days}d ago`;
+    return timestamp.toLocaleDateString();
   };
 
-  if (!isEnabled || !user) return null;
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'border-red-500/50 bg-red-950/20';
+      case 'medium': return 'border-yellow-500/50 bg-yellow-950/20';
+      case 'low': return 'border-green-500/50 bg-green-950/20';
+      default: return 'border-gray-500/50 bg-gray-950/20';
+    }
+  };
+
+  if (!isEnabled) return null;
 
   return (
-    <>
-      {/* Notification Bell Button */}
-      <div className="relative">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          onMouseEnter={() => requestNotificationPermission()}
-          className="relative p-2 text-green-600 hover:text-green-400 transition-colors"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-          </svg>
-          
-          {/* Unread Badge */}
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-mono">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-          
-          {/* Connection Status */}
-          <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full ${
-            isConnected ? 'bg-green-500' : 'bg-yellow-500'
-          }`} title={isConnected ? 'Connected' : 'Reconnecting...'}>
-          </div>
-        </button>
-      </div>
+    <div className="relative">
+      {/* Notification Bell Icon */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="relative p-2 text-green-400 hover:text-green-300 transition-colors"
+        title="Notifications"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3.001 3.001 0 11-6 0m6 0H9" />
+        </svg>
+        
+        {/* Unread Count Badge */}
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
+        
+        {/* Connection Status Indicator */}
+        <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full ${
+          isConnected ? 'bg-green-500' : 'bg-red-500'
+        }`} />
+      </button>
 
-      {/* Notification Panel */}
+      {/* Notifications Panel */}
       {isOpen && (
-        <div className="absolute top-16 right-4 w-96 max-w-[90vw] bg-black border border-green-900/50 rounded-xl shadow-2xl z-50">
+        <div className="absolute right-0 top-full mt-2 w-96 bg-black/95 border border-green-900/50 rounded-xl shadow-2xl z-50 max-h-96 overflow-hidden">
           {/* Header */}
-          <div className="bg-green-950/20 border-b border-green-900/30 p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-green-400 font-mono">Notifications</h3>
-                <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                {unreadCount > 0 && (
-                  <button
-                    onClick={markAllAsRead}
-                    className="text-xs font-mono text-green-600 hover:text-green-400 transition-colors"
-                  >
-                    Mark all read
-                  </button>
-                )}
-                
+          <div className="flex items-center justify-between p-4 border-b border-green-900/30">
+            <h3 className="text-lg font-bold text-green-400 font-mono">Notifications</h3>
+            <div className="flex items-center gap-2">
+              {unreadCount > 0 && (
                 <button
-                  onClick={() => setIsOpen(false)}
-                  className="text-green-600 hover:text-green-400 transition-colors"
+                  onClick={markAllAsRead}
+                  className="text-xs text-green-600 hover:text-green-400 transition-colors"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  Mark all read
                 </button>
-              </div>
+              )}
+              <button
+                onClick={requestNotificationPermission}
+                className="text-xs text-green-600 hover:text-green-400 transition-colors"
+                title="Enable browser notifications"
+              >
+                🔔
+              </button>
             </div>
           </div>
 
           {/* Notifications List */}
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="p-6 text-center">
-                <div className="text-4xl mb-3">🔔</div>
-                <h4 className="font-bold text-green-400 mb-2">No Notifications</h4>
-                <p className="text-sm text-green-600 font-mono">
-                  You're all caught up! New notifications will appear here.
-                </p>
+                <div className="text-4xl mb-2">🔔</div>
+                <p className="text-green-600 font-mono text-sm">No notifications yet</p>
+                <p className="text-green-700 text-xs mt-1">Start making commits to see updates!</p>
               </div>
             ) : (
-              <div className="space-y-2 p-2">
-                {notifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={`p-3 rounded-lg border transition-all duration-200 cursor-pointer hover:bg-green-950/10 ${
-                      notification.isRead 
-                        ? 'bg-black/20 border-green-900/20 opacity-75' 
-                        : getNotificationColor(notification.type)
-                    }`}
-                    onClick={() => {
-                      markAsRead(notification.id);
-                      if (notification.actionUrl) {
-                        window.location.href = notification.actionUrl;
-                      }
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className="text-lg">{notification.icon}</span>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between">
-                          <h4 className="font-semibold text-sm text-green-400">
-                            {notification.title}
-                          </h4>
-                          <span className="text-xs text-green-600 font-mono ml-2">
-                            {formatTimestamp(notification.timestamp)}
-                          </span>
-                        </div>
-                        
-                        <p className="text-sm text-green-600 mt-1">
-                          {notification.message}
-                        </p>
-                        
-                        {notification.amount && (
-                          <div className="font-mono font-bold text-green-300 text-sm mt-1">
-                            +{notification.amount}
-                          </div>
+              notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={`p-3 border-l-4 hover:bg-green-950/10 transition-colors cursor-pointer ${
+                    getPriorityColor(notification.priority)
+                  } ${notification.isRead ? 'opacity-60' : ''}`}
+                  onClick={() => {
+                    if (!notification.isRead) markAsRead(notification.id);
+                    if (notification.actionUrl) {
+                      window.location.href = notification.actionUrl;
+                    }
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl flex-shrink-0">{notification.icon}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between">
+                        <h4 className="font-semibold text-green-400 text-sm">{notification.title}</h4>
+                        {!notification.isRead && (
+                          <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1" />
                         )}
-                        
-                        <div className="flex items-center justify-between mt-2">
-                          {notification.actionText && (
-                            <span className="text-xs text-green-500 hover:text-green-400 transition-colors">
-                              {notification.actionText} →
-                            </span>
-                          )}
-                          
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              clearNotification(notification.id);
-                            }}
-                            className="text-xs text-green-700 hover:text-red-400 transition-colors"
-                          >
-                            ✕
-                          </button>
-                        </div>
                       </div>
+                      <p className="text-green-600 text-xs mt-1 line-clamp-2">
+                        {notification.message}
+                      </p>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-green-700 text-xs font-mono">
+                          {formatTimestamp(notification.timestamp)}
+                        </span>
+                        {notification.amount && (
+                          <span className="text-green-400 text-xs font-mono font-bold">
+                            +{notification.amount}
+                          </span>
+                        )}
+                      </div>
+                      {notification.actionText && notification.actionUrl && (
+                        <button className="text-green-500 text-xs mt-1 hover:text-green-400 transition-colors">
+                          {notification.actionText} →
+                        </button>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))
             )}
           </div>
 
           {/* Footer */}
-          {notifications.length > 0 && (
-            <div className="bg-green-950/20 border-t border-green-900/30 p-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-green-600 font-mono">
-                  {notifications.length} notification{notifications.length !== 1 ? 's' : ''}
-                </span>
-                
-                <button
-                  onClick={clearAllNotifications}
-                  className="text-xs font-mono text-green-700 hover:text-red-400 transition-colors"
-                >
-                  Clear all
-                </button>
-              </div>
+          <div className="p-3 border-t border-green-900/30 text-center">
+            <div className="flex items-center justify-center gap-2 text-xs text-green-700">
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+              {isConnected ? 'Connected' : 'Disconnected'}
+              <span className="text-green-800">•</span>
+              <span>Updates every 30s</span>
             </div>
-          )}
+          </div>
         </div>
       )}
-
-      {/* Click Outside to Close */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setIsOpen(false)}
-        ></div>
-      )}
-    </>
+    </div>
   );
 }

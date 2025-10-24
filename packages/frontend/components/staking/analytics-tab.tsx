@@ -53,33 +53,123 @@ export function AnalyticsTab({ stakingData, user }: AnalyticsTabProps) {
   const loadAnalytics = async () => {
     setIsLoading(true);
     
-    // Simulate API call - replace with actual analytics API
-    setTimeout(() => {
-      const totalTokens = parseFloat(stakingData.tokenBalance) + parseFloat(stakingData.stakedAmount);
-      const mockAnalytics: AnalyticsData = {
+    try {
+      if (!user?.wallet_address) {
+        // No wallet address available, use fallback data
+        const totalTokens = parseFloat(stakingData.tokenBalance) + parseFloat(stakingData.stakedAmount);
+        const fallbackAnalytics: AnalyticsData = {
+          stakingPerformance: {
+            totalStaked: stakingData.stakedAmount,
+            totalRewards: stakingData.totalEarned,
+            averageDailyReward: (parseFloat(stakingData.totalEarned) / 30).toFixed(6),
+            bestDay: '0.0000',
+            stakingDays: 1,
+            effectiveAPY: stakingData.currentAPY
+          },
+          portfolioBreakdown: {
+            stakedPercentage: totalTokens > 0 ? (parseFloat(stakingData.stakedAmount) / totalTokens) * 100 : 0,
+            availablePercentage: totalTokens > 0 ? (parseFloat(stakingData.tokenBalance) / totalTokens) * 100 : 0,
+            rewardsPercentage: 0
+          },
+          recentActivity: {
+            stakingActions: 0,
+            claimActions: 0,
+            totalTransactions: 0
+          }
+        };
+        setAnalytics(fallbackAnalytics);
+        setIsLoading(false);
+        return;
+      }
+
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app';
+      const response = await fetch(`${backendUrl}/api/staking/analytics/${user.wallet_address}?timeframe=${timeframe}`);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          // User not found in staking data - use fallback based on current staking data
+          const totalTokens = parseFloat(stakingData.tokenBalance) + parseFloat(stakingData.stakedAmount);
+          const fallbackAnalytics: AnalyticsData = {
+            stakingPerformance: {
+              totalStaked: stakingData.stakedAmount,
+              totalRewards: stakingData.totalEarned,
+              averageDailyReward: '0.000000',
+              bestDay: '0.000000',
+              stakingDays: 1,
+              effectiveAPY: stakingData.currentAPY
+            },
+            portfolioBreakdown: {
+              stakedPercentage: totalTokens > 0 ? (parseFloat(stakingData.stakedAmount) / totalTokens) * 100 : 0,
+              availablePercentage: totalTokens > 0 ? (parseFloat(stakingData.tokenBalance) / totalTokens) * 100 : 0,
+              rewardsPercentage: 0
+            },
+            recentActivity: {
+              stakingActions: 0,
+              claimActions: 0,
+              totalTransactions: 0
+            }
+          };
+          setAnalytics(fallbackAnalytics);
+          setIsLoading(false);
+          return;
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Transform API response to match component interface
+      const transformedAnalytics: AnalyticsData = {
         stakingPerformance: {
-          totalStaked: stakingData.stakedAmount,
-          totalRewards: stakingData.totalEarned,
-          averageDailyReward: (parseFloat(stakingData.totalEarned) / 30).toFixed(6),
-          bestDay: '0.0089',
-          stakingDays: 30,
-          effectiveAPY: (parseFloat(stakingData.currentAPY) * 1.05).toFixed(2) // Slightly higher due to compounding
+          totalStaked: data.stakingPerformance.totalStaked + 'M',
+          totalRewards: data.stakingPerformance.totalRewards,
+          averageDailyReward: data.stakingPerformance.averageDailyReward,
+          bestDay: data.stakingPerformance.bestDay,
+          stakingDays: data.stakingPerformance.stakingDays,
+          effectiveAPY: data.stakingPerformance.effectiveAPY
         },
         portfolioBreakdown: {
-          stakedPercentage: (parseFloat(stakingData.stakedAmount) / totalTokens) * 100,
-          availablePercentage: (parseFloat(stakingData.tokenBalance) / totalTokens) * 100,
-          rewardsPercentage: (parseFloat(stakingData.totalEarned) * 3000 / (totalTokens * 0.1)) * 100 // Assume $0.10 ABC price
+          stakedPercentage: data.portfolioBreakdown.stakedPercentage,
+          availablePercentage: data.portfolioBreakdown.availablePercentage,
+          rewardsPercentage: data.portfolioBreakdown.rewardsPercentage
         },
         recentActivity: {
-          stakingActions: 12,
-          claimActions: 8,
-          totalTransactions: 20
+          stakingActions: data.recentActivity.stakingActions,
+          claimActions: data.recentActivity.claimActions,
+          totalTransactions: data.recentActivity.totalTransactions
         }
       };
       
-      setAnalytics(mockAnalytics);
+      setAnalytics(transformedAnalytics);
       setIsLoading(false);
-    }, 800);
+    } catch (error) {
+      console.error('Failed to load staking analytics:', error);
+      
+      // Fallback to basic analytics on error
+      const totalTokens = parseFloat(stakingData.tokenBalance) + parseFloat(stakingData.stakedAmount);
+      const fallbackAnalytics: AnalyticsData = {
+        stakingPerformance: {
+          totalStaked: stakingData.stakedAmount,
+          totalRewards: stakingData.totalEarned,
+          averageDailyReward: '0.000000',
+          bestDay: '0.000000',
+          stakingDays: 1,
+          effectiveAPY: stakingData.currentAPY
+        },
+        portfolioBreakdown: {
+          stakedPercentage: totalTokens > 0 ? (parseFloat(stakingData.stakedAmount) / totalTokens) * 100 : 0,
+          availablePercentage: totalTokens > 0 ? (parseFloat(stakingData.tokenBalance) / totalTokens) * 100 : 0,
+          rewardsPercentage: 0
+        },
+        recentActivity: {
+          stakingActions: 0,
+          claimActions: 0,
+          totalTransactions: 0
+        }
+      };
+      setAnalytics(fallbackAnalytics);
+      setIsLoading(false);
+    }
   };
 
   if (isLoading) {

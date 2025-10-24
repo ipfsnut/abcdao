@@ -682,4 +682,157 @@ router.get('/:fid/repositories/:repoId/webhook-instructions', async (req, res) =
   }
 });
 
+// Repository Detection Endpoint
+router.get('/:fid/detect', async (req, res) => {
+  const { fid } = req.params;
+  
+  try {
+    const pool = getPool();
+    
+    // Get user info
+    const userResult = await pool.query(`
+      SELECT id, wallet_address, github_username, github_oauth_token 
+      FROM users 
+      WHERE farcaster_fid = $1 AND github_username IS NOT NULL
+    `, [fid]);
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ 
+        error: 'User not found or GitHub not connected',
+        suggestion: 'Please connect your GitHub account first'
+      });
+    }
+    
+    const user = userResult.rows[0];
+    
+    if (!user.github_oauth_token) {
+      return res.status(400).json({ 
+        error: 'GitHub OAuth token not available',
+        suggestion: 'Please reconnect your GitHub account'
+      });
+    }
+    
+    // Use GitHub API to fetch repositories
+    const octokit = new Octokit({
+      auth: user.github_oauth_token
+    });
+    
+    // Fetch user's repositories
+    const { data: repositories } = await octokit.rest.repos.listForAuthenticatedUser({
+      sort: 'updated',
+      per_page: 100,
+      type: 'owner' // Only repos owned by the user
+    });
+    
+    // Filter and score repositories
+    const recentDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // 90 days ago
+    
+    const scoredRepos = repositories
+      .filter(repo => {
+        // Filter criteria
+        const isRecent = new Date(repo.updated_at) > recentDate;
+        const hasActivity = repo.size > 0; // Has some content
+        const notFork = !repo.fork;
+        
+        return isRecent && hasActivity && notFork;
+      })
+      .map(repo => {
+        // Scoring algorithm
+        let score = 0;
+        
+        // Activity score (based on update recency)
+        const daysSinceUpdate = Math.floor((Date.now() - new Date(repo.updated_at)) / (1000 * 60 * 60 * 24));
+        score += Math.max(0, 100 - daysSinceUpdate); // More recent = higher score
+        
+        // Popularity score
+        score += repo.stargazers_count * 2;
+        score += repo.forks_count * 3;
+        
+        // Size/content score
+        score += Math.min(repo.size / 1000, 20); // Cap at 20 points for size
+        
+        // Language boost for popular languages
+        const languageBoost = {
+          'JavaScript': 10,
+          'TypeScript': 10,
+          'Python': 8,
+          'Rust': 8,
+          'Go': 6,
+          'Java': 5
+        };
+        score += languageBoost[repo.language] || 0;
+        
+        return {
+          id: repo.id,
+          name: repo.name,
+          full_name: repo.full_name,
+          description: repo.description,
+          html_url: repo.html_url,
+          private: repo.private,
+          language: repo.language,
+          stargazers_count: repo.stargazers_count,
+          forks_count: repo.forks_count,
+          updated_at: repo.updated_at,
+          score: Math.round(score),
+          auto_eligible: !repo.private && score > 30 // Auto-enable if public and good score
+        };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 20); // Top 20 repositories
+    
+    // Check which repositories are already registered
+    const repoIds = scoredRepos.map(repo => repo.id.toString());
+    const existingRepos = await pool.query(`
+      SELECT github_repo_id 
+      FROM registered_repositories 
+      WHERE github_repo_id = ANY($1::text[])
+    `, [repoIds]);
+    
+    const existingRepoIds = new Set(existingRepos.rows.map(row => row.github_repo_id));
+    
+    // Mark existing repositories
+    const detectedRepos = scoredRepos.map(repo => ({
+      ...repo,
+      already_registered: existingRepoIds.has(repo.id.toString())
+    }));
+    
+    const stats = {
+      total_repositories: repositories.length,
+      detected_count: detectedRepos.length,
+      auto_eligible_count: detectedRepos.filter(repo => repo.auto_eligible && !repo.already_registered).length,
+      already_registered_count: detectedRepos.filter(repo => repo.already_registered).length
+    };
+    
+    res.json({
+      success: true,
+      user: {
+        github_username: user.github_username,
+        wallet_address: user.wallet_address
+      },
+      repositories: detectedRepos,
+      stats,
+      recommendations: {
+        auto_enable: detectedRepos.filter(repo => repo.auto_eligible && !repo.already_registered),
+        manual_setup: detectedRepos.filter(repo => !repo.auto_eligible && !repo.already_registered),
+        already_setup: detectedRepos.filter(repo => repo.already_registered)
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error detecting repositories:', error);
+    
+    if (error.status === 401) {
+      return res.status(401).json({ 
+        error: 'GitHub token expired',
+        suggestion: 'Please reconnect your GitHub account'
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'Failed to detect repositories',
+      message: error.message 
+    });
+  }
+});
+
 export default router;

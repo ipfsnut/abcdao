@@ -52,85 +52,64 @@ export function RepositorySetupWizard({ user, onComplete, onCancel, isOpen }: Re
   const runAutoDetection = async () => {
     setIsLoading(true);
     
-    // Simulate repository detection API call
-    setTimeout(() => {
-      const mockRepositories: Repository[] = [
-        {
-          id: '1',
-          name: 'my-awesome-project',
-          fullName: 'username/my-awesome-project',
-          description: 'A React-based web application with TypeScript',
-          language: 'TypeScript',
-          stars: 45,
-          isPrivate: false,
-          lastActivity: '2 days ago',
-          commits: 127,
-          score: 85,
-          estimatedEarning: '95000',
-          isSelected: true
-        },
-        {
-          id: '2',
-          name: 'blockchain-explorer',
-          fullName: 'username/blockchain-explorer',
-          description: 'Ethereum blockchain explorer and analytics dashboard',
-          language: 'JavaScript',
-          stars: 67,
-          isPrivate: false,
-          lastActivity: '3 days ago',
-          commits: 201,
-          score: 92,
-          estimatedEarning: '120000',
-          isSelected: true
-        },
-        {
-          id: '3',
-          name: 'python-data-analyzer',
-          fullName: 'username/python-data-analyzer',
-          description: 'Data analysis tool for processing large datasets',
-          language: 'Python',
-          stars: 23,
-          isPrivate: false,
-          lastActivity: '1 week ago',
-          commits: 89,
-          score: 78,
-          estimatedEarning: '75000',
-          isSelected: true
-        },
-        {
-          id: '4',
-          name: 'mobile-app-flutter',
-          fullName: 'username/mobile-app-flutter',
-          description: 'Cross-platform mobile application built with Flutter',
-          language: 'Dart',
-          stars: 12,
-          isPrivate: false,
-          lastActivity: '2 weeks ago',
-          commits: 56,
-          score: 65,
-          estimatedEarning: '50000',
-          isSelected: false
-        },
-        {
-          id: '5',
-          name: 'personal-website',
-          fullName: 'username/personal-website',
-          description: 'Personal portfolio website and blog',
-          language: 'HTML',
-          stars: 5,
-          isPrivate: false,
-          lastActivity: '1 month ago',
-          commits: 34,
-          score: 42,
-          estimatedEarning: '25000',
-          isSelected: false
-        }
-      ];
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app';
+      const response = await fetch(`${backendUrl}/api/repositories/${user.farcaster_fid}/detect`);
       
-      setRepositories(mockRepositories);
+      if (!response.ok) {
+        if (response.status === 404) {
+          // User not found or GitHub not connected
+          setRepositories([]);
+          setIsLoading(false);
+          setCurrentStep('selection');
+          return;
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Transform API response to match component interface
+      const transformedRepos: Repository[] = data.repositories.map((repo: any) => {
+        // Calculate estimated earning based on score (rough approximation)
+        const estimatedEarning = Math.round(repo.score * 1000).toString();
+        
+        // Format last activity
+        const lastActivityDate = new Date(repo.updated_at);
+        const daysSinceUpdate = Math.floor((Date.now() - lastActivityDate.getTime()) / (1000 * 60 * 60 * 24));
+        const lastActivity = daysSinceUpdate === 0 ? 'Today' :
+                           daysSinceUpdate === 1 ? '1 day ago' :
+                           daysSinceUpdate < 7 ? `${daysSinceUpdate} days ago` :
+                           daysSinceUpdate < 30 ? `${Math.floor(daysSinceUpdate / 7)} weeks ago` :
+                           `${Math.floor(daysSinceUpdate / 30)} months ago`;
+        
+        return {
+          id: repo.id.toString(),
+          name: repo.name,
+          fullName: repo.full_name,
+          description: repo.description || 'No description available',
+          language: repo.language || 'Unknown',
+          stars: repo.stargazers_count,
+          isPrivate: repo.private,
+          lastActivity,
+          commits: 0, // API doesn't provide commit count, could be enhanced
+          score: repo.score,
+          estimatedEarning,
+          isSelected: repo.auto_eligible && !repo.already_registered // Auto-select eligible repos
+        };
+      });
+      
+      setRepositories(transformedRepos);
       setIsLoading(false);
       setCurrentStep('selection');
-    }, 2000);
+    } catch (error) {
+      console.error('Failed to detect repositories:', error);
+      
+      // Fallback to empty state on error
+      setRepositories([]);
+      setIsLoading(false);
+      setCurrentStep('selection');
+    }
   };
 
   const toggleRepository = (repoId: string) => {

@@ -45,7 +45,7 @@ export function SystematicDataDemo() {
             <div className="mb-6">
               <h3 className="font-semibold mb-2 text-red-300">Treasury (Direct Blockchain)</h3>
               <div className="bg-red-950/20 p-3 rounded text-xs">
-                <div>Balance: {oldTreasury.treasuryBalance || '0'} ABC</div>
+                <div>Balance: {oldTreasury.treasuryAbcBalance || '0'} ABC</div>
                 <div>Loading: {oldTreasury.isLoading ? '⏳ Yes' : '✅ No'}</div>
                 <div>Error: {oldTreasury.isError ? '❌ Yes' : '✅ No'}</div>
                 <div className="text-red-400 mt-2">

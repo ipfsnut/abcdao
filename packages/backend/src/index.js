@@ -37,6 +37,9 @@ import blockchainEventsRoutes from './routes/blockchain-events.js';
 import systemHealthRoutes from './routes/system-health.js';
 import castRoutes from './routes/cast.js';
 import treasuryTiersRoutes from './routes/treasury-tiers.js';
+import socialFeedRoutes from './routes/social-feed.js';
+import notificationsRoutes from './routes/notifications.js';
+import supportRoutes from './routes/support.js';
 import botFollowingRoutes from './routes/bot-following.js';
 import nftMembershipRoutes from './routes/nft-membership.js';
 
@@ -235,6 +238,9 @@ app.use('/api/blockchain-events', blockchainEventsRoutes);
 app.use('/api/system-health', systemHealthRoutes);
 app.use('/api/cast', castRoutes);
 app.use('/api/treasury-tiers', treasuryTiersRoutes);
+app.use('/api/social-feed', socialFeedRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/support', supportRoutes);
 app.use('/api/bot-following', botFollowingRoutes);
 app.use('/api/nft-membership', nftMembershipRoutes);
 

@@ -37,77 +37,66 @@ export function LeaderboardTab({ currentUser, userStakedAmount }: LeaderboardTab
   const loadLeaderboard = async () => {
     setIsLoading(true);
     
-    // Simulate API call - replace with actual leaderboard API
-    setTimeout(() => {
-      const mockLeaderboard: LeaderboardEntry[] = [
-        {
-          rank: 1,
-          address: '0x1234...5678',
-          displayName: 'TopStaker.eth',
-          stakedAmount: '50.2M',
-          rewardsEarned: '2.4567',
-          stakingDuration: 89,
-          isCurrentUser: false
-        },
-        {
-          rank: 2,
-          address: '0x2345...6789',
-          displayName: 'MegaStaker',
-          stakedAmount: '35.8M',
-          rewardsEarned: '1.8923',
-          stakingDuration: 67,
-          isCurrentUser: false
-        },
-        {
-          rank: 3,
-          address: '0x3456...7890',
-          stakedAmount: '28.1M',
-          rewardsEarned: '1.5642',
-          stakingDuration: 45,
-          isCurrentUser: false
-        },
-        {
-          rank: 4,
-          address: '0x4567...8901',
-          displayName: 'CryptoBuilder',
-          stakedAmount: '22.7M',
-          rewardsEarned: '1.2134',
-          stakingDuration: 34,
-          isCurrentUser: false
-        },
-        {
-          rank: 5,
-          address: currentUser?.wallet_address || '0x5678...9012',
-          displayName: currentUser?.github_username || 'You',
-          stakedAmount: userStakedAmount || '15.3M',
-          rewardsEarned: '0.8756',
-          stakingDuration: 23,
-          isCurrentUser: true
-        },
-        {
-          rank: 6,
-          address: '0x6789...0123',
-          stakedAmount: '12.9M',
-          rewardsEarned: '0.7234',
-          stakingDuration: 19,
-          isCurrentUser: false
-        },
-        {
-          rank: 7,
-          address: '0x7890...1234',
-          displayName: 'HODLer2024',
-          stakedAmount: '9.6M',
-          rewardsEarned: '0.5891',
-          stakingDuration: 15,
-          isCurrentUser: false
-        }
-      ];
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app';
+      const response = await fetch(`${backendUrl}/api/staking/leaderboard?limit=50`);
       
-      setLeaderboard(mockLeaderboard);
-      const currentUserEntry = mockLeaderboard.find(entry => entry.isCurrentUser);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Transform API response to match component interface
+      const transformedLeaderboard: LeaderboardEntry[] = data.leaderboard.map((staker: any) => {
+        // Format staked amount in millions
+        const stakedAmountFormatted = (staker.currentStake / 1000000).toFixed(1) + 'M';
+        
+        // Format rewards earned
+        const rewardsEarned = staker.totalRewardsClaimed.toFixed(4);
+        
+        // Calculate staking duration (if firstStakeTime is available)
+        let stakingDuration = 0;
+        if (staker.firstStakeTime) {
+          const firstStakeDate = new Date(staker.firstStakeTime * 1000); // Convert from Unix timestamp
+          const daysSinceFirstStake = Math.floor((Date.now() - firstStakeDate.getTime()) / (1000 * 60 * 60 * 24));
+          stakingDuration = daysSinceFirstStake;
+        }
+        
+        // Check if this is the current user's address
+        const isCurrentUser = currentUser?.wallet_address?.toLowerCase() === staker.address.toLowerCase();
+        
+        // Generate display name (could be enhanced with ENS lookup)
+        const displayName = isCurrentUser ? 
+          (currentUser?.github_username || 'You') : 
+          `Staker${staker.rank}`;
+        
+        return {
+          rank: staker.rank,
+          address: staker.address,
+          displayName,
+          stakedAmount: stakedAmountFormatted,
+          rewardsEarned,
+          stakingDuration,
+          isCurrentUser
+        };
+      });
+      
+      setLeaderboard(transformedLeaderboard);
+      
+      // Find current user's rank
+      const currentUserEntry = transformedLeaderboard.find(entry => entry.isCurrentUser);
       setUserRank(currentUserEntry?.rank || null);
+      
       setIsLoading(false);
-    }, 800);
+    } catch (error) {
+      console.error('Failed to load staking leaderboard:', error);
+      
+      // Fallback to empty state on error
+      setLeaderboard([]);
+      setUserRank(null);
+      setIsLoading(false);
+    }
   };
 
   const formatAddress = (address: string) => {

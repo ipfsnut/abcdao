@@ -43,9 +43,38 @@ export function SocialTab({ user, discordMembers }: SocialTabProps) {
   const loadSocialUpdates = async () => {
     setIsLoading(true);
     
-    // Simulate API call - replace with actual social feed API
-    setTimeout(() => {
-      const mockUpdates: SocialUpdate[] = [
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app';
+      const response = await fetch(`${backendUrl}/api/social-feed/updates?filter=${filter}&limit=20`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Transform API response to match component interface
+      const transformedUpdates: SocialUpdate[] = data.updates.map((update: any) => ({
+        id: update.id,
+        type: update.type as 'announcement' | 'achievement' | 'milestone' | 'event' | 'news',
+        title: update.title,
+        content: update.content,
+        author: update.author,
+        timestamp: update.timestamp,
+        likes: update.likes,
+        comments: update.comments,
+        isLiked: update.isLiked,
+        tags: update.tags,
+        url: update.url
+      }));
+      
+      setUpdates(transformedUpdates);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Failed to load social updates:', error);
+      
+      // Fallback to empty state with a single welcome message
+      const fallbackUpdates: SocialUpdate[] = [
         {
           id: '1',
           type: 'announcement',
@@ -110,19 +139,9 @@ export function SocialTab({ user, discordMembers }: SocialTabProps) {
         }
       ];
       
-      // Filter updates based on selected filter
-      const filteredUpdates = filter === 'all' 
-        ? mockUpdates 
-        : mockUpdates.filter(update => {
-            if (filter === 'announcements') return update.type === 'announcement' || update.type === 'news';
-            if (filter === 'achievements') return update.type === 'achievement' || update.type === 'milestone';
-            if (filter === 'events') return update.type === 'event';
-            return false;
-          });
-      
-      setUpdates(filteredUpdates);
+      setUpdates(fallbackUpdates);
       setIsLoading(false);
-    }, 800);
+    }
   };
 
   const handleLike = (updateId: string) => {

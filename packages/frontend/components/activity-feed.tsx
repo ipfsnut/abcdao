@@ -39,12 +39,27 @@ export function ActivityFeed({ walletAddress }: ActivityFeedProps) {
     setIsLoading(true);
     
     try {
-      // TODO: Replace with actual API call to get user activity
-      // const response = await fetch(`${config.backendUrl}/api/users-commits/activity/${walletAddress}`);
-      // const data = await response.json();
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app';
+      const response = await fetch(`${backendUrl}/api/users-commits/activity/${walletAddress}?limit=20`);
       
-      // For now, show empty state encouraging users to start activity
-      setActivities([]);
+      if (!response.ok) {
+        if (response.status === 404) {
+          // User not found - show empty state
+          setActivities([]);
+          setIsLoading(false);
+          return;
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Filter activities based on selected filter
+      const filteredActivities = filter === 'all' 
+        ? data.activities 
+        : data.activities.filter((activity: ActivityItem) => activity.type === filter);
+      
+      setActivities(filteredActivities);
       setIsLoading(false);
     } catch (error) {
       console.error('Failed to load activity feed:', error);
