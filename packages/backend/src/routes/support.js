@@ -24,7 +24,7 @@ router.get('/test', (req, res) => {
  */
 router.get('/tickets/:walletAddress', async (req, res) => {
   try {
-    const walletAddress = req.params.walletAddress;
+    const walletAddress = req.params.walletAddress.toLowerCase();
     const status = req.query.status || 'all'; // all, open, closed, pending
     const limit = parseInt(req.query.limit) || 20;
     

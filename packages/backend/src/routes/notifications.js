@@ -24,7 +24,7 @@ router.get('/test', (req, res) => {
  */
 router.get('/:walletAddress', async (req, res) => {
   try {
-    const walletAddress = req.params.walletAddress;
+    const walletAddress = req.params.walletAddress.toLowerCase();
     const since = req.query.since; // ISO timestamp for polling
     const limit = parseInt(req.query.limit) || 20;
     
@@ -91,7 +91,7 @@ router.post('/:walletAddress/:notificationId/read', async (req, res) => {
  */
 router.post('/:walletAddress/mark-all-read', async (req, res) => {
   try {
-    const walletAddress = req.params.walletAddress;
+    const walletAddress = req.params.walletAddress.toLowerCase();
     
     if (!walletAddress) {
       return res.status(400).json({ error: 'Missing wallet address' });

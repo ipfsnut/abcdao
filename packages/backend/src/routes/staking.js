@@ -414,7 +414,7 @@ router.get('/health', async (req, res) => {
  */
 router.get('/analytics/:walletAddress', async (req, res) => {
   try {
-    const walletAddress = req.params.walletAddress;
+    const walletAddress = req.params.walletAddress.toLowerCase();
     const timeframe = req.query.timeframe || '30d';
     
     if (!walletAddress) {

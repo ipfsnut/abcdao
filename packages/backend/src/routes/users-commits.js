@@ -26,7 +26,7 @@ router.get('/test', (req, res) => {
  */
 router.get('/profile/:identifier', async (req, res) => {
   try {
-    const identifier = req.params.identifier;
+    const identifier = req.params.identifier.toLowerCase();
     
     if (!identifier) {
       return res.status(400).json({ 
@@ -371,7 +371,7 @@ router.get('/health', async (req, res) => {
  */
 router.get('/activity/:walletAddress', async (req, res) => {
   try {
-    const walletAddress = req.params.walletAddress;
+    const walletAddress = req.params.walletAddress.toLowerCase();
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
     
@@ -457,7 +457,7 @@ router.get('/activity/:walletAddress', async (req, res) => {
  */
 router.get('/metrics/:walletAddress', async (req, res) => {
   try {
-    const walletAddress = req.params.walletAddress;
+    const walletAddress = req.params.walletAddress.toLowerCase();
     
     if (!walletAddress) {
       return res.status(400).json({ 
@@ -571,7 +571,7 @@ router.post('/webhook/github', async (req, res) => {
  */
 router.get('/analytics/:walletAddress', async (req, res) => {
   try {
-    const walletAddress = req.params.walletAddress;
+    const walletAddress = req.params.walletAddress.toLowerCase();
     const timeframe = req.query.timeframe || '30d';
     
     if (!walletAddress) {
