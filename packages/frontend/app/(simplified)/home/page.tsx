@@ -66,29 +66,8 @@ export default function ConsolidatedDashboard() {
       
       setAvatarLoading(true);
       try {
-        // Try Neynar API if available
-        const apiKey = process.env.NEXT_PUBLIC_NEYNAR_API_KEY;
-        
-        if (apiKey && user.farcaster_fid) {
-          const response = await fetch(`https://api.neynar.com/v2/farcaster/user/bulk?fids=${user.farcaster_fid}`, {
-            headers: {
-              'Accept': 'application/json',
-              'api_key': apiKey
-            }
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            const fcUser = data.users?.[0];
-            if (fcUser?.pfp_url) {
-              setFarcasterAvatar(fcUser.pfp_url);
-              return;
-            }
-          }
-        }
-        
-        // Fallback: Try Warpcast profile URL pattern
-        const fallbackUrl = `https://res.cloudinary.com/merkle-manufactory/image/fetch/c_fill,f_png,w_256/${encodeURIComponent(`https://warpcast.com/~/profile-picture?username=${user.farcaster_username}`)}`;
+        // Try farcaster.xyz profile URL pattern as primary method
+        const fallbackUrl = `https://farcaster.xyz/v2/user/${user.farcaster_username}/avatar`;
         setFarcasterAvatar(fallbackUrl);
       } catch (error) {
         console.log('Failed to fetch Farcaster avatar:', error);

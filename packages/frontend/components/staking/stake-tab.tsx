@@ -120,22 +120,6 @@ export function StakeTab({ stakingData, user, onDataUpdate }: StakeTabProps) {
               </div>
             </div>
 
-            <div className="bg-green-950/20 border border-green-700/30 rounded-lg p-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <div className="text-green-600 font-mono">Daily Rewards</div>
-                  <div className="text-green-400 font-bold">
-                    {calculateProjectedRewards(stakeAmount)} ETH
-                  </div>
-                </div>
-                <div>
-                  <div className="text-green-600 font-mono">Annual Rewards</div>
-                  <div className="text-green-400 font-bold">
-                    {(parseFloat(calculateProjectedRewards(stakeAmount)) * 365).toFixed(4)} ETH
-                  </div>
-                </div>
-              </div>
-            </div>
 
             <button
               onClick={handleStake}
