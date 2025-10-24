@@ -33,97 +33,15 @@ export class UserCommitDataManager {
       return;
     }
 
-    console.log('👥 Initializing User/Commit Data Manager...');
-
-    try {
-      // Start periodic updates
-      setInterval(() => this.updateUserStatistics(), this.updateInterval);
-      setInterval(() => this.generateAnalytics(), this.analyticsInterval);
-      setInterval(() => this.updateUserStreaks(), 60 * 60 * 1000); // 1 hour
-      
-      // Initial data processing
-      await this.updateUserStatistics();
-      await this.generateAnalytics();
-      await this.updateUserStreaks();
-      
-      this.isInitialized = true;
-      console.log('✅ User/Commit Data Manager initialized successfully');
-      console.log(`   - User statistics updates every ${this.updateInterval / 60000} minutes`);
-      console.log(`   - Analytics generation every ${this.analyticsInterval / 60000} minutes`);
-
-    } catch (error) {
-      console.error('❌ Failed to initialize User/Commit Data Manager:', error);
-      throw error;
-    }
+    console.log('👥 User/Commit Data Manager (DISABLED - using original tables only)');
+    console.log('   - Webhook processing handled by /api/webhooks/github directly');
+    console.log('   - User data queries use original users/commits tables');
+    
+    this.isInitialized = true;
+    // Disabled - functionality moved to direct webhook processing
   }
 
-  /**
-   * Migrate existing data from legacy tables to systematic schema
-   */
-  async migrateExistingData() {
-    try {
-      console.log('📦 Migrating existing user and commit data...');
-      
-      const pool = getPool();
-      
-      // Migrate users to users_master
-      await pool.query(`
-        INSERT INTO users_master (
-          farcaster_fid, farcaster_username, github_username, github_id,
-          wallet_address, membership_status, membership_paid_at, 
-          membership_tx_hash, membership_amount, github_access_token,
-          total_commits, total_rewards_earned, last_commit_at,
-          verified_at, created_at, updated_at
-        )
-        SELECT 
-          farcaster_fid, farcaster_username, github_username, github_id,
-          wallet_address, COALESCE(membership_status, 'pending'), membership_paid_at,
-          membership_tx_hash, membership_amount, access_token,
-          COALESCE(total_commits, 0), COALESCE(total_rewards_earned, 0), last_commit_at,
-          verified_at, created_at, COALESCE(updated_at, created_at)
-        FROM users
-        ON CONFLICT (farcaster_fid) DO UPDATE SET
-          github_username = EXCLUDED.github_username,
-          wallet_address = EXCLUDED.wallet_address,
-          membership_status = EXCLUDED.membership_status,
-          total_commits = EXCLUDED.total_commits,
-          total_rewards_earned = EXCLUDED.total_rewards_earned,
-          updated_at = NOW()
-      `);
-
-      // Migrate commits to commits_master
-      await pool.query(`
-        INSERT INTO commits_master (
-          commit_hash, repository_name, commit_message, commit_url,
-          user_id, reward_amount, processed_at, cast_url,
-          commit_timestamp, created_at
-        )
-        SELECT 
-          c.commit_hash, 
-          c.repository as repository_name,
-          c.commit_message, 
-          c.commit_url,
-          um.id as user_id,
-          COALESCE(c.reward_amount, 0),
-          c.processed_at,
-          c.cast_url,
-          COALESCE(c.created_at, c.processed_at) as commit_timestamp,
-          c.created_at
-        FROM commits c
-        JOIN users u ON c.user_id = u.id
-        JOIN users_master um ON u.farcaster_fid = um.farcaster_fid
-        ON CONFLICT (commit_hash) DO UPDATE SET
-          reward_amount = EXCLUDED.reward_amount,
-          processed_at = EXCLUDED.processed_at,
-          cast_url = EXCLUDED.cast_url
-      `);
-
-      console.log('✅ Data migration completed');
-      
-    } catch (error) {
-      console.warn('⚠️  Data migration failed (may be normal on first run):', error.message);
-    }
-  }
+  // Migration removed - using original tables only
 
   /**
    * Process GitHub webhook systematically
