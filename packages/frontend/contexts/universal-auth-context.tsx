@@ -333,11 +333,11 @@ export function UniversalAuthProvider({ children }: { children: ReactNode }) {
       has_github: backendUser.has_github || !!backendUser.github_username,
       has_farcaster: backendUser.has_farcaster || !!backendUser.farcaster_fid,
       has_discord: backendUser.has_discord || !!backendUser.discord_id,
-      can_earn_rewards: !!backendUser.github_username && !!backendUser.membership_tx_hash,
+      can_earn_rewards: backendUser.can_earn_rewards || (!!backendUser.github_username && !!backendUser.membership_tx_hash),
       membership_tx_hash: backendUser.membership_tx_hash,
-      joined_at: backendUser.joined_at,
+      joined_at: backendUser.joined_at || backendUser.membership_paid_at,
       total_commits: backendUser.total_commits || 0,
-      total_earned: backendUser.total_earned || 0,
+      total_earned: parseInt(backendUser.total_earned || backendUser.total_rewards_earned || backendUser.total_abc_earned || '0'),
     };
   };
 

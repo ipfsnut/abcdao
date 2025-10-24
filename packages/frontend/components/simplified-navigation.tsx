@@ -162,7 +162,7 @@ export function SimplifiedNavigation({ user, isAuthenticated }: SimplifiedNaviga
                 {/* User Menu */}
                 <div className="relative">
                   <Link
-                    href={`/profile/${user.wallet_address}`}
+                    href={`/profile?address=${user.wallet_address}`}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg border border-green-900/30 hover:border-green-700/50 transition-all"
                   >
                     <span className="text-xs text-green-600">

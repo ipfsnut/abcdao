@@ -297,39 +297,7 @@ async function processCommit(user, repository, commit) {
       commitParsed.isPrivate
     ]);
     
-    // ALSO insert into systematic commits_master table for roster
-    const systematicUser = await pool.query(`
-      SELECT id FROM users_master WHERE farcaster_fid = $1
-    `, [user.farcaster_fid]);
-    
-    if (systematicUser.rows.length > 0) {
-      const systematicUserId = systematicUser.rows[0].id;
-      
-      await pool.query(`
-        INSERT INTO commits_master (
-          commit_hash, repository_name, repository_url, commit_message, commit_url,
-          user_id, author_github_username, reward_amount, reward_status,
-          commit_timestamp, processed_at, created_at
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-        ON CONFLICT (commit_hash) DO NOTHING
-      `, [
-        commit.id,
-        repository.full_name,
-        repository.html_url,
-        commitParsed.cleanedMessage,
-        commit.url,
-        systematicUserId,
-        user.github_username,
-        0, // Will be set during reward processing
-        'pending',
-        new Date(commit.timestamp),
-        new Date(),
-        new Date()
-      ]);
-      
-      console.log(`✅ Added commit ${commit.id} to systematic table for roster`);
-    }
+    // Commit recorded in main commits table only
     
     console.log(`✅ Recorded commit ${commit.id} for ${user.farcaster_username}`);
     
@@ -415,12 +383,7 @@ async function processRewardDirectly(commitData) {
       WHERE commit_hash = $2
     `, [rewardAmount, commitHash]);
     
-    // ALSO update systematic commits_master table for roster
-    await pool.query(`
-      UPDATE commits_master 
-      SET reward_amount = $1, reward_status = 'processed', processed_at = NOW()
-      WHERE commit_hash = $2
-    `, [rewardAmount, commitHash]);
+    // Commit reward updated in main commits table only
     
     // Update daily stats
     const today = new Date().toISOString().split('T')[0];
@@ -440,20 +403,20 @@ async function processRewardDirectly(commitData) {
     
     console.log(`✅ Awarded ${rewardAmount} ABC to ${farcasterUsername}`);
     
-    // Update user statistics in systematic table
+    // Update user statistics in main users table
     try {
       const userUpdateResult = await pool.query(`
-        UPDATE users_master 
+        UPDATE users 
         SET 
           total_commits = COALESCE((
-            SELECT COUNT(*) FROM commits_master WHERE user_id = users_master.id
+            SELECT COUNT(*) FROM commits WHERE user_id = users.id
           ), 0),
           total_rewards_earned = COALESCE((
-            SELECT SUM(reward_amount) FROM commits_master 
-            WHERE user_id = users_master.id AND reward_status IN ('pending', 'processed')
+            SELECT SUM(reward_amount) FROM commits 
+            WHERE user_id = users.id AND reward_amount IS NOT NULL
           ), 0),
           last_commit_at = (
-            SELECT MAX(commit_timestamp) FROM commits_master WHERE user_id = users_master.id
+            SELECT MAX(processed_at) FROM commits WHERE user_id = users.id
           ),
           updated_at = NOW()
         WHERE farcaster_fid = $1

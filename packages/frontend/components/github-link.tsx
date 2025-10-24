@@ -72,30 +72,24 @@ export function GitHubLinkPanel() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${config.backendUrl}/api/auth/github/authorize`, {
-        method: 'POST',
+      const response = await fetch(`${config.backendUrl}/api/universal-auth/github/url?wallet_address=${encodeURIComponent('webapp')}`, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          farcasterFid: profile.fid,
-          farcasterUsername: profile.username,
-          // Include callback URL for proper redirect after GitHub auth
-          callbackUrl: getCallbackUrl(),
-        }),
       });
 
       if (response.ok) {
-        const { authUrl } = await response.json();
+        const { auth_url } = await response.json();
         
         // Handle redirect differently for frames vs regular browser
         if (inFrame) {
           // In a frame, we need to open in a new window/tab
-          window.open(authUrl, '_blank');
+          window.open(auth_url, '_blank');
           alert('Complete GitHub authorization in the new tab, then refresh this page.');
         } else {
           // In regular browser, direct redirect is fine
-          window.location.href = authUrl;
+          window.location.href = auth_url;
         }
       } else {
         alert('Failed to initialize GitHub authentication');

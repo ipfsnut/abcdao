@@ -42,7 +42,6 @@ export class UserCommitDataManager {
       setInterval(() => this.updateUserStreaks(), 60 * 60 * 1000); // 1 hour
       
       // Initial data processing
-      await this.migrateExistingData();
       await this.updateUserStatistics();
       await this.generateAnalytics();
       await this.updateUserStreaks();

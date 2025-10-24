@@ -83,7 +83,7 @@ export function QuickActionsPanel({ user, features, onSectionChange }: QuickActi
       title: 'Profile',
       description: 'View and edit your developer profile',
       icon: '👤',
-      href: `/profile/${user.wallet_address}`,
+      href: `/profile?address=${user.wallet_address}`,
       enabled: true
     },
     {

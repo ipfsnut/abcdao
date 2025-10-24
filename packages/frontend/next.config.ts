@@ -4,12 +4,20 @@ const nextConfig: NextConfig = {
   output: 'export',
   trailingSlash: true,
   outputFileTracingRoot: '.',
+  // Handle dynamic routes for static export
+  distDir: 'out',
   // Generate consistent build ID for deterministic asset names
   generateBuildId: async () => {
     return 'abcdao-static-build-v1'
   },
   images: {
-    unoptimized: true
+    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      }
+    ]
   },
   eslint: {
     ignoreDuringBuilds: true,
