@@ -79,16 +79,6 @@ export function QuickActionsPanel({ user, features, onSectionChange }: QuickActi
       enabled: true
     },
     {
-      id: 'governance',
-      title: 'Governance',
-      description: 'Vote on proposals and participate in decisions',
-      icon: '🗳️',
-      href: '/governance',
-      enabled: features?.governance,
-      setupRequired: !user.is_member,
-      setupText: 'Membership required'
-    },
-    {
       id: 'profile',
       title: 'Profile',
       description: 'View and edit your developer profile',

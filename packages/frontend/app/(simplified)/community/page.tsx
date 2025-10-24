@@ -5,7 +5,6 @@
  * - Connect Tab: Discord, Farcaster integration
  * - Support Tab: Help, documentation, contact
  * - Social Tab: Recent activity, announcements
- * - Governance Tab: Proposals, voting (if member)
  */
 
 'use client';
@@ -19,16 +18,14 @@ import { config } from '@/lib/config';
 import { ConnectTab } from '@/components/community/connect-tab';
 import { SupportTab } from '@/components/community/support-tab';
 import { SocialTab } from '@/components/community/social-tab';
-import { GovernanceTab } from '@/components/community/governance-tab';
 
-type TabId = 'connect' | 'support' | 'social' | 'governance';
+type TabId = 'connect' | 'support' | 'social';
 
 export default function UnifiedCommunityHub() {
   const { user, isAuthenticated, features } = useWalletFirstAuth();
   const [activeTab, setActiveTab] = useState<TabId>('connect');
   const [communityData, setCommunityData] = useState({
     discordMembers: 0,
-    activeProposals: 0,
     socialConnections: 0,
     supportTickets: 0,
     isLoading: true
@@ -49,7 +46,6 @@ export default function UnifiedCommunityHub() {
         const data = await response.json();
         setCommunityData({
           discordMembers: data.discord_members || 0, // Use 0 if no real data
-          activeProposals: data.active_proposals || 0,
           socialConnections: user?.discord_connected && user?.farcaster_connected ? 2 : 
                             user?.discord_connected || user?.farcaster_connected ? 1 : 0,
           supportTickets: data.support_tickets || 0,
@@ -60,7 +56,6 @@ export default function UnifiedCommunityHub() {
         const discordMembers = await fetchDiscordMemberCount();
         setCommunityData({
           discordMembers,
-          activeProposals: 0, // Currently no governance system
           socialConnections: user?.discord_connected && user?.farcaster_connected ? 2 : 
                             user?.discord_connected || user?.farcaster_connected ? 1 : 0,
           supportTickets: 0,
@@ -73,7 +68,6 @@ export default function UnifiedCommunityHub() {
       const discordMembers = await fetchDiscordMemberCount();
       setCommunityData({
         discordMembers,
-        activeProposals: 0,
         socialConnections: user?.discord_connected && user?.farcaster_connected ? 2 : 
                           user?.discord_connected || user?.farcaster_connected ? 1 : 0,
         supportTickets: 0,
@@ -123,15 +117,6 @@ export default function UnifiedCommunityHub() {
       description: 'Community updates and activity',
       count: null,
       priority: false
-    },
-    {
-      id: 'governance' as TabId,
-      label: 'Governance',
-      icon: '🗳️',
-      description: 'Vote on proposals and decisions',
-      count: communityData.activeProposals > 0 ? communityData.activeProposals.toString() : null,
-      priority: false,
-      disabled: !features?.governance
     }
   ];
 
@@ -205,13 +190,6 @@ export default function UnifiedCommunityHub() {
                 </div>
               </div>
               
-              <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-4">
-                <div className="text-sm font-mono text-yellow-600 mb-1">Active Proposals</div>
-                <div className="text-2xl font-bold text-yellow-400">
-                  {communityData.isLoading ? '...' : communityData.activeProposals}
-                </div>
-                <div className="text-xs text-yellow-700">Ready for voting</div>
-              </div>
               
               <div className="bg-purple-950/20 border border-purple-900/30 rounded-lg p-4">
                 <div className="text-sm font-mono text-purple-600 mb-1">Support Status</div>
@@ -294,14 +272,6 @@ export default function UnifiedCommunityHub() {
               <SocialTab 
                 user={user}
                 discordMembers={communityData.discordMembers}
-              />
-            )}
-            
-            {activeTab === 'governance' && (
-              <GovernanceTab 
-                user={user}
-                activeProposals={communityData.activeProposals}
-                canVote={features?.governance || false}
               />
             )}
           </div>

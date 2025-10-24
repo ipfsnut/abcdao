@@ -52,7 +52,6 @@ interface AvailableFeatures {
   social_features: boolean;
   premium_features: boolean;
   staking: boolean;
-  governance: boolean;
 }
 
 interface NextStep {
@@ -108,7 +107,6 @@ export function useWalletFirstAuth() {
           social_features: user.discord_connected || user.farcaster_connected || false,
           premium_features: user.is_member || false,
           staking: true,
-          governance: user.is_member || false
         };
 
         const nextSteps: NextStep[] = [];
@@ -170,7 +168,6 @@ export function useWalletFirstAuth() {
           social_features: false,
           premium_features: false,
           staking: true,
-          governance: false
         };
 
         const nextSteps = [
@@ -234,7 +231,6 @@ export function useWalletFirstAuth() {
           social_features: user.discord_connected || user.farcaster_connected || false,
           premium_features: user.is_member || false,
           staking: true,
-          governance: user.is_member || false
         };
 
         const nextSteps: NextStep[] = [];
