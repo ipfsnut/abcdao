@@ -121,7 +121,7 @@ Our philosophy: **Ship code, get rewards.** Every commit counts. Every push gets
 - **Variable Rewards**: Earn 50,000-1,000,000 $ABC per commit (randomized)
 - **Repository Registration**: Add up to 3 repositories to reward system
 - **Priority Tags**: Use #high, #milestone tags for 1.5x reward multipliers
-- **Governance Rights**: Vote on DAO proposals and treasury decisions
+- **Community Access**: Connect with developers and access premium features
 - **Staking Eligibility**: Stake $ABC to earn $ETH from trading fees
 
 **Repository Integration**:

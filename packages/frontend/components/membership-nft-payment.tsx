@@ -304,7 +304,6 @@ export function MembershipNFTPayment({ onPaymentComplete }: MembershipNFTPayment
             <p className="text-yellow-600 font-mono text-xs mb-2">{"// After linking GitHub:"}</p>
             <ul className="space-y-1 text-yellow-400 font-mono text-xs">
               <li>→ Start earning $ABC for commits</li>
-              <li>→ Participate in governance</li>
               <li>→ Access full DAO benefits</li>
             </ul>
           </div>
@@ -345,7 +344,6 @@ export function MembershipNFTPayment({ onPaymentComplete }: MembershipNFTPayment
             <ul className="space-y-1 text-green-400 font-mono text-xs">
               <li>→ Tradeable membership proof</li>
               <li>→ Earn $ABC for commits</li>
-              <li>→ DAO governance rights</li>
               <li>→ October 2025 collectible</li>
             </ul>
           </div>
@@ -496,7 +494,6 @@ export function MembershipNFTPayment({ onPaymentComplete }: MembershipNFTPayment
             <li>1. NFT appears in your wallet</li>
             <li>2. Membership verified on-chain</li>
             <li>3. {hasGithub ? 'Start earning $ABC for commits' : 'Link GitHub to start earning'}</li>
-            <li>4. Access to DAO governance</li>
             <li>5. Tradeable on NFT marketplaces</li>
           </ol>
         </div>

@@ -118,7 +118,7 @@ export function WalletFirstAuth() {
               <h3 className="font-semibold text-green-400 mb-3">For Everyone</h3>
               <ul className="text-sm text-green-600 space-y-2">
                 <li>• Stake $ABC tokens for rewards</li>
-                <li>• Community governance voting</li>
+                <li>• Community access and networking</li>
                 <li>• Social features and recognition</li>
                 <li>• Treasury transparency</li>
               </ul>

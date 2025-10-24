@@ -128,7 +128,7 @@ export function BuyABCSection() {
           <li>• Stake tokens to earn ETH rewards from trading fees</li>
           <li>• Pay 0.002 ETH membership to earn rewards for commits</li>
           <li>• Access token-gated community features</li>
-          <li>• Participate in DAO governance (coming soon)</li>
+          <li>• Access premium community features</li>
         </ul>
       </div>
     </div>

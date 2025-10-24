@@ -124,7 +124,7 @@ export function useWalletFirstAuth() {
             action: 'purchase_membership',
             title: 'Become a Member',
             description: 'Pay 0.002 ETH to unlock full features',
-            benefits: ['Premium features', 'Governance voting', 'Priority support'],
+            benefits: ['Premium features', 'Community status', 'Priority support'],
             priority: 'medium' as const
           });
         }
@@ -182,7 +182,7 @@ export function useWalletFirstAuth() {
             action: 'purchase_membership',
             title: 'Become a Member',
             description: 'Pay 0.002 ETH to unlock premium features',
-            benefits: ['Premium features', 'Governance voting', 'Priority support'],
+            benefits: ['Premium features', 'Community status', 'Priority support'],
             priority: 'medium' as const
           }
         ];
@@ -248,7 +248,7 @@ export function useWalletFirstAuth() {
             action: 'purchase_membership',
             title: 'Become a Member',
             description: 'Pay 0.002 ETH to unlock full features',
-            benefits: ['Premium features', 'Governance voting', 'Priority support'],
+            benefits: ['Premium features', 'Community status', 'Priority support'],
             priority: 'medium' as const
           });
         }

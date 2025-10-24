@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useStaking } from '@/hooks/useStaking';
 
 interface MetricsDashboardProps {
   user: any;
@@ -16,14 +17,18 @@ interface MetricsDashboardProps {
 
 export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
   const [isLoading, setIsLoading] = useState(true);
-  const [metrics, setMetrics] = useState({
-    tokenBalance: '0',
-    stakedAmount: '0',
-    pendingRewards: '0',
-    totalEarned: '0',
+  const [backendMetrics, setBackendMetrics] = useState({
     commitCount: 0,
     stakingAPY: '0'
   });
+
+  // Use blockchain data for accurate token/staking info
+  const {
+    tokenBalance,
+    stakedAmount,
+    pendingRewards,
+    totalEarned
+  } = useStaking();
 
   useEffect(() => {
     loadMetrics();
@@ -36,12 +41,8 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
       
       if (!response.ok) {
         if (response.status === 404) {
-          // User not found - use fallback data
-          setMetrics({
-            tokenBalance: ((user.total_earned_tokens || 0) / 1000000).toFixed(1),
-            stakedAmount: ((user.total_staked_tokens || 0) / 1000000).toFixed(1),
-            pendingRewards: '0',
-            totalEarned: ((user.total_earned_tokens || 0) / 1000000).toFixed(1),
+          // User not found - use fallback data for backend-only metrics
+          setBackendMetrics({
             commitCount: user.total_commits || 0,
             stakingAPY: '0'
           });
@@ -54,23 +55,15 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
       const data = await response.json();
       const metrics = data.metrics;
       
-      setMetrics({
-        tokenBalance: metrics.tokenBalance,
-        stakedAmount: metrics.stakedAmount,
-        pendingRewards: metrics.pendingRewards,
-        totalEarned: metrics.totalEarned,
-        commitCount: metrics.commitCount,
-        stakingAPY: metrics.stakingAPY
+      setBackendMetrics({
+        commitCount: metrics.commitCount || user.total_commits || 0,
+        stakingAPY: metrics.stakingAPY || '0'
       });
       setIsLoading(false);
     } catch (error) {
-      console.error('Failed to load metrics:', error);
+      console.error('Failed to load backend metrics:', error);
       // Fallback to user data if API fails
-      setMetrics({
-        tokenBalance: ((user.total_earned_tokens || 0) / 1000000).toFixed(1),
-        stakedAmount: ((user.total_staked_tokens || 0) / 1000000).toFixed(1),
-        pendingRewards: '0',
-        totalEarned: ((user.total_earned_tokens || 0) / 1000000).toFixed(1),
+      setBackendMetrics({
         commitCount: user.total_commits || 0,
         stakingAPY: '0'
       });
@@ -94,10 +87,19 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
     );
   }
 
+  // Format blockchain values for display
+  const formatTokenAmount = (amount: string) => {
+    const num = parseFloat(amount);
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    }
+    return num.toFixed(1);
+  };
+
   const metricCards = [
     {
       label: 'Token Balance',
-      value: `${metrics.tokenBalance}M`,
+      value: formatTokenAmount(tokenBalance || '0'),
       unit: '$ABC',
       icon: '💰',
       color: 'text-green-400',
@@ -105,7 +107,7 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
     },
     {
       label: 'Staked Amount',
-      value: `${metrics.stakedAmount}M`,
+      value: formatTokenAmount(stakedAmount || '0'),
       unit: '$ABC',
       icon: '🏦',
       color: 'text-blue-400',
@@ -113,7 +115,7 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
     },
     {
       label: 'Pending ETH',
-      value: metrics.pendingRewards,
+      value: parseFloat(pendingRewards || '0').toFixed(4),
       unit: 'ETH',
       icon: '⏳',
       color: 'text-yellow-400',
@@ -121,7 +123,7 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
     },
     {
       label: 'Total Earned',
-      value: `${metrics.totalEarned}M`,
+      value: formatTokenAmount(totalEarned || '0'),
       unit: '$ABC',
       icon: '🎁',
       color: 'text-green-400',
@@ -129,7 +131,7 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
     },
     {
       label: 'Commits',
-      value: metrics.commitCount.toString(),
+      value: backendMetrics.commitCount.toString(),
       unit: 'commits',
       icon: '📝',
       color: 'text-purple-400',
@@ -137,7 +139,7 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
     },
     {
       label: 'Staking APY',
-      value: `${metrics.stakingAPY}%`,
+      value: `${backendMetrics.stakingAPY}%`,
       unit: 'annual',
       icon: '📈',
       color: 'text-orange-400',
@@ -199,7 +201,7 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
         <div className="bg-black/20 border border-green-900/20 rounded-lg p-3">
           <div className="text-sm font-mono text-green-600 mb-1">🎯 Goal</div>
           <div className="text-xs text-green-700">
-            {parseInt(metrics.stakedAmount) >= 5 
+            {parseFloat(stakedAmount || '0') >= 5000000 
               ? 'You have premium staking benefits!'
               : 'Stake 5M+ $ABC for premium benefits'
             }

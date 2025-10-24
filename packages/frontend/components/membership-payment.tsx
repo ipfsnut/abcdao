@@ -263,7 +263,6 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
             <p className="text-yellow-600 font-mono text-xs mb-2">{"// After linking GitHub:"}</p>
             <ul className="space-y-1 text-yellow-400 font-mono text-xs">
               <li>→ Start earning $ABC for commits</li>
-              <li>→ Participate in governance</li>
               <li>→ Access full DAO benefits</li>
             </ul>
           </div>
@@ -303,7 +302,6 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
             <p className="text-green-600 font-mono text-xs mb-2">{"// You can now:"}</p>
             <ul className="space-y-1 text-green-400 font-mono text-xs">
               <li>→ Earn $ABC for commits</li>
-              <li>→ Participate in governance</li>
               <li>→ Stake $ABC for ETH rewards</li>
             </ul>
           </div>
@@ -486,7 +484,6 @@ export function MembershipPaymentPanel({ onPaymentComplete }: MembershipPaymentP
             <li>1. Transaction verified on-chain</li>
             <li>2. Membership activated</li>
             <li>3. {hasGithub ? 'Start earning $ABC for commits' : 'Link GitHub to start earning'}</li>
-            <li>4. Access to DAO governance</li>
           </ol>
         </div>
       </div>

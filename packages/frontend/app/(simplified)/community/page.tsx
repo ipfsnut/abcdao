@@ -152,7 +152,7 @@ export default function UnifiedCommunityHub() {
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-green-400">✓</span>
-                  Governance participation
+                  Community engagement
                 </li>
               </ul>
             </div>
@@ -164,7 +164,7 @@ export default function UnifiedCommunityHub() {
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
-      <BackNavigation title="Community Hub" subtitle="Connect • Support • Collaborate • Govern" />
+      <BackNavigation title="Community Hub" subtitle="Connect • Support • Collaborate • Grow" />
       
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">

@@ -20,11 +20,12 @@ import { StakeTab } from '@/components/staking/stake-tab';
 import { LeaderboardTab } from '@/components/staking/leaderboard-tab';
 import { RewardsTab } from '@/components/staking/rewards-tab';
 import { AnalyticsTab } from '@/components/staking/analytics-tab';
+import { TokenSupplyChart } from '@/components/token-supply-chart';
 
-type TabId = 'stake' | 'leaderboard' | 'rewards' | 'analytics';
+type TabId = 'stake' | 'leaderboard' | 'rewards' | 'analytics' | 'supply';
 
 export default function UnifiedStakingPage() {
-  const { user, isAuthenticated, features } = useWalletFirstAuth();
+  const { user, isAuthenticated } = useWalletFirstAuth();
   const [activeTab, setActiveTab] = useState<TabId>('stake');
   
   // Use real staking hook for live blockchain data
@@ -77,6 +78,13 @@ export default function UnifiedStakingPage() {
       icon: '📊',
       description: 'Your staking stats',
       count: null
+    },
+    {
+      id: 'supply' as TabId,
+      label: 'Supply',
+      icon: '🪙',
+      description: 'Token supply breakdown',
+      count: null
     }
   ];
 
@@ -108,7 +116,7 @@ export default function UnifiedStakingPage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-green-400">✓</span>
-                  Governance voting rights
+                  Community status benefits
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-green-400">✓</span>
@@ -124,7 +132,7 @@ export default function UnifiedStakingPage() {
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
-      <BackNavigation title="Staking Dashboard" subtitle="Stake ABC • Earn ETH • Govern DAO" />
+      <BackNavigation title="Staking Dashboard" subtitle="Stake ABC • Earn ETH • Community Benefits" />
       
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
@@ -233,6 +241,12 @@ export default function UnifiedStakingPage() {
                 stakingData={stakingData}
                 user={user}
               />
+            )}
+            
+            {activeTab === 'supply' && (
+              <div className="bg-gray-900/50 border border-green-900/30 rounded-lg p-6">
+                <TokenSupplyChart size={400} showLegend={true} interactive={true} />
+              </div>
             )}
           </div>
         </div>

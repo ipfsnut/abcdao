@@ -250,10 +250,10 @@ export function StakeTab({ stakingData, user, onDataUpdate }: StakeTabProps) {
             </div>
             
             <div className="flex items-start gap-3">
-              <span className="text-blue-400 text-xl">🗳️</span>
+              <span className="text-blue-400 text-xl">🏆</span>
               <div>
-                <div className="text-sm font-mono text-blue-400">Governance Rights</div>
-                <div className="text-xs text-green-600">Vote on DAO proposals and decisions</div>
+                <div className="text-sm font-mono text-blue-400">Community Status</div>
+                <div className="text-xs text-green-600">Higher reputation and recognition</div>
               </div>
             </div>
           </div>

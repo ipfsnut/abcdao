@@ -420,7 +420,7 @@ export function SocialTab({ user, discordMembers }: SocialTabProps) {
             { tag: 'typescript-bonus', count: 34 },
             { tag: 'developer-ama', count: 28 },
             { tag: 'milestone-10m', count: 23 },
-            { tag: 'governance', count: 19 },
+            { tag: 'community', count: 19 },
             { tag: 'community-growth', count: 15 }
           ].map((topic) => (
             <button

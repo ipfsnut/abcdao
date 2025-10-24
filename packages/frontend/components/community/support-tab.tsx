@@ -18,7 +18,7 @@ interface FAQ {
   id: string;
   question: string;
   answer: string;
-  category: 'getting-started' | 'earning' | 'staking' | 'technical' | 'governance';
+  category: 'getting-started' | 'earning' | 'staking' | 'technical';
   helpful: number;
 }
 
@@ -74,9 +74,6 @@ export function SupportTab({ user, supportTickets }: SupportTabProps) {
     },
     {
       id: '5',
-      question: 'How do I participate in governance?',
-      answer: 'DAO governance requires membership status. Stake ABC tokens and maintain minimum balances to unlock voting rights on proposals and protocol decisions.',
-      category: 'governance',
       helpful: 24
     }
   ];
@@ -145,7 +142,6 @@ export function SupportTab({ user, supportTickets }: SupportTabProps) {
     { value: 'earning', label: 'Earning Tokens' },
     { value: 'staking', label: 'Staking' },
     { value: 'technical', label: 'Technical' },
-    { value: 'governance', label: 'Governance' }
   ];
 
   const filteredFAQs = selectedCategory === 'all' 

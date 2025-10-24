@@ -67,9 +67,9 @@ Rewards are processed automatically within hours of contribution, not months. Wh
 ### **Medium-Term (2025-2026)**
 - **Farcaster Ecosystem Standard** for appcoin reward distribution adopted by 50+ applications
 - **Cross-Chain Appcoin Support** enabling rewards across multiple networks where Farcaster apps deploy
-- **Decentralized Governance** with multi-stakeholder voting from app developers, token holders, and the community
+- **Community Coordination** with collaborative decision-making from app developers, token holders, and the community
 - **Global Farcaster Developer Network** spanning multiple time zones, programming languages, and application verticals
-- **Interoperable Appcoin Economy** with cross-app utility, shared governance, and ecosystem-wide benefits
+- **Interoperable Appcoin Economy** with cross-app utility, community collaboration, and ecosystem-wide benefits
 
 ### **Long-Term (2026+)**
 - **Universal Farcaster Funding Model** powering the entire decentralized social ecosystem through appcoins
@@ -118,7 +118,7 @@ ABC DAO creates a **collaborative economic layer** for the Farcaster ecosystem:
 - **Channel-Targeted Broadcasting**: Automated announcements in relevant channels (/evermark, /frames, /social, etc.)
 - **Frame-Based Interactions**: Interactive reward claiming, voting, and collaboration tools within Farcaster
 - **Cross-App Developer Profiles**: On-chain reputation showing contributions across the entire Farcaster ecosystem
-- **Multi-Stakeholder Governance**: Token-weighted voting with input from app developers, appcoin holders, and the community
+- **Multi-Stakeholder Coordination**: Community collaboration with input from app developers, appcoin holders, and ecosystem participants
 
 ---
 
@@ -155,7 +155,7 @@ ABC DAO creates a **collaborative economic layer** for the Farcaster ecosystem:
 - **Farcaster**: [@abc-dao-dev](https://warpcast.com/abc-dao-dev) & [@abc-dao-commits](https://warpcast.com/abc-dao-commits)
 - **GitHub**: [ABC-DAO Organization](https://github.com/abc-dao)
 - **Base Contract**: `0x5c0872b790bb73e2b3a9778db6e7704095624b07`
-- **Treasury**: Multi-sig governance with transparent fund allocation
+- **Treasury**: Protocol wallet with transparent fund tracking
 
 ---
 

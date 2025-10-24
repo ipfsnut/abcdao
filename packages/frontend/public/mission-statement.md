@@ -61,7 +61,7 @@ Rewards are processed automatically within hours of contribution, not months. Wh
 ### **Medium-Term (2025-2026)**
 - **Farcaster Ecosystem Standard** for appcoin reward distribution adopted by 50+ applications
 - **Cross-Chain Appcoin Support** enabling rewards across multiple networks where Farcaster apps deploy
-- **Interoperable Appcoin Economy** with cross-app utility, shared governance, and ecosystem-wide benefits
+- **Interoperable Appcoin Economy** with cross-app utility, community collaboration, and ecosystem-wide benefits
 
 ### **Long-Term (2026+)**
 - **Universal Farcaster Funding Model** powering the entire decentralized social ecosystem through appcoins
