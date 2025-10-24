@@ -9,6 +9,7 @@
 
 import { WalletFirstAuth } from "@/components/wallet-first-auth";
 import { SimplifiedNavigation } from "@/components/simplified-navigation";
+import { UpgradeBanner } from "@/components/upgrade-banner";
 import { useWalletFirstAuth } from "@/hooks/useWalletFirstAuth";
 
 interface SimplifiedLayoutContentProps {
@@ -20,6 +21,9 @@ export function SimplifiedLayoutContent({ children }: SimplifiedLayoutContentPro
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
+      {/* Upgrade Banner */}
+      <UpgradeBanner />
+      
       {/* Simplified Navigation Header */}
       <SimplifiedNavigation user={user as any} isAuthenticated={isAuthenticated} />
       

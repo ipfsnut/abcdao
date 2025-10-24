@@ -86,6 +86,27 @@ export function useWalletFirstAuth() {
   });
 
   /**
+   * Resolve display name with priority: ENS > Farcaster > Wallet
+   */
+  const resolveDisplayName = useCallback(async (walletAddress: string): Promise<string> => {
+    try {
+      // Try to resolve ENS name
+      const response = await fetch(`https://api.ensideas.com/ens/resolve/${walletAddress}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.name) {
+          return data.name;
+        }
+      }
+    } catch (error) {
+      console.log('ENS resolution failed:', error);
+    }
+    
+    // Fallback to shortened wallet address
+    return `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+  }, []);
+
+  /**
    * Authenticate with wallet address
    */
   const authenticateWallet = useCallback(async (walletAddress: string, context?: any) => {
@@ -142,9 +163,10 @@ export function useWalletFirstAuth() {
         return { user, features, nextSteps };
       } else {
         // User doesn't exist, create a basic profile
+        const displayName = await resolveDisplayName(walletAddress);
         const newUser = {
           wallet_address: walletAddress,
-          display_name: `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
+          display_name: displayName,
           is_member: false,
           membership_tier: 'free' as const,
           github_connected: false,
