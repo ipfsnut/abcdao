@@ -4,6 +4,10 @@ const nextConfig: NextConfig = {
   output: 'export',
   trailingSlash: true,
   outputFileTracingRoot: '.',
+  // Generate consistent build ID for deterministic asset names
+  generateBuildId: async () => {
+    return 'abcdao-static-build-v1'
+  },
   images: {
     unoptimized: true
   },
