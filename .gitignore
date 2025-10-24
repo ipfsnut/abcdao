@@ -42,6 +42,7 @@ wallet-*
 *wallet*
 !packages/backend/src/models/WalletUser.js
 !packages/frontend/components/wallet-first-auth.tsx
+!packages/frontend/hooks/useWalletFirstAuth.ts
 !packages/backend/src/services/wallet-first-auth.js
 !packages/backend/src/routes/wallet-first-auth.js
 mnemonic*
