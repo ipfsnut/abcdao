@@ -449,9 +449,9 @@ export class UserCommitDataManager {
     let query, params;
     
     if (identifier.startsWith('0x')) {
-      // Wallet address - look in original users table
-      query = 'SELECT * FROM users WHERE wallet_address = $1';
-      params = [identifier];
+      // Wallet address - look in original users table with case-insensitive search
+      query = 'SELECT * FROM users WHERE LOWER(wallet_address) = $1';
+      params = [identifier.toLowerCase()];
     } else if (!isNaN(identifier)) {
       // Farcaster FID - look in original users table
       query = 'SELECT * FROM users WHERE farcaster_fid = $1';

@@ -117,9 +117,23 @@ export function useWalletFirstAuth() {
       const profileResponse = await fetch(`${config.backendUrl}/api/users-commits/profile/${walletAddress}`);
       const profileData = await profileResponse.json();
 
-      if (profileResponse.ok && profileData.user) {
-        // User exists, set up authentication state
-        const user = profileData.user;
+      if (profileResponse.ok && profileData.id) {
+        // User exists, set up authentication state - transform API response to expected format
+        const user = {
+          wallet_address: profileData.identifiers.walletAddress,
+          display_name: profileData.profile.displayName,
+          farcaster_username: profileData.profile.farcasterUsername,
+          github_username: profileData.identifiers.githubUsername,
+          github_connected: !!profileData.identifiers.githubUsername,
+          farcaster_connected: !!profileData.identifiers.farcasterFid,
+          discord_connected: false, // Not in current API response
+          is_member: profileData.membership.status === 'paid',
+          total_commits: profileData.stats.totalCommits,
+          total_rewards_earned: profileData.stats.totalRewardsEarned,
+          membership_status: profileData.membership.status,
+          verified_at: profileData.meta.verifiedAt,
+          is_active: profileData.meta.isActive
+        };
         const features = {
           token_operations: true,
           earning_rewards: user.github_connected || false,
@@ -243,8 +257,23 @@ export function useWalletFirstAuth() {
       const response = await fetch(`${config.backendUrl}/api/users-commits/profile/${authState.token}`);
       const data = await response.json();
 
-      if (response.ok && data.user) {
-        const user = data.user;
+      if (response.ok && data.id) {
+        // Transform API response to expected format
+        const user = {
+          wallet_address: data.identifiers.walletAddress,
+          display_name: data.profile.displayName,
+          farcaster_username: data.profile.farcasterUsername,
+          github_username: data.identifiers.githubUsername,
+          github_connected: !!data.identifiers.githubUsername,
+          farcaster_connected: !!data.identifiers.farcasterFid,
+          discord_connected: false, // Not in current API response
+          is_member: data.membership.status === 'paid',
+          total_commits: data.stats.totalCommits,
+          total_rewards_earned: data.stats.totalRewardsEarned,
+          membership_status: data.membership.status,
+          verified_at: data.meta.verifiedAt,
+          is_active: data.meta.isActive
+        };
         const features = {
           token_operations: true,
           earning_rewards: user.github_connected || false,
