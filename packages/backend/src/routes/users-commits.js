@@ -20,6 +20,16 @@ router.get('/test', (req, res) => {
   });
 });
 
+// Debug route to check wallet addresses
+router.get('/debug/users', async (req, res) => {
+  try {
+    const users = await userCommitDataManager.getRecentUsers();
+    res.json({ users });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 /**
  * GET /api/users-commits/profile/:identifier
  * Returns user profile by wallet address, FID, or GitHub username

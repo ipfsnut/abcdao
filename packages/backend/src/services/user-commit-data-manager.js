@@ -466,6 +466,14 @@ export class UserCommitDataManager {
     return result.rows[0];
   }
 
+  async getRecentUsers() {
+    const pool = getPool();
+    const result = await pool.query(
+      'SELECT wallet_address, github_username, farcaster_username, discord_username, is_member FROM users ORDER BY created_at DESC LIMIT 10'
+    );
+    return result.rows;
+  }
+
   /**
    * Get leaderboard
    */
