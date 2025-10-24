@@ -76,7 +76,7 @@ export function SupportTab({ user, supportTickets }: SupportTabProps) {
       id: '5',
       question: 'How do I increase my staking rewards?',
       answer: 'Stake more $ABC tokens to earn a larger share of ETH rewards. The rewards are distributed proportionally based on your stake size.',
-      category: 'rewards',
+      category: 'staking',
       helpful: 24
     }
   ];
