@@ -253,7 +253,7 @@ export default function ConsolidatedDashboard() {
                 </h1>
                 <div className="space-y-1">
                   <p className="text-green-600 font-mono text-sm">
-                    {user.wallet_address.slice(0, 8)}...{user.wallet_address.slice(-6)}
+                    {user.wallet_address.slice(0, 6)}...{user.wallet_address.slice(-4)}
                     {user.is_member && (
                       <span className="ml-3 px-2 py-1 bg-green-900/50 text-green-400 rounded text-xs">
                         {user.membership_tier.toUpperCase()} MEMBER

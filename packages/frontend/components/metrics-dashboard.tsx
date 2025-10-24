@@ -18,8 +18,7 @@ interface MetricsDashboardProps {
 export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [backendMetrics, setBackendMetrics] = useState({
-    commitCount: 0,
-    stakingAPY: '0'
+    commitCount: 0
   });
 
   // Use blockchain data for accurate token/staking info
@@ -43,8 +42,7 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
         if (response.status === 404) {
           // User not found - use fallback data for backend-only metrics
           setBackendMetrics({
-            commitCount: user.total_commits || 0,
-            stakingAPY: '0'
+            commitCount: user.total_commits || 0
           });
           setIsLoading(false);
           return;
@@ -56,16 +54,14 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
       const metrics = data.metrics;
       
       setBackendMetrics({
-        commitCount: metrics.commitCount || user.total_commits || 0,
-        stakingAPY: metrics.stakingAPY || '0'
+        commitCount: metrics.commitCount || user.total_commits || 0
       });
       setIsLoading(false);
     } catch (error) {
       console.error('Failed to load backend metrics:', error);
       // Fallback to user data if API fails
       setBackendMetrics({
-        commitCount: user.total_commits || 0,
-        stakingAPY: '0'
+        commitCount: user.total_commits || 0
       });
       setIsLoading(false);
     }
@@ -138,9 +134,9 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
       link: '/developers'
     },
     {
-      label: 'Staking APY',
-      value: `${backendMetrics.stakingAPY}%`,
-      unit: 'annual',
+      label: 'ETH Rewards',
+      value: parseFloat(totalEarned || '0').toFixed(4),
+      unit: 'ETH',
       icon: '📈',
       color: 'text-orange-400',
       link: '/staking'
