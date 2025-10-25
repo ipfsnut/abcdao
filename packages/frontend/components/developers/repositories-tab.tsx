@@ -8,6 +8,8 @@
 
 import { useState, useEffect } from 'react';
 import { config } from '@/lib/config';
+import { GitHubOAuthRepositoryManager } from '@/components/github-oauth-repository-manager';
+import { toast } from 'sonner';
 
 interface Repository {
   id: string;
@@ -39,6 +41,7 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
   const [sortBy, setSortBy] = useState<'score' | 'stars' | 'commits' | 'earned'>('score');
   const [isToggling, setIsToggling] = useState<string | null>(null);
   const [autoDetectionEnabled, setAutoDetectionEnabled] = useState(true);
+  const [showAddRepo, setShowAddRepo] = useState(false);
 
   useEffect(() => {
     loadRepositories();
@@ -48,14 +51,14 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
     setIsLoading(true);
     
     try {
-      if (!user?.wallet_address) {
+      if (!user?.farcaster_fid) {
         setRepositories([]);
         setIsLoading(false);
         return;
       }
 
-      // Fetch real repositories from backend API
-      const response = await fetch(`${config.backendUrl}/api/users-commits/repositories/${user.wallet_address}`);
+      // Fetch real repositories from backend API using FID
+      const response = await fetch(`${config.backendUrl}/api/repositories/${user.farcaster_fid}/repositories`);
       
       if (response.ok) {
         const data = await response.json();
@@ -63,20 +66,20 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
         
         // Transform backend data to Repository format
         const transformedRepos: Repository[] = repositoriesData.map((repo: any) => ({
-          id: repo.id?.toString() || repo.full_name,
-          name: repo.name || repo.repo_name || 'Unknown Repository',
-          fullName: repo.full_name || repo.repository || repo.name || 'Unknown',
-          description: repo.description || 'No description available',
-          language: repo.language || repo.primary_language || 'Unknown',
-          stars: repo.stargazers_count || repo.stars || 0,
-          forks: repo.forks_count || repo.forks || 0,
-          isEnabled: repo.is_enabled || repo.enabled || false,
-          isPrivate: repo.private || repo.is_private || false,
-          lastCommit: repo.updated_at ? new Date(repo.updated_at).toLocaleDateString() : 'Unknown',
-          commits: repo.commits_count || repo.total_commits || 0,
-          totalEarned: repo.total_earned?.toString() || repo.abc_earned?.toString() || '0',
-          score: repo.score || repo.earning_score || 0,
-          url: repo.html_url || repo.url || `https://github.com/${repo.full_name || repo.name}`
+          id: repo.id?.toString(),
+          name: repo.repository_name?.split('/')[1] || repo.repository_name || 'Unknown Repository',
+          fullName: repo.repository_name || 'Unknown',
+          description: 'Repository earning ABC tokens', // We don't have description in this endpoint
+          language: 'Unknown', // We don't have language in this endpoint
+          stars: 0, // We don't have stars in this endpoint
+          forks: 0, // We don't have forks in this endpoint
+          isEnabled: repo.status === 'active' && repo.webhook_configured,
+          isPrivate: false, // We don't have private info in this endpoint
+          lastCommit: repo.created_at ? new Date(repo.created_at).toLocaleDateString() : 'Unknown',
+          commits: 0, // We don't have commit count in this endpoint
+          totalEarned: '0', // We don't have total earned in this endpoint
+          score: repo.webhook_configured ? 100 : 50, // Simple scoring based on webhook status
+          url: repo.repository_url || `https://github.com/${repo.repository_name}`
         }));
         
         setRepositories(transformedRepos);
@@ -289,6 +292,23 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
         </div>
       </div>
 
+      {/* Add Repository Button */}
+      <div className="flex justify-between items-center">
+        <button
+          onClick={() => setShowAddRepo(true)}
+          className="bg-green-900/50 hover:bg-green-900/70 text-green-400 font-mono py-2.5 px-4 rounded-lg 
+                   border border-green-700/50 transition-all duration-300 hover:matrix-glow text-sm
+                   flex items-center gap-2"
+        >
+          <span>➕</span>
+          Add New Repository
+        </button>
+        
+        <div className="text-xs text-green-600 font-mono">
+          {repositories.filter(r => r.isEnabled).length} of {repositories.length} repositories enabled
+        </div>
+      </div>
+
       {/* Repository List */}
       <div className="space-y-4">
         {filteredRepos.map((repo) => (
@@ -485,6 +505,38 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
           </div>
         </div>
       </div>
+
+      {/* Add Repository Modal */}
+      {showAddRepo && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-black border border-green-700/50 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-green-400">Add New Repository</h3>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      loadRepositories();
+                      toast.success('Repository list refreshed');
+                    }}
+                    className="text-green-600 hover:text-green-400 text-sm font-mono"
+                  >
+                    🔄 Refresh
+                  </button>
+                  <button
+                    onClick={() => setShowAddRepo(false)}
+                    className="text-green-600 hover:text-green-400 text-xl"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+              
+              <GitHubOAuthRepositoryManager />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
