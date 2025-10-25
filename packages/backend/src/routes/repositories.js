@@ -95,6 +95,93 @@ router.get('/:fid/repositories', async (req, res) => {
   }
 });
 
+// Get user's GitHub repositories (OAuth)
+router.get('/:fid/github-repositories', async (req, res) => {
+  const { fid } = req.params;
+  
+  try {
+    const pool = getPool();
+    
+    // Get user with GitHub access token
+    const userResult = await pool.query(
+      'SELECT id, github_username, access_token FROM users WHERE farcaster_fid = $1', 
+      [fid]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    if (!user.access_token || !user.github_username) {
+      return res.status(401).json({ error: 'GitHub not connected' });
+    }
+    
+    // Fetch repositories from GitHub API
+    try {
+      const octokit = new Octokit({ auth: user.access_token });
+      
+      // Get repositories where user has admin access
+      const { data: repos } = await octokit.rest.repos.listForAuthenticatedUser({
+        visibility: 'all',
+        affiliation: 'owner,collaborator',
+        sort: 'updated',
+        per_page: 100
+      });
+      
+      // Filter for repositories with admin permissions
+      const adminRepos = repos.filter(repo => repo.permissions && repo.permissions.admin);
+      
+      // Get already registered repositories to exclude from list
+      const registeredRepos = await pool.query(`
+        SELECT repository_name, repository_url 
+        FROM registered_repositories rr
+        JOIN users u ON rr.registered_by_user_id = u.id
+        WHERE u.farcaster_fid = $1
+      `, [fid]);
+      
+      const registeredRepoNames = new Set(registeredRepos.rows.map(r => r.repository_name));
+      
+      // Format repository data and exclude already registered ones
+      const availableRepos = adminRepos
+        .filter(repo => !registeredRepoNames.has(repo.full_name))
+        .map(repo => ({
+          id: repo.id,
+          name: repo.full_name,
+          url: repo.html_url,
+          description: repo.description,
+          private: repo.private,
+          updated_at: repo.updated_at,
+          language: repo.language,
+          stargazers_count: repo.stargazers_count
+        }));
+      
+      res.json({
+        repositories: availableRepos,
+        total_repos: adminRepos.length,
+        available_repos: availableRepos.length,
+        registered_repos: registeredRepoNames.size
+      });
+      
+    } catch (githubError) {
+      console.error('GitHub API error:', githubError);
+      
+      if (githubError.status === 401) {
+        return res.status(401).json({ 
+          error: 'GitHub access token expired. Please reconnect your GitHub account.' 
+        });
+      }
+      
+      throw githubError;
+    }
+    
+  } catch (error) {
+    console.error('Error fetching GitHub repositories:', error);
+    res.status(500).json({ error: 'Failed to fetch GitHub repositories' });
+  }
+});
+
 // Register a new repository (member)
 router.post('/:fid/repositories', async (req, res) => {
   const { fid } = req.params;
