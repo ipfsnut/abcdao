@@ -23,25 +23,131 @@ export function ConnectTab({ user, communityData, onDataUpdate }: ConnectTabProp
   const handleDiscordConnect = async () => {
     setIsConnecting('discord');
     
-    // Simulate Discord OAuth flow
-    setTimeout(() => {
-      // In production, redirect to Discord OAuth
-      window.open('https://discord.gg/abcdao', '_blank');
+    if (!user?.farcaster_fid) {
+      alert('Please connect your Farcaster account first');
       setIsConnecting(null);
-      onDataUpdate();
-    }, 1500);
+      return;
+    }
+
+    try {
+      // Get Discord OAuth URL from backend
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app'}/api/universal-auth/discord/url`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          farcaster_fid: user.farcaster_fid,
+          farcaster_username: user.farcaster_username,
+          context: 'webapp'
+        }),
+      });
+
+      if (response.ok) {
+        const { auth_url } = await response.json();
+        
+        // Open Discord OAuth in new window
+        const discordWindow = window.open(auth_url, '_blank', 'width=600,height=700');
+        
+        // Poll for connection success
+        const pollForConnection = setInterval(async () => {
+          try {
+            const statusResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app'}/api/users/${user.farcaster_fid}/status`);
+            if (statusResponse.ok) {
+              const statusData = await statusResponse.json();
+              if (statusData.user?.discord_username) {
+                clearInterval(pollForConnection);
+                alert(`Discord account @${statusData.user.discord_username} connected successfully!`);
+                onDataUpdate();
+                discordWindow?.close();
+              }
+            }
+          } catch (pollError) {
+            console.error('Error polling Discord auth status:', pollError);
+          }
+        }, 3000);
+        
+        // Stop polling after 2 minutes
+        setTimeout(() => {
+          clearInterval(pollForConnection);
+          discordWindow?.close();
+        }, 120000);
+        
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to initialize Discord authentication');
+      }
+    } catch (error) {
+      console.error('Error connecting Discord:', error);
+      alert('Error connecting to Discord. Please try again later.');
+    }
+    
+    setIsConnecting(null);
   };
 
   const handleFarcasterConnect = async () => {
     setIsConnecting('farcaster');
     
-    // Simulate Farcaster connection
-    setTimeout(() => {
-      // In production, handle Farcaster OAuth
-      console.log('Farcaster connection initiated');
-      setIsConnecting(null);
-      onDataUpdate();
-    }, 1500);
+    try {
+      // Check if we're in a mini-app context first
+      const isMiniApp = window !== window.top || 
+                        window.location !== window.parent.location ||
+                        navigator.userAgent.includes('farcaster') ||
+                        window.location.href.includes('frame');
+
+      if (isMiniApp) {
+        // In mini-app, user should already be authenticated
+        alert('You are already connected via Farcaster mini-app!');
+        onDataUpdate();
+        setIsConnecting(null);
+        return;
+      }
+
+      // For web users, redirect to Neynar OAuth
+      const clientId = process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID;
+      if (!clientId) {
+        alert('Farcaster authentication not configured');
+        setIsConnecting(null);
+        return;
+      }
+
+      const redirectUri = encodeURIComponent(window.location.href);
+      const authUrl = `https://app.neynar.com/login?client_id=${clientId}&redirect_uri=${redirectUri}`;
+      
+      // Open in new window for OAuth flow
+      const farcasterWindow = window.open(authUrl, '_blank', 'width=600,height=700');
+      
+      // Monitor for successful authentication
+      const pollForConnection = setInterval(() => {
+        try {
+          // Check localStorage for updated user data
+          const storedUser = localStorage.getItem('abc_farcaster_user');
+          if (storedUser) {
+            const userData = JSON.parse(storedUser);
+            if (userData.fid && userData.username) {
+              clearInterval(pollForConnection);
+              alert(`Farcaster account @${userData.username} connected successfully!`);
+              onDataUpdate();
+              farcasterWindow?.close();
+            }
+          }
+        } catch (pollError) {
+          console.error('Error polling Farcaster auth status:', pollError);
+        }
+      }, 2000);
+      
+      // Stop polling after 2 minutes
+      setTimeout(() => {
+        clearInterval(pollForConnection);
+        farcasterWindow?.close();
+      }, 120000);
+      
+    } catch (error) {
+      console.error('Error connecting Farcaster:', error);
+      alert('Error connecting to Farcaster. Please try again later.');
+    }
+    
+    setIsConnecting(null);
   };
 
   const integrations = [

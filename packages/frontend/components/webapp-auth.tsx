@@ -22,13 +22,59 @@ export function WebappAuth() {
   }, [isConnected, address, user, isLoading, authenticateByWallet]);
 
   const handleGithubLink = async () => {
+    if (!address) {
+      alert('Please connect your wallet first');
+      return;
+    }
+
     setLinkingGithub(true);
     try {
-      // In a real implementation, this would redirect to GitHub OAuth
-      // For now, we'll show a placeholder
-      alert('GitHub OAuth flow would start here. This requires implementing OAuth redirect flow.');
+      // Get GitHub OAuth URL from the universal auth endpoint
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app'}/api/universal-auth/github/url`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          wallet_address: address,
+          context: 'webapp'
+        }),
+      });
+
+      if (response.ok) {
+        const { auth_url } = await response.json();
+        
+        // Open GitHub OAuth in new window
+        const githubWindow = window.open(auth_url, '_blank', 'width=600,height=700');
+        
+        // Poll for connection success
+        const pollForConnection = setInterval(async () => {
+          try {
+            // Re-authenticate to check for GitHub connection
+            await authenticateByWallet(address);
+            if (user?.has_github) {
+              clearInterval(pollForConnection);
+              alert(`GitHub account @${user.github_username} linked successfully!`);
+              githubWindow?.close();
+            }
+          } catch (pollError) {
+            console.error('Error polling GitHub auth status:', pollError);
+          }
+        }, 3000);
+        
+        // Stop polling after 2 minutes
+        setTimeout(() => {
+          clearInterval(pollForConnection);
+          githubWindow?.close();
+        }, 120000);
+        
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to initialize GitHub authentication');
+      }
     } catch (error) {
       console.error('GitHub linking failed:', error);
+      alert('Error connecting to GitHub. Please try again later.');
     } finally {
       setLinkingGithub(false);
     }

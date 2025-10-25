@@ -72,11 +72,17 @@ export function GitHubLinkPanel() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${config.backendUrl}/api/universal-auth/github/url?wallet_address=${encodeURIComponent('webapp')}`, {
-        method: 'GET',
+      // Use the updated universal auth endpoint for GitHub OAuth
+      const response = await fetch(`${config.backendUrl}/api/universal-auth/github/url`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          farcaster_fid: profile.fid,
+          farcaster_username: profile.username,
+          context: inFrame ? 'farcaster_miniapp' : 'webapp'
+        }),
       });
 
       if (response.ok) {
@@ -86,13 +92,35 @@ export function GitHubLinkPanel() {
         if (inFrame) {
           // In a frame, we need to open in a new window/tab
           window.open(auth_url, '_blank');
-          alert('Complete GitHub authorization in the new tab, then refresh this page.');
+          
+          // Set up polling to check for successful authentication
+          const pollInterval = setInterval(async () => {
+            try {
+              const statusResponse = await fetch(`${config.backendUrl}/api/users/${profile.fid}/status`);
+              if (statusResponse.ok) {
+                const statusData = await statusResponse.json();
+                if (statusData.user?.github_username) {
+                  clearInterval(pollInterval);
+                  membership.refreshStatus();
+                  alert(`GitHub account @${statusData.user.github_username} linked successfully!`);
+                }
+              }
+            } catch (pollError) {
+              console.error('Error polling auth status:', pollError);
+            }
+          }, 3000);
+          
+          // Stop polling after 2 minutes
+          setTimeout(() => clearInterval(pollInterval), 120000);
+          
+          alert('Complete GitHub authorization in the new tab. This page will automatically update when complete.');
         } else {
           // In regular browser, direct redirect is fine
           window.location.href = auth_url;
         }
       } else {
-        alert('Failed to initialize GitHub authentication');
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to initialize GitHub authentication');
       }
     } catch (error) {
       console.error('Error linking GitHub:', error);

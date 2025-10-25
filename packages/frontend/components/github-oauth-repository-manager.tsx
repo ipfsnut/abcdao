@@ -87,20 +87,22 @@ export function GitHubOAuthRepositoryManager() {
     
     setLoading(true);
     try {
-      const response = await fetch(`${config.backendUrl}/api/auth/github/authorize`, {
+      // Use the updated universal auth endpoint
+      const response = await fetch(`${config.backendUrl}/api/universal-auth/github/url`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          farcasterFid: profile.fid,
-          farcasterUsername: profile.username
+          farcaster_fid: profile.fid,
+          farcaster_username: profile.username,
+          context: 'farcaster_miniapp'
         })
       });
       
       const data = await response.json();
       
-      if (data.authUrl) {
+      if (response.ok && data.auth_url) {
         // Open GitHub OAuth in new window
-        window.open(data.authUrl, '_blank', 'width=600,height=700');
+        window.open(data.auth_url, '_blank', 'width=600,height=700');
         
         // Poll for connection success
         const pollForConnection = setInterval(async () => {
@@ -113,6 +115,8 @@ export function GitHubOAuthRepositoryManager() {
         
         // Stop polling after 2 minutes
         setTimeout(() => clearInterval(pollForConnection), 120000);
+      } else {
+        toast.error(data.error || 'Failed to initialize GitHub authentication');
       }
     } catch (error) {
       console.error('Error connecting GitHub:', error);
