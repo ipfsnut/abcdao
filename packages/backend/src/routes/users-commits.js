@@ -53,6 +53,24 @@ router.get('/profile/:identifier', async (req, res) => {
       });
     }
 
+    // Get repository count from registered_repositories table
+    let uniqueRepositories = 0;
+    try {
+      const { getPool } = await import('../services/database.js');
+      const pool = getPool();
+      const repoCountResult = await pool.query(`
+        SELECT COUNT(*) as count 
+        FROM registered_repositories rr
+        JOIN users u ON rr.registered_by_user_id = u.id
+        WHERE u.farcaster_fid = $1 AND rr.status = 'active'
+      `, [user.farcaster_fid]);
+      
+      uniqueRepositories = parseInt(repoCountResult.rows[0]?.count || 0);
+    } catch (error) {
+      console.error('Error fetching repository count:', error);
+      uniqueRepositories = 0;
+    }
+
     res.json({
       id: user.id,
       identifiers: {
@@ -74,7 +92,8 @@ router.get('/profile/:identifier', async (req, res) => {
         currentStreakDays: user.current_streak_days,
         longestStreakDays: user.longest_streak_days,
         lastCommitAt: user.last_commit_at,
-        firstCommitAt: user.first_commit_at
+        firstCommitAt: user.first_commit_at,
+        uniqueRepositories: uniqueRepositories
       },
       membership: {
         status: user.membership_status,
