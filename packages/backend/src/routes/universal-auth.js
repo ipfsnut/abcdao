@@ -472,7 +472,8 @@ router.get('/status', async (req, res) => {
 
 /**
  * Generate GitHub OAuth URL
- * GET /api/auth/github/url
+ * GET /api/auth/github/url (legacy)
+ * POST /api/auth/github/url (new)
  */
 router.get('/github/url', (req, res) => {
   try {
@@ -500,9 +501,63 @@ router.get('/github/url', (req, res) => {
   }
 });
 
+router.post('/github/url', (req, res) => {
+  try {
+    const { 
+      wallet_address, 
+      farcaster_fid, 
+      farcaster_username, 
+      context,
+      redirect_uri 
+    } = req.body;
+    
+    const client_id = process.env.GITHUB_CLIENT_ID;
+    if (!client_id) {
+      return res.status(500).json({ error: 'GitHub OAuth not configured' });
+    }
+
+    // Create state object with context information
+    let state;
+    if (farcaster_fid && farcaster_username) {
+      // Farcaster context - use FID and username
+      state = JSON.stringify({
+        type: 'farcaster',
+        fid: farcaster_fid,
+        username: farcaster_username,
+        context: context || 'farcaster_miniapp'
+      });
+    } else if (wallet_address) {
+      // Wallet context
+      state = JSON.stringify({
+        type: 'wallet',
+        wallet_address: wallet_address,
+        context: context || 'webapp'
+      });
+    } else {
+      state = 'webapp';
+    }
+    
+    const scope = 'user:email,read:user';
+    const redirect = redirect_uri || `${process.env.BACKEND_URL || 'https://abcdao-production.up.railway.app'}/api/auth/github/callback`;
+    
+    const authUrl = `https://github.com/login/oauth/authorize?client_id=${client_id}&scope=${scope}&state=${encodeURIComponent(state)}&redirect_uri=${encodeURIComponent(redirect)}`;
+    
+    res.json({
+      auth_url: authUrl,
+      state: state,
+      redirect_uri: redirect
+    });
+
+  } catch (error) {
+    console.error('GitHub URL generation error:', error);
+    res.status(500).json({ error: 'Failed to generate GitHub OAuth URL' });
+  }
+});
+
 /**
  * Generate Discord OAuth URL
- * GET /api/auth/discord/url
+ * GET /api/auth/discord/url (legacy)
+ * POST /api/auth/discord/url (new)
  */
 router.get('/discord/url', (req, res) => {
   try {
@@ -518,6 +573,59 @@ router.get('/discord/url', (req, res) => {
     const redirect = redirect_uri || `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/auth/discord/callback`;
     
     const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${client_id}&redirect_uri=${encodeURIComponent(redirect)}&response_type=code&scope=${scope}&state=${state}`;
+    
+    res.json({
+      auth_url: authUrl,
+      state: state,
+      redirect_uri: redirect
+    });
+
+  } catch (error) {
+    console.error('Discord URL generation error:', error);
+    res.status(500).json({ error: 'Failed to generate Discord OAuth URL' });
+  }
+});
+
+router.post('/discord/url', (req, res) => {
+  try {
+    const { 
+      wallet_address, 
+      farcaster_fid, 
+      farcaster_username, 
+      context,
+      redirect_uri 
+    } = req.body;
+    
+    const client_id = process.env.DISCORD_CLIENT_ID;
+    if (!client_id) {
+      return res.status(500).json({ error: 'Discord OAuth not configured' });
+    }
+
+    // Create state object with context information
+    let state;
+    if (farcaster_fid && farcaster_username) {
+      // Farcaster context - use FID and username
+      state = JSON.stringify({
+        type: 'farcaster',
+        fid: farcaster_fid,
+        username: farcaster_username,
+        context: context || 'farcaster_miniapp'
+      });
+    } else if (wallet_address) {
+      // Wallet context
+      state = JSON.stringify({
+        type: 'wallet',
+        wallet_address: wallet_address,
+        context: context || 'webapp'
+      });
+    } else {
+      state = 'webapp';
+    }
+    
+    const scope = 'identify';
+    const redirect = redirect_uri || `${process.env.BACKEND_URL || 'https://abcdao-production.up.railway.app'}/api/auth/discord/callback`;
+    
+    const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${client_id}&redirect_uri=${encodeURIComponent(redirect)}&response_type=code&scope=${scope}&state=${encodeURIComponent(state)}`;
     
     res.json({
       auth_url: authUrl,
