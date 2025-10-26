@@ -60,10 +60,20 @@ export function GitHubOAuthRepositoryManager() {
 
   useEffect(() => {
     if (profile?.fid) {
+      console.log('🎯 Profile loaded, checking GitHub connection...');
       checkGitHubConnection();
       fetchRegisteredRepos();
     }
   }, [profile]);
+
+  // Debug effect to log state changes
+  useEffect(() => {
+    console.log('🎭 GitHub state changed:', { 
+      githubLinked, 
+      repoCount: githubRepos.length,
+      profileFid: profile?.fid 
+    });
+  }, [githubLinked, githubRepos, profile?.fid]);
 
   const checkGitHubConnection = async () => {
     if (!profile?.fid) return;
@@ -75,10 +85,13 @@ export function GitHubOAuthRepositoryManager() {
       if (response.ok) {
         const data = await response.json();
         console.log(`✅ GitHub connected! Found ${data.repositories?.length || 0} repositories`);
+        console.log('Repository data:', data);
         setGithubLinked(true);
         setGithubRepos(data.repositories || []);
       } else if (response.status === 401) {
         console.log('❌ GitHub not connected (401)');
+        const errorData = await response.json().catch(() => ({ error: 'GitHub not connected' }));
+        console.log('401 Error details:', errorData);
         setGithubLinked(false);
         setGithubRepos([]);
       } else {
@@ -141,7 +154,8 @@ export function GitHubOAuthRepositoryManager() {
           
           try {
             await checkGitHubConnection();
-            if (githubLinked) {
+            // Check if repos were loaded (indicates successful connection)
+            if (githubRepos.length > 0 || githubLinked) {
               clearInterval(pollForConnection);
               toast.success('GitHub connected successfully!');
               console.log('✅ GitHub connection confirmed via polling');
@@ -270,9 +284,17 @@ export function GitHubOAuthRepositoryManager() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 bg-green-950/20 border border-green-700/50 rounded-lg">
-              <CheckCircleIcon className="w-5 h-5 text-green-400" />
-              <span className="text-green-400 font-mono">GitHub Connected</span>
+            <div className="flex items-center justify-between p-3 bg-green-950/20 border border-green-700/50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <CheckCircleIcon className="w-5 h-5 text-green-400" />
+                <span className="text-green-400 font-mono">GitHub Connected</span>
+              </div>
+              <button
+                onClick={checkGitHubConnection}
+                className="text-green-600 hover:text-green-400 text-sm font-mono"
+              >
+                🔄 Refresh
+              </button>
             </div>
             
             {/* Repository Stats */}
