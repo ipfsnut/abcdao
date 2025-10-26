@@ -1,4 +1,5 @@
 import { WalletUser } from '../models/WalletUser.js';
+import { getPool } from './database.js';
 import jwt from 'jsonwebtoken';
 
 /**
@@ -291,6 +292,83 @@ export class UniversalAuthService {
     } catch (error) {
       console.error('Discord OAuth exchange error:', error);
       throw new Error(`Discord OAuth failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Link GitHub account to Farcaster user (by FID)
+   */
+  static async linkGithubAccountToFarcaster(farcaster_fid, farcaster_username, github_data) {
+    try {
+      const pool = getPool();
+      
+      // First, try to find user by Farcaster FID
+      let userResult = await pool.query(
+        'SELECT * FROM users WHERE farcaster_fid = $1',
+        [farcaster_fid]
+      );
+      
+      if (userResult.rows.length === 0) {
+        // Create new user with Farcaster info (requires wallet linking later)
+        const insertResult = await pool.query(`
+          INSERT INTO users (
+            farcaster_fid, 
+            farcaster_username, 
+            github_username, 
+            github_id, 
+            access_token, 
+            membership_status,
+            verified_at,
+            created_at,
+            updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW(), NOW())
+          RETURNING *
+        `, [
+          farcaster_fid,
+          farcaster_username,
+          github_data.username,
+          github_data.id,
+          github_data.access_token,
+          'free'
+        ]);
+        
+        userResult = insertResult;
+      } else {
+        // Update existing user with GitHub info
+        await pool.query(`
+          UPDATE users 
+          SET 
+            github_username = $2, 
+            github_id = $3, 
+            access_token = $4, 
+            verified_at = NOW(), 
+            updated_at = NOW()
+          WHERE farcaster_fid = $1
+        `, [
+          farcaster_fid,
+          github_data.username,
+          github_data.id,
+          github_data.access_token
+        ]);
+        
+        // Fetch updated user
+        userResult = await pool.query(
+          'SELECT * FROM users WHERE farcaster_fid = $1',
+          [farcaster_fid]
+        );
+      }
+      
+      const user = userResult.rows[0];
+      
+      return {
+        success: true,
+        user: this.sanitizeUser(user),
+        message: `GitHub account ${github_data.username} linked to Farcaster @${farcaster_username} successfully!`
+      };
+
+    } catch (error) {
+      console.error('GitHub-to-Farcaster linking error:', error);
+      throw new Error(`GitHub linking to Farcaster failed: ${error.message}`);
     }
   }
 

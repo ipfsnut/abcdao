@@ -69,17 +69,29 @@ export function GitHubOAuthRepositoryManager() {
     if (!profile?.fid) return;
     
     try {
+      console.log(`🔍 Checking GitHub connection for FID ${profile.fid}...`);
       const response = await fetch(`${config.backendUrl}/api/repositories/${profile.fid}/github-repositories`);
+      
       if (response.ok) {
-        setGithubLinked(true);
         const data = await response.json();
-        setGithubRepos(data.repositories);
+        console.log(`✅ GitHub connected! Found ${data.repositories?.length || 0} repositories`);
+        setGithubLinked(true);
+        setGithubRepos(data.repositories || []);
       } else if (response.status === 401) {
+        console.log('❌ GitHub not connected (401)');
         setGithubLinked(false);
+        setGithubRepos([]);
+      } else {
+        console.warn(`⚠️ Unexpected response status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.warn('Error details:', errorData);
+        setGithubLinked(false);
+        setGithubRepos([]);
       }
     } catch (error) {
       console.error('Error checking GitHub connection:', error);
       setGithubLinked(false);
+      setGithubRepos([]);
     }
   };
 
@@ -120,16 +132,32 @@ export function GitHubOAuthRepositoryManager() {
         window.open(data.auth_url, '_blank', 'width=600,height=700');
         
         // Poll for connection success
+        let pollCount = 0;
+        const maxPolls = 60; // 2 minutes at 2-second intervals
+        
         const pollForConnection = setInterval(async () => {
-          await checkGitHubConnection();
-          if (githubLinked) {
+          pollCount++;
+          console.log(`🔄 Polling for GitHub connection (${pollCount}/${maxPolls})...`);
+          
+          try {
+            await checkGitHubConnection();
+            if (githubLinked) {
+              clearInterval(pollForConnection);
+              toast.success('GitHub connected successfully!');
+              console.log('✅ GitHub connection confirmed via polling');
+              return;
+            }
+          } catch (error) {
+            console.warn('⚠️ Polling error:', error);
+          }
+          
+          // Stop polling after max attempts
+          if (pollCount >= maxPolls) {
             clearInterval(pollForConnection);
-            toast.success('GitHub connected successfully!');
+            console.log('⏰ GitHub connection polling timed out');
+            toast.error('GitHub connection verification timed out. Please refresh and try again.');
           }
         }, 2000);
-        
-        // Stop polling after 2 minutes
-        setTimeout(() => clearInterval(pollForConnection), 120000);
       } else {
         toast.error(data.error || 'Failed to initialize GitHub authentication');
       }

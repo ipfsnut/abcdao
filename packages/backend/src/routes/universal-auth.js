@@ -221,20 +221,56 @@ router.get('/github/callback', async (req, res) => {
       return res.status(400).json({ error: 'GitHub OAuth code is required' });
     }
 
+    console.log('🔍 GitHub OAuth callback - state:', state);
+
     // Exchange code for GitHub data
     const githubData = await UniversalAuthService.exchangeGithubCode(code);
     
-    // If state contains wallet address, link automatically
-    if (state && state.startsWith('0x')) {
-      const result = await UniversalAuthService.linkGithubAccount(state, githubData);
-      return res.json(result);
+    // Parse state to determine linking approach
+    let linkingResult = null;
+    
+    try {
+      // Try to parse as JSON first (new format)
+      const stateData = JSON.parse(state);
+      console.log('📋 Parsed state data:', stateData);
+      
+      if (stateData.type === 'farcaster' && stateData.fid) {
+        // Link to Farcaster user by FID
+        console.log(`🎭 Linking GitHub to Farcaster user ${stateData.username} (FID: ${stateData.fid})`);
+        linkingResult = await UniversalAuthService.linkGithubAccountToFarcaster(
+          stateData.fid, 
+          stateData.username, 
+          githubData
+        );
+      } else if (stateData.type === 'wallet' && stateData.wallet_address) {
+        // Link to wallet address
+        console.log(`💰 Linking GitHub to wallet ${stateData.wallet_address}`);
+        linkingResult = await UniversalAuthService.linkGithubAccount(stateData.wallet_address, githubData);
+      }
+    } catch (parseError) {
+      // Fallback: treat as plain wallet address or old format
+      if (state && state.startsWith('0x')) {
+        console.log(`💰 Linking GitHub to wallet ${state} (legacy format)`);
+        linkingResult = await UniversalAuthService.linkGithubAccount(state, githubData);
+      }
+    }
+    
+    if (linkingResult) {
+      // Successful automatic linking - return success for all contexts
+      return res.json({
+        success: true,
+        github_linked: true,
+        message: 'GitHub linked successfully!',
+        user: linkingResult.user,
+        redirect_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}?github_linked=true`
+      });
     }
     
     // Otherwise, return GitHub data for manual linking
     res.json({
       success: true,
       github_data: githubData,
-      message: 'GitHub OAuth successful. Please provide wallet address to complete linking.'
+      message: 'GitHub OAuth successful. Please provide wallet address or Farcaster info to complete linking.'
     });
 
   } catch (error) {
