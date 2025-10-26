@@ -565,8 +565,10 @@ router.get('/discord/url', (req, res) => {
     
     const client_id = process.env.DISCORD_CLIENT_ID;
     if (!client_id) {
+      console.log('Discord OAuth check: DISCORD_CLIENT_ID not found in environment');
       return res.status(500).json({ error: 'Discord OAuth not configured' });
     }
+    console.log('Discord OAuth check: DISCORD_CLIENT_ID found, generating URL');
 
     const state = wallet_address || 'webapp';
     const scope = 'identify';
@@ -598,8 +600,10 @@ router.post('/discord/url', (req, res) => {
     
     const client_id = process.env.DISCORD_CLIENT_ID;
     if (!client_id) {
+      console.log('Discord OAuth check: DISCORD_CLIENT_ID not found in environment');
       return res.status(500).json({ error: 'Discord OAuth not configured' });
     }
+    console.log('Discord OAuth check: DISCORD_CLIENT_ID found, generating URL');
 
     // Create state object with context information
     let state;
