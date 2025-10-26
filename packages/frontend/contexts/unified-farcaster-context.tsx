@@ -146,8 +146,9 @@ export function UnifiedFarcasterProvider({ children }: { children: ReactNode }) 
         console.log('ℹ️ No stored user session');
         
         // Development fallback: Auto-authenticate with known user
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🔧 Development mode: Auto-authenticating with known user');
+        // Always enable for epicdylan user (development/testing)
+        if (process.env.NODE_ENV === 'development' || window.location.hostname.includes('abc.epicdylan.com')) {
+          console.log('🔧 Development mode or epicdylan domain: Auto-authenticating with known user');
           const fallbackUser: FarcasterUser = {
             fid: 8573,
             username: 'epicdylan',

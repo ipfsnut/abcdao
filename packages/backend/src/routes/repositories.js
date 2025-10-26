@@ -7,6 +7,42 @@ import githubAPIService from '../services/github-api.js';
 
 const router = express.Router();
 
+// Helper function to resolve user by wallet address or Farcaster FID
+async function resolveUserByIdentifier(identifier) {
+  const pool = getPool();
+  
+  // Check if identifier is a wallet address (starts with 0x and is 42 chars)
+  if (identifier.startsWith('0x') && identifier.length === 42) {
+    console.log(`🔍 Resolving user by wallet address: ${identifier}`);
+    const result = await pool.query(`
+      SELECT id, farcaster_fid, farcaster_username, github_username, access_token, wallet_address
+      FROM users 
+      WHERE LOWER(wallet_address) = LOWER($1)
+    `, [identifier]);
+    
+    if (result.rows.length === 0) {
+      throw new Error('User not found for wallet address');
+    }
+    
+    return result.rows[0];
+  } 
+  // Otherwise treat as Farcaster FID
+  else {
+    console.log(`🔍 Resolving user by Farcaster FID: ${identifier}`);
+    const result = await pool.query(`
+      SELECT id, farcaster_fid, farcaster_username, github_username, access_token, wallet_address
+      FROM users 
+      WHERE farcaster_fid = $1
+    `, [parseInt(identifier)]);
+    
+    if (result.rows.length === 0) {
+      throw new Error('User not found for Farcaster FID');
+    }
+    
+    return result.rows[0];
+  }
+}
+
 // Check if user has 5M+ ABC staked (exempts from repository fees)
 async function checkPremiumStaking(userId) {
   try {
@@ -40,7 +76,61 @@ async function checkPremiumStaking(userId) {
   }
 }
 
-// Get user's registered repositories
+// Universal endpoint: Get user's registered repositories (accepts wallet address or FID)
+router.get('/user/:identifier/repositories', async (req, res) => {
+  const { identifier } = req.params;
+  
+  try {
+    console.log(`📁 Fetching repositories for identifier: ${identifier}`);
+    const user = await resolveUserByIdentifier(identifier);
+    const isPremiumStaker = await checkPremiumStaking(user.id);
+    
+    const pool = getPool();
+    
+    // Get user's registered repositories
+    const repos = await pool.query(`
+      SELECT 
+        rr.id,
+        rr.repository_name,
+        rr.repository_url,
+        rr.registration_type,
+        rr.webhook_configured,
+        rr.reward_multiplier,
+        rr.status,
+        rr.created_at,
+        rr.expires_at
+      FROM registered_repositories rr
+      WHERE rr.registered_by_user_id = $1
+      ORDER BY rr.created_at DESC
+    `, [user.id]);
+    
+    // Calculate remaining slots for member registrations
+    const memberRepos = repos.rows.filter(r => r.registration_type === 'member');
+    const maxSlots = isPremiumStaker ? 999 : 3; // Unlimited for premium stakers
+    const remainingSlots = isPremiumStaker ? 999 : Math.max(0, 3 - memberRepos.length);
+    
+    res.json({
+      repositories: repos.rows,
+      member_slots_used: memberRepos.length,
+      member_slots_remaining: remainingSlots,
+      member_slots_max: maxSlots,
+      premium_staker: isPremiumStaker,
+      premium_benefits: isPremiumStaker ? ['Unlimited repositories', 'No 0.002 ETH fee required'] : null,
+      partner_repositories: repos.rows.filter(r => r.registration_type === 'partner'),
+      user_info: {
+        identifier: identifier,
+        resolved_fid: user.farcaster_fid,
+        github_connected: !!user.github_username
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching repositories:', error);
+    res.status(404).json({ error: error.message });
+  }
+});
+
+// Legacy endpoint: Get user's registered repositories (FID only)
 router.get('/:fid/repositories', async (req, res) => {
   const { fid } = req.params;
   
@@ -95,7 +185,104 @@ router.get('/:fid/repositories', async (req, res) => {
   }
 });
 
-// Get user's GitHub repositories (OAuth)
+// Universal endpoint: Get user's GitHub repositories (accepts wallet address or FID)
+router.get('/user/:identifier/github-repositories', async (req, res) => {
+  const { identifier } = req.params;
+  
+  try {
+    console.log(`🐙 Fetching GitHub repositories for identifier: ${identifier}`);
+    const user = await resolveUserByIdentifier(identifier);
+    
+    if (!user.access_token || !user.github_username) {
+      return res.status(401).json({ 
+        error: 'GitHub not connected',
+        user_info: {
+          identifier: identifier,
+          resolved_fid: user.farcaster_fid,
+          github_connected: false
+        }
+      });
+    }
+    
+    // Fetch repositories from GitHub API
+    try {
+      const octokit = new Octokit({ auth: user.access_token });
+      
+      // Get repositories where user has admin access
+      const { data: repos } = await octokit.rest.repos.listForAuthenticatedUser({
+        visibility: 'all',
+        affiliation: 'owner,collaborator',
+        sort: 'updated',
+        per_page: 100
+      });
+      
+      // Filter for repositories with admin permissions
+      const adminRepos = repos.filter(repo => repo.permissions && repo.permissions.admin);
+      
+      const pool = getPool();
+      
+      // Get already registered repositories to exclude from list
+      const registeredRepos = await pool.query(`
+        SELECT repository_name, repository_url 
+        FROM registered_repositories rr
+        WHERE rr.registered_by_user_id = $1
+      `, [user.id]);
+      
+      const registeredRepoNames = new Set(registeredRepos.rows.map(r => r.repository_name));
+      
+      // Format repository data and exclude already registered ones
+      const availableRepos = adminRepos
+        .filter(repo => !registeredRepoNames.has(repo.full_name))
+        .map(repo => ({
+          id: repo.id,
+          name: repo.full_name,
+          url: repo.html_url,
+          description: repo.description,
+          private: repo.private,
+          updated_at: repo.updated_at,
+          language: repo.language,
+          stargazers_count: repo.stargazers_count
+        }));
+      
+      res.json({
+        repositories: availableRepos,
+        total_repos: adminRepos.length,
+        available_repos: availableRepos.length,
+        registered_repos: registeredRepoNames.size,
+        user_info: {
+          identifier: identifier,
+          resolved_fid: user.farcaster_fid,
+          github_connected: true,
+          github_username: user.github_username
+        }
+      });
+      
+    } catch (githubError) {
+      console.error('GitHub API error:', githubError);
+      
+      if (githubError.status === 401) {
+        return res.status(401).json({ 
+          error: 'GitHub access token expired. Please reconnect your GitHub account.',
+          user_info: {
+            identifier: identifier,
+            resolved_fid: user.farcaster_fid,
+            github_connected: false
+          }
+        });
+      }
+      
+      throw githubError;
+    }
+    
+  } catch (error) {
+    console.error('Error fetching GitHub repositories:', error);
+    res.status(error.message.includes('User not found') ? 404 : 500).json({ 
+      error: error.message 
+    });
+  }
+});
+
+// Legacy endpoint: Get user's GitHub repositories (FID only)
 router.get('/:fid/github-repositories', async (req, res) => {
   const { fid } = req.params;
   
@@ -182,7 +369,92 @@ router.get('/:fid/github-repositories', async (req, res) => {
   }
 });
 
-// Register a new repository (member)
+// Universal endpoint: Register a new repository (accepts wallet address or FID)
+router.post('/user/:identifier/repositories', async (req, res) => {
+  const { identifier } = req.params;
+  const { repository_url, repository_name } = req.body;
+  
+  if (!repository_url || !repository_name) {
+    return res.status(400).json({ error: 'Repository URL and name required' });
+  }
+  
+  try {
+    console.log(`📝 Registering repository for identifier: ${identifier}`);
+    const user = await resolveUserByIdentifier(identifier);
+    const isPremiumStaker = await checkPremiumStaking(user.id);
+    
+    const pool = getPool();
+    
+    // Check if repository already exists
+    const existingRepo = await pool.query(`
+      SELECT id FROM registered_repositories 
+      WHERE repository_name = $1 AND registered_by_user_id = $2
+    `, [repository_name, user.id]);
+    
+    if (existingRepo.rows.length > 0) {
+      return res.status(400).json({ error: 'Repository already registered' });
+    }
+    
+    // Check member slot limits (unless premium staker)
+    if (!isPremiumStaker) {
+      const memberRepos = await pool.query(`
+        SELECT COUNT(*) as count FROM registered_repositories 
+        WHERE registered_by_user_id = $1 AND registration_type = 'member'
+      `, [user.id]);
+      
+      if (parseInt(memberRepos.rows[0].count) >= 3) {
+        return res.status(400).json({ 
+          error: 'Maximum of 3 member repositories allowed. Stake 5M+ $ABC for unlimited repositories.' 
+        });
+      }
+    }
+    
+    // Register repository
+    const result = await pool.query(`
+      INSERT INTO registered_repositories (
+        registered_by_user_id, 
+        repository_name, 
+        repository_url, 
+        registration_type,
+        webhook_configured,
+        status,
+        created_at,
+        updated_at
+      ) VALUES ($1, $2, $3, 'member', false, 'pending', NOW(), NOW())
+      RETURNING *
+    `, [user.id, repository_name, repository_url]);
+    
+    const repository = result.rows[0];
+    
+    console.log(`✅ Repository registered: ${repository_name} for user ${identifier}`);
+    
+    res.json({
+      success: true,
+      message: `Repository ${repository_name} registered successfully`,
+      repository: {
+        id: repository.id,
+        repository_name: repository.repository_name,
+        repository_url: repository.repository_url,
+        webhook_configured: repository.webhook_configured,
+        status: repository.status
+      },
+      next_step: 'webhook_setup',
+      webhook_setup_required: true,
+      user_info: {
+        identifier: identifier,
+        resolved_fid: user.farcaster_fid
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error registering repository:', error);
+    res.status(error.message.includes('User not found') ? 404 : 500).json({ 
+      error: error.message 
+    });
+  }
+});
+
+// Legacy endpoint: Register a new repository (FID only)
 router.post('/:fid/repositories', async (req, res) => {
   const { fid } = req.params;
   const { repository_url, repository_name } = req.body;
@@ -695,7 +967,137 @@ router.post('/:fid/repositories/:repoId/fix-webhook', async (req, res) => {
   }
 });
 
-// Get webhook setup instructions for a specific repository
+// Universal endpoint: Get webhook setup instructions for a specific repository
+router.get('/user/:identifier/repositories/:repoId/webhook-instructions', async (req, res) => {
+  const { identifier, repoId } = req.params;
+  
+  try {
+    console.log(`🔗 Getting webhook instructions for repo ${repoId}, user ${identifier}`);
+    const user = await resolveUserByIdentifier(identifier);
+    
+    const pool = getPool();
+    
+    // Get repository details and verify ownership
+    const repoResult = await pool.query(`
+      SELECT rr.id, rr.repository_name, rr.webhook_secret, rr.webhook_configured, rr.status
+      FROM registered_repositories rr
+      WHERE rr.id = $1 AND rr.registered_by_user_id = $2
+    `, [repoId, user.id]);
+    
+    if (repoResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Repository not found or access denied' });
+    }
+    
+    const repo = repoResult.rows[0];
+    
+    // Generate new secret if one doesn't exist
+    let webhookSecret = repo.webhook_secret;
+    if (!webhookSecret) {
+      webhookSecret = crypto.randomBytes(32).toString('hex');
+      await pool.query(`
+        UPDATE registered_repositories 
+        SET webhook_secret = $1, updated_at = NOW()
+        WHERE id = $2
+      `, [webhookSecret, repoId]);
+    }
+    
+    const backendUrl = process.env.BACKEND_URL || 'https://abcdao-production.up.railway.app';
+    const [owner, repoName] = repo.repository_name.split('/');
+    
+    res.json({
+      success: true,
+      repository: {
+        id: repo.id,
+        name: repo.repository_name,
+        owner,
+        repo: repoName,
+        webhook_configured: repo.webhook_configured,
+        status: repo.status
+      },
+      webhook_setup: {
+        github_url: `https://github.com/${repo.repository_name}/settings/hooks`,
+        payload_url: `${backendUrl}/api/webhooks/github`,
+        content_type: 'application/json',
+        secret: webhookSecret,
+        events: ['push'],
+        active: true
+      },
+      instructions: {
+        steps: [
+          `Go to https://github.com/${repo.repository_name}/settings/hooks`,
+          'Click "Add webhook"',
+          `Set Payload URL to: ${backendUrl}/api/webhooks/github`,
+          'Set Content type to: application/json',
+          `Set Secret to: ${webhookSecret}`,
+          'Select "Just the push event"',
+          'Make sure "Active" is checked',
+          'Click "Add webhook"',
+          'Come back here and click "I\'ve configured the webhook"'
+        ]
+      },
+      user_info: {
+        identifier: identifier,
+        resolved_fid: user.farcaster_fid
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error getting webhook instructions:', error);
+    res.status(error.message.includes('User not found') ? 404 : 500).json({ 
+      error: error.message 
+    });
+  }
+});
+
+// Universal endpoint: Mark webhook as manually configured
+router.post('/user/:identifier/repositories/:repoId/webhook-configured', async (req, res) => {
+  const { identifier, repoId } = req.params;
+  
+  try {
+    console.log(`✅ Marking webhook as configured for repo ${repoId}, user ${identifier}`);
+    const user = await resolveUserByIdentifier(identifier);
+    
+    const pool = getPool();
+    
+    // Verify repository ownership
+    const repoResult = await pool.query(`
+      SELECT rr.id, rr.repository_name
+      FROM registered_repositories rr
+      WHERE rr.id = $1 AND rr.registered_by_user_id = $2
+    `, [repoId, user.id]);
+    
+    if (repoResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Repository not found or access denied' });
+    }
+    
+    // Mark webhook as configured
+    await pool.query(`
+      UPDATE registered_repositories 
+      SET 
+        webhook_configured = true,
+        status = 'active',
+        updated_at = NOW()
+      WHERE id = $1
+    `, [repoId]);
+    
+    res.json({
+      success: true,
+      message: `Webhook marked as configured for ${repoResult.rows[0].repository_name}. Repository is now active for rewards!`,
+      user_info: {
+        identifier: identifier,
+        resolved_fid: user.farcaster_fid
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error marking webhook as configured:', error);
+    res.status(error.message.includes('User not found') ? 404 : 500).json({ 
+      error: error.message 
+    });
+  }
+});
+
+// Legacy endpoint: Get webhook setup instructions for a specific repository
 router.get('/:fid/repositories/:repoId/webhook-instructions', async (req, res) => {
   const { fid, repoId } = req.params;
   

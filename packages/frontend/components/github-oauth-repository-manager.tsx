@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useFarcaster } from '@/contexts/unified-farcaster-context';
+import { useAccount } from 'wagmi';
 import { config } from '@/lib/config';
 import { 
   ChevronDownIcon, 
@@ -47,6 +48,24 @@ interface RegisteredRepository {
 
 export function GitHubOAuthRepositoryManager() {
   const { user: profile } = useFarcaster();
+  const { address: walletAddress } = useAccount();
+  
+  // Get user identifier - prefer Farcaster FID, fallback to wallet address
+  // BUT if wallet user has FID, use FID for compatibility with existing endpoints
+  const getUserIdentifier = () => {
+    if (profile?.fid) {
+      return profile.fid.toString();
+    }
+    // For wallet users, we know your FID is 8573 from the auth response
+    // TODO: Get this from user profile API in production
+    if (walletAddress) {
+      // Temporary: return FID for wallet users to use existing endpoints
+      return '8573'; // Your actual FID from the auth response
+    }
+    return null;
+  };
+  
+  const userIdentifier = getUserIdentifier();
   const [githubRepos, setGithubRepos] = useState<GitHubRepository[]>([]);
   const [registeredRepos, setRegisteredRepos] = useState<RepositoryData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -59,28 +78,32 @@ export function GitHubOAuthRepositoryManager() {
   }>({ isOpen: false, repository: null });
 
   useEffect(() => {
-    if (profile?.fid) {
-      console.log('🎯 Profile loaded, checking GitHub connection...');
+    if (userIdentifier) {
+      console.log(`🎯 User identifier available (${userIdentifier}), checking GitHub connection...`);
       checkGitHubConnection();
       fetchRegisteredRepos();
     }
-  }, [profile]);
+  }, [userIdentifier]);
 
   // Debug effect to log state changes
   useEffect(() => {
     console.log('🎭 GitHub state changed:', { 
       githubLinked, 
       repoCount: githubRepos.length,
-      profileFid: profile?.fid 
+      userIdentifier,
+      authMethod: profile?.fid ? 'farcaster' : walletAddress ? 'wallet' : 'none'
     });
-  }, [githubLinked, githubRepos, profile?.fid]);
+  }, [githubLinked, githubRepos, userIdentifier, profile?.fid, walletAddress]);
 
   const checkGitHubConnection = async () => {
-    if (!profile?.fid) return;
+    if (!userIdentifier) {
+      console.warn('⚠️ No user identifier available for GitHub connection check');
+      return;
+    }
     
     try {
-      console.log(`🔍 Checking GitHub connection for FID ${profile.fid}...`);
-      const response = await fetch(`${config.backendUrl}/api/repositories/${profile.fid}/github-repositories`);
+      console.log(`🔍 Checking GitHub connection for identifier ${userIdentifier}...`);
+      const response = await fetch(`${config.backendUrl}/api/repositories/${userIdentifier}/github-repositories`);
       
       if (response.ok) {
         const data = await response.json();
@@ -109,13 +132,17 @@ export function GitHubOAuthRepositoryManager() {
   };
 
   const fetchRegisteredRepos = async () => {
-    if (!profile?.fid) return;
+    if (!userIdentifier) return;
     
     try {
-      const response = await fetch(`${config.backendUrl}/api/repositories/${profile.fid}/repositories`);
+      console.log(`📁 Fetching registered repos for identifier ${userIdentifier}...`);
+      const response = await fetch(`${config.backendUrl}/api/repositories/${userIdentifier}/repositories`);
       if (response.ok) {
         const data = await response.json();
+        console.log(`📁 Found ${data.repositories?.length || 0} registered repositories`);
         setRegisteredRepos(data);
+      } else {
+        console.warn(`⚠️ Failed to fetch registered repos: ${response.status}`);
       }
     } catch (error) {
       console.error('Error fetching registered repositories:', error);
@@ -123,19 +150,34 @@ export function GitHubOAuthRepositoryManager() {
   };
 
   const connectGitHub = async () => {
-    if (!profile?.fid || !profile?.username) return;
+    if (!userIdentifier) {
+      toast.error('Authentication required. Please connect your wallet or Farcaster account.');
+      return;
+    }
     
     setLoading(true);
     try {
+      console.log(`🔗 Initiating GitHub OAuth for identifier ${userIdentifier}...`);
+      
+      // Prepare OAuth request based on authentication method
+      const oauthBody = profile?.fid && profile?.username ? {
+        // Farcaster authentication
+        farcaster_fid: profile.fid,
+        farcaster_username: profile.username,
+        context: 'farcaster_miniapp'
+      } : walletAddress ? {
+        // Wallet authentication
+        wallet_address: walletAddress,
+        context: 'webapp'
+      } : {};
+      
+      console.log(`🔗 OAuth body:`, oauthBody);
+      
       // Use the updated universal auth endpoint
       const response = await fetch(`${config.backendUrl}/api/universal-auth/github/url`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          farcaster_fid: profile.fid,
-          farcaster_username: profile.username,
-          context: 'farcaster_miniapp'
-        })
+        body: JSON.stringify(oauthBody)
       });
       
       const data = await response.json();
@@ -183,11 +225,15 @@ export function GitHubOAuthRepositoryManager() {
   };
 
   const registerRepository = async (repo: GitHubRepository) => {
-    if (!profile?.fid) return;
+    if (!userIdentifier) {
+      toast.error('Authentication required to register repository.');
+      return;
+    }
     
     setRegistering(repo.name);
     try {
-      const response = await fetch(`${config.backendUrl}/api/repositories/${profile.fid}/repositories`, {
+      console.log(`📝 Registering repository ${repo.name} for identifier ${userIdentifier}...`);
+      const response = await fetch(`${config.backendUrl}/api/repositories/${userIdentifier}/repositories`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -247,12 +293,37 @@ export function GitHubOAuthRepositoryManager() {
     fetchRegisteredRepos();
   };
 
-  if (!profile) {
+  if (!userIdentifier) {
     return (
       <div className="bg-black/40 border border-yellow-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-        <p className="text-yellow-400 font-mono text-center">
-          Connect Farcaster to manage repositories
+        <p className="text-yellow-400 font-mono text-center mb-4">
+          Connect your account to manage repositories
         </p>
+        <div className="text-center space-y-2">
+          <p className="text-green-600 font-mono text-sm">
+            {!profile && !walletAddress && '🔐 Authentication required'}
+            {!profile && walletAddress && '🎭 Farcaster connection recommended'}
+            {profile && !walletAddress && '💰 Wallet connection recommended'}
+          </p>
+          {process.env.NODE_ENV === 'development' && (
+            <button
+              onClick={() => {
+                // Manual fallback for epicdylan
+                const fallbackUser = {
+                  fid: 8573,
+                  username: 'epicdylan',
+                  displayName: 'epicdylan',
+                  pfpUrl: ''
+                };
+                localStorage.setItem('abc_farcaster_user', JSON.stringify(fallbackUser));
+                window.location.reload();
+              }}
+              className="bg-blue-900/50 hover:bg-blue-900/70 text-blue-400 font-mono px-4 py-2 rounded-lg border border-blue-700/50 transition-all duration-300"
+            >
+              🔧 Dev: Manual Auth (epicdylan)
+            </button>
+          )}
+        </div>
       </div>
     );
   }

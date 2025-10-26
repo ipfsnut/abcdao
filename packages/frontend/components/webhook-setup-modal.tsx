@@ -53,8 +53,11 @@ export function WebhookSetupModal({ isOpen, onClose, repository, onWebhookConfig
     
     setLoading(true);
     try {
+      // Try to get user identifier from parent component context or use FID
+      const userIdentifier = profile.fid;
+      
       const response = await fetch(
-        `${config.backendUrl}/api/repositories/${profile.fid}/repositories/${repository.id}/webhook-instructions`
+        `${config.backendUrl}/api/repositories/${userIdentifier}/repositories/${repository.id}/webhook-instructions`
       );
       
       if (response.ok) {
@@ -92,8 +95,11 @@ export function WebhookSetupModal({ isOpen, onClose, repository, onWebhookConfig
     
     setVerifying(true);
     try {
+      // Try to get user identifier from parent component context or use FID
+      const userIdentifier = profile.fid;
+      
       const response = await fetch(
-        `${config.backendUrl}/api/repositories/${profile.fid}/repositories/${repository.id}/webhook-configured`,
+        `${config.backendUrl}/api/repositories/${userIdentifier}/repositories/${repository.id}/webhook-configured`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
