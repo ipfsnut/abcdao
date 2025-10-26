@@ -158,8 +158,20 @@ async function handlePushEvent(payload) {
     console.log('✅ Database pool obtained');
   
     // Try multiple fields for GitHub username
-    const githubUsername = pusher?.name || pusher?.login || pusher?.username;
+    console.log('🔍 PUSHER DEBUG:', {
+      pusher_name: pusher?.name,
+      pusher_login: pusher?.login, 
+      pusher_username: pusher?.username,
+      pusher_email: pusher?.email,
+      full_pusher: JSON.stringify(pusher, null, 2)
+    });
+    
+    // GitHub typically sends the username in pusher.login, not pusher.name
+    // pusher.name is the display name, pusher.login is the actual username
+    const githubUsername = pusher?.login || pusher?.name || pusher?.username;
     console.log('🔍 Looking for user with GitHub username:', githubUsername);
+    console.log('🔍 Expected GitHub username in DB: ipfsnut');
+    console.log('🔍 Checking prioritized order: login, name, username');
     
     // Look up user by GitHub username
     console.log('🔍 Querying database for user...');
@@ -171,6 +183,20 @@ async function handlePushEvent(payload) {
     
     if (userResult.rows.length === 0) {
       console.log(`⚠️ Push from unregistered user: ${githubUsername}`);
+      console.log('🔍 Available GitHub usernames in database:');
+      
+      // Debug: Show all GitHub usernames in database to help diagnose
+      try {
+        const allUsersResult = await pool.query(
+          'SELECT farcaster_fid, farcaster_username, github_username FROM users WHERE github_username IS NOT NULL AND verified_at IS NOT NULL LIMIT 10'
+        );
+        allUsersResult.rows.forEach(user => {
+          console.log(`  - FID ${user.farcaster_fid} (${user.farcaster_username}): github_username="${user.github_username}"`);
+        });
+      } catch (debugError) {
+        console.log('Could not query users for debugging:', debugError.message);
+      }
+      
       return;
     }
     
