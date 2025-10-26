@@ -474,11 +474,11 @@ export class UserCommitDataManager {
     const statsQuery = `
       SELECT 
         COUNT(DISTINCT c.id) as total_commits,
-        COUNT(DISTINCT c.repository_name) as unique_repositories,
+        COUNT(DISTINCT c.repository) as unique_repositories,
         COALESCE(SUM(c.reward_amount), 0) as total_rewards_earned,
-        MAX(c.commit_timestamp) as last_commit_at,
-        COUNT(DISTINCT CASE WHEN c.commit_timestamp >= NOW() - INTERVAL '7 days' THEN c.id END) as commits_7d,
-        COUNT(DISTINCT CASE WHEN c.commit_timestamp >= NOW() - INTERVAL '30 days' THEN c.id END) as commits_30d
+        MAX(c.processed_at) as last_commit_at,
+        COUNT(DISTINCT CASE WHEN c.processed_at >= NOW() - INTERVAL '7 days' THEN c.id END) as commits_7d,
+        COUNT(DISTINCT CASE WHEN c.processed_at >= NOW() - INTERVAL '30 days' THEN c.id END) as commits_30d
       FROM commits c
       WHERE c.user_id = $1
     `;
