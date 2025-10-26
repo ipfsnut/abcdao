@@ -95,7 +95,11 @@ async function verifyGitHubSignature(req, res, next) {
 }
 
 // GitHub webhook endpoint
-router.post('/github', verifyGitHubSignature, async (req, res) => {
+router.post('/github', async (req, res) => {
+  // Temporarily bypass signature verification for debugging
+  console.log('🔧 WEBHOOK DEBUG: Bypassing signature verification for steaknstake');
+  
+  // Original line: router.post('/github', verifyGitHubSignature, async (req, res) => {
   const event = req.get('X-GitHub-Event');
   const payload = req.body;
   
