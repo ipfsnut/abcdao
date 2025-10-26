@@ -441,6 +441,7 @@ export class UserCommitDataManager {
 
   /**
    * Get user profile by identifier
+   * Enhanced with repository count and commit statistics
    */
   async getUserProfile(identifier) {
     const pool = getPool();
@@ -463,7 +464,98 @@ export class UserCommitDataManager {
     }
     
     const result = await pool.query(query, params);
-    return result.rows[0];
+    const user = result.rows[0];
+    
+    if (!user) {
+      return null;
+    }
+
+    // Get additional statistics for this user
+    const statsQuery = `
+      SELECT 
+        COUNT(DISTINCT c.id) as total_commits,
+        COUNT(DISTINCT c.repository_name) as unique_repositories,
+        COALESCE(SUM(c.reward_amount), 0) as total_rewards_earned,
+        MAX(c.commit_timestamp) as last_commit_at,
+        COUNT(DISTINCT CASE WHEN c.commit_timestamp >= NOW() - INTERVAL '7 days' THEN c.id END) as commits_7d,
+        COUNT(DISTINCT CASE WHEN c.commit_timestamp >= NOW() - INTERVAL '30 days' THEN c.id END) as commits_30d
+      FROM commits c
+      WHERE c.user_id = $1
+    `;
+    
+    const statsResult = await pool.query(statsQuery, [user.id]);
+    const stats = statsResult.rows[0];
+
+    // Get repository information for this user
+    const repoQuery = `
+      SELECT 
+        COUNT(*) as total_repositories,
+        COUNT(CASE WHEN rr.status = 'active' AND rr.webhook_configured = true THEN 1 END) as active_repositories
+      FROM registered_repositories rr
+      WHERE rr.registered_by_user_id = $1
+    `;
+    
+    const repoResult = await pool.query(repoQuery, [user.id]);
+    const repoStats = repoResult.rows[0];
+
+    return {
+      // User profile data
+      profile: user,
+      
+      // Identifiers for easy lookup
+      identifiers: {
+        userId: user.id,
+        walletAddress: user.wallet_address,
+        farcasterFid: user.farcaster_fid,
+        githubUsername: user.github_username,
+        farcasterUsername: user.farcaster_username
+      },
+      
+      // Statistics
+      stats: {
+        totalCommits: parseInt(stats.total_commits) || 0,
+        uniqueRepositories: parseInt(stats.unique_repositories) || 0,
+        totalRepositories: parseInt(repoStats.total_repositories) || 0,
+        activeRepositories: parseInt(repoStats.active_repositories) || 0,
+        totalRewardsEarned: parseFloat(stats.total_rewards_earned) || 0,
+        lastCommitAt: stats.last_commit_at,
+        commits7d: parseInt(stats.commits_7d) || 0,
+        commits30d: parseInt(stats.commits_30d) || 0
+      },
+      
+      // Membership information
+      membership: {
+        status: user.is_member ? 'active' : 'inactive',
+        tier: user.membership_tier || 'basic',
+        joinedAt: user.payment_verified_at,
+        verified: !!user.payment_verified_at
+      },
+      
+      // Meta information
+      meta: {
+        isActive: !!user.github_username && !!user.wallet_address,
+        hasCommits: parseInt(stats.total_commits) > 0,
+        hasRepositories: parseInt(repoStats.total_repositories) > 0,
+        profileCompleteness: this.calculateProfileCompleteness(user),
+        lastUpdated: new Date().toISOString()
+      }
+    };
+  }
+
+  /**
+   * Calculate profile completeness percentage
+   */
+  calculateProfileCompleteness(user) {
+    let completed = 0;
+    let total = 5;
+    
+    if (user.wallet_address) completed++;
+    if (user.github_username) completed++;
+    if (user.farcaster_username) completed++;
+    if (user.is_member) completed++;
+    if (user.display_name) completed++;
+    
+    return Math.round((completed / total) * 100);
   }
 
   async getRecentUsers() {

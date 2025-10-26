@@ -3,8 +3,10 @@
 import React from 'react';
 import { useTreasury } from '@/hooks/useTreasury';
 import { useTreasurySystematic } from '@/hooks/useTreasurySystematic';
+import { useTreasuryUnified } from '@/hooks/useTreasuryUnified';
 import { useStaking } from '@/hooks/useStaking';
 import { useStakingSystematic } from '@/hooks/useStakingSystematic';
+import { useStakingUnified } from '@/hooks/useStakingUnified';
 
 /**
  * Systematic Data Architecture Demo
@@ -23,6 +25,10 @@ export function SystematicDataDemo() {
   // NEW: Systematic API consumption (proactive data management)
   const newTreasury = useTreasurySystematic();
   const newStaking = useStakingSystematic();
+
+  // UNIFIED: Best of both worlds (production-ready)
+  const unifiedTreasury = useTreasuryUnified();
+  const unifiedStaking = useStakingUnified();
 
   return (
     <div className="p-6 bg-black text-green-400 font-mono">

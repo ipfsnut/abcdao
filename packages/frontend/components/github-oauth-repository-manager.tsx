@@ -13,8 +13,11 @@ import {
   GlobeAltIcon,
   PlusIcon,
   LinkIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  WrenchScrewdriverIcon
 } from '@heroicons/react/24/outline';
+import { WebhookSetupModal } from './webhook-setup-modal';
 
 interface GitHubRepository {
   id: number;
@@ -34,6 +37,14 @@ interface RepositoryData {
   premium_staker: boolean;
 }
 
+interface RegisteredRepository {
+  id: string;
+  repository_name: string;
+  repository_url: string;
+  webhook_configured: boolean;
+  status: 'pending' | 'active';
+}
+
 export function GitHubOAuthRepositoryManager() {
   const { user: profile } = useFarcaster();
   const [githubRepos, setGithubRepos] = useState<GitHubRepository[]>([]);
@@ -42,6 +53,10 @@ export function GitHubOAuthRepositoryManager() {
   const [registering, setRegistering] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [githubLinked, setGithubLinked] = useState(false);
+  const [webhookSetupModal, setWebhookSetupModal] = useState<{
+    isOpen: boolean;
+    repository: { id: string; name: string; url: string } | null;
+  }>({ isOpen: false, repository: null });
 
   useEffect(() => {
     if (profile?.fid) {
@@ -145,6 +160,16 @@ export function GitHubOAuthRepositoryManager() {
         toast.success(data.message || 'Repository registered successfully!');
         await fetchRegisteredRepos();
         await checkGitHubConnection(); // Refresh available repos
+        
+        // Immediately open webhook setup modal for the newly registered repository
+        setWebhookSetupModal({
+          isOpen: true,
+          repository: {
+            id: data.repository.id.toString(),
+            name: repo.name,
+            url: repo.url
+          }
+        });
       } else {
         toast.error(data.error || 'Failed to register repository');
       }
@@ -157,6 +182,27 @@ export function GitHubOAuthRepositoryManager() {
 
   const isRepoRegistered = (repoName: string) => {
     return registeredRepos?.repositories?.some(r => r.repository_name === repoName);
+  };
+
+  const getRepoStatus = (repoName: string): RegisteredRepository | null => {
+    return registeredRepos?.repositories?.find(r => r.repository_name === repoName) || null;
+  };
+
+  const openWebhookSetup = (repo: RegisteredRepository) => {
+    setWebhookSetupModal({
+      isOpen: true,
+      repository: {
+        id: repo.id,
+        name: repo.repository_name,
+        url: repo.repository_url
+      }
+    });
+  };
+
+  const closeWebhookSetup = () => {
+    setWebhookSetupModal({ isOpen: false, repository: null });
+    // Refresh repository data after webhook setup
+    fetchRegisteredRepos();
   };
 
   if (!profile) {
@@ -249,12 +295,18 @@ export function GitHubOAuthRepositoryManager() {
           <div className={`space-y-3 ${isExpanded ? 'max-h-none' : 'max-h-96 overflow-y-auto'}`}>
             {githubRepos.slice(0, isExpanded ? undefined : 5).map((repo) => {
               const isRegistered = isRepoRegistered(repo.name);
+              const repoStatus = getRepoStatus(repo.name);
               const isCurrentlyRegistering = registering === repo.name;
+              const needsWebhookSetup = repoStatus && !repoStatus.webhook_configured;
               
               return (
                 <div 
                   key={repo.id} 
-                  className="bg-green-950/20 border border-green-700/50 rounded-lg p-4 hover:bg-green-950/30 transition-colors"
+                  className={`border rounded-lg p-4 transition-colors ${
+                    needsWebhookSetup 
+                      ? 'bg-yellow-950/20 border-yellow-700/50 hover:bg-yellow-950/30' 
+                      : 'bg-green-950/20 border-green-700/50 hover:bg-green-950/30'
+                  }`}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex-1 min-w-0">
@@ -265,6 +317,20 @@ export function GitHubOAuthRepositoryManager() {
                           <LockClosedIcon className="w-3 h-3 text-yellow-400" />
                         ) : (
                           <GlobeAltIcon className="w-3 h-3 text-green-600" />
+                        )}
+                        {/* Status indicators */}
+                        {repoStatus && (
+                          <div className="flex items-center gap-1">
+                            {repoStatus.webhook_configured ? (
+                              <span className="px-2 py-0.5 bg-green-900/50 text-green-400 border border-green-700/50 rounded text-xs">
+                                🟢 Active
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 bg-yellow-900/50 text-yellow-400 border border-yellow-700/50 rounded text-xs">
+                                ⚠️ Setup Required
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                       {repo.description && (
@@ -280,14 +346,20 @@ export function GitHubOAuthRepositoryManager() {
                         </div>
                         <span>Updated: {new Date(repo.updated_at).toLocaleDateString()}</span>
                       </div>
+                      
+                      {/* Webhook setup warning */}
+                      {needsWebhookSetup && (
+                        <div className="mt-2 p-2 bg-yellow-950/20 border border-yellow-700/50 rounded text-xs">
+                          <div className="flex items-center gap-2 text-yellow-400 font-mono">
+                            <ExclamationTriangleIcon className="w-3 h-3" />
+                            <span>Webhook setup required to earn rewards</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
-                    <div className="ml-4 flex-shrink-0">
-                      {isRegistered ? (
-                        <span className="px-3 py-1 bg-green-900/50 text-green-400 border border-green-700/50 rounded text-xs font-mono">
-                          ✓ Registered
-                        </span>
-                      ) : (
+                    <div className="ml-4 flex-shrink-0 flex flex-col gap-2">
+                      {!isRegistered ? (
                         <button
                           onClick={() => registerRepository(repo)}
                           disabled={isCurrentlyRegistering || (registeredRepos ? (registeredRepos.member_slots_remaining <= 0 && !registeredRepos.premium_staker) : false)}
@@ -301,6 +373,18 @@ export function GitHubOAuthRepositoryManager() {
                               Register
                             </>
                           )}
+                        </button>
+                      ) : repoStatus?.webhook_configured ? (
+                        <span className="px-3 py-1 bg-green-900/50 text-green-400 border border-green-700/50 rounded text-xs font-mono">
+                          ✓ Active & Earning
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => repoStatus && openWebhookSetup(repoStatus)}
+                          className="flex items-center gap-2 bg-yellow-900/50 hover:bg-yellow-900/70 text-yellow-400 font-mono px-3 py-1 rounded text-xs border border-yellow-700/50 transition-all duration-300 hover:matrix-glow"
+                        >
+                          <WrenchScrewdriverIcon className="w-3 h-3" />
+                          Setup Webhook
                         </button>
                       )}
                     </div>
@@ -338,6 +422,16 @@ export function GitHubOAuthRepositoryManager() {
             Create a repository on GitHub or ensure you have admin permissions.
           </p>
         </div>
+      )}
+
+      {/* Webhook Setup Modal */}
+      {webhookSetupModal.isOpen && webhookSetupModal.repository && (
+        <WebhookSetupModal
+          isOpen={webhookSetupModal.isOpen}
+          onClose={closeWebhookSetup}
+          repository={webhookSetupModal.repository}
+          onWebhookConfigured={closeWebhookSetup}
+        />
       )}
     </div>
   );

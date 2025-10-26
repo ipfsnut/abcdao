@@ -7,7 +7,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTreasury } from '@/hooks/useTreasury';
+import { useTreasuryUnified } from '@/hooks/useTreasuryUnified';
 
 interface SocialUpdate {
   id: string;
@@ -33,8 +33,8 @@ export function SocialTab({ user, discordMembers }: SocialTabProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'announcements' | 'achievements' | 'events'>('all');
   
-  // Get real treasury data for ABC distributed
-  const { totalAbcDistributed } = useTreasury();
+  // Get unified treasury data for ABC distributed
+  const { totalAbcDistributed } = useTreasuryUnified();
 
   useEffect(() => {
     loadSocialUpdates();

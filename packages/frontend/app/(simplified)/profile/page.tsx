@@ -349,9 +349,11 @@ export default function ProfilePage() {
             <div className="bg-purple-950/20 border border-purple-900/30 rounded-lg p-4">
               <div className="text-sm font-mono text-purple-600 mb-1">Repositories</div>
               <div className="text-2xl font-bold text-purple-400">
-                {stats?.uniqueRepositories || 0}
+                {stats?.activeRepositories || 0}
               </div>
-              <div className="text-xs text-purple-700">Active repos</div>
+              <div className="text-xs text-purple-700">
+                {stats?.totalRepositories || 0} total • {stats?.activeRepositories || 0} active
+              </div>
             </div>
             
             <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-4">

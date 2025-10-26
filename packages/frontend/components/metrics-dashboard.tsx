@@ -8,7 +8,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useStaking } from '@/hooks/useStaking';
+import { useStakingUnified } from '@/hooks/useStakingUnified';
+import { useUserStatsUnified } from '@/hooks/useUserStatsUnified';
 
 interface MetricsDashboardProps {
   user: any;
@@ -16,56 +17,26 @@ interface MetricsDashboardProps {
 }
 
 export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [backendMetrics, setBackendMetrics] = useState({
-    commitCount: 0
-  });
-
-  // Use blockchain data for accurate token/staking info
+  // Use unified staking data for consistency across all components
   const {
     tokenBalance,
     stakedAmount,
     pendingRewards,
-    totalEarned
-  } = useStaking();
+    formatStakingAmount,
+    formatEthAmount
+  } = useStakingUnified();
 
-  useEffect(() => {
-    loadMetrics();
-  }, [user]);
+  // Use unified user statistics for consistency across all components
+  const {
+    totalCommits,
+    totalRewardsEarned,
+    totalRewardsEarnedFormatted,
+    isLoading: userStatsLoading,
+    formatNumber
+  } = useUserStatsUnified(user?.wallet_address, user);
 
-  const loadMetrics = async () => {
-    try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app';
-      const response = await fetch(`${backendUrl}/api/users-commits/metrics/${user.wallet_address}`);
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          // User not found - use fallback data for backend-only metrics
-          setBackendMetrics({
-            commitCount: user.total_commits || 0
-          });
-          setIsLoading(false);
-          return;
-        }
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      const metrics = data.metrics;
-      
-      setBackendMetrics({
-        commitCount: metrics.commitCount || user.total_commits || 0
-      });
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Failed to load backend metrics:', error);
-      // Fallback to user data if API fails
-      setBackendMetrics({
-        commitCount: user.total_commits || 0
-      });
-      setIsLoading(false);
-    }
-  };
+  // Loading state now handled by unified hooks
+  const isLoading = userStatsLoading;
 
   if (isLoading) {
     return (
@@ -83,19 +54,12 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
     );
   }
 
-  // Format blockchain values for display
-  const formatTokenAmount = (amount: string) => {
-    const num = parseFloat(amount);
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    }
-    return num.toFixed(1);
-  };
+  // Use unified formatting for consistent display
 
   const metricCards = [
     {
       label: 'Token Balance',
-      value: formatTokenAmount(tokenBalance || '0'),
+      value: formatStakingAmount(tokenBalance || '0'),
       unit: '$ABC',
       icon: '💰',
       color: 'text-green-400',
@@ -103,7 +67,7 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
     },
     {
       label: 'Staked Amount',
-      value: formatTokenAmount(stakedAmount || '0'),
+      value: formatStakingAmount(stakedAmount || '0'),
       unit: '$ABC',
       icon: '🏦',
       color: 'text-blue-400',
@@ -111,7 +75,7 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
     },
     {
       label: 'Pending ETH',
-      value: parseFloat(pendingRewards || '0').toFixed(4),
+      value: formatEthAmount(pendingRewards || '0'),
       unit: 'ETH',
       icon: '⏳',
       color: 'text-yellow-400',
@@ -119,7 +83,7 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
     },
     {
       label: 'Total Earned',
-      value: formatTokenAmount(totalEarned || '0'),
+      value: totalRewardsEarnedFormatted,
       unit: '$ABC',
       icon: '🎁',
       color: 'text-green-400',
@@ -127,7 +91,7 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
     },
     {
       label: 'Commits',
-      value: backendMetrics.commitCount.toString(),
+      value: totalCommits.toString(),
       unit: 'commits',
       icon: '📝',
       color: 'text-purple-400',
@@ -135,7 +99,7 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
     },
     {
       label: 'ETH Rewards',
-      value: parseFloat(totalEarned || '0').toFixed(4),
+      value: formatEthAmount(pendingRewards || '0'),
       unit: 'ETH',
       icon: '📈',
       color: 'text-orange-400',

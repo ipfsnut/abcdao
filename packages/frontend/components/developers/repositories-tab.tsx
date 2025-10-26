@@ -9,6 +9,7 @@
 import { useState, useEffect } from 'react';
 import { config } from '@/lib/config';
 import { GitHubOAuthRepositoryManager } from '@/components/github-oauth-repository-manager';
+import { WebhookSetupModal } from '@/components/webhook-setup-modal';
 import { toast } from 'sonner';
 
 interface Repository {
@@ -26,6 +27,8 @@ interface Repository {
   totalEarned: string;
   score: number;
   url: string;
+  webhook_configured?: boolean;
+  status?: string;
 }
 
 interface RepositoriesTabProps {
@@ -42,6 +45,10 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
   const [isToggling, setIsToggling] = useState<string | null>(null);
   const [autoDetectionEnabled, setAutoDetectionEnabled] = useState(true);
   const [showAddRepo, setShowAddRepo] = useState(false);
+  const [webhookSetupModal, setWebhookSetupModal] = useState<{
+    isOpen: boolean;
+    repository: { id: string; name: string; url: string } | null;
+  }>({ isOpen: false, repository: null });
 
   useEffect(() => {
     loadRepositories();
@@ -79,7 +86,10 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
           commits: 0, // We don't have commit count in this endpoint
           totalEarned: '0', // We don't have total earned in this endpoint
           score: repo.webhook_configured ? 100 : 50, // Simple scoring based on webhook status
-          url: repo.repository_url || `https://github.com/${repo.repository_name}`
+          url: repo.repository_url || `https://github.com/${repo.repository_name}`,
+          // Add webhook status for better UI handling
+          webhook_configured: repo.webhook_configured,
+          status: repo.status
         }));
         
         setRepositories(transformedRepos);
@@ -188,6 +198,25 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
     return 'Low';
   };
 
+  const openWebhookSetup = (repo: Repository) => {
+    setWebhookSetupModal({
+      isOpen: true,
+      repository: {
+        id: repo.id,
+        name: repo.fullName,
+        url: repo.url
+      }
+    });
+  };
+
+  const closeWebhookSetup = () => {
+    setWebhookSetupModal({ isOpen: false, repository: null });
+    // Refresh repository data after webhook setup
+    loadRepositories();
+  };
+
+  const pendingRepos = repositories.filter(r => r.status === 'pending' && !r.webhook_configured);
+
   const filteredRepos = getFilteredRepositories();
 
   if (isLoading) {
@@ -213,6 +242,34 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
 
   return (
     <div className="space-y-6">
+      {/* Pending Webhook Setup Warning */}
+      {pendingRepos.length > 0 && (
+        <div className="bg-gradient-to-r from-yellow-950/30 to-orange-950/30 border border-yellow-700/50 rounded-xl p-6 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-yellow-400 mb-2">⚠️ Action Required</h3>
+              <p className="text-sm text-yellow-600 font-mono mb-3">
+                {pendingRepos.length} {pendingRepos.length === 1 ? 'repository needs' : 'repositories need'} webhook setup to start earning rewards
+              </p>
+              <div className="space-y-1">
+                {pendingRepos.map(repo => (
+                  <div key={repo.id} className="flex items-center gap-3">
+                    <span className="text-yellow-400 font-mono text-sm">{repo.fullName}</span>
+                    <button
+                      onClick={() => openWebhookSetup(repo)}
+                      className="bg-yellow-900/50 hover:bg-yellow-900/70 text-yellow-400 font-mono px-3 py-1 rounded text-xs border border-yellow-700/50 transition-all duration-300"
+                    >
+                      Setup Now
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="text-4xl">🔧</div>
+          </div>
+        </div>
+      )}
+
       {/* Repository Management Header */}
       <div className="bg-gradient-to-r from-green-950/30 to-blue-950/30 border border-green-700/50 rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
@@ -227,7 +284,9 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
             <div className="text-2xl font-bold text-green-400">
               {repositories.filter(r => r.isEnabled).length}
             </div>
-            <div className="text-sm text-green-600">Active repositories</div>
+            <div className="text-sm text-green-600">
+              Active repositories ({repositories.length} total)
+            </div>
           </div>
         </div>
 
@@ -380,22 +439,42 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
               </div>
               
               <div className="ml-4 flex flex-col items-end gap-2">
-                <button
-                  onClick={() => handleToggleRepository(repo.id)}
-                  disabled={isToggling === repo.id}
-                  className={`px-4 py-2 rounded-lg font-mono text-sm font-semibold transition-all duration-200 ${
-                    repo.isEnabled
-                      ? 'bg-red-900/50 text-red-400 hover:bg-red-800/60'
-                      : 'bg-green-900/50 text-green-400 hover:bg-green-800/60'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {isToggling === repo.id ? '🔄 ...' : 
-                   repo.isEnabled ? '❌ Disable' : '✅ Enable'}
-                </button>
+                {/* Webhook setup button for pending repos */}
+                {repo.status === 'pending' && !repo.webhook_configured && (
+                  <button
+                    onClick={() => openWebhookSetup(repo)}
+                    className="px-4 py-2 bg-yellow-900/50 hover:bg-yellow-900/70 text-yellow-400 font-mono text-sm font-semibold rounded-lg border border-yellow-700/50 transition-all duration-300 hover:matrix-glow"
+                  >
+                    🔧 Setup Webhook
+                  </button>
+                )}
                 
-                {repo.isEnabled && (
+                {/* Enable/Disable button for active repos */}
+                {repo.webhook_configured && (
+                  <button
+                    onClick={() => handleToggleRepository(repo.id)}
+                    disabled={isToggling === repo.id}
+                    className={`px-4 py-2 rounded-lg font-mono text-sm font-semibold transition-all duration-200 ${
+                      repo.isEnabled
+                        ? 'bg-red-900/50 text-red-400 hover:bg-red-800/60'
+                        : 'bg-green-900/50 text-green-400 hover:bg-green-800/60'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    {isToggling === repo.id ? '🔄 ...' : 
+                     repo.isEnabled ? '❌ Disable' : '✅ Enable'}
+                  </button>
+                )}
+                
+                {/* Status indicators */}
+                {repo.webhook_configured && repo.isEnabled && (
                   <div className="text-xs text-green-600 text-center">
                     🟢 Earning active
+                  </div>
+                )}
+                
+                {repo.status === 'pending' && !repo.webhook_configured && (
+                  <div className="text-xs text-yellow-600 text-center">
+                    ⚠️ Setup required
                   </div>
                 )}
               </div>
@@ -536,6 +615,16 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
             </div>
           </div>
         </div>
+      )}
+
+      {/* Webhook Setup Modal */}
+      {webhookSetupModal.isOpen && webhookSetupModal.repository && (
+        <WebhookSetupModal
+          isOpen={webhookSetupModal.isOpen}
+          onClose={closeWebhookSetup}
+          repository={webhookSetupModal.repository}
+          onWebhookConfigured={closeWebhookSetup}
+        />
       )}
     </div>
   );

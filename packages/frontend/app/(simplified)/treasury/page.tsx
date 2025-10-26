@@ -8,11 +8,11 @@
 
 import React from 'react';
 import { BackNavigation } from '@/components/back-navigation';
-import { useTreasury } from '@/hooks/useTreasury';
+import { useTreasuryUnified } from '@/hooks/useTreasuryUnified';
 import Link from 'next/link';
 
 export default function TreasuryPage() {
-  // Use real treasury data from blockchain
+  // Use unified treasury data for consistency across all components
   const {
     treasuryAbcBalance,
     treasuryEthBalance,
@@ -21,12 +21,16 @@ export default function TreasuryPage() {
     totalRewardsDistributedEth,
     totalAbcDistributed,
     totalTreasuryValue,
-    totalStaked,
+    totalTreasuryValueUSD,
+    abcPriceFormatted,
     addresses,
     isLoading,
     isError,
-    error
-  } = useTreasury();
+    error,
+    formatTokenAmount,
+    formatEthAmount,
+    formatUsdAmount
+  } = useTreasuryUnified();
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
@@ -45,15 +49,17 @@ export default function TreasuryPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="bg-black/40 border border-green-900/30 rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-green-400 mb-2">
-                  {isLoading ? '...' : `${(parseFloat(totalTreasuryValue) / 1e6).toFixed(1)}M`}
+                  {isLoading ? '...' : totalTreasuryValue}
                 </div>
                 <div className="text-sm text-green-600 font-mono">Total Treasury Value</div>
-                <div className="text-xs text-green-700 mt-1">$ABC tokens</div>
+                <div className="text-xs text-green-700 mt-1">
+                  {totalTreasuryValueUSD} • $ABC tokens
+                </div>
               </div>
               
               <div className="bg-black/40 border border-blue-900/30 rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-blue-400 mb-2">
-                  {isLoading ? '...' : `${(parseFloat(treasuryAbcBalance) / 1e6).toFixed(1)}M`}
+                  {isLoading ? '...' : treasuryAbcBalance}
                 </div>
                 <div className="text-sm text-green-600 font-mono">Protocol Treasury</div>
                 <div className="text-xs text-green-700 mt-1">Main wallet ABC</div>
@@ -61,7 +67,7 @@ export default function TreasuryPage() {
               
               <div className="bg-black/40 border border-purple-900/30 rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-purple-400 mb-2">
-                  {isLoading ? '...' : parseFloat(totalRewardsDistributedEth).toFixed(4)}
+                  {isLoading ? '...' : totalRewardsDistributedEth}
                 </div>
                 <div className="text-sm text-green-600 font-mono">ETH Distributed</div>
                 <div className="text-xs text-green-700 mt-1">Staking rewards</div>
@@ -69,7 +75,7 @@ export default function TreasuryPage() {
               
               <div className="bg-black/40 border border-orange-900/30 rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-orange-400 mb-2">
-                  {isLoading ? '...' : `${(parseFloat(totalAbcDistributed) / 1e6).toFixed(1)}M`}
+                  {isLoading ? '...' : totalAbcDistributed}
                 </div>
                 <div className="text-sm text-green-600 font-mono">ABC Distributed</div>
                 <div className="text-xs text-green-700 mt-1">Developer rewards</div>
@@ -87,7 +93,7 @@ export default function TreasuryPage() {
                   <div className="font-semibold text-green-400 mb-1">Protocol Treasury</div>
                   <div className="text-xs text-green-600 font-mono mb-2">Main treasury wallet holding $ABC tokens</div>
                   <div className="text-xs text-green-500">
-                    Balance: {isLoading ? '...' : `${(parseFloat(treasuryAbcBalance) / 1e6).toFixed(1)}M $ABC`}
+                    Balance: {isLoading ? '...' : `${treasuryAbcBalance} $ABC`}
                   </div>
                 </div>
                 <div className="text-right">

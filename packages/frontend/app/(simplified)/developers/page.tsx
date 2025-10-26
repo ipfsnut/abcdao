@@ -13,6 +13,7 @@
 import { useState, useEffect } from 'react';
 import { useWalletFirstAuth } from '@/hooks/useWalletFirstAuth';
 import { useUserProfileSystematic, useUsersCommitsStatsSystematic } from '@/hooks/useUsersCommitsSystematic';
+import { useDeveloperStatsUnified } from '@/hooks/useUserStatsUnified';
 import { BackNavigation } from '@/components/back-navigation';
 
 // Import tabbed components
@@ -27,28 +28,21 @@ export default function UnifiedDeveloperHub() {
   const { user, isAuthenticated, features } = useWalletFirstAuth();
   const [activeTab, setActiveTab] = useState<TabId>('earning');
   
-  // Use systematic hooks for real API data
-  const userProfile = useUserProfileSystematic(user?.wallet_address);
+  // Use unified developer statistics for consistency
+  const developerStats = useDeveloperStatsUnified(user?.wallet_address, user);
   const systemStats = useUsersCommitsStatsSystematic();
   
-  // Derive developer data from real API responses
+  // Derive developer data from unified statistics
   const developerData = {
-    totalEarned: userProfile.totalRewards ? (userProfile.totalRewards / 1000000).toFixed(1) : '0',
-    pendingRewards: userProfile.stats?.pendingRewards?.toString() || '0',
-    activeRepos: userProfile.stats?.uniqueRepositories || 0,
-    totalCommits: userProfile.stats?.totalCommits || user?.total_commits || 0,
-    averageReward: userProfile.stats?.totalCommits ? 
-      Math.round((userProfile.totalRewards || 0) / userProfile.stats.totalCommits).toString() : '0',
-    isLoading: userProfile.isLoading || systemStats.isLoading
+    totalEarned: developerStats.totalRewardsEarnedFormatted,
+    pendingRewards: '0', // TODO: Add pending rewards to unified hook if needed
+    activeRepos: developerStats.activeRepositories,
+    totalCommits: developerStats.totalCommits,
+    averageReward: developerStats.averageRewardPerCommitFormatted,
+    isLoading: developerStats.isLoading || systemStats.isLoading
   };
 
-  // Calculate average reward in a more robust way
-  const calculateAverageReward = () => {
-    const totalRewards = userProfile.totalRewards || 0;
-    const commits = userProfile.stats?.totalCommits || 0;
-    if (commits === 0) return '0';
-    return Math.round(totalRewards / commits).toString();
-  };
+  // Average reward calculation now handled by unified hook
 
   const tabs = [
     {
@@ -298,7 +292,7 @@ export default function UnifiedDeveloperHub() {
               <EarningTab 
                 developerData={developerData}
                 user={user}
-                onDataUpdate={() => userProfile.refetch()}
+                onDataUpdate={() => developerStats.refreshData()}
               />
             )}
             
@@ -306,7 +300,7 @@ export default function UnifiedDeveloperHub() {
               <RepositoriesTab 
                 user={user}
                 activeRepos={developerData.activeRepos}
-                onRepoUpdate={() => userProfile.refetch()}
+                onRepoUpdate={() => developerStats.refreshData()}
               />
             )}
             
