@@ -117,19 +117,22 @@ router.post('/github', verifyGitHubSignature, async (req, res) => {
     res.status(200).json({ status: 'received' });
     
   } catch (error) {
-    console.error('❌ Webhook processing error:', error);
+    console.error('❌ WEBHOOK PROCESSING ERROR - FULL STACK TRACE:');
+    console.error('Error object:', error);
+    console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
-    console.error('Error details:', {
-      message: error.message,
-      code: error.code,
-      detail: error.detail,
-      name: error.name
-    });
+    console.error('Error name:', error.name);
+    console.error('Error code:', error.code);
+    console.error('Error detail:', error.detail);
+    console.error('Error cause:', error.cause);
+    console.error('Raw error JSON:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    
     res.status(500).json({ 
       error: 'Webhook processing failed',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      details: error.message,
       errorCode: error.code,
-      errorName: error.name
+      errorName: error.name,
+      stack: error.stack
     });
   }
 });
@@ -208,7 +211,12 @@ async function handlePushEvent(payload) {
     console.log('✅ All commits processed');
     
   } catch (error) {
-    console.error('❌ Error in handlePushEvent:', error);
+    console.error('❌ ERROR IN HANDLEUSHEVENT - FULL DETAILS:');
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Error at step: handlePushEvent');
+    console.error('Payload repository:', payload?.repository?.full_name);
+    console.error('Payload pusher:', payload?.pusher?.login);
     throw error; // Re-throw to be caught by main handler
   }
 }
@@ -343,7 +351,13 @@ async function processCommit(user, repository, commit) {
     });
     
   } catch (error) {
-    console.error('Error processing commit:', error);
+    console.error('❌ ERROR IN PROCESSCOMMIT - FULL DETAILS:');
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Error at step: processCommit');
+    console.error('Commit ID:', commit?.id);
+    console.error('User ID:', user?.id);
+    console.error('Repository:', repository?.full_name);
     throw error;
   }
 }
@@ -479,7 +493,12 @@ async function processRewardDirectly(commitData) {
     return { success: true, rewardAmount };
     
   } catch (error) {
-    console.error(`❌ Direct reward processing failed for ${commitHash}:`, error);
+    console.error(`❌ ERROR IN PROCESSREWARDDIRECTLY - FULL DETAILS:`);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Error at step: processRewardDirectly');
+    console.error('Commit hash:', commitHash);
+    console.error('User:', farcasterUsername);
     throw error;
   }
 }
