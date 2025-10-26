@@ -49,18 +49,18 @@ interface RegisteredRepository {
 export function GitHubOAuthRepositoryManager() {
   const { user: profile } = useFarcaster();
   const { address: walletAddress } = useAccount();
+  const [walletUserFid, setWalletUserFid] = useState<number | null>(null);
   
-  // Get user identifier - prefer Farcaster FID, fallback to wallet address
-  // BUT if wallet user has FID, use FID for compatibility with existing endpoints
+  // Get user identifier - prefer Farcaster FID, fallback to wallet lookup
   const getUserIdentifier = () => {
     if (profile?.fid) {
       return profile.fid.toString();
     }
-    // For wallet users, we know your FID is 8573 from the auth response
-    // TODO: Get this from user profile API in production
+    if (walletUserFid) {
+      return walletUserFid.toString();
+    }
     if (walletAddress) {
-      // Temporary: return FID for wallet users to use existing endpoints
-      return '8573'; // Your actual FID from the auth response
+      return walletAddress;
     }
     return null;
   };
@@ -77,6 +77,34 @@ export function GitHubOAuthRepositoryManager() {
     repository: { id: string; name: string; url: string } | null;
   }>({ isOpen: false, repository: null });
 
+  // Fetch user FID when wallet is connected but no Farcaster profile
+  useEffect(() => {
+    const fetchWalletUserFid = async () => {
+      if (!profile?.fid && walletAddress && !walletUserFid) {
+        try {
+          console.log(`🔍 Fetching FID for wallet ${walletAddress}...`);
+          const response = await fetch(`${config.backendUrl}/api/universal-auth/wallet`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ wallet_address: walletAddress })
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.user?.farcaster_fid) {
+              console.log(`✅ Found FID ${data.user.farcaster_fid} for wallet`);
+              setWalletUserFid(data.user.farcaster_fid);
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to fetch wallet user FID:', error);
+        }
+      }
+    };
+    
+    fetchWalletUserFid();
+  }, [walletAddress, profile?.fid, walletUserFid]);
+
   useEffect(() => {
     if (userIdentifier) {
       console.log(`🎯 User identifier available (${userIdentifier}), checking GitHub connection...`);
@@ -91,9 +119,12 @@ export function GitHubOAuthRepositoryManager() {
       githubLinked, 
       repoCount: githubRepos.length,
       userIdentifier,
-      authMethod: profile?.fid ? 'farcaster' : walletAddress ? 'wallet' : 'none'
+      profileFid: profile?.fid,
+      walletUserFid,
+      walletAddress,
+      authMethod: profile?.fid ? 'farcaster' : walletUserFid ? 'wallet-with-fid' : walletAddress ? 'wallet-only' : 'none'
     });
-  }, [githubLinked, githubRepos, userIdentifier, profile?.fid, walletAddress]);
+  }, [githubLinked, githubRepos, userIdentifier, profile?.fid, walletUserFid, walletAddress]);
 
   const checkGitHubConnection = async () => {
     if (!userIdentifier) {
@@ -103,7 +134,13 @@ export function GitHubOAuthRepositoryManager() {
     
     try {
       console.log(`🔍 Checking GitHub connection for identifier ${userIdentifier}...`);
-      const response = await fetch(`${config.backendUrl}/api/repositories/${userIdentifier}/github-repositories`);
+      
+      // Use universal endpoint if wallet address, legacy endpoint if FID
+      const endpoint = userIdentifier.startsWith('0x') 
+        ? `${config.backendUrl}/api/repositories/user/${userIdentifier}/github-repositories`
+        : `${config.backendUrl}/api/repositories/${userIdentifier}/github-repositories`;
+        
+      const response = await fetch(endpoint);
       
       if (response.ok) {
         const data = await response.json();
@@ -136,7 +173,13 @@ export function GitHubOAuthRepositoryManager() {
     
     try {
       console.log(`📁 Fetching registered repos for identifier ${userIdentifier}...`);
-      const response = await fetch(`${config.backendUrl}/api/repositories/${userIdentifier}/repositories`);
+      
+      // Use universal endpoint if wallet address, legacy endpoint if FID
+      const endpoint = userIdentifier.startsWith('0x') 
+        ? `${config.backendUrl}/api/repositories/user/${userIdentifier}/repositories`
+        : `${config.backendUrl}/api/repositories/${userIdentifier}/repositories`;
+        
+      const response = await fetch(endpoint);
       if (response.ok) {
         const data = await response.json();
         console.log(`📁 Found ${data.repositories?.length || 0} registered repositories`);
@@ -233,7 +276,13 @@ export function GitHubOAuthRepositoryManager() {
     setRegistering(repo.name);
     try {
       console.log(`📝 Registering repository ${repo.name} for identifier ${userIdentifier}...`);
-      const response = await fetch(`${config.backendUrl}/api/repositories/${userIdentifier}/repositories`, {
+      
+      // Use universal endpoint if wallet address, legacy endpoint if FID
+      const endpoint = userIdentifier.startsWith('0x') 
+        ? `${config.backendUrl}/api/repositories/user/${userIdentifier}/repositories`
+        : `${config.backendUrl}/api/repositories/${userIdentifier}/repositories`;
+        
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
