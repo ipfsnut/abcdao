@@ -68,10 +68,21 @@ export function UnifiedFarcasterProvider({ children }: { children: ReactNode }) 
     try {
       console.log('🔍 Checking for Farcaster miniapp context...');
       
-      // Skip Farcaster SDK entirely in development mode
+      // Skip Farcaster SDK in development ONLY if we're not actually in a mini-app
       if (process.env.NODE_ENV === 'development') {
-        console.log('💻 Development mode: Skipping Farcaster SDK, using direct wallet connection');
-        return false;
+        // Check if we're actually in a Farcaster mini-app context
+        const isActuallyMiniApp = window !== window.top || 
+                                  window.location !== window.parent.location ||
+                                  navigator.userAgent.includes('farcaster') ||
+                                  window.location.href.includes('frame') ||
+                                  window.location.href.includes('miniapp');
+        
+        if (!isActuallyMiniApp) {
+          console.log('💻 Development mode + not in mini-app: Skipping Farcaster SDK');
+          return false;
+        } else {
+          console.log('💻 Development mode but IN mini-app: Continuing with Farcaster SDK');
+        }
       }
       
       // Check if SDK is available
@@ -133,6 +144,22 @@ export function UnifiedFarcasterProvider({ children }: { children: ReactNode }) 
         setIsInMiniApp(false);
       } else {
         console.log('ℹ️ No stored user session');
+        
+        // Development fallback: Auto-authenticate with known user
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔧 Development mode: Auto-authenticating with known user');
+          const fallbackUser: FarcasterUser = {
+            fid: 8573,
+            username: 'epicdylan',
+            displayName: 'epicdylan',
+            pfpUrl: ''
+          };
+          
+          setUser(fallbackUser);
+          setIsInMiniApp(true); // Treat as mini-app for proper auth flow
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(fallbackUser));
+          console.log('✅ Auto-authenticated with fallback user:', fallbackUser);
+        }
       }
     } catch (error) {
       console.error('Failed to restore user session:', error);

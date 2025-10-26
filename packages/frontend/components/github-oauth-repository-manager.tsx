@@ -130,11 +130,12 @@ export function GitHubOAuthRepositoryManager() {
     
     setRegistering(repo.name);
     try {
-      const response = await fetch(`${config.backendUrl}/api/repositories/${profile.fid}/repositories/oauth`, {
+      const response = await fetch(`${config.backendUrl}/api/repositories/${profile.fid}/repositories`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          repository_url: repo.url
+          repository_url: repo.url,
+          repository_name: repo.name
         })
       });
       
