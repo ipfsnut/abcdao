@@ -191,3 +191,4 @@ migrations/add-extended-treasury-schema.sql
 /app/
 steakdao/
 generate-new-wallets.js
+check-user-staking.js

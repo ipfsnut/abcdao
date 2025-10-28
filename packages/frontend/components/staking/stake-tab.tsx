@@ -6,8 +6,9 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStaking } from '@/hooks/useStaking';
+import { useUnbonding } from '@/hooks/useUnbonding';
 
 interface StakeTabProps {
   stakingData: {
@@ -31,13 +32,39 @@ export function StakeTab({ stakingData, user, onDataUpdate }: StakeTabProps) {
   const { 
     handleStake: stakeTokens, 
     handleUnstake: unstakeTokens, 
+    handleCompleteUnstake: claimUnbondedTokens,
     handleClaimRewards, 
     isApproving,
     needsApproval 
   } = useStaking();
+  
+  // Get unbonding information
+  const { unbondingQueue, totalUnbonding, withdrawableAmount } = useUnbonding();
   const [isStaking, setIsStaking] = useState(false);
   const [isUnstaking, setIsUnstaking] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
   const [activeOperation, setActiveOperation] = useState<'stake' | 'unstake'>('stake');
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  // Update timer every second for countdown
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleClaimUnbondedTokens = async () => {
+    setIsClaiming(true);
+    try {
+      await claimUnbondedTokens();
+    } catch (error) {
+      console.error('Claiming failed:', error);
+    } finally {
+      setIsClaiming(false);
+    }
+  };
 
   const handleStake = async () => {
     if (!stakeAmount || parseFloat(stakeAmount) <= 0) return;
@@ -176,6 +203,90 @@ export function StakeTab({ stakingData, user, onDataUpdate }: StakeTabProps) {
           </div>
         )}
       </div>
+
+      {/* Unbonding Status Widget */}
+      {(parseFloat(totalUnbonding) > 0 || parseFloat(withdrawableAmount) > 0) && (
+        <div className="bg-yellow-950/20 border border-yellow-700/30 rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-2xl">⏳</span>
+            <h3 className="text-lg font-bold text-yellow-400">Unbonding Tokens</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="bg-yellow-900/20 border border-yellow-800/30 rounded-lg p-4">
+              <div className="text-sm font-mono text-yellow-600 mb-1">Total Unbonding</div>
+              <div className="text-xl font-bold text-yellow-400">
+                {parseFloat(totalUnbonding).toFixed(1)}M $ABC
+              </div>
+            </div>
+            
+            <div className="bg-green-900/20 border border-green-800/30 rounded-lg p-4">
+              <div className="text-sm font-mono text-green-600 mb-1">Ready to Claim</div>
+              <div className="text-xl font-bold text-green-400">
+                {parseFloat(withdrawableAmount).toFixed(1)}M $ABC
+              </div>
+            </div>
+          </div>
+
+          {/* Unbonding Queue */}
+          {unbondingQueue.length > 0 && (
+            <div className="space-y-3 mb-4">
+              <div className="text-sm font-mono text-yellow-600">Unbonding Schedule:</div>
+              {unbondingQueue.map((item, index) => {
+                const releaseTime = item.releaseTime * 1000;
+                const timeRemaining = releaseTime - currentTime;
+                const isReady = timeRemaining <= 0;
+                
+                const formatTimeRemaining = (ms: number) => {
+                  if (ms <= 0) return "Ready to claim!";
+                  
+                  const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+                  const hours = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+                  
+                  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+                  if (hours > 0) return `${hours}h ${minutes}m`;
+                  return `${minutes}m`;
+                };
+
+                return (
+                  <div key={index} className="bg-black/40 border border-yellow-800/30 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className={isReady ? "text-green-400" : "text-yellow-400"}>
+                          {isReady ? "✅" : "⏱️"}
+                        </span>
+                        <div>
+                          <div className="text-sm font-mono text-green-400">
+                            {parseFloat(item.amount).toFixed(1)}M $ABC
+                          </div>
+                          <div className="text-xs text-yellow-600">
+                            Release: {new Date(releaseTime).toLocaleDateString()} at {new Date(releaseTime).toLocaleTimeString()}
+                          </div>
+                        </div>
+                      </div>
+                      <div className={`text-sm font-mono ${isReady ? "text-green-400" : "text-yellow-400"}`}>
+                        {formatTimeRemaining(timeRemaining)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Claim Button */}
+          {parseFloat(withdrawableAmount) > 0 && (
+            <button
+              onClick={handleClaimUnbondedTokens}
+              disabled={isClaiming}
+              className="w-full py-3 bg-green-900/50 text-green-400 rounded-lg font-mono font-bold hover:bg-green-800/60 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isClaiming ? '🔄 Claiming...' : `🎁 Claim ${parseFloat(withdrawableAmount).toFixed(1)}M $ABC`}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Staking Benefits */}
       <div className="bg-gradient-to-r from-green-950/20 via-blue-950/20 to-purple-950/20 border border-green-900/30 rounded-xl p-6">
