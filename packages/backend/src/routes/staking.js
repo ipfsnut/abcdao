@@ -201,6 +201,7 @@ router.get('/history', async (req, res) => {
 /**
  * GET /api/staking/position/:wallet
  * Returns staking position for specific wallet
+ * Falls back to live blockchain data if not found in database
  */
 router.get('/position/:wallet', async (req, res) => {
   try {
@@ -213,9 +214,137 @@ router.get('/position/:wallet', async (req, res) => {
       });
     }
 
-    const position = await stakingDataManager.getStakerPosition(walletAddress);
+    // Try database first (fast cached data)
+    let position = await stakingDataManager.getStakerPosition(walletAddress);
     
     if (!position) {
+      // Fallback to live blockchain data
+      console.log(`No cached position for ${walletAddress}, querying blockchain...`);
+      
+      try {
+        // Get live staking data from stakingService (which queries blockchain)
+        const activeStakers = await stakingService.getActiveStakers();
+        const blockchainStaker = activeStakers.find(staker => 
+          staker.address.toLowerCase() === walletAddress.toLowerCase()
+        );
+        
+        if (blockchainStaker && blockchainStaker.currentStake > 0) {
+          // Found active staking position on blockchain
+          return res.json({
+            walletAddress,
+            stakedAmount: blockchainStaker.currentStake,
+            rewardsEarned: blockchainStaker.totalRewardsClaimed || 0,
+            pendingRewards: blockchainStaker.pendingEth || 0,
+            lastStakeTime: blockchainStaker.lastStakeTime ? new Date(blockchainStaker.lastStakeTime * 1000).toISOString() : null,
+            lastRewardClaim: null,
+            isActive: true,
+            lastUpdated: new Date().toISOString(),
+            dataSource: 'blockchain_live'
+          });
+        }
+        
+        // Check for unbonding positions by calling contract directly
+        try {
+          // Import ethers and contract setup
+          const ethers = await import('ethers');
+          const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL || 'https://mainnet.base.org');
+          
+          const STAKING_CONTRACT_ADDRESS = process.env.STAKING_CONTRACT_ADDRESS || '0x577822396162022654D5bDc9CB58018cB53e7017';
+          const STAKING_ABI = [
+            {
+              'inputs': [{'internalType': 'address', 'name': '_user', 'type': 'address'}],
+              'name': 'getStakeInfo',
+              'outputs': [
+                {'internalType': 'uint256', 'name': 'amount', 'type': 'uint256'},
+                {'internalType': 'uint256', 'name': 'lastStakeTime', 'type': 'uint256'},
+                {'internalType': 'uint256', 'name': 'totalEthEarned', 'type': 'uint256'},
+                {'internalType': 'uint256', 'name': 'pendingEth', 'type': 'uint256'}
+              ],
+              'stateMutability': 'view',
+              'type': 'function'
+            },
+            {
+              'inputs': [{'internalType': 'address', 'name': '_user', 'type': 'address'}],
+              'name': 'getUnbondingInfo',
+              'outputs': [
+                {
+                  'components': [
+                    {'internalType': 'uint256', 'name': 'amount', 'type': 'uint256'},
+                    {'internalType': 'uint256', 'name': 'releaseTime', 'type': 'uint256'}
+                  ],
+                  'internalType': 'struct ABCStakingV2Fixed.UnbondingInfo[]',
+                  'name': '',
+                  'type': 'tuple[]'
+                }
+              ],
+              'stateMutability': 'view',
+              'type': 'function'
+            },
+            {
+              'inputs': [{'internalType': 'address', 'name': '_user', 'type': 'address'}],
+              'name': 'getWithdrawableAmount',
+              'outputs': [{'internalType': 'uint256', 'name': '', 'type': 'uint256'}],
+              'stateMutability': 'view',
+              'type': 'function'
+            }
+          ];
+          
+          const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_ABI, provider);
+          
+          // Get current staking info
+          const stakeInfo = await stakingContract.getStakeInfo(walletAddress);
+          const stakedAmount = parseFloat(ethers.formatEther(stakeInfo[0]));
+          const lastStakeTime = stakeInfo[1].toString() !== '0' ? new Date(parseInt(stakeInfo[1].toString()) * 1000).toISOString() : null;
+          const totalEthEarned = parseFloat(ethers.formatEther(stakeInfo[2]));
+          const pendingEth = parseFloat(ethers.formatEther(stakeInfo[3]));
+          
+          // Get unbonding info
+          const unbondingInfo = await stakingContract.getUnbondingInfo(walletAddress);
+          const withdrawableAmount = await stakingContract.getWithdrawableAmount(walletAddress);
+          const withdrawable = parseFloat(ethers.formatEther(withdrawableAmount));
+          
+          // Calculate total unbonding
+          let totalUnbonding = 0;
+          if (unbondingInfo && Array.isArray(unbondingInfo)) {
+            totalUnbonding = unbondingInfo.reduce((total, entry) => {
+              return total + parseFloat(ethers.formatEther(entry.amount));
+            }, 0);
+          }
+          
+          // If user has any staking activity (staked, unbonding, or withdrawable), return it
+          if (stakedAmount > 0 || totalUnbonding > 0 || withdrawable > 0) {
+            return res.json({
+              walletAddress,
+              stakedAmount,
+              rewardsEarned: totalEthEarned,
+              pendingRewards: pendingEth,
+              lastStakeTime,
+              lastRewardClaim: null,
+              isActive: stakedAmount > 0,
+              
+              // Additional unbonding info
+              unbondingAmount: totalUnbonding,
+              withdrawableAmount: withdrawable,
+              hasUnbondingTokens: totalUnbonding > 0,
+              
+              lastUpdated: new Date().toISOString(),
+              dataSource: 'blockchain_direct',
+              message: stakedAmount > 0 ? 'Active staking position' : 
+                      totalUnbonding > 0 ? 'Tokens in unbonding period' :
+                      withdrawable > 0 ? 'Tokens ready to claim' : 'No staking activity'
+            });
+          }
+          
+        } catch (contractError) {
+          console.warn('Direct contract call failed:', contractError.message);
+        }
+        
+      } catch (blockchainError) {
+        console.warn('Blockchain fallback failed:', blockchainError.message);
+        // Continue to database-only response
+      }
+      
+      // No position found in database or blockchain
       return res.json({
         walletAddress,
         stakedAmount: 0,
@@ -223,10 +352,12 @@ router.get('/position/:wallet', async (req, res) => {
         pendingRewards: 0,
         lastStakeTime: null,
         isActive: false,
-        message: 'No staking position found'
+        message: 'No staking position found',
+        dataSource: 'database_only'
       });
     }
 
+    // Return cached database position
     res.json({
       walletAddress: position.wallet_address,
       stakedAmount: parseFloat(position.staked_amount),
@@ -235,7 +366,8 @@ router.get('/position/:wallet', async (req, res) => {
       lastStakeTime: position.last_stake_time,
       lastRewardClaim: position.last_reward_claim,
       isActive: position.is_active,
-      lastUpdated: position.updated_at
+      lastUpdated: position.updated_at,
+      dataSource: 'database_cached'
     });
 
   } catch (error) {
