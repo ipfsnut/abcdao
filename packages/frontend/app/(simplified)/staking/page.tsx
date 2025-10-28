@@ -12,7 +12,7 @@
 
 import { useState } from 'react';
 import { useWalletFirstAuth } from '@/hooks/useWalletFirstAuth';
-import { useStaking } from '@/hooks/useStaking';
+import { useStakingUnified } from '@/hooks/useStakingUnified';
 import { BackNavigation } from '@/components/back-navigation';
 
 // Import tabbed components
@@ -28,26 +28,30 @@ export default function UnifiedStakingPage() {
   const { user, isAuthenticated } = useWalletFirstAuth();
   const [activeTab, setActiveTab] = useState<TabId>('stake');
   
-  // Use real staking hook for live blockchain data
+  // Use unified staking hook for live blockchain data
   const {
     tokenBalance,
     stakedAmount,
     pendingRewards,
     totalEarned,
+    blockchainStakedAmount,
     isApproveLoading,
     isStakeLoading,
     isUnstakeLoading,
     isClaimLoading,
     handleClaimRewards
-  } = useStaking();
+  } = useStakingUnified();
 
-  // Transform blockchain data to display format
+  // Use data directly from unified hook (already formatted)
   const stakingData = {
     tokenBalance: tokenBalance ? (Number(tokenBalance) / 1e6).toFixed(1) : '0',
     stakedAmount: stakedAmount ? (Number(stakedAmount) / 1e6).toFixed(1) : '0',
     pendingRewards: pendingRewards ? Number(pendingRewards).toFixed(4) : '0',
     totalEarned: totalEarned ? Number(totalEarned).toFixed(4) : '0',
-    isLoading: isApproveLoading || isStakeLoading || isUnstakeLoading || isClaimLoading
+    isLoading: isApproveLoading || isStakeLoading || isUnstakeLoading || isClaimLoading,
+    // Raw values for MAX buttons
+    rawTokenBalance: tokenBalance || '0',
+    rawStakedAmount: blockchainStakedAmount || '0'
   };
 
   const tabs = [

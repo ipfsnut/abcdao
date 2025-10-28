@@ -16,6 +16,8 @@ interface StakeTabProps {
     pendingRewards: string;
     totalEarned: string;
     isLoading: boolean;
+    rawTokenBalance?: string;
+    rawStakedAmount?: string;
   };
   user: any;
   onDataUpdate: () => void;
@@ -112,7 +114,7 @@ export function StakeTab({ stakingData, user, onDataUpdate }: StakeTabProps) {
                   className="flex-1 bg-black/40 border border-green-900/50 rounded-lg px-3 py-2 text-green-400 font-mono focus:outline-none focus:border-green-700/50"
                 />
                 <button
-                  onClick={() => setStakeAmount(stakingData.tokenBalance)}
+                  onClick={() => setStakeAmount(stakingData.rawTokenBalance || stakingData.tokenBalance)}
                   className="px-4 py-2 bg-green-900/50 text-green-400 rounded-lg font-mono text-sm hover:bg-green-800/60 transition-colors"
                 >
                   MAX
@@ -147,7 +149,7 @@ export function StakeTab({ stakingData, user, onDataUpdate }: StakeTabProps) {
                   className="flex-1 bg-black/40 border border-green-900/50 rounded-lg px-3 py-2 text-green-400 font-mono focus:outline-none focus:border-green-700/50"
                 />
                 <button
-                  onClick={() => setUnstakeAmount(stakingData.stakedAmount)}
+                  onClick={() => setUnstakeAmount(stakingData.rawStakedAmount || stakingData.stakedAmount)}
                   className="px-4 py-2 bg-yellow-900/50 text-yellow-400 rounded-lg font-mono text-sm hover:bg-yellow-800/60 transition-colors"
                 >
                   MAX

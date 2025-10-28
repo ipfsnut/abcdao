@@ -32,7 +32,8 @@ export function useStakingUnified() {
     isStakeLoading,
     isUnstakeLoading,
     isClaimLoading,
-    tokenBalance // Keep token balance from blockchain for accuracy
+    tokenBalance, // Keep token balance from blockchain for accuracy
+    stakedAmount: blockchainStakedAmount // Raw staked amount for MAX buttons
   } = useStaking();
 
   // Get cached staking data from backend (primary source for display)
@@ -104,23 +105,24 @@ export function useStakingUnified() {
 
   return {
     // Primary display data (from backend cache)
-    stakedAmount: userPosition?.staked_amount || '0',
-    pendingRewards: userPosition?.pending_rewards || '0',
-    totalEarned: userPosition?.rewards_earned || '0',
-    lastStakeTime: userPosition?.last_stake_time,
+    stakedAmount: userPosition?.stakedAmount || '0',
+    pendingRewards: userPosition?.pendingRewards || '0',
+    totalEarned: userPosition?.rewardsEarned || '0',
+    lastStakeTime: userPosition?.lastStakeTime,
     
     // System-wide data (from backend cache)
-    totalStaked: stakingOverview?.currentSnapshot?.total_staked || '0',
-    totalRewardsDistributed: stakingOverview?.currentSnapshot?.total_rewards_distributed || '0',
-    totalStakers: stakingOverview?.currentSnapshot?.total_stakers || 0,
-    rewardsPoolBalance: stakingOverview?.currentSnapshot?.rewards_pool_balance || '0',
-    currentAPY: stakingOverview?.currentSnapshot?.current_apy || 0,
+    totalStaked: stakingOverview?.totalStaked || '0',
+    totalRewardsDistributed: stakingOverview?.totalRewardsDistributed || '0',
+    totalStakers: stakingOverview?.totalStakers || 0,
+    rewardsPoolBalance: stakingOverview?.rewardsPoolBalance || '0',
+    currentAPY: stakingOverview?.currentAPY || 0,
     
     // APY breakdown by timeframe
     apyBreakdown: stakingOverview?.apyBreakdown || [],
     
     // User wallet data (from blockchain for accuracy)
     tokenBalance,
+    blockchainStakedAmount, // Raw staked amount for MAX buttons
     
     // Transaction state
     isApproving,
@@ -152,8 +154,8 @@ export function useStakingUnified() {
     
     // Health indicators
     dataFreshness: {
-      overview: stakingOverview?.meta?.lastUpdate,
-      position: userPosition?.updated_at,
+      overview: stakingOverview?.lastUpdated,
+      position: userPosition?.lastUpdated,
       isStale: false // TODO: Implement staleness detection
     }
   };
