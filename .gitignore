@@ -194,5 +194,10 @@ generate-new-wallets.js
 check-user-staking.js
 # V2 analysis files with hardcoded addresses
 packages/backend/v2-*.js
+packages/backend/analyze-*.js
 packages/backend/sync-production-staker.js
 packages/backend/check-treasury-table.js
+
+# Analysis scripts in root (should be in plans/V2)
+analyze-*.js
+get-*.js

@@ -608,6 +608,29 @@ async function postCommitCast(castData) {
     
     console.log(`✅ Posted cast: ${castHash}`);
     
+    // Store commit data for digest analysis
+    try {
+      const { CommitDigestService } = await import('../services/commit-digest-service.js');
+      const digestService = new CommitDigestService();
+      
+      await digestService.storeCommitData({
+        repository: repository,
+        commitHash: commitHash,
+        authorFid: farcasterFid,
+        authorUsername: farcasterUsername,
+        authorGithubUsername: digestService.extractGithubUsername(repository, commitUrl),
+        commitMessage: commitMessage,
+        commitUrl: commitUrl,
+        rewardAmount: rewardAmount,
+        commitTags: commitTags,
+        priorityLevel: finalPriority,
+        isPrivate: commitTags?.isPrivate || false
+      });
+    } catch (digestError) {
+      console.error('⚠️ Failed to store commit data for digest:', digestError.message);
+      // Don't throw - digest storage failure shouldn't break cast posting
+    }
+    
     return { success: true, castHash };
     
   } catch (error) {

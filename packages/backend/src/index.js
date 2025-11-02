@@ -48,6 +48,7 @@ import walletManagementRoutes from './routes/wallet-management.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
+import { WeeklyDigestCron } from './jobs/weekly-digest-cron.js';
 import { setupQueues } from './services/queue.js';
 import { RewardDebtCron } from './jobs/reward-debt-cron.js';
 import { NightlyLeaderboardJob } from './jobs/nightly-leaderboard-cron.js';
@@ -558,6 +559,25 @@ async function initializeBackgroundServices(server) {
       }
     } else {
       console.warn('⚠️  Bot following cron not started - missing Neynar API key or signer UUID');
+    }
+
+    // Weekly Digest Cron (automated development summaries)
+    if (process.env.ABC_DEV_SIGNER_UUID && process.env.NEYNAR_API_KEY) {
+      try {
+        const weeklyDigestCron = new WeeklyDigestCron();
+        weeklyDigestCron.startScheduler();
+        console.log('✅ Weekly digest cron job started (runs Fridays at 5:00 PM UTC)');
+        console.log('   - Automatically generates weekly development summaries');
+        console.log('   - Posts repository activity and contributor highlights via @abc-dao-dev');
+        console.log('   - Enhances community visibility into development patterns');
+        
+        // Store reference for graceful shutdown and admin access
+        global.weeklyDigestCron = weeklyDigestCron;
+      } catch (weeklyDigestCronError) {
+        console.warn('⚠️  Weekly digest cron setup failed:', weeklyDigestCronError.message);
+      }
+    } else {
+      console.warn('⚠️  Weekly digest cron not started - missing ABC_DEV_SIGNER_UUID or NEYNAR_API_KEY');
     }
 
     // WETH Unwrap Cron (critical for treasury automation)

@@ -860,4 +860,285 @@ router.post('/sync-staker/:address', requireAuth, async (req, res) => {
   }
 });
 
+// ============================================================================
+// DIGEST MANAGEMENT ENDPOINTS 🔥
+// ============================================================================
+
+// Manual weekly digest trigger
+router.post('/digest/weekly/trigger', requireAuth, async (req, res) => {
+  try {
+    const { WeeklyDigestCron } = await import('../jobs/weekly-digest-cron.js');
+    const digestCron = new WeeklyDigestCron();
+    
+    console.log('🧪 Admin triggered weekly digest generation...');
+    await digestCron.triggerManual();
+    
+    res.json({
+      success: true,
+      message: 'Weekly digest triggered successfully',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Admin weekly digest trigger failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Preview weekly digest without posting
+router.get('/digest/weekly/preview', requireAuth, async (req, res) => {
+  try {
+    const { WeeklyDigestCron } = await import('../jobs/weekly-digest-cron.js');
+    const digestCron = new WeeklyDigestCron();
+    
+    console.log('👁️ Admin requested digest preview...');
+    const preview = await digestCron.previewDigest();
+    
+    res.json({
+      success: true,
+      preview: {
+        content: preview.content,
+        type: preview.type,
+        length: preview.content.length,
+        withinLimit: preview.content.length <= 1024,
+        analytics: {
+          totalCommits: preview.analytics.totalCommits,
+          repositories: preview.analytics.repositoryBreakdown?.length || 0,
+          contributors: preview.analytics.contributorRankings?.length || 0,
+          totalRewards: preview.analytics.rewardDistribution?.totalRewards || 0,
+          newContributors: preview.analytics.communityGrowth?.newContributorCount || 0
+        }
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Admin digest preview failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Get digest history and statistics
+router.get('/digest/history', requireAuth, async (req, res) => {
+  try {
+    const { CommitDigestService } = await import('../services/commit-digest-service.js');
+    const digestService = new CommitDigestService();
+    
+    const limit = parseInt(req.query.limit) || 20;
+    
+    console.log(`📊 Admin requested digest history (limit: ${limit})...`);
+    const history = await digestService.getDigestHistory(limit);
+    
+    res.json({
+      success: true,
+      history,
+      count: history.length,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Admin digest history request failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Get digest statistics and configuration
+router.get('/digest/stats', requireAuth, async (req, res) => {
+  try {
+    const { WeeklyDigestCron } = await import('../jobs/weekly-digest-cron.js');
+    const digestCron = new WeeklyDigestCron();
+    
+    console.log('📈 Admin requested digest statistics...');
+    const stats = await digestCron.getDigestStats();
+    
+    res.json({
+      success: true,
+      stats: {
+        configuration: {
+          enabled: stats.enabled,
+          schedule: stats.schedule,
+          minCommits: stats.minCommits,
+          nextRun: stats.nextRun,
+          isRunning: stats.isRunning
+        },
+        commits: {
+          totalStored: stats.commits.total_commits,
+          uniqueRepositories: stats.commits.unique_repositories,
+          uniqueContributors: stats.commits.unique_contributors,
+          totalRewards: stats.commits.total_rewards,
+          latestCommit: stats.commits.latest_commit
+        },
+        digests: {
+          totalPosted: stats.digests.total_digests,
+          weeklyDigests: stats.digests.weekly_digests,
+          monthlyDigests: stats.digests.monthly_digests,
+          latestDigest: stats.digests.latest_digest
+        },
+        environment: {
+          hasSignerUuid: !!process.env.ABC_DEV_SIGNER_UUID,
+          hasNeynarKey: !!process.env.NEYNAR_API_KEY,
+          digestEnabled: process.env.DIGEST_ENABLED !== 'false',
+          nodeEnv: process.env.NODE_ENV
+        }
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Admin digest stats request failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Get commit digest data for analysis
+router.get('/digest/commits', requireAuth, async (req, res) => {
+  try {
+    const { CommitDigestService } = await import('../services/commit-digest-service.js');
+    const digestService = new CommitDigestService();
+    
+    // Parse date range from query params
+    const daysBack = parseInt(req.query.days) || 7;
+    const endDate = new Date();
+    const startDate = new Date(endDate.getTime() - daysBack * 24 * 60 * 60 * 1000);
+    
+    console.log(`📝 Admin requested commit data (${daysBack} days)...`);
+    
+    const [commits, repoActivity, topContributors] = await Promise.all([
+      digestService.getCommitsByDateRange(startDate, endDate),
+      digestService.getRepositoryActivity(startDate, endDate),
+      digestService.getTopContributors(startDate, endDate, 10)
+    ]);
+    
+    res.json({
+      success: true,
+      period: {
+        start: startDate.toISOString(),
+        end: endDate.toISOString(),
+        days: daysBack
+      },
+      data: {
+        commits: commits.map(commit => ({
+          id: commit.id,
+          repository: commit.repository,
+          author: commit.author_username,
+          message: commit.commit_message?.substring(0, 100) + '...',
+          reward: commit.reward_amount,
+          priority: commit.priority_level,
+          isPrivate: commit.is_private,
+          createdAt: commit.created_at
+        })),
+        repositoryActivity: repoActivity,
+        topContributors: topContributors.map(contributor => ({
+          username: contributor.author_username,
+          commits: parseInt(contributor.commit_count),
+          rewards: parseInt(contributor.total_rewards || 0),
+          repositories: contributor.repositories
+        }))
+      },
+      summary: {
+        totalCommits: commits.length,
+        totalRewards: commits.reduce((sum, c) => sum + (c.reward_amount || 0), 0),
+        uniqueRepositories: repoActivity.length,
+        uniqueContributors: topContributors.length
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Admin commit data request failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Test digest posting (with [TEST] prefix for safety)
+router.post('/digest/test-post', requireAuth, async (req, res) => {
+  try {
+    // Safety check - refuse in production
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).json({
+        success: false,
+        error: 'Test posting disabled in production environment',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    const { WeeklyDigestCron } = await import('../jobs/weekly-digest-cron.js');
+    const digestCron = new WeeklyDigestCron();
+    
+    console.log('🧪 Admin triggered test digest posting...');
+    
+    // Generate preview content
+    const preview = await digestCron.previewDigest();
+    const testContent = `[ADMIN TEST] ${preview.content}`;
+    
+    // Post with test prefix
+    const postResult = await digestCron.postDigest(testContent, 'admin-test');
+    
+    if (postResult.success) {
+      // Record in database
+      const { CommitDigestService } = await import('../services/commit-digest-service.js');
+      const digestService = new CommitDigestService();
+      
+      await digestService.recordDigestPost({
+        digestType: 'admin-test',
+        periodStart: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        periodEnd: new Date(),
+        castHash: postResult.castHash,
+        castUrl: postResult.castUrl,
+        totalCommits: preview.analytics.totalCommits,
+        totalRewards: preview.analytics.rewardDistribution?.totalRewards || 0,
+        uniqueContributors: preview.analytics.contributorRankings?.length || 0,
+        repositoriesInvolved: preview.analytics.repositoryBreakdown?.map(r => r.repository) || [],
+        topContributors: preview.analytics.contributorRankings?.slice(0, 5) || [],
+        activityMetrics: { adminTest: true, triggeredBy: 'admin-api' }
+      });
+      
+      res.json({
+        success: true,
+        message: 'Test digest posted successfully',
+        cast: {
+          hash: postResult.castHash,
+          url: postResult.castUrl,
+          length: testContent.length
+        },
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: postResult.error,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ Admin test digest posting failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 export default router;
