@@ -716,4 +716,52 @@ router.post('/populate-stakers/discovered', requireAuth, async (req, res) => {
   }
 });
 
+// Discord bot status check
+router.get('/discord/status', requireAuth, async (req, res) => {
+  try {
+    const discordBot = global.discordBot;
+    
+    if (!discordBot) {
+      return res.json({
+        status: 'not_initialized',
+        message: 'Discord bot not found in global scope',
+        env_check: {
+          bot_token: process.env.DISCORD_BOT_TOKEN ? 'CONFIGURED' : 'MISSING',
+          guild_id: process.env.DISCORD_GUILD_ID || 'MISSING',
+          commits_channel: process.env.DISCORD_COMMITS_CHANNEL_ID || 'MISSING',
+          announcements_channel: process.env.DISCORD_ANNOUNCEMENTS_CHANNEL_ID || 'MISSING'
+        }
+      });
+    }
+    
+    res.json({
+      status: discordBot.isReady ? 'ready' : 'not_ready',
+      bot_user: discordBot.client?.user?.tag || 'Unknown',
+      guild_count: discordBot.client?.guilds?.cache?.size || 0,
+      env_check: {
+        bot_token: process.env.DISCORD_BOT_TOKEN ? 'CONFIGURED' : 'MISSING',
+        guild_id: process.env.DISCORD_GUILD_ID || 'MISSING',
+        commits_channel: process.env.DISCORD_COMMITS_CHANNEL_ID || 'MISSING',
+        announcements_channel: process.env.DISCORD_ANNOUNCEMENTS_CHANNEL_ID || 'MISSING'
+      },
+      channels: {
+        commits: discordBot.channelIds?.commits || 'NOT_SET',
+        announcements: discordBot.channelIds?.announcements || 'NOT_SET',
+        general: discordBot.channelIds?.general || 'NOT_SET'
+      }
+    });
+    
+  } catch (error) {
+    console.error('Discord status check error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: error.message,
+      env_check: {
+        bot_token: process.env.DISCORD_BOT_TOKEN ? 'CONFIGURED' : 'MISSING',
+        guild_id: process.env.DISCORD_GUILD_ID || 'MISSING'
+      }
+    });
+  }
+});
+
 export default router;
