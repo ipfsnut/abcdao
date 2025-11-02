@@ -764,4 +764,100 @@ router.get('/discord/status', requireAuth, async (req, res) => {
   }
 });
 
+// Sync user staking data from blockchain to database
+router.post('/sync-staker/:address', requireAuth, async (req, res) => {
+  const { address } = req.params;
+  
+  try {
+    const { ethers } = await import('ethers');
+    const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL);
+    
+    const STAKING_CONTRACT = process.env.STAKING_CONTRACT_ADDRESS || '0x577822396162022654D5bDc9CB58018cB53e7017';
+    const STAKING_ABI = [
+      'function getStakeInfo(address) view returns (uint256 amount, uint256 rewardDebt)',
+      'function pendingRewards(address) view returns (uint256)',
+      'function totalRewardsDistributed() view returns (uint256)',
+      'function totalStaked() view returns (uint256)'
+    ];
+    
+    const contract = new ethers.Contract(STAKING_CONTRACT, STAKING_ABI, provider);
+    
+    // Get blockchain data
+    const [stakeInfo, pendingRewards, totalDistributed, totalStaked] = await Promise.all([
+      contract.getStakeInfo(address),
+      contract.pendingRewards(address),
+      contract.totalRewardsDistributed(),
+      contract.totalStaked()
+    ]);
+    
+    const stakedAmount = parseFloat(ethers.formatUnits(stakeInfo.amount, 18));
+    const pending = parseFloat(ethers.formatEther(pendingRewards));
+    const totalEth = parseFloat(ethers.formatEther(totalDistributed));
+    const totalStakedAmount = parseFloat(ethers.formatUnits(totalStaked, 18));
+    
+    // Calculate user's historical share
+    const userShareRatio = stakedAmount / totalStakedAmount;
+    const estimatedEthEarned = totalEth * userShareRatio;
+    
+    const pool = getPool();
+    
+    // Check if record exists
+    const existingResult = await pool.query(`
+      SELECT id FROM staker_positions 
+      WHERE LOWER(wallet_address) = $1
+    `, [address.toLowerCase()]);
+    
+    if (existingResult.rows.length > 0) {
+      // Update existing
+      await pool.query(`
+        UPDATE staker_positions 
+        SET 
+          staked_amount = $2,
+          rewards_earned = $3,
+          pending_rewards = $4,
+          is_active = true,
+          updated_at = NOW()
+        WHERE LOWER(wallet_address) = $1
+      `, [address.toLowerCase(), stakedAmount, estimatedEthEarned, pending]);
+      
+      res.json({
+        success: true,
+        action: 'updated',
+        address,
+        staked_amount: stakedAmount,
+        rewards_earned: estimatedEthEarned,
+        pending_rewards: pending,
+        user_share_ratio: userShareRatio,
+        total_distributed: totalEth
+      });
+    } else {
+      // Create new
+      await pool.query(`
+        INSERT INTO staker_positions (
+          wallet_address, staked_amount, rewards_earned, pending_rewards,
+          last_stake_time, is_active, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, NOW(), true, NOW(), NOW())
+      `, [address, stakedAmount, estimatedEthEarned, pending]);
+      
+      res.json({
+        success: true,
+        action: 'created',
+        address,
+        staked_amount: stakedAmount,
+        rewards_earned: estimatedEthEarned,
+        pending_rewards: pending,
+        user_share_ratio: userShareRatio,
+        total_distributed: totalEth
+      });
+    }
+    
+  } catch (error) {
+    console.error('Staker sync error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 export default router;
