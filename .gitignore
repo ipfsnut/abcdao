@@ -192,3 +192,7 @@ migrations/add-extended-treasury-schema.sql
 steakdao/
 generate-new-wallets.js
 check-user-staking.js
+# V2 analysis files with hardcoded addresses
+packages/backend/v2-*.js
+packages/backend/sync-production-staker.js
+packages/backend/check-treasury-table.js

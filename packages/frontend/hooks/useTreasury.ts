@@ -5,8 +5,8 @@ import { formatEther } from 'viem';
 import { CONTRACTS, ERC20_ABI } from '@/lib/contracts';
 import { useMemo } from 'react';
 
-// Protocol wallet address (treasury) - from CLAUDE.md
-const TREASURY_ADDRESS = '0xBE6525b767cA8D38d169C93C8120c0C0957388B8' as `0x${string}`;
+// Protocol wallet address (treasury) - updated current treasury
+const TREASURY_ADDRESS = '0x48D87BE38677Ad764203b5516900691Cbd8C7042' as `0x${string}`;
 
 export function useTreasury() {
   // Read treasury ABC token balance

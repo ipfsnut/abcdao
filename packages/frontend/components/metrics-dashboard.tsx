@@ -26,15 +26,13 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
   } = useStakingUnified();
 
   // Use fixed user statistics to show correct ABC rewards and profile data
-  // TODO: Get farcaster_fid from wallet-first auth or create lookup endpoint
-  const userFid = user?.farcaster_fid || (user?.wallet_address === '0x18a85ad341b2d6a2bd67fbb104b4827b922a2a3c' ? 8573 : null);
   const {
     totalCommits,
     totalRewardsEarnedFormatted,
     ethRewardsEarnedFormatted,
     isLoading: userStatsLoading,
     formatEthAmount
-  } = useUserStatsFixed(userFid);
+  } = useUserStatsFixed(user?.farcaster_fid, user?.wallet_address);
 
   // Loading state now handled by unified hooks
   const isLoading = userStatsLoading;

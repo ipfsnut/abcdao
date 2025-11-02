@@ -16,7 +16,9 @@ import { getPool } from './database.js';
  */
 export class TreasuryDataManager {
   constructor() {
-    this.walletAddress = process.env.PROTOCOL_WALLET_ADDRESS || '0xBE6525b767cA8D38d169C93C8120c0C0957388B8';
+    this.walletAddress = process.env.PROTOCOL_WALLET_ADDRESS || process.env.BOT_WALLET_PRIVATE_KEY ? 
+      new ethers.Wallet(process.env.BOT_WALLET_PRIVATE_KEY).address : 
+      '0x48D87BE38677Ad764203b5516900691Cbd8C7042';
     this.stakingContract = process.env.STAKING_CONTRACT_ADDRESS || '0x577822396162022654D5bDc9CB58018cB53e7017';
     this.abcTokenContract = process.env.ABC_TOKEN_CONTRACT_ADDRESS || '0x5c0872b790bb73e2b3a9778db6e7704095624b07';
     this.wethContract = '0x4200000000000000000000000000000000000006'; // WETH on Base

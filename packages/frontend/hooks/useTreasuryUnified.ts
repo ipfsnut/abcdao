@@ -156,7 +156,7 @@ export function useTreasuryUnified() {
     
     // Contract addresses
     addresses: addresses || {
-      treasury: '0xBE6525b767cA8D38d169C93C8120c0C0957388B8',
+      treasury: '0x48D87BE38677Ad764203b5516900691Cbd8C7042',
       stakingContract: treasurySnapshot?.stakingContractAddress,
       rewardsContract: treasurySnapshot?.rewardsContractAddress,
       abcToken: treasurySnapshot?.abcTokenAddress,

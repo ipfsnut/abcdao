@@ -216,14 +216,14 @@ export function StakeTab({ stakingData, user, onDataUpdate }: StakeTabProps) {
             <div className="bg-yellow-900/20 border border-yellow-800/30 rounded-lg p-4">
               <div className="text-sm font-mono text-yellow-600 mb-1">Total Unbonding</div>
               <div className="text-xl font-bold text-yellow-400">
-                {parseFloat(totalUnbonding).toFixed(1)}M $ABC
+                {(parseFloat(totalUnbonding) / 1e6).toFixed(1)}M $ABC
               </div>
             </div>
             
             <div className="bg-green-900/20 border border-green-800/30 rounded-lg p-4">
               <div className="text-sm font-mono text-green-600 mb-1">Ready to Claim</div>
               <div className="text-xl font-bold text-green-400">
-                {parseFloat(withdrawableAmount).toFixed(1)}M $ABC
+                {(parseFloat(withdrawableAmount) / 1e6).toFixed(1)}M $ABC
               </div>
             </div>
           </div>
@@ -258,7 +258,7 @@ export function StakeTab({ stakingData, user, onDataUpdate }: StakeTabProps) {
                         </span>
                         <div>
                           <div className="text-sm font-mono text-green-400">
-                            {parseFloat(item.amount).toFixed(1)}M $ABC
+                            {(parseFloat(item.amount) / 1e6).toFixed(1)}M $ABC
                           </div>
                           <div className="text-xs text-yellow-600">
                             Release: {new Date(releaseTime).toLocaleDateString()} at {new Date(releaseTime).toLocaleTimeString()}
@@ -282,7 +282,7 @@ export function StakeTab({ stakingData, user, onDataUpdate }: StakeTabProps) {
               disabled={isClaiming}
               className="w-full py-3 bg-green-900/50 text-green-400 rounded-lg font-mono font-bold hover:bg-green-800/60 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isClaiming ? '🔄 Claiming...' : `🎁 Claim ${parseFloat(withdrawableAmount).toFixed(1)}M $ABC`}
+              {isClaiming ? '🔄 Claiming...' : `🎁 Claim ${(parseFloat(withdrawableAmount) / 1e6).toFixed(1)}M $ABC`}
             </button>
           )}
         </div>

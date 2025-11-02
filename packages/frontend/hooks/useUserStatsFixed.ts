@@ -15,9 +15,17 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-produ
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
-export function useUserStatsFixed(farcasterFid?: number) {
+export function useUserStatsFixed(farcasterFid?: number, walletAddress?: string) {
+  // First, get FID from wallet if not provided
+  const { data: lookupData } = useSWR(
+    !farcasterFid && walletAddress ? `${BACKEND_URL}/api/users/lookup/wallet/${walletAddress}` : null,
+    fetcher
+  );
+  
+  const effectiveFid = farcasterFid || lookupData?.farcaster_fid;
+  
   const { data, error, isLoading, mutate } = useSWR(
-    farcasterFid ? `${BACKEND_URL}/api/users/${farcasterFid}/status` : null,
+    effectiveFid ? `${BACKEND_URL}/api/users/${effectiveFid}/status` : null,
     fetcher,
     {
       refreshInterval: 60000, // 1 minute
@@ -52,7 +60,7 @@ export function useUserStatsFixed(farcasterFid?: number) {
   const ethRewardsEarned = data?.eth_rewards?.earned ? parseFloat(data.eth_rewards.earned) : 0;
   const ethRewardsPending = data?.eth_rewards?.pending ? parseFloat(data.eth_rewards.pending) : 0;
   const avatarUrl = data?.user?.avatar_url || null;
-  const walletAddress = data?.user?.wallet_address || null;
+  const userWalletAddress = data?.user?.wallet_address || null;
 
   return {
     // Core statistics (formatted for display)
@@ -69,7 +77,7 @@ export function useUserStatsFixed(farcasterFid?: number) {
     
     // Profile data
     avatarUrl,
-    walletAddress,
+    walletAddress: userWalletAddress,
     membership: {
       status: data?.membership_status || 'free',
       txHash: data?.membership_tx_hash,
