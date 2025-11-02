@@ -380,7 +380,7 @@ class WalletFirstAuthService {
     const hasGitHub = !!(profile.github_username || profile.github_id);
     const hasDiscord = !!(profile.discord_username || profile.discord_id);
     const hasFarcaster = !!(profile.farcaster_username || profile.farcaster_fid);
-    const isMember = profile.membership_status === 'member' || profile.membership_status === 'premium';
+    const isMember = profile.membership_status === 'member' || profile.membership_status === 'premium' || profile.membership_status === 'paid';
     
     return {
       token_operations: true, // Always available with wallet
@@ -404,7 +404,7 @@ class WalletFirstAuthService {
     const hasGitHub = !!(profile.github_username || profile.github_id);
     const hasDiscord = !!(profile.discord_username || profile.discord_id);
     const hasFarcaster = !!(profile.farcaster_username || profile.farcaster_fid);
-    const isMember = profile.membership_status === 'member' || profile.membership_status === 'premium';
+    const isMember = profile.membership_status === 'member' || profile.membership_status === 'premium' || profile.membership_status === 'paid';
     
     if (!hasGitHub) {
       steps.push({

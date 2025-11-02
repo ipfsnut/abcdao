@@ -44,6 +44,7 @@ import botFollowingRoutes from './routes/bot-following.js';
 import nftMembershipRoutes from './routes/nft-membership.js';
 import walletFirstAuthRoutes from './routes/wallet-first-auth.js';
 import farcasterVerifiedAuthRoutes from './routes/farcaster-verified-auth.js';
+import walletManagementRoutes from './routes/wallet-management.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
@@ -253,6 +254,7 @@ app.use('/api/bot-following', botFollowingRoutes);
 app.use('/api/nft-membership', nftMembershipRoutes);
 app.use('/api/auth', walletFirstAuthRoutes);
 app.use('/api/farcaster-auth', farcasterVerifiedAuthRoutes);
+app.use('/api/wallet', walletManagementRoutes);
 
 // Custom cast endpoint (requires admin key for security)
 app.post('/api/cast/custom', async (req, res) => {
