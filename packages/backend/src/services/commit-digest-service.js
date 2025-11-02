@@ -95,9 +95,12 @@ class CommitDigestService {
   /**
    * Get commits for a specific date range
    * Used for digest generation
+   * OPTIMIZED: Uses indexes and limits result size
    */
-  async getCommitsByDateRange(startDate, endDate) {
+  async getCommitsByDateRange(startDate, endDate, limit = 1000) {
     await this.initialize();
+    
+    const startTime = Date.now();
     
     try {
       const query = `
@@ -118,11 +121,17 @@ class CommitDigestService {
         FROM commit_digest_data
         WHERE created_at >= $1 AND created_at <= $2
         ORDER BY created_at DESC
+        LIMIT $3
       `;
 
-      const result = await this.pool.query(query, [startDate, endDate]);
+      const result = await this.pool.query(query, [startDate, endDate, limit]);
       
-      console.log(`📊 Retrieved ${result.rows.length} commits for digest analysis (${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]})`);
+      const duration = Date.now() - startTime;
+      console.log(`📊 Retrieved ${result.rows.length} commits for digest analysis in ${duration}ms (${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]})`);
+      
+      if (result.rows.length === limit) {
+        console.warn(`⚠️ Query hit limit of ${limit} commits - results may be truncated`);
+      }
       
       return result.rows.map(row => ({
         ...row,

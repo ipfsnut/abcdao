@@ -11,26 +11,60 @@ class DigestAnalytics {
 
   /**
    * Generate comprehensive weekly activity analysis
+   * OPTIMIZED: Parallel processing with performance monitoring
    */
   async analyzeWeeklyActivity(startDate, endDate) {
+    const analysisStart = Date.now();
     console.log(`📊 Analyzing weekly activity: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
     
     try {
+      // Phase 1: Core data collection (parallel)
+      const phase1Start = Date.now();
       const [
         commits,
         repositoryBreakdown,
-        contributorRankings,
-        developmentTrends,
-        rewardDistribution
+        contributorRankings
       ] = await Promise.all([
         this.digestService.getCommitsByDateRange(startDate, endDate),
         this.digestService.getRepositoryActivity(startDate, endDate),
-        this.digestService.getTopContributors(startDate, endDate, 10),
-        this.analyzeTechnicalFocus(startDate, endDate),
-        this.calculateRewardMetrics(startDate, endDate)
+        this.digestService.getTopContributors(startDate, endDate, 10)
       ]);
+      const phase1Duration = Date.now() - phase1Start;
+      
+      // Early exit if no commits
+      if (commits.length === 0) {
+        console.log(`📭 No commits found for period - skipping detailed analysis`);
+        return {
+          period: {
+            start: startDate,
+            end: endDate,
+            days: Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24))
+          },
+          totalCommits: 0,
+          repositoryBreakdown: [],
+          contributorRankings: [],
+          developmentTrends: { categories: {}, topCategories: [], priorityDistribution: {}, totalCategorized: 0, uncategorized: 0 },
+          rewardDistribution: { totalRewards: 0, averageReward: 0, rewardByPriority: {}, topEarners: [], totalContributors: 0 },
+          communityGrowth: { newContributors: [], returningContributors: 0, totalActive: 0, newContributorCount: 0, averageCommitsPerContributor: 0, contributorRetentionRate: 0 },
+          rawCommits: [],
+          performance: { phase1Duration, totalDuration: Date.now() - analysisStart }
+        };
+      }
 
-      const communityGrowth = await this.trackNewContributors(startDate, endDate);
+      // Phase 2: Analysis and metrics (parallel where possible)
+      const phase2Start = Date.now();
+      const [
+        developmentTrends,
+        rewardDistribution,
+        communityGrowth
+      ] = await Promise.all([
+        this.analyzeTechnicalFocus(startDate, endDate, commits), // Pass commits to avoid re-query
+        this.calculateRewardMetrics(startDate, endDate, commits, contributorRankings), // Pass data to avoid re-query
+        this.trackNewContributors(startDate, endDate, contributorRankings) // Pass data to avoid re-query
+      ]);
+      const phase2Duration = Date.now() - phase2Start;
+      
+      const totalDuration = Date.now() - analysisStart;
       
       const analytics = {
         period: {
@@ -44,10 +78,17 @@ class DigestAnalytics {
         developmentTrends,
         rewardDistribution,
         communityGrowth,
-        rawCommits: commits
+        rawCommits: commits,
+        performance: {
+          phase1Duration,
+          phase2Duration,
+          totalDuration
+        }
       };
 
-      console.log(`✅ Analysis complete: ${analytics.totalCommits} commits, ${analytics.repositoryBreakdown.length} repos, ${analytics.contributorRankings.length} contributors`);
+      console.log(`✅ Analysis complete in ${totalDuration}ms: ${analytics.totalCommits} commits, ${analytics.repositoryBreakdown.length} repos, ${analytics.contributorRankings.length} contributors`);
+      console.log(`⚡ Performance: Phase 1: ${phase1Duration}ms, Phase 2: ${phase2Duration}ms`);
+      
       return analytics;
       
     } catch (error) {
@@ -58,9 +99,10 @@ class DigestAnalytics {
 
   /**
    * Analyze technical focus areas from commit messages
+   * OPTIMIZED: Accepts pre-fetched commits to avoid duplicate queries
    */
-  async analyzeTechnicalFocus(startDate, endDate) {
-    const commits = await this.digestService.getCommitsByDateRange(startDate, endDate);
+  async analyzeTechnicalFocus(startDate, endDate, preloadedCommits = null) {
+    const commits = preloadedCommits || await this.digestService.getCommitsByDateRange(startDate, endDate);
     
     const categories = {
       frontend: { count: 0, keywords: ['ui', 'frontend', 'component', 'styling', 'dashboard', 'page', 'react', 'tsx', 'css'] },
@@ -134,12 +176,15 @@ class DigestAnalytics {
 
   /**
    * Calculate reward distribution metrics
+   * OPTIMIZED: Accepts pre-fetched data to avoid duplicate queries
    */
-  async calculateRewardMetrics(startDate, endDate) {
-    const [commits, contributors] = await Promise.all([
-      this.digestService.getCommitsByDateRange(startDate, endDate),
-      this.digestService.getTopContributors(startDate, endDate, 100)
-    ]);
+  async calculateRewardMetrics(startDate, endDate, preloadedCommits = null, preloadedContributors = null) {
+    const [commits, contributors] = preloadedCommits && preloadedContributors ? 
+      [preloadedCommits, preloadedContributors] :
+      await Promise.all([
+        preloadedCommits || this.digestService.getCommitsByDateRange(startDate, endDate),
+        preloadedContributors || this.digestService.getTopContributors(startDate, endDate, 100)
+      ]);
 
     const totalRewards = commits.reduce((sum, commit) => sum + (commit.reward_amount || 0), 0);
     const averageReward = commits.length > 0 ? Math.round(totalRewards / commits.length) : 0;
@@ -181,10 +226,11 @@ class DigestAnalytics {
 
   /**
    * Track new contributors and community growth
+   * OPTIMIZED: Accepts pre-fetched contributors to avoid duplicate queries
    */
-  async trackNewContributors(startDate, endDate) {
+  async trackNewContributors(startDate, endDate, preloadedContributors = null) {
     // Get all contributors in the period
-    const periodContributors = await this.digestService.getTopContributors(startDate, endDate, 100);
+    const periodContributors = preloadedContributors || await this.digestService.getTopContributors(startDate, endDate, 100);
     
     // Get contributors from before this period (last 30 days before start)
     const lookbackStart = new Date(startDate.getTime() - 30 * 24 * 60 * 60 * 1000);
