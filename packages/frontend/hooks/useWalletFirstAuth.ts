@@ -142,39 +142,43 @@ export function useWalletFirstAuth() {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
-      // First try to get user profile by wallet address
-      const profileResponse = await fetch(`${config.backendUrl}/api/users-commits/profile/${walletAddress}`);
-      const profileData = await profileResponse.json();
+      // Authenticate wallet with new endpoint
+      const authResponse = await fetch(`${config.backendUrl}/api/auth/wallet`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet_address: walletAddress })
+      });
+      const authData = await authResponse.json();
 
-      if (profileResponse.ok && profileData.id) {
-        // User exists, set up authentication state - transform API response to expected format
-        // Fetch staking data
+      if (authResponse.ok && authData.success && authData.user) {
+        // User authenticated successfully, get additional staking data
         const stakedAmount = await fetchUserStakedAmount(walletAddress);
         
         const user = {
-          wallet_address: profileData.identifiers.walletAddress,
-          display_name: profileData.profile.displayName,
-          farcaster_username: profileData.profile.farcasterUsername,
-          github_username: profileData.identifiers.githubUsername,
-          github_connected: !!profileData.identifiers.githubUsername,
-          farcaster_connected: !!profileData.identifiers.farcasterFid,
-          discord_connected: false, // Not in current API response
-          discord_username: undefined,
-          is_member: profileData.membership.status === 'paid',
-          membership_tier: profileData.membership.status === 'paid' ? 'member' as const : 'free' as const,
-          can_earn_rewards: !!profileData.identifiers.githubUsername,
+          wallet_address: authData.user.wallet_address,
+          display_name: authData.user.farcaster_username || authData.user.github_username,
+          farcaster_username: authData.user.farcaster_username,
+          github_username: authData.user.github_username,
+          github_connected: !!authData.user.github_username,
+          farcaster_connected: !!authData.user.farcaster_fid,
+          discord_connected: !!authData.user.discord_username,
+          discord_username: authData.user.discord_username,
+          is_member: authData.user.membership_status === 'member' || authData.user.membership_status === 'premium',
+          membership_tier: authData.user.membership_status as 'free' | 'member' | 'premium',
+          can_earn_rewards: !!authData.user.github_username,
           community_access: true,
-          social_features: !!profileData.identifiers.farcasterFid,
-          premium_features: profileData.membership.status === 'paid',
-          total_commits: profileData.stats.totalCommits,
-          total_earned_tokens: profileData.stats.totalRewardsEarned,
+          social_features: !!authData.user.farcaster_fid,
+          premium_features: authData.user.membership_status === 'premium',
+          total_commits: authData.user.total_commits || 0,
+          total_earned_tokens: parseFloat(authData.user.total_abc_earned || '0'),
           total_staked_tokens: stakedAmount,
-          last_active_at: new Date().toISOString(),
-          bio: profileData.profile.bio,
-          avatar_url: profileData.profile.avatarUrl,
-          website_url: profileData.profile.websiteUrl
+          last_active_at: authData.user.updated_at || new Date().toISOString(),
+          bio: authData.user.display_name,
+          avatar_url: undefined,
+          website_url: undefined
         };
-        const features = {
+        // Use backend-provided features and next steps
+        const features = authData.features || {
           token_operations: true,
           earning_rewards: user.github_connected || false,
           repository_management: user.github_connected || false,
@@ -184,29 +188,11 @@ export function useWalletFirstAuth() {
           staking: true,
         };
 
-        const nextSteps: NextStep[] = [];
-        if (!user.github_connected) {
-          nextSteps.push({
-            action: 'connect_github',
-            title: 'Connect GitHub',
-            description: 'Connect your GitHub account to earn rewards for commits',
-            benefits: ['Earn $ABC tokens for commits', 'Track your coding activity', 'Repository management'],
-            priority: 'high' as const
-          });
-        }
-        if (!user.is_member) {
-          nextSteps.push({
-            action: 'purchase_membership',
-            title: 'Become a Member',
-            description: 'Pay 0.002 ETH to unlock full features',
-            benefits: ['Premium features', 'Community status', 'Priority support'],
-            priority: 'medium' as const
-          });
-        }
+        const nextSteps = authData.next_steps || [];
 
         setAuthState({
           user,
-          token: walletAddress, // Use wallet address as token for now
+          token: authData.token, // Use JWT token from backend
           features,
           nextSteps,
           isLoading: false,
@@ -216,70 +202,8 @@ export function useWalletFirstAuth() {
 
         return { user, features, nextSteps };
       } else {
-        // User doesn't exist, create a basic profile
-        const displayName = await resolveDisplayName(walletAddress);
-        const newUser = {
-          wallet_address: walletAddress,
-          display_name: displayName,
-          bio: undefined,
-          avatar_url: undefined,
-          website_url: undefined,
-          is_member: false,
-          membership_tier: 'free' as const,
-          github_connected: false,
-          github_username: undefined,
-          discord_connected: false,
-          discord_username: undefined,
-          farcaster_connected: false,
-          farcaster_username: undefined,
-          can_earn_rewards: false,
-          community_access: true,
-          social_features: false,
-          premium_features: false,
-          total_commits: 0,
-          total_earned_tokens: 0,
-          total_staked_tokens: 0,
-          last_active_at: new Date().toISOString()
-        };
-
-        const features = {
-          token_operations: true,
-          earning_rewards: false,
-          repository_management: false,
-          community_access: true,
-          social_features: false,
-          premium_features: false,
-          staking: true,
-        };
-
-        const nextSteps = [
-          {
-            action: 'connect_github',
-            title: 'Connect GitHub',
-            description: 'Connect your GitHub account to start earning rewards',
-            benefits: ['Earn $ABC tokens for commits', 'Track your coding activity', 'Repository management'],
-            priority: 'high' as const
-          },
-          {
-            action: 'purchase_membership',
-            title: 'Become a Member',
-            description: 'Pay 0.002 ETH to unlock premium features',
-            benefits: ['Premium features', 'Community status', 'Priority support'],
-            priority: 'medium' as const
-          }
-        ];
-
-        setAuthState({
-          user: newUser,
-          token: walletAddress,
-          features,
-          nextSteps,
-          isLoading: false,
-          isAuthenticated: true,
-          error: null
-        });
-
-        return { user: newUser, features, nextSteps };
+        // Authentication failed
+        throw new Error(authData.error || 'Authentication failed');
       }
 
     } catch (error) {
