@@ -147,14 +147,19 @@ router.get('/:fid/status', async (req, res) => {
     if (user.wallet_address) {
       try {
         const pool = getPool();
-        // Query for any ETH distributions to this user
+        // Query staker_positions table for ETH rewards
         const ethResult = await pool.query(`
-          SELECT COALESCE(SUM(amount_eth), 0) as total_eth_earned
-          FROM eth_distributions 
-          WHERE recipient_address = $1
-        `, [user.wallet_address]);
+          SELECT 
+            COALESCE(rewards_earned, 0) as total_eth_earned,
+            COALESCE(pending_rewards, 0) as pending_eth_rewards
+          FROM staker_positions 
+          WHERE LOWER(wallet_address) = $1 AND is_active = true
+        `, [user.wallet_address.toLowerCase()]);
         
-        eth_rewards.earned = parseFloat(ethResult.rows[0]?.total_eth_earned || 0);
+        if (ethResult.rows.length > 0) {
+          eth_rewards.earned = parseFloat(ethResult.rows[0].total_eth_earned || 0);
+          eth_rewards.pending = parseFloat(ethResult.rows[0].pending_eth_rewards || 0);
+        }
       } catch (error) {
         console.log(`⚠️ Could not fetch ETH rewards for ${user.wallet_address}:`, error.message);
       }
