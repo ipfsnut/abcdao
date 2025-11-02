@@ -3,6 +3,40 @@ import { getPool } from '../services/database.js';
 
 const router = express.Router();
 
+// Get all users (basic endpoint)
+router.get('/', async (req, res) => {
+  try {
+    const pool = getPool();
+    const { limit = 50, offset = 0 } = req.query;
+    
+    const result = await pool.query(`
+      SELECT 
+        farcaster_fid,
+        farcaster_username,
+        github_username,
+        display_name,
+        membership_status,
+        total_abc_earned,
+        total_commits,
+        created_at
+      FROM users 
+      ORDER BY total_abc_earned DESC, total_commits DESC
+      LIMIT $1 OFFSET $2
+    `, [limit, offset]);
+    
+    res.json({
+      users: result.rows,
+      total: result.rows.length,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+    
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
 // Get global stats
 router.get('/stats', async (req, res) => {
   try {

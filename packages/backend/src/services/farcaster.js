@@ -86,6 +86,53 @@ class FarcasterService {
     }
   }
 
+  /**
+   * Get user's verified wallet addresses (not custody address)
+   * Returns primary wallet address that user actually controls
+   */
+  async getUserVerifiedAddresses(fid) {
+    const user = await this.getUserByFid(fid);
+    if (!user) {
+      return null;
+    }
+
+    const result = {
+      fid: user.fid,
+      username: user.username,
+      display_name: user.display_name,
+      custody_address: user.custody_address,
+      verified_addresses: [],
+      primary_address: null
+    };
+
+    // Extract verified ETH addresses
+    if (user.verified_addresses?.eth_addresses) {
+      result.verified_addresses = user.verified_addresses.eth_addresses;
+      // Use first verified address as primary (user's choice for verification order)
+      result.primary_address = user.verified_addresses.eth_addresses[0] || null;
+    }
+
+    console.log(`📍 Farcaster user ${user.username} (${fid}):`);
+    console.log(`   Custody: ${result.custody_address}`);
+    console.log(`   Verified: ${result.verified_addresses.length} addresses`);
+    console.log(`   Primary: ${result.primary_address || 'None'}`);
+
+    return result;
+  }
+
+  /**
+   * Check if a wallet address is the user's verified primary address
+   * This helps distinguish between custody addresses and user-controlled addresses
+   */
+  async isVerifiedPrimaryAddress(fid, walletAddress) {
+    const addressData = await this.getUserVerifiedAddresses(fid);
+    if (!addressData) return false;
+
+    // Check if the wallet address matches their primary verified address
+    return addressData.primary_address && 
+           addressData.primary_address.toLowerCase() === walletAddress.toLowerCase();
+  }
+
   async announcePRMerged(githubUsername, prTitle, prUrl, rewardAmount) {
     const message = `🎉 PR Merged!\n\n` +
       `@${githubUsername} just earned ${rewardAmount} $ABC for:\n` +

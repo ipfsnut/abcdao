@@ -99,9 +99,9 @@ export const CONTRACTS = {
     ] as const
   },
   
-  // ABC Membership NFT contract (October 2025) - Production Version
+  // ABC Membership NFT contract (October 2025) - Production Version  
   ABC_MEMBERSHIP: {
-    address: '0x9B790111758CB7C666e742814b86CF8185792f6E' as `0x${string}`,
+    address: '0x52986d25082E8D040743017ED2d25bD1aD94c5cD' as `0x${string}`,
     abi: [
       {
         "inputs": [],

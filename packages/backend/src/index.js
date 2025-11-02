@@ -43,6 +43,7 @@ import supportRoutes from './routes/support.js';
 import botFollowingRoutes from './routes/bot-following.js';
 import nftMembershipRoutes from './routes/nft-membership.js';
 import walletFirstAuthRoutes from './routes/wallet-first-auth.js';
+import farcasterVerifiedAuthRoutes from './routes/farcaster-verified-auth.js';
 
 // Import services
 import { initializeDatabase } from './services/database.js';
@@ -155,7 +156,13 @@ app.get('/api', (req, res) => {
       },
       'auth': {
         'POST /api/auth/github': 'GitHub OAuth',
-        'POST /api/auth/transaction': 'Transaction validation'
+        'POST /api/auth/transaction': 'Transaction validation',
+        'POST /api/auth/wallet': 'Wallet-first authentication'
+      },
+      'farcaster-auth': {
+        'POST /api/farcaster-auth/verify-address': 'Authenticate using Farcaster verified addresses',
+        'GET /api/farcaster-auth/addresses/:fid': 'Get verified addresses for Farcaster user',
+        'POST /api/farcaster-auth/check-primary': 'Check if wallet is user\'s primary verified address'
       },
       'admin': {
         'GET /api/admin/stats': 'Admin statistics',
@@ -245,6 +252,7 @@ app.use('/api/support', supportRoutes);
 app.use('/api/bot-following', botFollowingRoutes);
 app.use('/api/nft-membership', nftMembershipRoutes);
 app.use('/api/auth', walletFirstAuthRoutes);
+app.use('/api/farcaster-auth', farcasterVerifiedAuthRoutes);
 
 // Custom cast endpoint (requires admin key for security)
 app.post('/api/cast/custom', async (req, res) => {
