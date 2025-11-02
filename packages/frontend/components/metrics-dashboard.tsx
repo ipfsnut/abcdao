@@ -9,7 +9,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useStakingUnified } from '@/hooks/useStakingUnified';
-import { useUserStatsUnified } from '@/hooks/useUserStatsUnified';
+import { useUserStatsFixed } from '@/hooks/useUserStatsFixed';
 
 interface MetricsDashboardProps {
   user: any;
@@ -22,18 +22,17 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
     tokenBalance,
     stakedAmount,
     pendingRewards,
-    formatStakingAmount,
-    formatEthAmount
+    formatStakingAmount
   } = useStakingUnified();
 
-  // Use unified user statistics for consistency across all components
+  // Use fixed user statistics to show correct ABC rewards and profile data
   const {
     totalCommits,
-    totalRewardsEarned,
     totalRewardsEarnedFormatted,
+    ethRewardsEarnedFormatted,
     isLoading: userStatsLoading,
-    formatNumber
-  } = useUserStatsUnified(user?.wallet_address, user);
+    formatEthAmount
+  } = useUserStatsFixed(user?.farcaster_fid);
 
   // Loading state now handled by unified hooks
   const isLoading = userStatsLoading;
@@ -99,7 +98,7 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
     },
     {
       label: 'ETH Rewards',
-      value: formatEthAmount(pendingRewards || '0'),
+      value: ethRewardsEarnedFormatted || '0.0000',
       unit: 'ETH',
       icon: '📈',
       color: 'text-orange-400',

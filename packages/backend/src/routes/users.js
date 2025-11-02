@@ -1,5 +1,6 @@
 import express from 'express';
 import { getPool } from '../services/database.js';
+import { farcasterService } from '../services/farcaster.js';
 
 const router = express.Router();
 
@@ -132,6 +133,33 @@ router.get('/:fid/status', async (req, res) => {
       };
     }
     
+    // Try to get Farcaster avatar (non-blocking)
+    let avatar_url = null;
+    try {
+      const farcasterUser = await farcasterService.getUserByFid(fid);
+      avatar_url = farcasterUser?.pfp_url || null;
+    } catch (error) {
+      console.log(`⚠️ Could not fetch avatar for FID ${fid}:`, error.message);
+    }
+
+    // Get ETH rewards from staking if user has wallet
+    let eth_rewards = { earned: 0, pending: 0 };
+    if (user.wallet_address) {
+      try {
+        const pool = getPool();
+        // Query for any ETH distributions to this user
+        const ethResult = await pool.query(`
+          SELECT COALESCE(SUM(amount_eth), 0) as total_eth_earned
+          FROM eth_distributions 
+          WHERE recipient_address = $1
+        `, [user.wallet_address]);
+        
+        eth_rewards.earned = parseFloat(ethResult.rows[0]?.total_eth_earned || 0);
+      } catch (error) {
+        console.log(`⚠️ Could not fetch ETH rewards for ${user.wallet_address}:`, error.message);
+      }
+    }
+
     res.json({
       linked: isLinked,
       membership_tx_hash: user.membership_tx_hash,
@@ -142,9 +170,12 @@ router.get('/:fid/status', async (req, res) => {
         farcaster_username: user.farcaster_username,
         github_username: user.github_username,
         has_wallet: !!user.wallet_address,
-        verified_at: user.verified_at
+        verified_at: user.verified_at,
+        avatar_url,
+        wallet_address: user.wallet_address
       },
-      stats
+      stats,
+      eth_rewards
     });
     
   } catch (error) {
