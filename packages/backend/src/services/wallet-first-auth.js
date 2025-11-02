@@ -78,20 +78,29 @@ class WalletFirstAuthService {
    * Create new wallet-based user profile
    */
   async createWalletProfile(walletAddress, context = {}) {
+    // Generate a fake FID to avoid conflicts (negative number)
+    const fakeFid = -Math.floor(Math.random() * 1000000);
+    
     const query = `
-      INSERT INTO user_profiles (
+      INSERT INTO users (
+        farcaster_fid,
+        farcaster_username,
         wallet_address,
-        entry_context,
-        referral_source,
-        last_active_at
-      ) VALUES ($1, $2, $3, NOW())
+        membership_status,
+        verified_at,
+        created_at,
+        updated_at,
+        entry_context
+      ) VALUES ($1, $2, $3, $4, NOW(), NOW(), NOW(), $5)
       RETURNING *
     `;
     
     const values = [
+      fakeFid,
+      `wallet_${walletAddress.slice(2, 8)}`, // Username from wallet
       walletAddress,
-      context.entry_context || 'web',
-      context.referral_source || null
+      'free',
+      context.entry_context || 'webapp'
     ];
     
     const result = await this.getPool().query(query, values);
@@ -103,7 +112,7 @@ class WalletFirstAuthService {
    */
   async getUserProfile(walletAddress) {
     const query = `
-      SELECT * FROM user_profiles 
+      SELECT * FROM users 
       WHERE wallet_address = $1
     `;
     
@@ -123,12 +132,10 @@ class WalletFirstAuthService {
       const encryptedToken = githubToken ? this.encryptToken(githubToken) : null;
       
       const query = `
-        UPDATE user_profiles SET
-          github_connected = TRUE,
+        UPDATE users SET
           github_username = $2,
-          github_user_id = $3,
-          github_access_token = $4,
-          github_connected_at = NOW(),
+          github_id = $3,
+          access_token = $4,
           updated_at = NOW()
         WHERE wallet_address = $1
         RETURNING *
@@ -172,7 +179,7 @@ class WalletFirstAuthService {
       const encryptedToken = discordToken ? this.encryptToken(discordToken) : null;
       
       const query = `
-        UPDATE user_profiles SET
+        UPDATE users SET
           discord_connected = TRUE,
           discord_username = $2,
           discord_user_id = $3,
@@ -216,7 +223,7 @@ class WalletFirstAuthService {
   async addFarcasterIntegration(walletAddress, farcasterData) {
     try {
       const query = `
-        UPDATE user_profiles SET
+        UPDATE users SET
           farcaster_connected = TRUE,
           farcaster_fid = $2,
           farcaster_username = $3,
@@ -266,7 +273,7 @@ class WalletFirstAuthService {
   async processMembershipPurchase(walletAddress, paymentData) {
     try {
       const query = `
-        UPDATE user_profiles SET
+        UPDATE users SET
           is_member = TRUE,
           membership_tier = $2,
           membership_paid_at = NOW(),
@@ -448,13 +455,12 @@ class WalletFirstAuthService {
    */
   async updateLastActive(walletAddress, context = {}) {
     const query = `
-      UPDATE user_profiles SET
-        last_active_at = NOW(),
-        entry_context = COALESCE($2, entry_context)
+      UPDATE users SET
+        updated_at = NOW()
       WHERE wallet_address = $1
     `;
     
-    await this.getPool().query(query, [walletAddress, context.entry_context]);
+    await this.getPool().query(query, [walletAddress]);
   }
 
   /**
