@@ -27,26 +27,30 @@ export function useUserStatsFixed(farcasterFid?: number) {
     }
   );
 
-  // Helper function to format numbers
-  const formatNumber = (value: number) => {
-    if (value >= 1000000) {
-      return (value / 1000000).toFixed(1) + 'M';
+  // Helper function to format numbers with null safety
+  const formatNumber = (value: number | null | undefined) => {
+    const num = Number(value || 0);
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
     }
-    if (value >= 1000) {
-      return (value / 1000).toFixed(1) + 'K';
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'K';
     }
-    return value.toString();
+    return num.toString();
   };
 
-  const formatEthAmount = (value: number) => {
-    return value.toFixed(4);
+  const formatEthAmount = (value: number | null | undefined) => {
+    if (value === null || value === undefined || isNaN(Number(value))) {
+      return '0.0000';
+    }
+    return Number(value).toFixed(4);
   };
 
-  // Extract data from the working API response
-  const totalCommits = data?.stats?.total_commits || 0;
+  // Extract data from the working API response with proper null handling
+  const totalCommits = parseInt(data?.stats?.total_commits || '0');
   const totalRewardsEarned = parseFloat(data?.stats?.total_rewards || '0');
-  const ethRewardsEarned = data?.eth_rewards?.earned || 0;
-  const ethRewardsPending = data?.eth_rewards?.pending || 0;
+  const ethRewardsEarned = data?.eth_rewards?.earned ? parseFloat(data.eth_rewards.earned) : 0;
+  const ethRewardsPending = data?.eth_rewards?.pending ? parseFloat(data.eth_rewards.pending) : 0;
   const avatarUrl = data?.user?.avatar_url || null;
   const walletAddress = data?.user?.wallet_address || null;
 
