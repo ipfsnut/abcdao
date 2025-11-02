@@ -559,4 +559,33 @@ router.get('/roster', async (req, res) => {
   }
 });
 
+// Get user's FID by wallet address (for frontend integration)
+router.get('/lookup/wallet/:address', async (req, res) => {
+  const { address } = req.params;
+  
+  try {
+    const pool = getPool();
+    
+    const result = await pool.query(`
+      SELECT farcaster_fid, farcaster_username, github_username
+      FROM users 
+      WHERE LOWER(wallet_address) = $1
+    `, [address.toLowerCase()]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json({
+      farcaster_fid: result.rows[0].farcaster_fid,
+      farcaster_username: result.rows[0].farcaster_username,
+      github_username: result.rows[0].github_username
+    });
+    
+  } catch (error) {
+    console.error('Error looking up user by wallet:', error);
+    res.status(500).json({ error: 'Failed to lookup user' });
+  }
+});
+
 export default router;
