@@ -14,9 +14,21 @@ import crypto from 'crypto';
 
 class WalletFirstAuthService {
   constructor() {
-    this.pool = getPool();
+    this.pool = null; // Initialize lazily to avoid startup crash
     this.JWT_SECRET = process.env.JWT_SECRET || 'abc-dao-wallet-auth-secret';
     this.JWT_EXPIRES_IN = '7d';
+  }
+
+  // Lazy database connection initialization
+  getPool() {
+    if (!this.pool) {
+      try {
+        this.pool = getPool();
+      } catch (error) {
+        throw new Error(`Database not available: ${error.message}. Ensure server initialization is complete.`);
+      }
+    }
+    return this.pool;
   }
 
   // ============================================================================
@@ -82,7 +94,7 @@ class WalletFirstAuthService {
       context.referral_source || null
     ];
     
-    const result = await this.pool.query(query, values);
+    const result = await this.getPool().query(query, values);
     return result.rows[0];
   }
 
@@ -95,7 +107,7 @@ class WalletFirstAuthService {
       WHERE wallet_address = $1
     `;
     
-    const result = await this.pool.query(query, [walletAddress]);
+    const result = await this.getPool().query(query, [walletAddress]);
     return result.rows[0] || null;
   }
 
@@ -129,7 +141,7 @@ class WalletFirstAuthService {
         encryptedToken
       ];
       
-      const result = await this.pool.query(query, values);
+      const result = await this.getPool().query(query, values);
       const updatedProfile = result.rows[0];
       
       if (!updatedProfile) {
@@ -178,7 +190,7 @@ class WalletFirstAuthService {
         encryptedToken
       ];
       
-      const result = await this.pool.query(query, values);
+      const result = await this.getPool().query(query, values);
       const updatedProfile = result.rows[0];
       
       if (!updatedProfile) {
@@ -224,7 +236,7 @@ class WalletFirstAuthService {
         farcasterData.pfpUrl || farcasterData.pfp_url
       ];
       
-      const result = await this.pool.query(query, values);
+      const result = await this.getPool().query(query, values);
       const updatedProfile = result.rows[0];
       
       if (!updatedProfile) {
@@ -273,7 +285,7 @@ class WalletFirstAuthService {
         paymentData.amount
       ];
       
-      const result = await this.pool.query(query, values);
+      const result = await this.getPool().query(query, values);
       const updatedProfile = result.rows[0];
       
       if (!updatedProfile) {
@@ -442,7 +454,7 @@ class WalletFirstAuthService {
       WHERE wallet_address = $1
     `;
     
-    await this.pool.query(query, [walletAddress, context.entry_context]);
+    await this.getPool().query(query, [walletAddress, context.entry_context]);
   }
 
   /**
