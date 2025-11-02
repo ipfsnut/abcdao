@@ -23,9 +23,9 @@ interface UserProfile {
   avatar_url?: string;
   website_url?: string;
   
-  // Membership
-  is_member: boolean;
-  membership_tier: 'free' | 'member' | 'premium';
+  // Membership - matches backend database fields
+  membership_status: 'free' | 'member' | 'premium' | 'paid';
+  is_member?: boolean; // Computed field (optional for compatibility)
   
   // Integrations
   github_connected: boolean;
@@ -275,7 +275,10 @@ export function useWalletFirstAuth() {
             priority: 'high' as const
           });
         }
-        if (!user.is_member) {
+        // Check membership status correctly - backend sends membership_status field
+        const isMember = user.membership_status === 'member' || user.membership_status === 'premium' || user.membership_status === 'paid';
+        
+        if (!isMember) {
           nextSteps.push({
             action: 'purchase_membership',
             title: 'Become a Member',
