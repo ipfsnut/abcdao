@@ -376,15 +376,21 @@ class WalletFirstAuthService {
    * Get available features based on current integrations
    */
   getAvailableFeatures(profile) {
+    // Derive features from actual database fields
+    const hasGitHub = !!(profile.github_username || profile.github_id);
+    const hasDiscord = !!(profile.discord_username || profile.discord_id);
+    const hasFarcaster = !!(profile.farcaster_username || profile.farcaster_fid);
+    const isMember = profile.membership_status === 'member' || profile.membership_status === 'premium';
+    
     return {
       token_operations: true, // Always available with wallet
-      earning_rewards: profile.can_earn_rewards,
-      repository_management: profile.github_connected,
-      community_access: profile.community_access,
-      social_features: profile.social_features,
-      premium_features: profile.premium_features,
+      earning_rewards: hasGitHub, // Can earn if GitHub connected
+      repository_management: hasGitHub,
+      community_access: hasDiscord || hasFarcaster || isMember,
+      social_features: hasFarcaster,
+      premium_features: profile.membership_status === 'premium',
       staking: true, // Always available with wallet
-      governance: profile.is_member
+      governance: isMember
     };
   }
 
@@ -394,7 +400,13 @@ class WalletFirstAuthService {
   getNextSteps(profile) {
     const steps = [];
     
-    if (!profile.github_connected) {
+    // Derive connection status from actual database fields
+    const hasGitHub = !!(profile.github_username || profile.github_id);
+    const hasDiscord = !!(profile.discord_username || profile.discord_id);
+    const hasFarcaster = !!(profile.farcaster_username || profile.farcaster_fid);
+    const isMember = profile.membership_status === 'member' || profile.membership_status === 'premium';
+    
+    if (!hasGitHub) {
       steps.push({
         action: 'connect_github',
         title: 'Connect GitHub',
@@ -404,7 +416,7 @@ class WalletFirstAuthService {
       });
     }
     
-    if (!profile.is_member && profile.github_connected) {
+    if (!isMember && hasGitHub) {
       steps.push({
         action: 'upgrade_membership',
         title: 'Upgrade to Member',
@@ -414,7 +426,7 @@ class WalletFirstAuthService {
       });
     }
     
-    if (!profile.discord_connected) {
+    if (!hasDiscord) {
       steps.push({
         action: 'connect_discord',
         title: 'Join Discord Community',
@@ -424,7 +436,7 @@ class WalletFirstAuthService {
       });
     }
     
-    if (!profile.farcaster_connected) {
+    if (!hasFarcaster) {
       steps.push({
         action: 'connect_farcaster',
         title: 'Connect Farcaster',
