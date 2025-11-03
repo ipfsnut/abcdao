@@ -1,5 +1,5 @@
 import express from 'express';
-import { Farcaster } from '../services/farcaster.js';
+import { farcasterService } from '../services/farcaster.js';
 import { getPool } from '../services/database.js';
 
 const router = express.Router();
@@ -78,7 +78,7 @@ router.get('/status', async (req, res) => {
     // Fetch live Farcaster data if FID available
     if (farcasterFid) {
       try {
-        const farcaster = new Farcaster();
+        const farcaster = farcasterService;
         const addressData = await farcaster.getUserVerifiedAddresses(farcasterFid);
         
         if (addressData) {
@@ -405,7 +405,7 @@ router.post('/set-primary', async (req, res) => {
     // Validate if address is in user's Farcaster verified addresses
     if (source === 'farcaster' && user.farcaster_fid) {
       try {
-        const farcaster = new Farcaster();
+        const farcaster = farcasterService;
         const addressData = await farcaster.getUserVerifiedAddresses(user.farcaster_fid);
         
         if (addressData?.verified_addresses) {
