@@ -429,6 +429,8 @@ export default function ConsolidatedDashboard() {
  * Calculate profile completion percentage based on integrations
  */
 function getProfileCompletionPercentage(user: any): number {
+  if (!user) return 0;
+  
   let completed = 0;
   let total = 4;
   
@@ -439,7 +441,7 @@ function getProfileCompletionPercentage(user: any): number {
   if (user.github_connected) completed += 1;
   
   // Membership status
-  if (user.is_member) completed += 1;
+  if (user.is_member || user.membership_status === 'paid') completed += 1;
   
   // Social connections (Discord or Farcaster)
   if (user.discord_connected || user.farcaster_connected) completed += 1;

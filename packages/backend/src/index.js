@@ -119,13 +119,16 @@ app.use(express.urlencoded({ extended: true }));
 
 // Health check - always return healthy regardless of background service status
 app.get('/health', (req, res) => {
+  console.log(`🏥 Health check requested from ${req.ip || req.connection?.remoteAddress || 'unknown'}`);
   res.json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(),
     service: 'abc-dao-backend',
     version: '1.0.2',
     uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    port: PORT,
+    host: '0.0.0.0'
   });
 });
 
@@ -343,7 +346,7 @@ async function startServer() {
     const server = createServer(app);
     
     // Start server FIRST for fast health checks
-    server.listen(PORT, () => {
+    server.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 ABC DAO Backend running on port ${PORT}`);
       console.log(`📊 Health check: http://localhost:${PORT}/health`);
       console.log(`🔌 WebSocket endpoint: ws://localhost:${PORT}/realtime`);
