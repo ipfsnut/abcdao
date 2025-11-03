@@ -150,7 +150,7 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
         <div className="bg-black/20 border border-green-900/20 rounded-lg p-3">
           <div className="text-sm font-mono text-green-600 mb-1">💡 Quick Tip</div>
           <div className="text-xs text-green-700">
-            {user.github_connected 
+            {user?.github_connected 
               ? 'Stake your $ABC to earn passive ETH rewards!'
               : 'Connect GitHub to start earning $ABC for your commits!'
             }
