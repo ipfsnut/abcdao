@@ -102,10 +102,19 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
   }, [walletAddress, profile?.fid, walletUserFid]);
 
   useEffect(() => {
-    if (userIdentifier) {
+    const loadRepositoriesEffect = async () => {
+      if (!userIdentifier) {
+        console.warn('No user identifier available for repositories loading');
+        setRepositories([]);
+        setIsLoading(false);
+        return;
+      }
+
       console.log(`🎯 Repository tab user identifier available (${userIdentifier}), loading repositories...`);
-      loadRepositories();
-    }
+      await loadRepositories();
+    };
+
+    loadRepositoriesEffect();
   }, [userIdentifier]);
 
   const loadRepositories = async () => {
@@ -125,43 +134,61 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
       
       if (response.ok) {
         const data = await response.json();
-        const repositoriesData = data.repositories || [];
+        console.log(`📦 Raw API response:`, data);
         
+        const repositoriesData = data.repositories || [];
         console.log(`✅ Found ${repositoriesData.length} registered repositories:`, repositoriesData);
         
+        if (repositoriesData.length === 0) {
+          console.warn('⚠️ No repositories found in API response');
+          setRepositories([]);
+          setIsLoading(false);
+          return;
+        }
+        
         // Transform backend data to Repository format
-        const transformedRepos: Repository[] = repositoriesData.map((repo: any) => ({
-          id: repo.id?.toString(),
-          name: repo.repository_name?.split('/')[1] || repo.repository_name || 'Unknown Repository',
-          fullName: repo.repository_name || 'Unknown',
-          description: 'Repository earning ABC tokens', // We don't have description in this endpoint
-          language: 'Unknown', // We don't have language in this endpoint
-          stars: 0, // We don't have stars in this endpoint
-          forks: 0, // We don't have forks in this endpoint
-          isEnabled: repo.status === 'active' && repo.webhook_configured,
-          isPrivate: false, // We don't have private info in this endpoint
-          lastCommit: repo.created_at ? new Date(repo.created_at).toLocaleDateString() : 'Unknown',
-          commits: 0, // We don't have commit count in this endpoint
-          totalEarned: '0', // We don't have total earned in this endpoint
-          score: repo.webhook_configured ? 100 : 50, // Simple scoring based on webhook status
-          url: repo.repository_url || `https://github.com/${repo.repository_name}`,
-          // Add webhook status for better UI handling
-          webhook_configured: repo.webhook_configured,
-          status: repo.status
-        }));
+        const transformedRepos: Repository[] = repositoriesData.map((repo: any) => {
+          const isEnabled = repo.status === 'active' && repo.webhook_configured;
+          console.log(`🔄 Processing repo ${repo.repository_name}: status=${repo.status}, webhook=${repo.webhook_configured}, isEnabled=${isEnabled}`);
+          
+          return {
+            id: repo.id?.toString(),
+            name: repo.repository_name?.split('/')[1] || repo.repository_name || 'Unknown Repository',
+            fullName: repo.repository_name || 'Unknown',
+            description: 'Repository earning ABC tokens', // We don't have description in this endpoint
+            language: 'Unknown', // We don't have language in this endpoint
+            stars: 0, // We don't have stars in this endpoint
+            forks: 0, // We don't have forks in this endpoint
+            isEnabled: isEnabled,
+            isPrivate: false, // We don't have private info in this endpoint
+            lastCommit: repo.created_at ? new Date(repo.created_at).toLocaleDateString() : 'Unknown',
+            commits: 0, // We don't have commit count in this endpoint
+            totalEarned: '0', // We don't have total earned in this endpoint
+            score: repo.webhook_configured ? 100 : 50, // Simple scoring based on webhook status
+            url: repo.repository_url || `https://github.com/${repo.repository_name}`,
+            // Add webhook status for better UI handling
+            webhook_configured: repo.webhook_configured,
+            status: repo.status
+          };
+        });
         
         console.log(`🔄 Transformed repositories:`, transformedRepos);
         console.log(`📊 Active repositories count:`, transformedRepos.filter(r => r.isEnabled).length);
+        console.log(`🎯 Setting repositories state with ${transformedRepos.length} repositories`);
         
         setRepositories(transformedRepos);
+        console.log(`✅ Successfully set repositories state`);
       } else {
-        console.error('Failed to fetch repositories:', response.status);
+        console.error(`❌ Failed to fetch repositories: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error(`❌ Error response:`, errorText);
         setRepositories([]);
       }
     } catch (error) {
-      console.error('Error loading repositories:', error);
+      console.error('❌ Error loading repositories:', error);
       setRepositories([]);
     } finally {
+      console.log(`🏁 Repository loading complete, setting isLoading to false`);
       setIsLoading(false);
     }
   };
