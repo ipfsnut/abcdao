@@ -58,18 +58,24 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
     setIsLoading(true);
     
     try {
-      if (!user?.farcaster_fid) {
+      // Use the same FID resolution logic as working components
+      const userFid = (user as any)?.farcaster_fid;
+      if (!userFid) {
+        console.warn('No farcaster_fid available for repositories loading');
         setRepositories([]);
         setIsLoading(false);
         return;
       }
 
+      console.log(`🔍 Loading repositories for FID ${userFid}...`);
       // Fetch real repositories from backend API using FID
-      const response = await fetch(`${config.backendUrl}/api/repositories/${user.farcaster_fid}/repositories`);
+      const response = await fetch(`${config.backendUrl}/api/repositories/${userFid}/repositories`);
       
       if (response.ok) {
         const data = await response.json();
         const repositoriesData = data.repositories || [];
+        
+        console.log(`✅ Found ${repositoriesData.length} registered repositories:`, repositoriesData);
         
         // Transform backend data to Repository format
         const transformedRepos: Repository[] = repositoriesData.map((repo: any) => ({
@@ -91,6 +97,9 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
           webhook_configured: repo.webhook_configured,
           status: repo.status
         }));
+        
+        console.log(`🔄 Transformed repositories:`, transformedRepos);
+        console.log(`📊 Active repositories count:`, transformedRepos.filter(r => r.isEnabled).length);
         
         setRepositories(transformedRepos);
       } else {
