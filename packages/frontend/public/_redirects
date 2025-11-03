@@ -6,6 +6,16 @@
 /_next/static/* /_next/static/:splat 200
 /favicon.ico /favicon.ico 200
 
-# SPA fallback for all other routes (excluding static assets and index.html itself)
-/* /index.html 200
-!/index.html
+# SPA fallback - redirect all non-static routes to index.html
+# This avoids the infinite loop by not matching /index.html itself
+/home /index.html 200
+/staking /index.html 200
+/developers /index.html 200
+/community /index.html 200
+/treasury /index.html 200
+/supply /index.html 200
+/support /index.html 200
+/profile /index.html 200
+/join /index.html 200
+/legal /index.html 200
+/docs* /index.html 200
