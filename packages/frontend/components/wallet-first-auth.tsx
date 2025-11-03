@@ -151,7 +151,7 @@ export function WalletFirstAuth() {
                     ? 'bg-green-900/50 text-green-400 border border-green-700/50' 
                     : 'bg-yellow-900/50 text-yellow-400 border border-yellow-700/50'
                 }`}>
-                  {user.membership_tier.toUpperCase()}
+                  {user.membership_tier?.toUpperCase() || user.membership_status?.toUpperCase() || 'MEMBER'}
                 </div>
               </div>
             </div>

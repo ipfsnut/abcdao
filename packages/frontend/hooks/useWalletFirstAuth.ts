@@ -25,6 +25,7 @@ interface UserProfile {
   
   // Membership - matches backend database fields
   membership_status: 'free' | 'member' | 'premium' | 'paid';
+  membership_tier?: 'free' | 'member' | 'premium'; // Legacy compatibility field
   is_member?: boolean; // Computed field (optional for compatibility)
   
   // Integrations
@@ -163,6 +164,7 @@ export function useWalletFirstAuth() {
           farcaster_connected: !!authData.user.farcaster_fid,
           discord_connected: !!authData.user.discord_username,
           discord_username: authData.user.discord_username,
+          membership_status: authData.user.membership_status || 'free',
           is_member: authData.user.membership_status === 'member' || authData.user.membership_status === 'premium',
           membership_tier: authData.user.membership_status as 'free' | 'member' | 'premium',
           can_earn_rewards: !!authData.user.github_username,
@@ -241,6 +243,7 @@ export function useWalletFirstAuth() {
           farcaster_connected: !!data.identifiers.farcasterFid,
           discord_connected: false, // Not in current API response
           discord_username: undefined,
+          membership_status: data.membership.status === 'paid' ? 'member' as const : 'free' as const,
           is_member: data.membership.status === 'paid',
           membership_tier: data.membership.status === 'paid' ? 'member' as const : 'free' as const,
           can_earn_rewards: !!data.identifiers.githubUsername,
@@ -276,7 +279,7 @@ export function useWalletFirstAuth() {
           });
         }
         // Check membership status correctly - backend sends membership_status field
-        const isMember = user.membership_status === 'member' || user.membership_status === 'premium' || user.membership_status === 'paid';
+        const isMember = user.membership_status === 'member' || user.is_member;
         
         if (!isMember) {
           nextSteps.push({
