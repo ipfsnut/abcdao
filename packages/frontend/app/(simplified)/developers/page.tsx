@@ -11,9 +11,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import useSWR from 'swr';
 import { useWalletFirstAuth } from '@/hooks/useWalletFirstAuth';
-import { useUserProfileSystematic, useUsersCommitsStatsSystematic } from '@/hooks/useUsersCommitsSystematic';
-import { useDeveloperStatsUnified } from '@/hooks/useUserStatsUnified';
+import { useUsersCommitsStatsSystematic } from '@/hooks/useUsersCommitsSystematic';
+import { useUserStatsFixed } from '@/hooks/useUserStatsFixed';
 import { BackNavigation } from '@/components/back-navigation';
 
 // Import tabbed components
@@ -28,18 +29,29 @@ export default function UnifiedDeveloperHub() {
   const { user, isAuthenticated, features } = useWalletFirstAuth();
   const [activeTab, setActiveTab] = useState<TabId>('earning');
   
-  // Use unified developer statistics for consistency
-  const developerStats = useDeveloperStatsUnified(user?.wallet_address, user);
+  // Use working user stats endpoint for consistency with home page
+  const userStats = useUserStatsFixed(user?.farcaster_fid, user?.wallet_address);
   const systemStats = useUsersCommitsStatsSystematic();
   
-  // Derive developer data from unified statistics
+  // Get repositories data for active repo count
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app';
+  const fetcher = (url: string) => fetch(url).then(res => res.json());
+  
+  const { data: reposData } = useSWR(
+    user?.farcaster_fid ? `${BACKEND_URL}/api/repositories/${user.farcaster_fid}/repositories` : null,
+    fetcher
+  );
+  
+  const activeReposCount = reposData?.repositories?.filter((r: any) => r.status === 'active' && r.webhook_configured)?.length || 0;
+  
+  // Derive developer data from working API endpoint (same as home page)
   const developerData = {
-    totalEarned: developerStats.totalRewardsEarnedFormatted,
-    pendingRewards: '0', // TODO: Add pending rewards to unified hook if needed
-    activeRepos: developerStats.activeRepositories,
-    totalCommits: developerStats.totalCommits,
-    averageReward: developerStats.averageRewardPerCommitFormatted,
-    isLoading: developerStats.isLoading || systemStats.isLoading
+    totalEarned: userStats.totalRewardsEarnedFormatted,
+    pendingRewards: '0',
+    activeRepos: activeReposCount,
+    totalCommits: userStats.totalCommits,
+    averageReward: userStats.totalCommits > 0 ? Math.round(userStats.totalRewardsEarned / userStats.totalCommits).toString() : '0',
+    isLoading: userStats.isLoading || systemStats.isLoading
   };
 
   // Average reward calculation now handled by unified hook
@@ -292,7 +304,7 @@ export default function UnifiedDeveloperHub() {
               <EarningTab 
                 developerData={developerData}
                 user={user}
-                onDataUpdate={() => developerStats.refreshData()}
+                onDataUpdate={() => userStats.refreshData()}
               />
             )}
             
@@ -300,7 +312,7 @@ export default function UnifiedDeveloperHub() {
               <RepositoriesTab 
                 user={user}
                 activeRepos={developerData.activeRepos}
-                onRepoUpdate={() => developerStats.refreshData()}
+                onRepoUpdate={() => userStats.refreshData()}
               />
             )}
             
