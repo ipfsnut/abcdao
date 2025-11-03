@@ -75,6 +75,11 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
   error: string | null;
+  // New fields for three-tier system
+  walletConnected: boolean;
+  walletAddress: string | null;
+  membershipStatus: 'unknown' | 'non-member' | 'member';
+  requiresMembership: boolean;
 }
 
 // Helper function to fetch user's staked amount
@@ -112,7 +117,11 @@ export function useWalletFirstAuth() {
     nextSteps: [],
     isLoading: false,
     isAuthenticated: false,
-    error: null
+    error: null,
+    walletConnected: false,
+    walletAddress: null,
+    membershipStatus: 'unknown',
+    requiresMembership: false
   });
 
   /**
@@ -152,7 +161,7 @@ export function useWalletFirstAuth() {
       const authData = await authResponse.json();
 
       if (authResponse.ok && authData.success && authData.user) {
-        // User authenticated successfully, get additional staking data
+        // User authenticated successfully (member wallet)
         const stakedAmount = await fetchUserStakedAmount(walletAddress);
         
         const user = {
@@ -194,17 +203,52 @@ export function useWalletFirstAuth() {
 
         setAuthState({
           user,
-          token: authData.token, // Use JWT token from backend
+          token: authData.token,
           features,
           nextSteps,
           isLoading: false,
           isAuthenticated: true,
-          error: null
+          error: null,
+          walletConnected: true,
+          walletAddress: walletAddress,
+          membershipStatus: 'member',
+          requiresMembership: false
         });
 
         return { user, features, nextSteps };
+      } else if (authResponse.ok && authData.action === 'require_membership') {
+        // Non-member wallet connected - valid state, not an error
+        setAuthState({
+          user: null,
+          token: null,
+          features: {
+            token_operations: true,  // Can still view/stake tokens
+            earning_rewards: false,
+            repository_management: false,
+            community_access: true, // Public community access
+            social_features: false,
+            premium_features: false,
+            staking: true  // Non-members can stake
+          },
+          nextSteps: [{
+            action: 'purchase_membership',
+            title: 'Purchase Membership',
+            description: 'Join ABC DAO to start earning rewards for your code',
+            benefits: ['Earn $ABC for commits', 'Add repositories', 'Developer community access'],
+            priority: 'high' as const
+          }],
+          isLoading: false,
+          isAuthenticated: false,
+          error: null,
+          walletConnected: true,
+          walletAddress: walletAddress,
+          membershipStatus: 'non-member',
+          requiresMembership: true
+        });
+
+        return { user: null, features: null, nextSteps: [] };
       } else {
-        // Authentication failed
+        // Actual authentication error
         throw new Error(authData.error || 'Authentication failed');
       }
 
@@ -534,12 +578,24 @@ export function useWalletFirstAuth() {
       nextSteps: [],
       isLoading: false,
       isAuthenticated: false,
-      error: null
+      error: null,
+      walletConnected: false,
+      walletAddress: null,
+      membershipStatus: 'unknown',
+      requiresMembership: false
     });
   }, []);
 
-  // Auto-authenticate when wallet connects
+  // Update wallet connection state and auto-authenticate when wallet connects
   useEffect(() => {
+    // Update wallet connection state
+    setAuthState(prev => ({
+      ...prev,
+      walletConnected: isConnected,
+      walletAddress: address || null
+    }));
+
+    // Auto-authenticate when wallet connects (if not already authenticated)
     if (isConnected && address && !authState.isAuthenticated && !authState.isLoading) {
       authenticateWallet(address);
     }

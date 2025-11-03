@@ -32,36 +32,36 @@ export function IntegrationProgressCard({ user, features }: IntegrationProgressC
       id: 'github',
       name: 'GitHub',
       icon: '💻',
-      connected: user.github_connected,
+      connected: user?.github_connected || false,
       required: false,
       description: 'Connect to earn ABC tokens for your code contributions',
       features: ['Earn from commits', 'Repository management', 'Auto-detection'],
-      status: user.github_connected ? `@${user.github_username}` : 'Not connected',
-      color: user.github_connected ? 'text-green-400' : 'text-yellow-400',
+      status: user?.github_connected ? `@${user?.github_username || 'unknown'}` : 'Not connected',
+      color: user?.github_connected ? 'text-green-400' : 'text-yellow-400',
       setupAction: 'connect_github'
     },
     {
       id: 'discord',
       name: 'Discord',
       icon: '💬',
-      connected: user.discord_connected,
+      connected: user?.discord_connected || false,
       required: false,
       description: 'Join the community for support and collaboration',
       features: ['Community access', 'Role management', 'Direct support'],
-      status: user.discord_connected ? user.discord_username : 'Not connected',
-      color: user.discord_connected ? 'text-blue-400' : 'text-gray-400',
+      status: user?.discord_connected ? (user?.discord_username || 'Connected') : 'Not connected',
+      color: user?.discord_connected ? 'text-blue-400' : 'text-gray-400',
       setupAction: 'connect_discord'
     },
     {
       id: 'farcaster',
       name: 'Farcaster',
       icon: '🌐',
-      connected: user.farcaster_connected,
+      connected: user?.farcaster_connected || false,
       required: false,
       description: 'Enable social features and achievement announcements',
       features: ['Social proof', 'Cast integration', 'Mini-app features'],
-      status: user.farcaster_connected ? `@${user.farcaster_username}` : 'Not connected',
-      color: user.farcaster_connected ? 'text-purple-400' : 'text-gray-400',
+      status: user?.farcaster_connected ? `@${user?.farcaster_username || 'unknown'}` : 'Not connected',
+      color: user?.farcaster_connected ? 'text-purple-400' : 'text-gray-400',
       setupAction: 'connect_farcaster'
     }
   ];
@@ -220,15 +220,15 @@ export function IntegrationProgressCard({ user, features }: IntegrationProgressC
       <div className="mt-4 p-3 bg-gradient-to-r from-green-950/20 via-blue-950/20 to-purple-950/20 border border-green-900/20 rounded-lg">
         <div className="text-xs font-mono text-green-600 mb-2">💡 What you unlock:</div>
         <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className={`flex items-center gap-1 ${user.github_connected ? 'text-green-400' : 'text-gray-500'}`}>
+          <div className={`flex items-center gap-1 ${user?.github_connected ? 'text-green-400' : 'text-gray-500'}`}>
             <span>💰</span>
             <span>Commit rewards</span>
           </div>
-          <div className={`flex items-center gap-1 ${user.discord_connected ? 'text-blue-400' : 'text-gray-500'}`}>
+          <div className={`flex items-center gap-1 ${user?.discord_connected ? 'text-blue-400' : 'text-gray-500'}`}>
             <span>👥</span>
             <span>Community</span>
           </div>
-          <div className={`flex items-center gap-1 ${user.farcaster_connected ? 'text-purple-400' : 'text-gray-500'}`}>
+          <div className={`flex items-center gap-1 ${user?.farcaster_connected ? 'text-purple-400' : 'text-gray-500'}`}>
             <span>🌟</span>
             <span>Social proof</span>
           </div>

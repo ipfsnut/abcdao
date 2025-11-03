@@ -28,7 +28,7 @@ export function QuickActionsPanel({ user, features, onSectionChange }: QuickActi
       icon: '💰',
       href: '/developers',
       enabled: features?.earning_rewards,
-      setupRequired: !user.github_connected,
+      setupRequired: !user?.github_connected,
       setupText: 'Connect GitHub first',
       color: 'green',
       priority: 1
@@ -51,7 +51,7 @@ export function QuickActionsPanel({ user, features, onSectionChange }: QuickActi
       icon: '📁',
       href: '/developers',
       enabled: features?.repository_management,
-      setupRequired: !user.github_connected,
+      setupRequired: !user?.github_connected,
       setupText: 'Connect GitHub first',
       color: 'purple',
       priority: 3
@@ -83,7 +83,7 @@ export function QuickActionsPanel({ user, features, onSectionChange }: QuickActi
       title: 'Profile',
       description: 'View and edit your developer profile',
       icon: '👤',
-      href: `/profile?address=${user.wallet_address}`,
+      href: `/profile?address=${user?.wallet_address || ''}`,
       enabled: true
     },
     {
