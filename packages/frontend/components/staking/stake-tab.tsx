@@ -22,11 +22,46 @@ interface StakeTabProps {
   };
   user: any;
   onDataUpdate: () => void;
+  isPublicView?: boolean;
 }
 
-export function StakeTab({ stakingData, user, onDataUpdate }: StakeTabProps) {
+export function StakeTab({ stakingData, user, onDataUpdate, isPublicView = false }: StakeTabProps) {
   const [stakeAmount, setStakeAmount] = useState('');
   const [unstakeAmount, setUnstakeAmount] = useState('');
+
+  if (isPublicView) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-blue-950/20 border border-blue-900/30 rounded-xl p-6 text-center">
+          <div className="text-4xl mb-4">🏦</div>
+          <h3 className="text-xl font-bold text-blue-400 mb-3">ABC Token Staking</h3>
+          <p className="text-blue-600 font-mono mb-4">
+            Connect your wallet to stake ABC tokens and earn ETH rewards
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+            <div className="bg-blue-900/20 border border-blue-800/30 rounded-lg p-4">
+              <h4 className="text-blue-400 font-bold mb-2">Staking Benefits</h4>
+              <ul className="space-y-2 text-sm text-blue-600">
+                <li>• Earn ETH rewards passively</li>
+                <li>• Compound your returns</li>
+                <li>• Support protocol security</li>
+                <li>• Get community status</li>
+              </ul>
+            </div>
+            <div className="bg-blue-900/20 border border-blue-800/30 rounded-lg p-4">
+              <h4 className="text-blue-400 font-bold mb-2">How It Works</h4>
+              <ul className="space-y-2 text-sm text-blue-600">
+                <li>• Stake your ABC tokens</li>
+                <li>• Earn ETH from protocol fees</li>
+                <li>• Claim rewards anytime</li>
+                <li>• Unstake with 7-day unbonding</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   // Use real staking functions
   const { 

@@ -199,20 +199,7 @@ export default function ConsolidatedDashboard() {
     );
   }
 
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-md mx-auto text-center">
-          <div className="text-4xl mb-4">🔐</div>
-          <h2 className="text-xl font-bold text-green-400 mb-4">Authentication Required</h2>
-          <p className="text-green-600 font-mono mb-6">
-            Please connect your wallet to access the dashboard
-          </p>
-          <ConnectButton />
-        </div>
-      </div>
-    );
-  }
+  // Show different content based on authentication status
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -221,98 +208,157 @@ export default function ConsolidatedDashboard() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              {/* Farcaster Profile Picture */}
-              {user.farcaster_connected && (
-                <div className="flex-shrink-0">
-                  {farcasterAvatar ? (
-                    <div className="relative w-16 h-16">
-                      <Image
-                        src={farcasterAvatar}
-                        alt={`${user.farcaster_username || 'User'}'s profile`}
-                        fill
-                        className="rounded-full border-2 border-green-400/50 object-cover"
-                        sizes="64px"
-                        onError={() => setFarcasterAvatar(null)}
-                      />
-                    </div>
-                  ) : avatarLoading ? (
-                    <div className="w-16 h-16 rounded-full border-2 border-green-400/30 bg-green-950/20 animate-pulse flex items-center justify-center">
-                      <span className="text-green-600 text-xs">...</span>
-                    </div>
-                  ) : (
-                    <div className="w-16 h-16 rounded-full border-2 border-green-400/30 bg-green-950/20 flex items-center justify-center">
-                      <span className="text-2xl">🎭</span>
+              {/* Profile Section - Different for authenticated vs public */}
+              {user ? (
+                <>
+                  {/* Farcaster Profile Picture */}
+                  {user.farcaster_connected && (
+                    <div className="flex-shrink-0">
+                      {farcasterAvatar ? (
+                        <div className="relative w-16 h-16">
+                          <Image
+                            src={farcasterAvatar}
+                            alt={`${user.farcaster_username || 'User'}'s profile`}
+                            fill
+                            className="rounded-full border-2 border-green-400/50 object-cover"
+                            sizes="64px"
+                            onError={() => setFarcasterAvatar(null)}
+                          />
+                        </div>
+                      ) : avatarLoading ? (
+                        <div className="w-16 h-16 rounded-full border-2 border-green-400/30 bg-green-950/20 animate-pulse flex items-center justify-center">
+                          <span className="text-green-600 text-xs">...</span>
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 rounded-full border-2 border-green-400/30 bg-green-950/20 flex items-center justify-center">
+                          <span className="text-2xl">🎭</span>
+                        </div>
+                      )}
                     </div>
                   )}
+                  
+                  <div>
+                    <h1 className="text-3xl font-bold text-green-400 matrix-glow">
+                      Welcome back, {user.display_name || 'Developer'}!
+                    </h1>
+                    <div className="space-y-1">
+                      <p className="text-green-600 font-mono text-sm">
+                        {user.wallet_address.slice(0, 6)}...{user.wallet_address.slice(-4)}
+                        {user.is_member && (
+                          <span className="ml-3 px-2 py-1 bg-green-900/50 text-green-400 rounded text-xs">
+                            MEMBER
+                          </span>
+                        )}
+                      </p>
+                      {user.farcaster_connected && user.farcaster_username && (
+                        <p className="text-purple-400 font-mono text-sm">
+                          🎭 @{user.farcaster_username}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <h1 className="text-3xl font-bold text-green-400 matrix-glow">
+                    ABC DAO Dashboard
+                  </h1>
+                  <p className="text-green-600 font-mono text-sm">
+                    Public staking data • Connect wallet for personal dashboard
+                  </p>
                 </div>
               )}
-              
-              <div>
-                <h1 className="text-3xl font-bold text-green-400 matrix-glow">
-                  Welcome back, {user.display_name || 'Developer'}!
-                </h1>
-                <div className="space-y-1">
-                  <p className="text-green-600 font-mono text-sm">
-                    {user.wallet_address.slice(0, 6)}...{user.wallet_address.slice(-4)}
-                    {user.is_member && (
-                      <span className="ml-3 px-2 py-1 bg-green-900/50 text-green-400 rounded text-xs">
-                        {user.membership_tier.toUpperCase()} MEMBER
-                      </span>
-                    )}
-                  </p>
-                  {user.farcaster_connected && user.farcaster_username && (
-                    <p className="text-purple-400 font-mono text-sm">
-                      🎭 @{user.farcaster_username}
-                    </p>
-                  )}
-                </div>
-              </div>
             </div>
             
-            {/* Quick Profile Status */}
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${user.github_connected ? 'bg-green-400' : 'bg-yellow-400'}`} 
-                   title={`GitHub: ${user.github_connected ? 'Connected' : 'Not connected'}`} />
-              <div className={`w-3 h-3 rounded-full ${user.discord_connected ? 'bg-blue-400' : 'bg-gray-400'}`}
-                   title={`Discord: ${user.discord_connected ? 'Connected' : 'Not connected'}`} />
-              <div className={`w-3 h-3 rounded-full ${user.farcaster_connected ? 'bg-purple-400' : 'bg-gray-400'}`}
-                   title={`Farcaster: ${user.farcaster_connected ? 'Connected' : 'Not connected'}`} />
-            </div>
+            {/* Quick Profile Status or Connect Button */}
+            {user ? (
+              <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${user.github_connected ? 'bg-green-400' : 'bg-yellow-400'}`} 
+                     title={`GitHub: ${user.github_connected ? 'Connected' : 'Not connected'}`} />
+                <div className={`w-3 h-3 rounded-full ${user.discord_connected ? 'bg-blue-400' : 'bg-gray-400'}`}
+                     title={`Discord: ${user.discord_connected ? 'Connected' : 'Not connected'}`} />
+                <div className={`w-3 h-3 rounded-full ${user.farcaster_connected ? 'bg-purple-400' : 'bg-gray-400'}`}
+                     title={`Farcaster: ${user.farcaster_connected ? 'Connected' : 'Not connected'}`} />
+              </div>
+            ) : (
+              <ConnectButton />
+            )}
           </div>
 
-          {/* Integration Progress Bar */}
-          <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-mono text-green-600">Profile Completion</span>
-              <span className="text-sm font-mono text-green-400">
-                {getProfileCompletionPercentage(user)}%
-              </span>
+          {/* Integration Progress Bar - Only for authenticated users */}
+          {user && (
+            <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-mono text-green-600">Profile Completion</span>
+                <span className="text-sm font-mono text-green-400">
+                  {getProfileCompletionPercentage(user)}%
+                </span>
+              </div>
+              <div className="w-full bg-green-950/30 rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-green-600 to-green-400 h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${getProfileCompletionPercentage(user)}%` }}
+                ></div>
+              </div>
             </div>
-            <div className="w-full bg-green-950/30 rounded-full h-2">
-              <div 
-                className="bg-gradient-to-r from-green-600 to-green-400 h-2 rounded-full transition-all duration-500"
-                style={{ width: `${getProfileCompletionPercentage(user)}%` }}
-              ></div>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Main Dashboard Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Column - Main Content */}
           <div className="lg:col-span-3 space-y-6">
-            {/* Metrics Dashboard */}
+            {/* Metrics Dashboard - Always visible with different content */}
             <MetricsDashboard user={user} features={features} />
             
-            {/* Quick Actions */}
-            <QuickActionsPanel 
-              user={user} 
-              features={features}
-              onSectionChange={setActiveSection}
-            />
+            {/* Quick Actions - Only for authenticated users */}
+            {user && (
+              <QuickActionsPanel 
+                user={user} 
+                features={features}
+                onSectionChange={setActiveSection}
+              />
+            )}
             
-            {/* Activity Feed */}
-            <ActivityFeed walletAddress={user.wallet_address} />
+            {/* Activity Feed - Only for authenticated users */}
+            {user && (
+              <ActivityFeed walletAddress={user.wallet_address} />
+            )}
+            
+            {/* Public Information for non-authenticated users */}
+            {!user && (
+              <div className="bg-gradient-to-r from-green-950/30 via-black/60 to-green-950/30 border border-green-900/30 rounded-xl p-8">
+                <h2 className="text-2xl font-bold text-green-400 mb-6">
+                  🌟 Join ABC DAO
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-green-400 mb-3">For Developers (Members)</h3>
+                    <ul className="space-y-2 text-green-600">
+                      <li>• Earn ABC tokens for code commits</li>
+                      <li>• Get rewards for building features</li>
+                      <li>• Access developer tools and APIs</li>
+                      <li>• Join exclusive developer community</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-blue-400 mb-3">For Stakers (Everyone)</h3>
+                    <ul className="space-y-2 text-blue-600">
+                      <li>• Stake ABC tokens for ETH rewards</li>
+                      <li>• Earn passive income from protocol fees</li>
+                      <li>• No coding required, just hold and stake</li>
+                      <li>• Public staking data available below</li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="mt-6 text-center">
+                  <p className="text-green-500 font-mono text-sm mb-4">
+                    Connect your wallet to get started
+                  </p>
+                  <ConnectButton />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right Column - Sidebar */}

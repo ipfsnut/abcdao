@@ -28,10 +28,11 @@ interface RewardsTabProps {
   user: any;
   onClaimSuccess: () => void;
   onClaimRewards?: () => Promise<void>;
+  isPublicView?: boolean;
   isClaimLoading?: boolean;
 }
 
-export function RewardsTab({ stakingData, user, onClaimSuccess, onClaimRewards, isClaimLoading }: RewardsTabProps) {
+export function RewardsTab({ stakingData, user, onClaimSuccess, onClaimRewards, isClaimLoading, isPublicView = false }: RewardsTabProps) {
   const [isClaiming, setIsClaiming] = useState(false);
   const [rewardsHistory, setRewardsHistory] = useState<RewardTransaction[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);

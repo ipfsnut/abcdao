@@ -58,13 +58,13 @@ export function SimplifiedNavigation({ user, isAuthenticated }: SimplifiedNaviga
       href: '/staking',
       label: 'Staking',
       icon: '🏦',
-      description: 'Stake tokens and leaderboard'
+      description: 'Public staking • Earn ETH rewards'
     },
     {
       href: '/developers',
       label: 'Developers',
       icon: '💻',
-      description: 'Dev tools and repositories',
+      description: 'Members only • Earn ABC tokens',
       show: isAuthenticated
     },
     {

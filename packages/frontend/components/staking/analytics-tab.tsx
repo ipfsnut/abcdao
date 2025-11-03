@@ -37,9 +37,10 @@ interface AnalyticsTabProps {
     isLoading: boolean;
   };
   user: any;
+  isPublicView?: boolean;
 }
 
-export function AnalyticsTab({ stakingData, user }: AnalyticsTabProps) {
+export function AnalyticsTab({ stakingData, user, isPublicView = false }: AnalyticsTabProps) {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d' | 'all'>('30d');

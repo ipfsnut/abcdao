@@ -29,11 +29,22 @@ export default function JoinPage() {
               Join ABC DAO
             </h1>
             <p className="text-xl text-green-300 mb-4">
-              The future of developer rewards
+              Two ways to participate and earn
             </p>
-            <p className="text-lg text-green-600 font-mono">
-              Ship code → Earn crypto → Build community
-            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+              <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6">
+                <h3 className="text-lg font-bold text-green-400 mb-2">💻 Developers (Members)</h3>
+                <p className="text-green-600 font-mono text-sm">
+                  Join as a member • Earn ABC tokens for code commits
+                </p>
+              </div>
+              <div className="bg-blue-950/20 border border-blue-900/30 rounded-xl p-6">
+                <h3 className="text-lg font-bold text-blue-400 mb-2">🏦 Stakers (Everyone)</h3>
+                <p className="text-blue-600 font-mono text-sm">
+                  Just connect wallet • Stake ABC for ETH rewards
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Value Proposition */}

@@ -92,47 +92,21 @@ export default function UnifiedStakingPage() {
     }
   ];
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-black text-green-400 font-mono">
-        <BackNavigation title="Staking" subtitle="Stake ABC tokens for ETH rewards" />
-        
-        <div className="container mx-auto px-4 py-12">
-          <div className="max-w-md mx-auto text-center">
-            <div className="text-4xl mb-6">🏦</div>
-            <h1 className="text-2xl font-bold text-green-400 matrix-glow mb-4">
-              ABC Token Staking
-            </h1>
-            <p className="text-green-600 font-mono mb-6">
-              Connect your wallet to view staking opportunities
-            </p>
-            
-            <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-green-400 mb-4">Staking Benefits</h3>
-              <ul className="space-y-3 text-sm text-green-600">
-                <li className="flex items-center gap-2">
-                  <span className="text-green-400">✓</span>
-                  Earn ETH rewards passively
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-green-400">✓</span>
-                  Passive rewards
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-green-400">✓</span>
-                  Community status benefits
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-green-400">✓</span>
-                  Premium features unlock
-                </li>
-              </ul>
-            </div>
-          </div>
+  // Show connection prompt at top of interface when not connected
+  const connectionPrompt = !isAuthenticated && (
+    <div className="mb-6 bg-yellow-950/20 border border-yellow-900/30 rounded-xl p-6">
+      <div className="text-center">
+        <div className="text-3xl mb-4">🔗</div>
+        <h3 className="text-lg font-bold text-yellow-400 mb-2">Connect Wallet to Stake</h3>
+        <p className="text-yellow-600 font-mono text-sm mb-4">
+          Connect your wallet to stake ABC tokens and earn ETH rewards
+        </p>
+        <div className="text-xs text-yellow-700">
+          You can view all public staking data below
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
@@ -140,39 +114,64 @@ export default function UnifiedStakingPage() {
       
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
+          {/* Connection Prompt for non-authenticated users */}
+          {connectionPrompt}
+          
           {/* Staking Overview Header */}
           <div className="mb-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-4">
-                <div className="text-sm font-mono text-green-600 mb-1">Your Balance</div>
-                <div className="text-2xl font-bold text-green-400">
-                  {stakingData.isLoading ? '...' : `${stakingData.tokenBalance}M`}
+                <div className="text-sm font-mono text-green-600 mb-1">
+                  {isAuthenticated ? "Your Balance" : "Total Staked"}
                 </div>
-                <div className="text-xs text-green-700">$ABC available</div>
+                <div className="text-2xl font-bold text-green-400">
+                  {stakingData.isLoading ? '...' : 
+                    isAuthenticated ? `${stakingData.tokenBalance}M` : '1.13B'
+                  }
+                </div>
+                <div className="text-xs text-green-700">
+                  {isAuthenticated ? "$ABC available" : "$ABC tokens staked"}
+                </div>
               </div>
               
               <div className="bg-blue-950/20 border border-blue-900/30 rounded-lg p-4">
-                <div className="text-sm font-mono text-blue-600 mb-1">Staked Amount</div>
-                <div className="text-2xl font-bold text-blue-400">
-                  {stakingData.isLoading ? '...' : `${stakingData.stakedAmount}M`}
+                <div className="text-sm font-mono text-blue-600 mb-1">
+                  {isAuthenticated ? "Staked Amount" : "Staking Ratio"}
                 </div>
-                <div className="text-xs text-blue-700">$ABC staked</div>
+                <div className="text-2xl font-bold text-blue-400">
+                  {stakingData.isLoading ? '...' : 
+                    isAuthenticated ? `${stakingData.stakedAmount}M` : '1.13%'
+                  }
+                </div>
+                <div className="text-xs text-blue-700">
+                  {isAuthenticated ? "$ABC staked" : "of total supply"}
+                </div>
               </div>
               
               <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-4">
-                <div className="text-sm font-mono text-yellow-600 mb-1">Pending Rewards</div>
-                <div className="text-2xl font-bold text-yellow-400">
-                  {stakingData.isLoading ? '...' : stakingData.pendingRewards}
+                <div className="text-sm font-mono text-yellow-600 mb-1">
+                  {isAuthenticated ? "Pending Rewards" : "Total Rewards"}
                 </div>
-                <div className="text-xs text-yellow-700">ETH claimable</div>
+                <div className="text-2xl font-bold text-yellow-400">
+                  {stakingData.isLoading ? '...' : 
+                    isAuthenticated ? stakingData.pendingRewards : '0.107'
+                  }
+                </div>
+                <div className="text-xs text-yellow-700">
+                  {isAuthenticated ? "ETH claimable" : "ETH distributed"}
+                </div>
               </div>
               
               <div className="bg-purple-950/20 border border-purple-900/30 rounded-lg p-4">
-                <div className="text-sm font-mono text-purple-600 mb-1">Total Earned</div>
-                <div className="text-2xl font-bold text-purple-400">
-                  {stakingData.totalEarned}
+                <div className="text-sm font-mono text-purple-600 mb-1">
+                  {isAuthenticated ? "Total Earned" : "Active Stakers"}
                 </div>
-                <div className="text-xs text-purple-700">ETH lifetime</div>
+                <div className="text-2xl font-bold text-purple-400">
+                  {isAuthenticated ? stakingData.totalEarned : '3'}
+                </div>
+                <div className="text-xs text-purple-700">
+                  {isAuthenticated ? "ETH lifetime" : "unique addresses"}
+                </div>
               </div>
             </div>
           </div>
@@ -222,6 +221,7 @@ export default function UnifiedStakingPage() {
                 stakingData={stakingData}
                 user={user}
                 onDataUpdate={() => {}} // Data auto-updates from staking hook
+                isPublicView={!isAuthenticated}
               />
             )}
             
@@ -229,6 +229,7 @@ export default function UnifiedStakingPage() {
               <LeaderboardTab 
                 currentUser={user}
                 userStakedAmount={stakingData.stakedAmount}
+                isPublicView={!isAuthenticated}
               />
             )}
             
@@ -239,6 +240,7 @@ export default function UnifiedStakingPage() {
                 onClaimSuccess={() => {}} // Data auto-updates from staking hook
                 onClaimRewards={handleClaimRewards}
                 isClaimLoading={isClaimLoading}
+                isPublicView={!isAuthenticated}
               />
             )}
             
@@ -246,6 +248,7 @@ export default function UnifiedStakingPage() {
               <AnalyticsTab 
                 stakingData={stakingData}
                 user={user}
+                isPublicView={!isAuthenticated}
               />
             )}
             

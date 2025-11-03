@@ -22,9 +22,10 @@ interface LeaderboardEntry {
 interface LeaderboardTabProps {
   currentUser: any;
   userStakedAmount: string;
+  isPublicView?: boolean;
 }
 
-export function LeaderboardTab({ currentUser, userStakedAmount }: LeaderboardTabProps) {
+export function LeaderboardTab({ currentUser, userStakedAmount, isPublicView = false }: LeaderboardTabProps) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userRank, setUserRank] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
