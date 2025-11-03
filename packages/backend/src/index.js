@@ -353,8 +353,8 @@ async function startServer() {
       console.log('⏱️  Initializing background services...');
     });
     
-    // Initialize background services AFTER server is listening (with timeout)
-    setTimeout(async () => {
+    // Initialize background services AFTER server is listening (completely async)
+    setImmediate(async () => {
       try {
         console.log('🔄 Starting background services initialization...');
         await initializeBackgroundServices(server);
@@ -362,7 +362,7 @@ async function startServer() {
         console.warn('⚠️  Background services initialization failed:', error.message);
         console.warn('🏥 Server remains healthy for API requests');
       }
-    }, 50); // Reduced delay for faster startup
+    });
     
   } catch (error) {
     console.error('❌ Failed to start server:', error);
