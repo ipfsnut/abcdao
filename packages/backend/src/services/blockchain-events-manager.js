@@ -115,8 +115,8 @@ export class BlockchainEventsManager {
       // Start transaction monitoring
       setInterval(() => this.monitorTransactions(), 60 * 1000); // 1 minute
       
-      // Initial event poll
-      await this.pollForEvents();
+      // Skip initial event poll during startup to avoid rate limiting
+      // First poll will happen after pollInterval
       
       this.isInitialized = true;
       console.log('✅ Blockchain Events Manager initialized successfully');
