@@ -24,8 +24,8 @@ interface UserProfile {
   website_url?: string;
   
   // Membership - matches backend database fields
-  membership_status: 'free' | 'member' | 'premium' | 'paid';
-  membership_tier?: 'free' | 'member' | 'premium'; // Legacy compatibility field
+  membership_status: 'free' | 'paid';
+  membership_tier?: 'free' | 'paid'; // Legacy compatibility field
   is_member?: boolean; // Computed field (optional for compatibility)
   
   // Integrations
@@ -165,12 +165,12 @@ export function useWalletFirstAuth() {
           discord_connected: !!authData.user.discord_username,
           discord_username: authData.user.discord_username,
           membership_status: authData.user.membership_status || 'free',
-          is_member: authData.user.membership_status === 'member' || authData.user.membership_status === 'premium' || authData.user.membership_status === 'paid',
-          membership_tier: authData.user.membership_status as 'free' | 'member' | 'premium',
-          can_earn_rewards: !!authData.user.github_username && (authData.user.membership_status === 'member' || authData.user.membership_status === 'premium' || authData.user.membership_status === 'paid'),
+          is_member: authData.user.membership_status !== 'free', // Any non-free membership
+          membership_tier: authData.user.membership_status as 'free' | 'paid',
+          can_earn_rewards: !!authData.user.github_username && authData.user.membership_status === 'paid',
           community_access: true, // All wallet holders have community access
           social_features: !!authData.user.farcaster_fid,
-          premium_features: authData.user.membership_status === 'premium' || authData.user.membership_status === 'paid',
+          premium_features: authData.user.membership_status === 'paid',
           total_commits: authData.user.total_commits || 0,
           total_earned_tokens: parseFloat(authData.user.total_abc_earned || '0'),
           total_staked_tokens: stakedAmount,
@@ -243,9 +243,9 @@ export function useWalletFirstAuth() {
           farcaster_connected: !!data.identifiers.farcasterFid,
           discord_connected: false, // Not in current API response
           discord_username: undefined,
-          membership_status: data.membership.status === 'paid' ? 'member' as const : 'free' as const,
+          membership_status: data.membership.status === 'paid' ? 'paid' as const : 'free' as const,
           is_member: data.membership.status === 'paid',
-          membership_tier: data.membership.status === 'paid' ? 'member' as const : 'free' as const,
+          membership_tier: data.membership.status === 'paid' ? 'paid' as const : 'free' as const,
           can_earn_rewards: !!data.identifiers.githubUsername,
           community_access: true,
           social_features: !!data.identifiers.farcasterFid,
@@ -279,15 +279,15 @@ export function useWalletFirstAuth() {
           });
         }
         // Check membership status correctly - backend sends membership_status field
-        const isMember = user.membership_status === 'member' || user.membership_status === 'paid' || user.is_member;
+        const isPaidMember = user.membership_status === 'paid';
         
-        if (!isMember) {
+        if (!isPaidMember) {
           nextSteps.push({
             action: 'purchase_membership',
-            title: 'Become a Member',
-            description: 'Unlock repository integration and commit rewards',
-            benefits: ['Earn ABC tokens for commits', 'GitHub repository management', 'Developer community access'],
-            priority: 'low' as const  // Lower priority - staking works without membership
+            title: 'Become a Paid Member',
+            description: 'Unlock repository management and commit earning',
+            benefits: ['Earn ABC tokens for commits', 'Add repositories to ABC DAO', 'Full platform access'],
+            priority: 'medium' as const  // Higher priority for earning features
           });
         }
 

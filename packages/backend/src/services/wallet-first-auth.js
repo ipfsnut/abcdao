@@ -381,17 +381,17 @@ class WalletFirstAuthService {
     const hasGitHub = !!(profile.github_username || profile.github_id);
     const hasDiscord = !!(profile.discord_username || profile.discord_id);
     const hasFarcaster = !!(profile.farcaster_username || profile.farcaster_fid);
-    const isMember = profile.membership_status === 'member' || profile.membership_status === 'premium' || profile.membership_status === 'paid';
+    const isPaidMember = profile.membership_status === 'paid';
     
     return {
-      token_operations: true, // Always available with wallet
-      earning_rewards: hasGitHub, // Can earn if GitHub connected
-      repository_management: hasGitHub,
-      community_access: hasDiscord || hasFarcaster || isMember,
+      token_operations: true, // Always available with wallet (free or paid)
+      earning_rewards: hasGitHub && isPaidMember, // Requires BOTH GitHub AND paid membership
+      repository_management: hasGitHub && isPaidMember, // Requires BOTH GitHub AND paid membership  
+      community_access: true, // All members (free and paid) have community access
       social_features: hasFarcaster,
-      premium_features: profile.membership_status === 'premium',
-      staking: true, // Always available with wallet
-      governance: isMember
+      premium_features: isPaidMember, // Paid members get premium features
+      staking: true, // Always available with wallet (free or paid)
+      governance: isPaidMember
     };
   }
 
@@ -405,25 +405,35 @@ class WalletFirstAuthService {
     const hasGitHub = !!(profile.github_username || profile.github_id);
     const hasDiscord = !!(profile.discord_username || profile.discord_id);
     const hasFarcaster = !!(profile.farcaster_username || profile.farcaster_fid);
-    const isMember = profile.membership_status === 'member' || profile.membership_status === 'premium' || profile.membership_status === 'paid';
+    const isPaidMember = profile.membership_status === 'paid';
     
     if (!hasGitHub) {
       steps.push({
         action: 'connect_github',
         title: 'Connect GitHub',
-        description: 'Start earning $ABC tokens for your code contributions',
-        benefits: ['Earn 50k-1M $ABC per commit', 'Auto-track your repositories'],
+        description: 'Connect GitHub to enable repository management (requires paid membership)',
+        benefits: ['Add repositories to ABC DAO', 'Earn $ABC per commit (paid members only)'],
         priority: 'high'
       });
     }
     
-    if (!isMember && hasGitHub) {
+    if (!isPaidMember && hasGitHub) {
       steps.push({
         action: 'upgrade_membership',
-        title: 'Upgrade to Member',
-        description: 'Unlock unlimited earning and premium features',
-        benefits: ['Unlimited daily commits', 'Priority reward processing'],
+        title: 'Become a Paid Member',
+        description: 'Unlock developer earning and repository management',
+        benefits: ['Earn $ABC tokens for commits', 'Add repositories to ABC DAO', 'Full platform access'],
         priority: 'medium'
+      });
+    }
+    
+    if (!isPaidMember && !hasGitHub) {
+      steps.push({
+        action: 'upgrade_membership',
+        title: 'Become a Paid Member',
+        description: 'Unlock full platform capabilities',
+        benefits: ['Repository management access', 'Commit earning potential', 'Developer features'],
+        priority: 'low'
       });
     }
     
