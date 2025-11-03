@@ -46,13 +46,26 @@ export default function UnifiedDeveloperHub() {
   
   const userIdentifier = getUserIdentifier();
   console.log('🔍 Developer dashboard user identifier:', userIdentifier, 'from user:', user);
+  console.log('🔍 User object details:', {
+    farcaster_fid: (user as any)?.farcaster_fid,
+    wallet_address: (user as any)?.wallet_address,
+    all_keys: user ? Object.keys(user) : 'user is null'
+  });
   
-  const { data: reposData, error: reposError } = useSWR(
-    userIdentifier ? `${BACKEND_URL}/api/repositories/${userIdentifier}/repositories` : null,
-    fetcher
-  );
+  const swrKey = userIdentifier ? `${BACKEND_URL}/api/repositories/${userIdentifier}/repositories` : null;
+  console.log('🔑 SWR key:', swrKey);
+  
+  const { data: reposData, error: reposError } = useSWR(swrKey, fetcher);
   
   console.log('📊 Developer dashboard SWR reposData:', reposData, 'error:', reposError);
+  console.log('📊 Repositories array:', reposData?.repositories);
+  
+  if (reposData?.repositories) {
+    console.log('🔍 Repository details:');
+    reposData.repositories.forEach((repo: any, index: number) => {
+      console.log(`  ${index + 1}. ${repo.repository_name} - status: ${repo.status}, webhook: ${repo.webhook_configured}`);
+    });
+  }
   
   const activeReposCount = reposData?.repositories?.filter((r: any) => r.status === 'active' && r.webhook_configured)?.length || 0;
   console.log('🎯 Active repos count calculated:', activeReposCount, 'from', reposData?.repositories?.length, 'total repos');
