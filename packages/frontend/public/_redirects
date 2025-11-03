@@ -6,5 +6,6 @@
 /_next/static/* /_next/static/:splat 200
 /favicon.ico /favicon.ico 200
 
-# SPA fallback for all other routes (excluding static assets)
+# SPA fallback for all other routes (excluding static assets and index.html itself)
 /* /index.html 200
+!/index.html
