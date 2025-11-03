@@ -102,9 +102,17 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
   }, [walletAddress, profile?.fid, walletUserFid]);
 
   useEffect(() => {
+    console.log('🚀 RepositoriesTab useEffect triggered with:', { 
+      userIdentifier, 
+      profileFid: profile?.fid, 
+      walletUserFid, 
+      walletAddress, 
+      user: user 
+    });
+    
     const loadRepositoriesEffect = async () => {
       if (!userIdentifier) {
-        console.warn('No user identifier available for repositories loading');
+        console.warn('⚠️ No user identifier available for repositories loading');
         setRepositories([]);
         setIsLoading(false);
         return;

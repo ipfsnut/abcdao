@@ -37,12 +37,25 @@ export default function UnifiedDeveloperHub() {
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app';
   const fetcher = (url: string) => fetch(url).then(res => res.json());
   
-  const { data: reposData } = useSWR(
-    (user as any)?.farcaster_fid ? `${BACKEND_URL}/api/repositories/${(user as any).farcaster_fid}/repositories` : null,
+  // Get user identifier - prefer FID, fallback to wallet address
+  const getUserIdentifier = () => {
+    if ((user as any)?.farcaster_fid) return (user as any).farcaster_fid.toString();
+    if ((user as any)?.wallet_address) return (user as any).wallet_address;
+    return null;
+  };
+  
+  const userIdentifier = getUserIdentifier();
+  console.log('🔍 Developer dashboard user identifier:', userIdentifier, 'from user:', user);
+  
+  const { data: reposData, error: reposError } = useSWR(
+    userIdentifier ? `${BACKEND_URL}/api/repositories/${userIdentifier}/repositories` : null,
     fetcher
   );
   
+  console.log('📊 Developer dashboard SWR reposData:', reposData, 'error:', reposError);
+  
   const activeReposCount = reposData?.repositories?.filter((r: any) => r.status === 'active' && r.webhook_configured)?.length || 0;
+  console.log('🎯 Active repos count calculated:', activeReposCount, 'from', reposData?.repositories?.length, 'total repos');
   
   // Derive developer data from working API endpoint (same as home page)
   const developerData = {
