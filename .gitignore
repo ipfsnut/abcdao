@@ -143,7 +143,7 @@ codebase-upgrade-complete.md
 packages/backend/scripts/db-utils.js
 
 # Repository integration guide and documentation
-REPOSITORY-INTEGRATION-GUIDE.md
+# REPOSITORY-INTEGRATION-GUIDE.md (moved to plans/V2/)
 
 # Runtime and temporary files
 *.tmp

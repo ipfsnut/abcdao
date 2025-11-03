@@ -1,0 +1,11 @@
+[variables]
+
+[phases.build]
+dependsOn = ["install"]
+cmds = ["cd packages/backend && npm ci"]
+
+[phases.install]
+cmds = ["cd packages/backend && npm install"]
+
+[phases.start]
+cmd = "cd packages/backend && npm start"
