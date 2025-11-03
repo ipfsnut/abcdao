@@ -282,10 +282,10 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
           
           <div className="text-right">
             <div className="text-2xl font-bold text-green-400">
-              {repositories.filter(r => r.isEnabled).length}
+              {isLoading ? '...' : repositories.filter(r => r.isEnabled).length}
             </div>
             <div className="text-sm text-green-600">
-              Active repositories ({repositories.length} total)
+              Active repositories ({isLoading ? '...' : repositories.length} total)
             </div>
           </div>
         </div>

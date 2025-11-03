@@ -69,6 +69,7 @@ export function GitHubOAuthRepositoryManager() {
   const [githubRepos, setGithubRepos] = useState<GitHubRepository[]>([]);
   const [registeredRepos, setRegisteredRepos] = useState<RepositoryData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [repoDataLoading, setRepoDataLoading] = useState(true); // Loading state for initial repo data
   const [registering, setRegistering] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [githubLinked, setGithubLinked] = useState(false);
@@ -165,6 +166,8 @@ export function GitHubOAuthRepositoryManager() {
       console.error('Error checking GitHub connection:', error);
       setGithubLinked(false);
       setGithubRepos([]);
+    } finally {
+      setRepoDataLoading(false);
     }
   };
 
@@ -189,6 +192,8 @@ export function GitHubOAuthRepositoryManager() {
       }
     } catch (error) {
       console.error('Error fetching registered repositories:', error);
+    } finally {
+      setRepoDataLoading(false);
     }
   };
 
