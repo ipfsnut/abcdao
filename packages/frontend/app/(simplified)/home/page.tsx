@@ -271,7 +271,7 @@ export default function ConsolidatedDashboard() {
             </div>
             
             {/* Quick Profile Status or Connect Button */}
-            {user ? (
+            {user && isAuthenticated ? (
               <div className="flex items-center gap-2">
                 <div className={`w-3 h-3 rounded-full ${user.github_connected ? 'bg-green-400' : 'bg-yellow-400'}`} 
                      title={`GitHub: ${user.github_connected ? 'Connected' : 'Not connected'}`} />
@@ -286,7 +286,7 @@ export default function ConsolidatedDashboard() {
           </div>
 
           {/* Integration Progress Bar - Only for authenticated users */}
-          {user && (
+          {user && isAuthenticated && (
             <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-mono text-green-600">Profile Completion</span>
@@ -312,7 +312,7 @@ export default function ConsolidatedDashboard() {
             <MetricsDashboard user={user} features={features} />
             
             {/* Quick Actions - Only for authenticated users */}
-            {user && (
+            {user && isAuthenticated && (
               <QuickActionsPanel 
                 user={user} 
                 features={features}
@@ -321,12 +321,12 @@ export default function ConsolidatedDashboard() {
             )}
             
             {/* Activity Feed - Only for authenticated users */}
-            {user && (
+            {user && isAuthenticated && (
               <ActivityFeed walletAddress={user.wallet_address} />
             )}
             
             {/* Public Information for non-authenticated users */}
-            {!user && (
+            {(!user || !isAuthenticated) && (
               <div className="bg-gradient-to-r from-green-950/30 via-black/60 to-green-950/30 border border-green-900/30 rounded-xl p-8">
                 <h2 className="text-2xl font-bold text-green-400 mb-6">
                   🌟 Join ABC DAO
