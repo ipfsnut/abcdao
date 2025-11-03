@@ -30,7 +30,7 @@ export default function UnifiedDeveloperHub() {
   const [activeTab, setActiveTab] = useState<TabId>('earning');
   
   // Use working user stats endpoint for consistency with home page
-  const userStats = useUserStatsFixed(user?.farcaster_fid, user?.wallet_address);
+  const userStats = useUserStatsFixed((user as any)?.farcaster_fid, (user as any)?.wallet_address);
   const systemStats = useUsersCommitsStatsSystematic();
   
   // Get repositories data for active repo count
@@ -38,7 +38,7 @@ export default function UnifiedDeveloperHub() {
   const fetcher = (url: string) => fetch(url).then(res => res.json());
   
   const { data: reposData } = useSWR(
-    user?.farcaster_fid ? `${BACKEND_URL}/api/repositories/${user.farcaster_fid}/repositories` : null,
+    (user as any)?.farcaster_fid ? `${BACKEND_URL}/api/repositories/${(user as any).farcaster_fid}/repositories` : null,
     fetcher
   );
   
