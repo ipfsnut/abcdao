@@ -8,6 +8,8 @@
 
 import { useState, useEffect } from 'react';
 import { config } from '@/lib/config';
+import { useFarcaster } from '@/contexts/unified-farcaster-context';
+import { useAccount } from 'wagmi';
 import { GitHubOAuthRepositoryManager } from '@/components/github-oauth-repository-manager';
 import { WebhookSetupModal } from '@/components/webhook-setup-modal';
 import { toast } from 'sonner';
@@ -38,6 +40,11 @@ interface RepositoriesTabProps {
 }
 
 export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: RepositoriesTabProps) {
+  // Use the same user access pattern as the working Add Repository Modal
+  const { user: profile } = useFarcaster();
+  const { address: walletAddress } = useAccount();
+  const [walletUserFid, setWalletUserFid] = useState<number | null>(null);
+  
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'enabled' | 'disabled'>('all');
@@ -50,26 +57,71 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
     repository: { id: string; name: string; url: string } | null;
   }>({ isOpen: false, repository: null });
 
+  // Get user identifier - same logic as working Add Repository Modal
+  const getUserIdentifier = () => {
+    if (profile?.fid) {
+      return profile.fid.toString();
+    }
+    if (walletUserFid) {
+      return walletUserFid.toString();
+    }
+    if (walletAddress) {
+      return walletAddress;
+    }
+    return null;
+  };
+  
+  const userIdentifier = getUserIdentifier();
+
+  // Fetch user FID when wallet is connected but no Farcaster profile (same as Add Repository Modal)
   useEffect(() => {
-    loadRepositories();
-  }, []);
+    const fetchWalletUserFid = async () => {
+      if (!profile?.fid && walletAddress && !walletUserFid) {
+        try {
+          console.log(`🔍 Fetching FID for wallet ${walletAddress}...`);
+          const response = await fetch(`${config.backendUrl}/api/universal-auth/wallet`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ wallet_address: walletAddress })
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.user?.farcaster_fid) {
+              console.log(`✅ Found FID ${data.user.farcaster_fid} for wallet`);
+              setWalletUserFid(data.user.farcaster_fid);
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to fetch wallet user FID:', error);
+        }
+      }
+    };
+    
+    fetchWalletUserFid();
+  }, [walletAddress, profile?.fid, walletUserFid]);
+
+  useEffect(() => {
+    if (userIdentifier) {
+      console.log(`🎯 Repository tab user identifier available (${userIdentifier}), loading repositories...`);
+      loadRepositories();
+    }
+  }, [userIdentifier]);
 
   const loadRepositories = async () => {
     setIsLoading(true);
     
     try {
-      // Use the same FID resolution logic as working components
-      const userFid = (user as any)?.farcaster_fid;
-      if (!userFid) {
-        console.warn('No farcaster_fid available for repositories loading');
+      if (!userIdentifier) {
+        console.warn('No user identifier available for repositories loading');
         setRepositories([]);
         setIsLoading(false);
         return;
       }
 
-      console.log(`🔍 Loading repositories for FID ${userFid}...`);
-      // Fetch real repositories from backend API using FID
-      const response = await fetch(`${config.backendUrl}/api/repositories/${userFid}/repositories`);
+      console.log(`🔍 Loading repositories for identifier ${userIdentifier}...`);
+      // Fetch real repositories from backend API using identifier (same as Add Repository Modal)
+      const response = await fetch(`${config.backendUrl}/api/repositories/${userIdentifier}/repositories`);
       
       if (response.ok) {
         const data = await response.json();
