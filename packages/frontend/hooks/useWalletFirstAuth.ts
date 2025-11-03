@@ -157,7 +157,7 @@ export function useWalletFirstAuth() {
         
         const user = {
           wallet_address: authData.user.wallet_address,
-          display_name: authData.user.farcaster_username || authData.user.github_username,
+          display_name: authData.user.farcaster_username || authData.user.github_username || `Wallet ${authData.user.wallet_address.slice(0,6)}...`,
           farcaster_username: authData.user.farcaster_username,
           github_username: authData.user.github_username,
           github_connected: !!authData.user.github_username,
@@ -165,12 +165,12 @@ export function useWalletFirstAuth() {
           discord_connected: !!authData.user.discord_username,
           discord_username: authData.user.discord_username,
           membership_status: authData.user.membership_status || 'free',
-          is_member: authData.user.membership_status === 'member' || authData.user.membership_status === 'premium',
+          is_member: authData.user.membership_status === 'member' || authData.user.membership_status === 'premium' || authData.user.membership_status === 'paid',
           membership_tier: authData.user.membership_status as 'free' | 'member' | 'premium',
-          can_earn_rewards: !!authData.user.github_username,
-          community_access: true,
+          can_earn_rewards: !!authData.user.github_username && (authData.user.membership_status === 'member' || authData.user.membership_status === 'premium' || authData.user.membership_status === 'paid'),
+          community_access: true, // All wallet holders have community access
           social_features: !!authData.user.farcaster_fid,
-          premium_features: authData.user.membership_status === 'premium',
+          premium_features: authData.user.membership_status === 'premium' || authData.user.membership_status === 'paid',
           total_commits: authData.user.total_commits || 0,
           total_earned_tokens: parseFloat(authData.user.total_abc_earned || '0'),
           total_staked_tokens: stakedAmount,
@@ -279,15 +279,15 @@ export function useWalletFirstAuth() {
           });
         }
         // Check membership status correctly - backend sends membership_status field
-        const isMember = user.membership_status === 'member' || user.is_member;
+        const isMember = user.membership_status === 'member' || user.membership_status === 'paid' || user.is_member;
         
         if (!isMember) {
           nextSteps.push({
             action: 'purchase_membership',
             title: 'Become a Member',
-            description: 'Pay 0.002 ETH to unlock full features',
-            benefits: ['Premium features', 'Community status', 'Priority support'],
-            priority: 'medium' as const
+            description: 'Unlock repository integration and commit rewards',
+            benefits: ['Earn ABC tokens for commits', 'GitHub repository management', 'Developer community access'],
+            priority: 'low' as const  // Lower priority - staking works without membership
           });
         }
 

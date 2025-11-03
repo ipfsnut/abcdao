@@ -75,16 +75,6 @@ export function StakeTab({ stakingData, user, onDataUpdate, isPublicView = false
   
   // Get unbonding information
   const { unbondingQueue, totalUnbonding, withdrawableAmount } = useUnbonding();
-  
-  // Debug logging
-  console.log('🔍 Unbonding Debug:', {
-    totalUnbonding,
-    withdrawableAmount,
-    unbondingQueueLength: unbondingQueue.length,
-    parsedTotal: parseFloat(totalUnbonding),
-    parsedWithdrawable: parseFloat(withdrawableAmount),
-    showCondition: (parseFloat(totalUnbonding) > 0 || parseFloat(withdrawableAmount) > 0)
-  });
   const [isStaking, setIsStaking] = useState(false);
   const [isUnstaking, setIsUnstaking] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);

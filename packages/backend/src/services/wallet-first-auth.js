@@ -86,12 +86,13 @@ class WalletFirstAuthService {
         farcaster_fid,
         farcaster_username,
         wallet_address,
+        wallet_address_primary,
         membership_status,
         verified_at,
         created_at,
         updated_at,
         entry_context
-      ) VALUES ($1, $2, $3, $4, NOW(), NOW(), NOW(), $5)
+      ) VALUES ($1, $2, $3, $3, $4, NOW(), NOW(), NOW(), $5)
       RETURNING *
     `;
     
@@ -99,7 +100,7 @@ class WalletFirstAuthService {
       fakeFid,
       `wallet_${walletAddress.slice(2, 8)}`, // Username from wallet
       walletAddress,
-      'free',
+      'free', // Default to free - can stake but no commit rewards
       context.entry_context || 'webapp'
     ];
     
