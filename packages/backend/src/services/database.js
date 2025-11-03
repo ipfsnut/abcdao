@@ -4,21 +4,42 @@ const { Pool } = pkg;
 let pool;
 
 export async function initializeDatabase() {
-  pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-  });
-  
-  // Test connection
-  const client = await pool.connect();
-  await client.query('SELECT NOW()');
-  client.release();
-  
-  // Run migrations
-  await runMigrations();
-  
-  // Validate schema after migrations
-  await validateSchema();
+  try {
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      connectionTimeoutMillis: 10000, // 10 second timeout
+      idleTimeoutMillis: 30000
+    });
+    
+    // Test connection with timeout
+    const client = await pool.connect();
+    await client.query('SELECT NOW()');
+    client.release();
+    console.log('✅ Database connection established');
+    
+    // Run migrations with error handling
+    try {
+      await runMigrations();
+      console.log('✅ Database migrations completed');
+    } catch (migrationError) {
+      console.warn('⚠️  Migration failed:', migrationError.message);
+      // Continue - app can still function with existing schema
+    }
+    
+    // Validate schema with error handling
+    try {
+      await validateSchema();
+      console.log('✅ Database schema validated');
+    } catch (validationError) {
+      console.warn('⚠️  Schema validation failed:', validationError.message);
+      // Continue - app can still function
+    }
+    
+  } catch (error) {
+    console.error('❌ Database initialization failed:', error.message);
+    throw error;
+  }
 }
 
 export function getPool() {

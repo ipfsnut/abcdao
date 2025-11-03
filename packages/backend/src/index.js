@@ -392,26 +392,32 @@ async function initializeBackgroundServices(server) {
   
   try {
     // Try to initialize database connection (optional for health checks)
-  if (process.env.DATABASE_URL) {
-    await withTimeout(
-      () => initializeDatabase(),
-      'Database initialization',
-      15000
-    );
-  } else {
-    console.warn('⚠️  DATABASE_URL not set, running without database');
-  }
+    if (process.env.DATABASE_URL) {
+      const dbResult = await withTimeout(
+        () => initializeDatabase(),
+        'Database initialization',
+        15000
+      );
+      if (!dbResult) {
+        console.warn('⚠️  Database initialization failed, continuing without database');
+      }
+    } else {
+      console.warn('⚠️  DATABASE_URL not set, running without database');
+    }
     
-  // Try to setup job queues (optional for health checks) 
-  if (process.env.REDIS_URL) {
-    await withTimeout(
-      () => setupQueues(),
-      'Queue setup',
-      10000
-    );
-  } else {
-    console.warn('⚠️  REDIS_URL not set, running without queues');
-  }
+    // Try to setup job queues (optional for health checks) 
+    if (process.env.REDIS_URL) {
+      const queueResult = await withTimeout(
+        () => setupQueues(),
+        'Queue setup',
+        10000
+      );
+      if (!queueResult) {
+        console.warn('⚠️  Queue setup failed, continuing without queues');
+      }
+    } else {
+      console.warn('⚠️  REDIS_URL not set, running without queues');
+    }
     
   // Start background services with timeout protection
   const serviceInitializers = [];
