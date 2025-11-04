@@ -39,7 +39,12 @@ export default function UnifiedDeveloperHub() {
   
   // Get user identifier - prefer FID, fallback to wallet address
   const getUserIdentifier = () => {
-    if ((user as any)?.farcaster_fid) return (user as any).farcaster_fid.toString();
+    // Check multiple possible property names for Farcaster FID
+    const fidFromDirect = (user as any)?.farcaster_fid;
+    const fidFromId = (user as any)?.id; // Sometimes FID is stored as 'id'
+    
+    if (fidFromDirect) return fidFromDirect.toString();
+    if (fidFromId && typeof fidFromId === 'number') return fidFromId.toString();
     if ((user as any)?.wallet_address) return (user as any).wallet_address;
     return null;
   };
@@ -49,7 +54,8 @@ export default function UnifiedDeveloperHub() {
   console.log('🔍 User object details:', {
     farcaster_fid: (user as any)?.farcaster_fid,
     wallet_address: (user as any)?.wallet_address,
-    all_keys: user ? Object.keys(user) : 'user is null'
+    all_keys: user ? Object.keys(user) : 'user is null',
+    full_user: user
   });
   
   const swrKey = userIdentifier ? `${BACKEND_URL}/api/repositories/${userIdentifier}/repositories` : null;
