@@ -33,38 +33,30 @@ export default function UnifiedDeveloperHub() {
   const userStats = useUserStatsFixed((user as any)?.farcaster_fid, (user as any)?.wallet_address);
   const systemStats = useUsersCommitsStatsSystematic();
   
-  // Get repositories data for active repo count
+  // Get repositories data for active repo count - using same pattern as useUserStatsFixed
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app';
   const fetcher = (url: string) => fetch(url).then(res => res.json());
   
-  // Get user identifier - prefer FID, fallback to wallet address
-  const getUserIdentifier = () => {
-    // Check multiple possible property names for Farcaster FID
-    const fidFromDirect = (user as any)?.farcaster_fid;
-    const fidFromId = (user as any)?.id; // Sometimes FID is stored as 'id'
-    
-    if (fidFromDirect) return fidFromDirect.toString();
-    if (fidFromId && typeof fidFromId === 'number') return fidFromId.toString();
-    if ((user as any)?.wallet_address) return (user as any).wallet_address;
-    return null;
-  };
+  const farcasterFid = (user as any)?.farcaster_fid;
+  const walletAddress = (user as any)?.wallet_address;
   
-  const userIdentifier = getUserIdentifier();
-  console.log('🔍 Developer dashboard user identifier:', userIdentifier, 'from user:', user);
-  console.log('🔍 User object details:', {
-    farcaster_fid: (user as any)?.farcaster_fid,
-    wallet_address: (user as any)?.wallet_address,
-    all_keys: user ? Object.keys(user) : 'user is null',
-    full_user: user
-  });
+  console.log('🔍 Developer dashboard inputs:', { farcasterFid, walletAddress, user });
   
-  const swrKey = userIdentifier ? `${BACKEND_URL}/api/repositories/${userIdentifier}/repositories` : null;
-  console.log('🔑 SWR key:', swrKey);
+  // First, get FID from wallet if not provided - same as useUserStatsFixed
+  const { data: lookupData } = useSWR(
+    !farcasterFid && walletAddress ? `${BACKEND_URL}/api/users/lookup/wallet/${walletAddress}` : null,
+    fetcher
+  );
   
-  const { data: reposData, error: reposError } = useSWR(swrKey, fetcher);
+  const effectiveFid = farcasterFid || lookupData?.farcaster_fid;
+  console.log('🎯 Effective FID for repositories:', effectiveFid, 'from:', { farcasterFid, lookupFid: lookupData?.farcaster_fid });
   
-  console.log('📊 Developer dashboard SWR reposData:', reposData, 'error:', reposError);
-  console.log('📊 Repositories array:', reposData?.repositories);
+  const { data: reposData, error: reposError } = useSWR(
+    effectiveFid ? `${BACKEND_URL}/api/repositories/${effectiveFid}/repositories` : null,
+    fetcher
+  );
+  
+  console.log('📊 Repository API response:', { reposData, reposError, effectiveFid });
   
   if (reposData?.repositories) {
     console.log('🔍 Repository details:');
