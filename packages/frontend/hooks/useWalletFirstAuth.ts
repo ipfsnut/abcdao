@@ -9,7 +9,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAccount } from 'wagmi';
 import { config } from '@/lib/config';
 import { createPublicClient, http, formatEther } from 'viem';
@@ -586,20 +586,32 @@ export function useWalletFirstAuth() {
     });
   }, []);
 
-  // Update wallet connection state and auto-authenticate when wallet connects
+  // Stable refs to prevent conditional hook rendering
+  const mountedRef = useRef(false);
+  const authAttemptedRef = useRef(false);
+
+  // Update wallet connection state (stable hook)
   useEffect(() => {
-    // Update wallet connection state
     setAuthState(prev => ({
       ...prev,
       walletConnected: isConnected,
       walletAddress: address || null
     }));
+  }, [isConnected, address]);
 
-    // Auto-authenticate when wallet connects (if not already authenticated)
-    if (isConnected && address && !authState.isAuthenticated && !authState.isLoading) {
+  // Separate effect for authentication (stable hook)
+  useEffect(() => {
+    // Only attempt authentication once per mount and when wallet connects
+    if (isConnected && address && !authAttemptedRef.current && !authState.isAuthenticated) {
+      authAttemptedRef.current = true;
       authenticateWallet(address);
     }
-  }, [isConnected, address, authState.isAuthenticated, authState.isLoading, authenticateWallet]);
+    
+    // Reset auth attempt flag when wallet disconnects
+    if (!isConnected) {
+      authAttemptedRef.current = false;
+    }
+  }, [isConnected, address, authState.isAuthenticated, authenticateWallet]);
 
   // Try to restore authentication from stored token on mount
   useEffect(() => {
