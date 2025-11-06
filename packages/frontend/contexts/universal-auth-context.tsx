@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { useAccount } from 'wagmi';
 import { useFarcaster } from './unified-farcaster-context';
 import { config } from '@/lib/config';
@@ -67,10 +67,40 @@ export function UniversalAuthProvider({ children }: { children: ReactNode }) {
   const { address } = useAccount();
   const { user: farcasterUser, isInMiniApp, isAuthenticated: farcasterAuthenticated } = useFarcaster();
 
-  // Initialize authentication
+  // Stable refs to prevent re-initialization loops
+  const initAttemptedRef = useRef(false);
+  const lastAddressRef = useRef<string | undefined>(undefined);
+  const lastFarcasterUserRef = useRef<any>(undefined);
+
+  // Initialize authentication once on mount
   useEffect(() => {
-    initializeAuth();
-  }, [address, farcasterUser, isInMiniApp]);
+    if (!initAttemptedRef.current) {
+      initAttemptedRef.current = true;
+      initializeAuth();
+    }
+  }, []);
+
+  // Handle wallet address changes
+  useEffect(() => {
+    if (initAttemptedRef.current && address !== lastAddressRef.current) {
+      lastAddressRef.current = address;
+      if (address) {
+        console.log('💰 Wallet address changed, re-authenticating');
+        authenticateByWallet(address);
+      }
+    }
+  }, [address]);
+
+  // Handle Farcaster user changes
+  useEffect(() => {
+    if (initAttemptedRef.current && farcasterUser !== lastFarcasterUserRef.current) {
+      lastFarcasterUserRef.current = farcasterUser;
+      if (isInMiniApp && farcasterUser) {
+        console.log('📱 Farcaster user changed, re-authenticating');
+        authenticateViaFarcaster();
+      }
+    }
+  }, [farcasterUser, isInMiniApp]);
 
   const initializeAuth = async () => {
     setIsLoading(true);

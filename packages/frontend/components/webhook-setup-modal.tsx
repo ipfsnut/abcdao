@@ -34,6 +34,9 @@ interface WebhookInstructions {
 }
 
 export function WebhookSetupModal({ isOpen, onClose, repository, onWebhookConfigured }: WebhookSetupModalProps) {
+  // Early return guard BEFORE any hooks
+  if (!isOpen) return null;
+
   const { user: profile } = useFarcaster();
   const [instructions, setInstructions] = useState<WebhookInstructions | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -43,10 +46,10 @@ export function WebhookSetupModal({ isOpen, onClose, repository, onWebhookConfig
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen && profile?.fid) {
+    if (profile?.fid) {
       fetchWebhookInstructions();
     }
-  }, [isOpen, profile?.fid, repository.id]);
+  }, [profile?.fid, repository.id]);
 
   const fetchWebhookInstructions = async () => {
     if (!profile?.fid) return;
@@ -152,8 +155,6 @@ export function WebhookSetupModal({ isOpen, onClose, repository, onWebhookConfig
     }
     setLoading(false);
   };
-
-  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">

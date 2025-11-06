@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
@@ -60,29 +61,29 @@ const customMatrixTheme = {
 // Context-aware Wagmi provider that uses Farcaster wallet in mini-app
 function ContextAwareWagmiProvider({ children }: { children: React.ReactNode }) {
   const { isInMiniApp, isLoading } = useFarcaster();
-
-  // Don't render until we know the context
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-black text-green-400 flex items-center justify-center">
-        <div className="text-center font-mono">
-          <div className="animate-pulse text-green-400 mb-2">🔗</div>
-          <div>Initializing wallet context...</div>
-        </div>
-      </div>
-    );
-  }
-
-  // Determine config based on context
-  const selectedConfig = isInMiniApp ? config : fallbackConfig;
+  const configRef = useRef<any>(fallbackConfig);
   
-  console.log(`🔗 Using ${isInMiniApp ? 'Farcaster miniapp' : 'standard'} wallet config`);
+  // Always render the same component structure to maintain consistent hook order
+  useEffect(() => {
+    const selectedConfig = isInMiniApp ? config : fallbackConfig;
+    configRef.current = selectedConfig;
+    console.log(`🔗 Using ${isInMiniApp ? 'Farcaster miniapp' : 'standard'} wallet config`);
+  }, [isInMiniApp]);
 
   return (
-    <WagmiProvider config={selectedConfig as any}>
+    <WagmiProvider config={configRef.current}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={customMatrixTheme}>
-          {children}
+          {isLoading ? (
+            <div className="min-h-screen bg-black text-green-400 flex items-center justify-center">
+              <div className="text-center font-mono">
+                <div className="animate-pulse text-green-400 mb-2">🔗</div>
+                <div>Initializing wallet context...</div>
+              </div>
+            </div>
+          ) : (
+            children
+          )}
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

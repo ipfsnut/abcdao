@@ -3,7 +3,7 @@
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { CONTRACTS, ERC20_ABI } from '@/lib/contracts';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 
 export function useStaking() {
@@ -110,79 +110,101 @@ export function useStaking() {
     hash: claimHash,
   });
 
-  // Handle approval errors
+  // Stable refs for tracking state changes
+  const approvalHandledRef = useRef(false);
+  const stakeHandledRef = useRef(false);
+  const unstakeHandledRef = useRef(false);
+  const claimHandledRef = useRef(false);
+
+  // Handle approval errors (stable hook)
   useEffect(() => {
-    if (isApproveError) {
+    if (isApproveError && !approvalHandledRef.current) {
+      approvalHandledRef.current = true;
       setIsApproving(false);
       setPendingStakeAmount('');
       toast.error(`Approval failed: ${approveError?.message || 'Unknown error'}`);
       console.error('❌ Approval failed:', approveError);
     }
+    if (!isApproveError) {
+      approvalHandledRef.current = false;
+    }
   }, [isApproveError, approveError]);
 
-  // Refetch data on successful transactions
+  // Handle approval success (stable hook)
   useEffect(() => {
-    if (isApproveSuccess && pendingStakeAmount) {
+    if (isApproveSuccess && pendingStakeAmount && !approvalHandledRef.current) {
+      approvalHandledRef.current = true;
       setIsApproving(false);
       toast.success('Approval successful! Now staking...');
       
-      // Store the amount to prevent state changes
       const stakeAmount = pendingStakeAmount;
       const amountWei = parseEther(stakeAmount);
       
       console.log('🎯 About to stake:', { stakeAmount, amountWei: amountWei.toString() });
       
-      // Wait for allowance to update before staking
-      const attemptStake = async () => {
-        // Retry allowance check with backoff
-        for (let i = 0; i < 5; i++) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // 1s, 2s, 3s, 4s, 5s
-          
+      // Simplified stake attempt without complex async loop
+      setTimeout(async () => {
+        try {
           const { data: currentAllowance } = await refetchAllowance();
-          console.log(`🔄 Attempt ${i + 1}: Allowance check:`, currentAllowance?.toString());
-          
           if (currentAllowance && currentAllowance >= amountWei) {
-            console.log('✅ Sufficient allowance confirmed, proceeding to stake with amount:', amountWei.toString());
+            console.log('✅ Sufficient allowance confirmed, proceeding to stake');
             stake({
               address: CONTRACTS.ABC_STAKING.address,
               abi: CONTRACTS.ABC_STAKING.abi,
               functionName: 'stake',
               args: [amountWei],
             });
-            setPendingStakeAmount('');
-            return;
+          } else {
+            toast.error('Approval not yet registered. Please try again in a moment.');
           }
+        } catch (error) {
+          console.error('Stake attempt failed:', error);
+          toast.error('Failed to proceed with staking. Please try again.');
         }
-        
-        toast.error('Approval failed to register. Please try again.');
         setPendingStakeAmount('');
-      };
-      
-      attemptStake();
+      }, 2000); // Wait 2 seconds for approval to register
+    }
+    if (!isApproveSuccess) {
+      approvalHandledRef.current = false;
     }
   }, [isApproveSuccess, pendingStakeAmount, refetchAllowance, stake]);
 
+  // Handle stake success (stable hook)
   useEffect(() => {
-    if (isStakeSuccess) {
+    if (isStakeSuccess && !stakeHandledRef.current) {
+      stakeHandledRef.current = true;
       refetchStakeInfo();
       refetchBalance();
       refetchAllowance();
       toast.success('Staking successful!');
     }
+    if (!isStakeSuccess) {
+      stakeHandledRef.current = false;
+    }
   }, [isStakeSuccess, refetchStakeInfo, refetchBalance, refetchAllowance]);
 
+  // Handle unstake success (stable hook)
   useEffect(() => {
-    if (isUnstakeSuccess) {
+    if (isUnstakeSuccess && !unstakeHandledRef.current) {
+      unstakeHandledRef.current = true;
       refetchStakeInfo();
       refetchBalance();
       toast.success('Unstaking successful!');
     }
+    if (!isUnstakeSuccess) {
+      unstakeHandledRef.current = false;
+    }
   }, [isUnstakeSuccess, refetchStakeInfo, refetchBalance]);
 
+  // Handle claim success (stable hook)
   useEffect(() => {
-    if (isClaimSuccess) {
+    if (isClaimSuccess && !claimHandledRef.current) {
+      claimHandledRef.current = true;
       refetchStakeInfo();
       toast.success('Rewards claimed successfully!');
+    }
+    if (!isClaimSuccess) {
+      claimHandledRef.current = false;
     }
   }, [isClaimSuccess, refetchStakeInfo]);
 
