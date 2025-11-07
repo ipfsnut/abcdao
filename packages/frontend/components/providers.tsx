@@ -4,7 +4,7 @@ import { useRef, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
-import { config, fallbackConfig } from '@/lib/web3';
+import { config } from '@/lib/web3';
 import { UnifiedFarcasterProvider, useFarcaster } from '@/contexts/unified-farcaster-context';
 import { UniversalAuthProvider } from '@/contexts/universal-auth-context';
 import '@rainbow-me/rainbowkit/styles.css';
@@ -58,34 +58,13 @@ const customMatrixTheme = {
   },
 };
 
-// Context-aware Wagmi provider that uses Farcaster wallet in mini-app
-function ContextAwareWagmiProvider({ children }: { children: React.ReactNode }) {
-  const { isInMiniApp, isLoading } = useFarcaster();
-  const configRef = useRef<any>(fallbackConfig);
-  
-  // Always render the same component structure to maintain consistent hook order
-  useEffect(() => {
-    const selectedConfig = isInMiniApp ? config : fallbackConfig;
-    configRef.current = selectedConfig;
-    console.log(`🔗 Using ${isInMiniApp ? 'Farcaster miniapp' : 'standard'} wallet config`);
-  }, [isInMiniApp]);
-
+// Simple Wagmi provider with unified stable configuration
+function StableWagmiProvider({ children }: { children: React.ReactNode }) {
   return (
-    <WagmiProvider config={configRef.current}>
+    <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={customMatrixTheme}>
-          {/* ALWAYS render children to maintain consistent hook calls */}
-          <div className="min-h-screen bg-black text-green-400">
-            {isLoading && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center bg-black">
-                <div className="text-center font-mono">
-                  <div className="animate-pulse text-green-400 mb-2">🔗</div>
-                  <div>Initializing wallet context...</div>
-                </div>
-              </div>
-            )}
-            {children}
-          </div>
+          {children}
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
@@ -95,11 +74,11 @@ function ContextAwareWagmiProvider({ children }: { children: React.ReactNode }) 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <UnifiedFarcasterProvider>
-      <ContextAwareWagmiProvider>
+      <StableWagmiProvider>
         <UniversalAuthProvider>
           {children}
         </UniversalAuthProvider>
-      </ContextAwareWagmiProvider>
+      </StableWagmiProvider>
     </UnifiedFarcasterProvider>
   );
 }
