@@ -189,7 +189,14 @@ export function AnalyticsTab({ stakingData, user, isPublicView = false }: Analyt
     );
   }
 
-  if (!analytics) return null;
+  if (!analytics) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-green-600 mb-2">📊</div>
+        <div className="text-green-400">Loading analytics...</div>
+      </div>
+    );
+  }
 
   const timeframeOptions = [
     { value: '7d', label: '7 Days' },
