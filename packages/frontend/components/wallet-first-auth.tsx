@@ -31,6 +31,7 @@ export function WalletFirstAuth() {
 
   const [activeIntegration, setActiveIntegration] = useState<string | null>(null);
 
+  // Early return guards handled inside components to maintain consistent hook order
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">

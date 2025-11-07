@@ -33,6 +33,9 @@ interface RepositorySetupWizardProps {
 type WizardStep = 'welcome' | 'detection' | 'selection' | 'configuration' | 'confirmation';
 
 export function RepositorySetupWizard({ user, onComplete, onCancel, isOpen }: RepositorySetupWizardProps) {
+  // Early return guard BEFORE any hooks
+  if (!isOpen) return null;
+
   const [currentStep, setCurrentStep] = useState<WizardStep>('welcome');
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -186,8 +189,6 @@ export function RepositorySetupWizard({ user, onComplete, onCancel, isOpen }: Re
   const totalEstimatedEarning = repositories
     .filter(repo => repo.isSelected)
     .reduce((sum, repo) => sum + parseInt(repo.estimatedEarning), 0);
-
-  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
