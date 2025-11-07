@@ -66,6 +66,43 @@ export function GitHubOAuthRepositoryManager() {
   };
   
   const userIdentifier = getUserIdentifier();
+  
+  // Early return guard BEFORE hook declarations
+  if (!userIdentifier) {
+    return (
+      <div className="bg-black/40 border border-yellow-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+        <p className="text-yellow-400 font-mono text-center mb-4">
+          Connect your account to manage repositories
+        </p>
+        <div className="text-center space-y-2">
+          <p className="text-green-600 font-mono text-sm">
+            {!profile && !walletAddress && '🔐 Authentication required'}
+            {!profile && walletAddress && '🎭 Farcaster connection recommended'}
+            {profile && !walletAddress && '💰 Wallet connection recommended'}
+          </p>
+          {process.env.NODE_ENV === 'development' && (
+            <button
+              onClick={() => {
+                // Manual fallback for epicdylan
+                const fallbackUser = {
+                  fid: 8573,
+                  username: 'epicdylan',
+                  displayName: 'epicdylan',
+                  pfpUrl: ''
+                };
+                localStorage.setItem('abc_farcaster_user', JSON.stringify(fallbackUser));
+                window.location.reload();
+              }}
+              className="bg-blue-900/50 hover:bg-blue-900/70 text-blue-400 font-mono px-4 py-2 rounded-lg border border-blue-700/50 transition-all duration-300"
+            >
+              🔧 Dev: Manual Auth (epicdylan)
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+  
   const [githubRepos, setGithubRepos] = useState<GitHubRepository[]>([]);
   const [registeredRepos, setRegisteredRepos] = useState<RepositoryData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -346,41 +383,6 @@ export function GitHubOAuthRepositoryManager() {
     // Refresh repository data after webhook setup
     fetchRegisteredRepos();
   };
-
-  if (!userIdentifier) {
-    return (
-      <div className="bg-black/40 border border-yellow-900/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-        <p className="text-yellow-400 font-mono text-center mb-4">
-          Connect your account to manage repositories
-        </p>
-        <div className="text-center space-y-2">
-          <p className="text-green-600 font-mono text-sm">
-            {!profile && !walletAddress && '🔐 Authentication required'}
-            {!profile && walletAddress && '🎭 Farcaster connection recommended'}
-            {profile && !walletAddress && '💰 Wallet connection recommended'}
-          </p>
-          {process.env.NODE_ENV === 'development' && (
-            <button
-              onClick={() => {
-                // Manual fallback for epicdylan
-                const fallbackUser = {
-                  fid: 8573,
-                  username: 'epicdylan',
-                  displayName: 'epicdylan',
-                  pfpUrl: ''
-                };
-                localStorage.setItem('abc_farcaster_user', JSON.stringify(fallbackUser));
-                window.location.reload();
-              }}
-              className="bg-blue-900/50 hover:bg-blue-900/70 text-blue-400 font-mono px-4 py-2 rounded-lg border border-blue-700/50 transition-all duration-300"
-            >
-              🔧 Dev: Manual Auth (epicdylan)
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">

@@ -57,6 +57,8 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
     repository: { id: string; name: string; url: string } | null;
   }>({ isOpen: false, repository: null });
 
+  // Early return for loading state
+
   // Get user identifier - same logic as working Add Repository Modal
   const getUserIdentifier = () => {
     if (profile?.fid) {
@@ -315,26 +317,6 @@ export function RepositoriesTab({ user, activeRepos, onRepoUpdate }: Repositorie
 
   const filteredRepos = getFilteredRepositories();
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="animate-pulse space-y-4">
-          {Array(5).fill(0).map((_, i) => (
-            <div key={i} className="bg-green-950/20 border border-green-900/30 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="h-5 bg-green-950/30 rounded mb-2"></div>
-                  <div className="h-3 bg-green-950/30 rounded w-2/3 mb-2"></div>
-                  <div className="h-3 bg-green-950/30 rounded w-1/2"></div>
-                </div>
-                <div className="w-16 h-8 bg-green-950/30 rounded"></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">

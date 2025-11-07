@@ -37,6 +37,7 @@ export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
   // Loading state now handled by unified hooks
   const isLoading = userStatsLoading;
 
+  // Early return guard BEFORE rest of component
   if (isLoading) {
     return (
       <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6">
