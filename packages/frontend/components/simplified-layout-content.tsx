@@ -28,9 +28,9 @@ function WalletFirstAuthWithData({
   addGitHubIntegration,
   addDiscordIntegration, 
   addFarcasterIntegration,
-  processMembershipPurchase 
+  processMembershipPurchase,
+  isConnected // Pass isConnected as prop instead of calling useAccount hook
 }: any) {
-  const { isConnected } = useAccount();
   const [activeIntegration, setActiveIntegration] = useState<string | null>(null);
 
   // Same rendering logic as WalletFirstAuth but without calling the hook
@@ -136,6 +136,7 @@ function WalletFirstAuthWithData({
 }
 
 export function SimplifiedLayoutContent({ children }: SimplifiedLayoutContentProps) {
+  const { isConnected } = useAccount();
   const { 
     user, 
     isLoading, 
@@ -171,6 +172,7 @@ export function SimplifiedLayoutContent({ children }: SimplifiedLayoutContentPro
               addDiscordIntegration={addDiscordIntegration}
               addFarcasterIntegration={addFarcasterIntegration}
               processMembershipPurchase={processMembershipPurchase}
+              isConnected={isConnected}
             />
           </div>
         ) : (
