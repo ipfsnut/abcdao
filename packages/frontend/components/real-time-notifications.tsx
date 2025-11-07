@@ -28,6 +28,9 @@ interface RealTimeNotificationsProps {
 }
 
 export function RealTimeNotifications({ user, isEnabled = true }: RealTimeNotificationsProps) {
+  // Early return guard BEFORE any hooks
+  if (!isEnabled) return null;
+
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -247,8 +250,6 @@ export function RealTimeNotifications({ user, isEnabled = true }: RealTimeNotifi
       default: return 'border-gray-500/50 bg-gray-950/20';
     }
   };
-
-  if (!isEnabled) return null;
 
   return (
     <div className="relative">

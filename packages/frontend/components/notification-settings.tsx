@@ -58,6 +58,9 @@ interface NotificationSettingsProps {
 }
 
 export function NotificationSettings({ user, onClose, isOpen }: NotificationSettingsProps) {
+  // Early return guard BEFORE any hooks
+  if (!isOpen) return null;
+
   const [settings, setSettings] = useState<NotificationSettings>({
     commitRewards: {
       enabled: true,
@@ -192,8 +195,6 @@ export function NotificationSettings({ user, onClose, isOpen }: NotificationSett
       alert('Please enable browser notifications first!');
     }
   };
-
-  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
