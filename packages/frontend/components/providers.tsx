@@ -74,16 +74,18 @@ function ContextAwareWagmiProvider({ children }: { children: React.ReactNode }) 
     <WagmiProvider config={configRef.current}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={customMatrixTheme}>
-          {isLoading ? (
-            <div className="min-h-screen bg-black text-green-400 flex items-center justify-center">
-              <div className="text-center font-mono">
-                <div className="animate-pulse text-green-400 mb-2">🔗</div>
-                <div>Initializing wallet context...</div>
+          {/* ALWAYS render children to maintain consistent hook calls */}
+          <div className="min-h-screen bg-black text-green-400">
+            {isLoading && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-black">
+                <div className="text-center font-mono">
+                  <div className="animate-pulse text-green-400 mb-2">🔗</div>
+                  <div>Initializing wallet context...</div>
+                </div>
               </div>
-            </div>
-          ) : (
-            children
-          )}
+            )}
+            {children}
+          </div>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
