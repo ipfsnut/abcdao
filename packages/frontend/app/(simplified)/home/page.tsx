@@ -29,10 +29,7 @@ import { MetricsDashboard } from '@/components/metrics-dashboard';
 import { NextStepsWizard } from '@/components/next-steps-wizard';
 
 // Component for wallet not connected state
-function WalletNotConnectedView() {
-  // Get real statistics for hero section
-  const systemStats = useUsersCommitsStatsSystematic();
-  
+function WalletNotConnectedView({ systemStats }: { systemStats: any }) {
   // Format large numbers for display
   const formatLargeNumber = (num: number) => {
     if (num >= 1000000) {
@@ -162,13 +159,8 @@ function LoadingDashboardView() {
 }
 
 export default function ConsolidatedDashboard() {
+  // ALL hooks must be called in every render
   const { isConnected } = useAccount();
-  
-  // Early return guard BEFORE hooks
-  if (!isConnected) {
-    return <WalletNotConnectedView />;
-  }
-
   const { 
     user, 
     features, 
@@ -188,7 +180,11 @@ export default function ConsolidatedDashboard() {
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('overview');
   
-  // Early return guard for loading AFTER hooks
+  // Conditional rendering AFTER all hooks
+  if (!isConnected) {
+    return <WalletNotConnectedView systemStats={systemStats} />;
+  }
+  
   if (isLoading) {
     return <LoadingDashboardView />;
   }
