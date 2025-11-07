@@ -28,8 +28,147 @@ import { ActivityFeed } from '@/components/activity-feed';
 import { MetricsDashboard } from '@/components/metrics-dashboard';
 import { NextStepsWizard } from '@/components/next-steps-wizard';
 
+// Component for wallet not connected state
+function WalletNotConnectedView() {
+  // Get real statistics for hero section
+  const systemStats = useUsersCommitsStatsSystematic();
+  
+  // Format large numbers for display
+  const formatLargeNumber = (num: number) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    }
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'K';
+    }
+    return num.toString();
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-12">
+      <div className="max-w-4xl mx-auto text-center">
+        <div className="mb-8">
+          <h1 className="text-5xl font-bold text-green-400 matrix-glow mb-6">
+            Welcome to ABC DAO
+          </h1>
+          <p className="text-2xl text-green-300 mb-4">
+            The future of developer rewards
+          </p>
+          <p className="text-lg text-green-600 font-mono mb-8">
+            Ship code → Earn crypto → Build community
+          </p>
+        </div>
+
+        {/* Hero Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6">
+            <div className="text-3xl font-bold text-green-400 mb-2">
+              {systemStats.isLoading ? '...' : systemStats.totalUsers.toLocaleString()}
+            </div>
+            <div className="text-sm text-green-600 font-mono">Active Developers</div>
+          </div>
+          <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6">
+            <div className="text-3xl font-bold text-green-400 mb-2">
+              {systemStats.isLoading ? '...' : formatLargeNumber(systemStats.totalRewardsDistributed)}
+            </div>
+            <div className="text-sm text-green-600 font-mono">$ABC Distributed</div>
+          </div>
+          <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6">
+            <div className="text-3xl font-bold text-green-400 mb-2">
+              {systemStats.isLoading ? '...' : formatLargeNumber(systemStats.totalCommits)}
+            </div>
+            <div className="text-sm text-green-600 font-mono">Commits Rewarded</div>
+          </div>
+        </div>
+
+        {/* Value Proposition */}
+        <div className="bg-gradient-to-r from-green-950/30 via-black/60 to-green-950/30 border border-green-900/30 rounded-2xl p-8 mb-8">
+          <h2 className="text-3xl font-bold text-green-400 mb-6">
+            Why ABC DAO?
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="text-4xl mb-4">💰</div>
+              <h3 className="font-semibold text-green-400 mb-2">Instant Rewards</h3>
+              <p className="text-sm text-green-600">
+                Earn 50k-1M $ABC tokens for every commit you make
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-4xl mb-4">🔗</div>
+              <h3 className="font-semibold text-green-400 mb-2">Auto-Detection</h3>
+              <p className="text-sm text-green-600">
+                Connect GitHub once, we handle the rest automatically
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-4xl mb-4">🏦</div>
+              <h3 className="font-semibold text-green-400 mb-2">Stake & Earn</h3>
+              <p className="text-sm text-green-600">
+                Stake $ABC tokens to earn ETH rewards passively
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-4xl mb-4">🤝</div>
+              <h3 className="font-semibold text-green-400 mb-2">Community</h3>
+              <p className="text-sm text-green-600">
+                Join a thriving community of builders and creators
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Call to Action */}
+        <div className="bg-black/40 border border-green-900/30 rounded-xl p-8">
+          <h3 className="text-2xl font-bold text-green-400 mb-4">Ready to Start Earning?</h3>
+          <p className="text-green-600 font-mono mb-6">
+            Connect your wallet to begin your developer journey
+          </p>
+          <ConnectButton />
+          <p className="text-xs text-green-700 font-mono mt-4">
+            No signup required • Your wallet, your identity • Start earning immediately
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Component for loading state
+function LoadingDashboardView() {
+  return (
+    <div className="container mx-auto px-4 py-12">
+      <div className="max-w-6xl mx-auto">
+        <div className="animate-pulse">
+          <div className="h-8 bg-green-950/20 rounded mb-6"></div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <div className="h-48 bg-green-950/20 rounded-xl"></div>
+              <div className="h-64 bg-green-950/20 rounded-xl"></div>
+            </div>
+            <div className="space-y-6">
+              <div className="h-32 bg-green-950/20 rounded-xl"></div>
+              <div className="h-48 bg-green-950/20 rounded-xl"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ConsolidatedDashboard() {
   const { isConnected } = useAccount();
+  
+  // Early return guard BEFORE hooks
+  if (!isConnected) {
+    return <WalletNotConnectedView />;
+  }
+
   const { 
     user, 
     features, 
@@ -37,7 +176,6 @@ export default function ConsolidatedDashboard() {
     isLoading, 
     isAuthenticated,
     walletConnected,
-    membershipStatus,
     requiresMembership,
     addGitHubIntegration,
     addDiscordIntegration,
@@ -46,10 +184,14 @@ export default function ConsolidatedDashboard() {
 
   // Get real statistics for hero section
   const systemStats = useUsersCommitsStatsSystematic();
-
-  const [activeSection, setActiveSection] = useState<string>('overview');
   const [farcasterAvatar, setFarcasterAvatar] = useState<string | null>(null);
   const [avatarLoading, setAvatarLoading] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>('overview');
+  
+  // Early return guard for loading AFTER hooks
+  if (isLoading) {
+    return <LoadingDashboardView />;
+  }
 
   // Format large numbers for display
   const formatLargeNumber = (num: number) => {
@@ -84,123 +226,6 @@ export default function ConsolidatedDashboard() {
       fetchFarcasterAvatar();
     }
   }, [user, isLoading]);
-
-  if (!isConnected) {
-    return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="mb-8">
-            <h1 className="text-5xl font-bold text-green-400 matrix-glow mb-6">
-              Welcome to ABC DAO
-            </h1>
-            <p className="text-2xl text-green-300 mb-4">
-              The future of developer rewards
-            </p>
-            <p className="text-lg text-green-600 font-mono mb-8">
-              Ship code → Earn crypto → Build community
-            </p>
-          </div>
-
-          {/* Hero Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6">
-              <div className="text-3xl font-bold text-green-400 mb-2">
-                {systemStats.isLoading ? '...' : systemStats.totalUsers.toLocaleString()}
-              </div>
-              <div className="text-sm text-green-600 font-mono">Active Developers</div>
-            </div>
-            <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6">
-              <div className="text-3xl font-bold text-green-400 mb-2">
-                {systemStats.isLoading ? '...' : formatLargeNumber(systemStats.totalRewardsDistributed)}
-              </div>
-              <div className="text-sm text-green-600 font-mono">$ABC Distributed</div>
-            </div>
-            <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6">
-              <div className="text-3xl font-bold text-green-400 mb-2">
-                {systemStats.isLoading ? '...' : formatLargeNumber(systemStats.totalCommits)}
-              </div>
-              <div className="text-sm text-green-600 font-mono">Commits Rewarded</div>
-            </div>
-          </div>
-
-          {/* Value Proposition */}
-          <div className="bg-gradient-to-r from-green-950/30 via-black/60 to-green-950/30 border border-green-900/30 rounded-2xl p-8 mb-8">
-            <h2 className="text-3xl font-bold text-green-400 mb-6">
-              Why ABC DAO?
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="text-center">
-                <div className="text-4xl mb-4">💰</div>
-                <h3 className="font-semibold text-green-400 mb-2">Instant Rewards</h3>
-                <p className="text-sm text-green-600">
-                  Earn 50k-1M $ABC tokens for every commit you make
-                </p>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-4xl mb-4">🔗</div>
-                <h3 className="font-semibold text-green-400 mb-2">Auto-Detection</h3>
-                <p className="text-sm text-green-600">
-                  Connect GitHub once, we handle the rest automatically
-                </p>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-4xl mb-4">🏦</div>
-                <h3 className="font-semibold text-green-400 mb-2">Stake & Earn</h3>
-                <p className="text-sm text-green-600">
-                  Stake $ABC tokens to earn ETH rewards passively
-                </p>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-4xl mb-4">🤝</div>
-                <h3 className="font-semibold text-green-400 mb-2">Community</h3>
-                <p className="text-sm text-green-600">
-                  Join a thriving community of builders and creators
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Call to Action */}
-          <div className="bg-black/40 border border-green-900/30 rounded-xl p-8">
-            <h3 className="text-2xl font-bold text-green-400 mb-4">Ready to Start Earning?</h3>
-            <p className="text-green-600 font-mono mb-6">
-              Connect your wallet to begin your developer journey
-            </p>
-            <ConnectButton />
-            <p className="text-xs text-green-700 font-mono mt-4">
-              No signup required • Your wallet, your identity • Start earning immediately
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-6xl mx-auto">
-          <div className="animate-pulse">
-            <div className="h-8 bg-green-950/20 rounded mb-6"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                <div className="h-48 bg-green-950/20 rounded-xl"></div>
-                <div className="h-64 bg-green-950/20 rounded-xl"></div>
-              </div>
-              <div className="space-y-6">
-                <div className="h-32 bg-green-950/20 rounded-xl"></div>
-                <div className="h-48 bg-green-950/20 rounded-xl"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // Show different content based on authentication status
 
