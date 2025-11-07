@@ -611,7 +611,7 @@ export function useWalletFirstAuth() {
     if (!isConnected) {
       authAttemptedRef.current = false;
     }
-  }, [isConnected, address, authState.isAuthenticated, authenticateWallet]);
+  }, [isConnected, address, authState.isAuthenticated]); // Removed authenticateWallet dependency
 
   // Try to restore authentication from stored token on mount
   useEffect(() => {
