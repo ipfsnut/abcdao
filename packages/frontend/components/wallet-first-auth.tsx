@@ -15,6 +15,7 @@ import { useAccount } from 'wagmi';
 import { useWalletFirstAuth } from '@/hooks/useWalletFirstAuth';
 
 export function WalletFirstAuth() {
+  // ALL hooks must be called before any conditional logic
   const { isConnected } = useAccount();
   const { 
     user, 
@@ -31,7 +32,7 @@ export function WalletFirstAuth() {
 
   const [activeIntegration, setActiveIntegration] = useState<string | null>(null);
 
-  // Early return guards handled inside components to maintain consistent hook order
+  // Conditional rendering AFTER all hooks
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
