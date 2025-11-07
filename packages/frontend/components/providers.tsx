@@ -6,7 +6,6 @@ import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import { config, fallbackConfig } from '@/lib/web3';
 import { UnifiedFarcasterProvider, useFarcaster } from '@/contexts/unified-farcaster-context';
-import { UniversalAuthProvider } from '@/contexts/universal-auth-context';
 import '@rainbow-me/rainbowkit/styles.css';
 
 const queryClient = new QueryClient();
@@ -96,9 +95,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <UnifiedFarcasterProvider>
       <ContextAwareWagmiProvider>
-        <UniversalAuthProvider>
-          {children}
-        </UniversalAuthProvider>
+        {children}
       </ContextAwareWagmiProvider>
     </UnifiedFarcasterProvider>
   );
