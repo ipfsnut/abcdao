@@ -11,7 +11,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { BackNavigation } from '@/components/back-navigation';
 import { useUserProfileSystematic } from '@/hooks/useUsersCommitsSystematic';
@@ -19,7 +19,7 @@ import { useStakingPosition } from '@/hooks/useStakingSystematic';
 import { ActivityFeed } from '@/components/activity-feed';
 import Image from 'next/image';
 
-export default function ProfilePage() {
+function ProfilePageContent() {
   const searchParams = useSearchParams();
   const address = searchParams.get('address');
   
@@ -458,5 +458,19 @@ export default function ProfilePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black text-green-400 font-mono">
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="animate-pulse text-green-400 text-2xl">Loading profile...</div>
+        </div>
+      </div>
+    }>
+      <ProfilePageContent />
+    </Suspense>
   );
 }
