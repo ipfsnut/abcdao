@@ -2,7 +2,7 @@
 
 import { useAccount } from 'wagmi';
 import useSWR from 'swr';
-import { useStaking } from './useStaking';
+import { useStakingMaster } from './useStakingMaster';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app';
 
@@ -20,7 +20,8 @@ const fetcher = (url: string) => fetch(url).then(res => res.json());
 export function useStakingUnified() {
   const { address } = useAccount();
   
-  // Get blockchain write operations from original hook
+  // Get all operations from master hook
+  const masterHook = useStakingMaster();
   const {
     handleStake,
     handleUnstake,
@@ -32,9 +33,9 @@ export function useStakingUnified() {
     isStakeLoading,
     isUnstakeLoading,
     isClaimLoading,
-    tokenBalance, // Keep token balance from blockchain for accuracy
-    stakedAmount: blockchainStakedAmount // Raw staked amount for MAX buttons
-  } = useStaking();
+    tokenBalance,
+    stakedAmount: blockchainStakedAmount
+  } = masterHook;
 
   // Get cached staking data from backend (primary source for display)
   const { data: stakingOverview, error: overviewError, isLoading: overviewLoading, mutate: refreshOverview } = useSWR(

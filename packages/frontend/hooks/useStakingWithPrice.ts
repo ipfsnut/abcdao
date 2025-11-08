@@ -1,11 +1,11 @@
 'use client';
 
-import { useStaking } from './useStaking';
+import { useStakingMaster } from './useStakingMaster';
 import { useTokenPrice } from './useTokenPrice';
 import { useMemo } from 'react';
 
 export function useStakingWithPrice() {
-  const stakingData = useStaking();
+  const stakingData = useStakingMaster();
   const { priceData } = useTokenPrice();
 
   const enhancedData = useMemo(() => {

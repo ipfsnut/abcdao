@@ -12,7 +12,7 @@
 
 import { useState } from 'react';
 import { useWalletFirstAuth } from '@/hooks/useWalletFirstAuth';
-import { useStakingUnified } from '@/hooks/useStakingUnified';
+import { useStakingMaster } from '@/hooks/useStakingMaster';
 import { BackNavigation } from '@/components/back-navigation';
 import { ErrorBoundary } from '@/components/error-boundary';
 
@@ -29,19 +29,19 @@ function UnifiedStakingPageContent() {
   const { user, isAuthenticated } = useWalletFirstAuth();
   const [activeTab, setActiveTab] = useState<TabId>('stake');
   
-  // Use unified staking hook for live blockchain data
+  // Use master staking hook for consolidated data and operations
   const {
     tokenBalance,
     stakedAmount,
     pendingRewards,
     totalEarned,
-    blockchainStakedAmount,
+    rawStakedAmount: blockchainStakedAmount,
     isApproveLoading,
     isStakeLoading,
     isUnstakeLoading,
     isClaimLoading,
     handleClaimRewards
-  } = useStakingUnified();
+  } = useStakingMaster();
 
   // Use data directly from unified hook (already formatted)
   const stakingData = {
