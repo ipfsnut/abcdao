@@ -114,7 +114,9 @@ export function UnifiedFarcasterProvider({ children }: { children: ReactNode }) 
         setIsInMiniApp(true);
         
         // Store in localStorage for consistency
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(miniAppUser));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(miniAppUser));
+        }
         
         // Note: Wallet auto-connection will be handled by the Farcaster miniapp connector
         console.log('ℹ️ Wallet will auto-connect via Farcaster miniapp connector');
@@ -136,6 +138,9 @@ export function UnifiedFarcasterProvider({ children }: { children: ReactNode }) 
   // Try to authenticate from stored web session
   const tryWebAuth = () => {
     try {
+      // Skip during SSG/SSR
+      if (typeof window === 'undefined') return;
+      
       const storedUser = localStorage.getItem(STORAGE_KEY);
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);

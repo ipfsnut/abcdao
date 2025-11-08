@@ -615,13 +615,16 @@ export function useWalletFirstAuth() {
 
   // Try to restore authentication from stored token on mount
   useEffect(() => {
+    // Skip during SSG/SSR
+    if (typeof window === 'undefined') return;
+    
     const storedToken = localStorage.getItem('abc_dao_token');
     if (storedToken && !authState.isAuthenticated && !authState.isLoading) {
       // For now, we'll skip automatic restoration since the token is just the wallet address
       // The wallet connection will trigger authentication automatically
       localStorage.removeItem('abc_dao_token');
     }
-  }, [authState.isAuthenticated, authState.isLoading]);
+  }, []); // Removed dependencies to prevent infinite loops
 
   return {
     ...authState,
