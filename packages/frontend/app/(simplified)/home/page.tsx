@@ -180,14 +180,10 @@ export default function ConsolidatedDashboard() {
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('overview');
   
-  // Conditional rendering AFTER all hooks
-  if (!isConnected) {
-    return <WalletNotConnectedView systemStats={systemStats} />;
-  }
-  
-  if (isLoading) {
-    return <LoadingDashboardView />;
-  }
+  // Render appropriate view based on state, but keep same component structure
+  const currentView = !isConnected ? 'not_connected' : 
+                     isLoading ? 'loading' : 
+                     'dashboard';
 
   // Format large numbers for display
   const formatLargeNumber = (num: number) => {
@@ -227,6 +223,15 @@ export default function ConsolidatedDashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {currentView === 'not_connected' && (
+        <WalletNotConnectedView systemStats={systemStats} />
+      )}
+      
+      {currentView === 'loading' && (
+        <LoadingDashboardView />
+      )}
+      
+      {currentView === 'dashboard' && (
       <div className="max-w-7xl mx-auto">
         {/* Welcome Header */}
         <div className="mb-8">
@@ -495,6 +500,7 @@ export default function ConsolidatedDashboard() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
