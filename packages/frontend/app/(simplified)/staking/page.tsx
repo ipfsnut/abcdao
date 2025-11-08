@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { useWalletFirstAuth } from '@/hooks/useWalletFirstAuth';
 import { useStakingUnified } from '@/hooks/useStakingUnified';
 import { BackNavigation } from '@/components/back-navigation';
+import { ErrorBoundary } from '@/components/error-boundary';
 
 // Import tabbed components
 import { StakeTab } from '@/components/staking/stake-tab';
@@ -216,47 +217,49 @@ export default function UnifiedStakingPage() {
 
           {/* Tab Content */}
           <div className="min-h-[600px]">
-            {activeTab === 'stake' && (
-              <StakeTab 
-                stakingData={stakingData}
-                user={user}
-                onDataUpdate={() => {}} // Data auto-updates from staking hook
-                isPublicView={!isAuthenticated}
-              />
-            )}
-            
-            {activeTab === 'leaderboard' && (
-              <LeaderboardTab 
-                currentUser={user}
-                userStakedAmount={stakingData.stakedAmount}
-                isPublicView={!isAuthenticated}
-              />
-            )}
-            
-            {activeTab === 'rewards' && (
-              <RewardsTab 
-                stakingData={stakingData}
-                user={user}
-                onClaimSuccess={() => {}} // Data auto-updates from staking hook
-                onClaimRewards={handleClaimRewards}
-                isClaimLoading={isClaimLoading}
-                isPublicView={!isAuthenticated}
-              />
-            )}
-            
-            {activeTab === 'analytics' && (
-              <AnalyticsTab 
-                stakingData={stakingData}
-                user={user}
-                isPublicView={!isAuthenticated}
-              />
-            )}
-            
-            {activeTab === 'supply' && (
-              <div className="bg-gray-900/50 border border-green-900/30 rounded-lg p-6">
-                <TokenSupplyChart size={400} showLegend={true} interactive={true} />
-              </div>
-            )}
+            <ErrorBoundary>
+              {activeTab === 'stake' && (
+                <StakeTab 
+                  stakingData={stakingData}
+                  user={user}
+                  onDataUpdate={() => {}} // Data auto-updates from staking hook
+                  isPublicView={!isAuthenticated}
+                />
+              )}
+              
+              {activeTab === 'leaderboard' && (
+                <LeaderboardTab 
+                  currentUser={user}
+                  userStakedAmount={stakingData.stakedAmount}
+                  isPublicView={!isAuthenticated}
+                />
+              )}
+              
+              {activeTab === 'rewards' && (
+                <RewardsTab 
+                  stakingData={stakingData}
+                  user={user}
+                  onClaimSuccess={() => {}} // Data auto-updates from staking hook
+                  onClaimRewards={handleClaimRewards}
+                  isClaimLoading={isClaimLoading}
+                  isPublicView={!isAuthenticated}
+                />
+              )}
+              
+              {activeTab === 'analytics' && (
+                <AnalyticsTab 
+                  stakingData={stakingData}
+                  user={user}
+                  isPublicView={!isAuthenticated}
+                />
+              )}
+              
+              {activeTab === 'supply' && (
+                <div className="bg-gray-900/50 border border-green-900/30 rounded-lg p-6">
+                  <TokenSupplyChart size={400} showLegend={true} interactive={true} />
+                </div>
+              )}
+            </ErrorBoundary>
           </div>
         </div>
       </div>
