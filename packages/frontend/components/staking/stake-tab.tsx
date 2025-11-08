@@ -29,6 +29,24 @@ export function StakeTab({ stakingData, user, onDataUpdate, isPublicView = false
   const [stakeAmount, setStakeAmount] = useState('');
   const [unstakeAmount, setUnstakeAmount] = useState('');
 
+  // Always call hooks before any conditional returns (Rules of Hooks)
+  const {
+    handleStake: stakeTokens, 
+    handleUnstake: unstakeTokens, 
+    handleCompleteUnstake: claimUnbondedTokens,
+    handleClaimRewards, 
+    isApproveLoading: isApproving,
+    needsApproval 
+  } = useStaking();
+  
+  // Get unbonding information
+  const { unbondingQueue, totalUnbonding, withdrawableAmount } = useUnbonding();
+  const [isStaking, setIsStaking] = useState(false);
+  const [isUnstaking, setIsUnstaking] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [activeOperation, setActiveOperation] = useState<'stake' | 'unstake'>('stake');
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
   if (isPublicView) {
     return (
       <div className="space-y-6">
@@ -62,24 +80,6 @@ export function StakeTab({ stakingData, user, onDataUpdate, isPublicView = false
       </div>
     );
   }
-  
-  // Use real staking functions
-  const { 
-    handleStake: stakeTokens, 
-    handleUnstake: unstakeTokens, 
-    handleCompleteUnstake: claimUnbondedTokens,
-    handleClaimRewards, 
-    isApproving,
-    needsApproval 
-  } = useStaking();
-  
-  // Get unbonding information
-  const { unbondingQueue, totalUnbonding, withdrawableAmount } = useUnbonding();
-  const [isStaking, setIsStaking] = useState(false);
-  const [isUnstaking, setIsUnstaking] = useState(false);
-  const [isClaiming, setIsClaiming] = useState(false);
-  const [activeOperation, setActiveOperation] = useState<'stake' | 'unstake'>('stake');
-  const [currentTime, setCurrentTime] = useState(Date.now());
 
   // Update timer every second for countdown
   useEffect(() => {
