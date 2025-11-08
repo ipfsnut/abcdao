@@ -25,7 +25,7 @@ import { TokenSupplyChart } from '@/components/token-supply-chart';
 
 type TabId = 'stake' | 'leaderboard' | 'rewards' | 'analytics' | 'supply';
 
-export default function UnifiedStakingPage() {
+function UnifiedStakingPageContent() {
   const { user, isAuthenticated } = useWalletFirstAuth();
   const [activeTab, setActiveTab] = useState<TabId>('stake');
   
@@ -217,52 +217,58 @@ export default function UnifiedStakingPage() {
 
           {/* Tab Content */}
           <div className="min-h-[600px]">
-            <ErrorBoundary>
-              {activeTab === 'stake' && (
-                <StakeTab 
-                  stakingData={stakingData}
-                  user={user}
-                  onDataUpdate={() => {}} // Data auto-updates from staking hook
-                  isPublicView={!isAuthenticated}
-                />
-              )}
-              
-              {activeTab === 'leaderboard' && (
-                <LeaderboardTab 
-                  currentUser={user}
-                  userStakedAmount={stakingData.stakedAmount}
-                  isPublicView={!isAuthenticated}
-                />
-              )}
-              
-              {activeTab === 'rewards' && (
-                <RewardsTab 
-                  stakingData={stakingData}
-                  user={user}
-                  onClaimSuccess={() => {}} // Data auto-updates from staking hook
-                  onClaimRewards={handleClaimRewards}
-                  isClaimLoading={isClaimLoading}
-                  isPublicView={!isAuthenticated}
-                />
-              )}
-              
-              {activeTab === 'analytics' && (
-                <AnalyticsTab 
-                  stakingData={stakingData}
-                  user={user}
-                  isPublicView={!isAuthenticated}
-                />
-              )}
-              
-              {activeTab === 'supply' && (
-                <div className="bg-gray-900/50 border border-green-900/30 rounded-lg p-6">
-                  <TokenSupplyChart size={400} showLegend={true} interactive={true} />
-                </div>
-              )}
-            </ErrorBoundary>
+            {activeTab === 'stake' && (
+              <StakeTab 
+                stakingData={stakingData}
+                user={user}
+                onDataUpdate={() => {}} // Data auto-updates from staking hook
+                isPublicView={!isAuthenticated}
+              />
+            )}
+            
+            {activeTab === 'leaderboard' && (
+              <LeaderboardTab 
+                currentUser={user}
+                userStakedAmount={stakingData.stakedAmount}
+                isPublicView={!isAuthenticated}
+              />
+            )}
+            
+            {activeTab === 'rewards' && (
+              <RewardsTab 
+                stakingData={stakingData}
+                user={user}
+                onClaimSuccess={() => {}} // Data auto-updates from staking hook
+                onClaimRewards={handleClaimRewards}
+                isClaimLoading={isClaimLoading}
+                isPublicView={!isAuthenticated}
+              />
+            )}
+            
+            {activeTab === 'analytics' && (
+              <AnalyticsTab 
+                stakingData={stakingData}
+                user={user}
+                isPublicView={!isAuthenticated}
+              />
+            )}
+            
+            {activeTab === 'supply' && (
+              <div className="bg-gray-900/50 border border-green-900/30 rounded-lg p-6">
+                <TokenSupplyChart size={400} showLegend={true} interactive={true} />
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function UnifiedStakingPage() {
+  return (
+    <ErrorBoundary>
+      <UnifiedStakingPageContent />
+    </ErrorBoundary>
   );
 }
