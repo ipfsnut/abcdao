@@ -8,7 +8,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useStakingUnified } from '@/hooks/useStakingUnified';
+import { useStakingMaster } from '@/hooks/useStakingMaster';
 import { useUserStatsFixed } from '@/hooks/useUserStatsFixed';
 
 interface MetricsDashboardProps {
@@ -17,13 +17,13 @@ interface MetricsDashboardProps {
 }
 
 export function MetricsDashboard({ user, features }: MetricsDashboardProps) {
-  // Use unified staking data for consistency across all components
+  // Use master staking data for consistency across all components
   const {
     tokenBalance,
     stakedAmount,
     pendingRewards,
     formatStakingAmount
-  } = useStakingUnified();
+  } = useStakingMaster();
 
   // Use fixed user statistics to show correct ABC rewards and profile data
   const {

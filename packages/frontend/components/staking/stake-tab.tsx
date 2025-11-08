@@ -7,8 +7,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useStaking } from '@/hooks/useStaking';
-import { useUnbonding } from '@/hooks/useUnbonding';
+import { useStakingMaster } from '@/hooks/useStakingMaster';
 
 interface StakeTabProps {
   stakingData: {
@@ -35,17 +34,27 @@ export function StakeTab({ stakingData, user, onDataUpdate, isPublicView = false
     handleUnstake: unstakeTokens, 
     handleCompleteUnstake: claimUnbondedTokens,
     handleClaimRewards, 
-    isApproveLoading: isApproving,
-    needsApproval 
-  } = useStaking();
-  
-  // Get unbonding information
-  const { unbondingQueue, totalUnbonding, withdrawableAmount } = useUnbonding();
+    isApproving,
+    needsApproval,
+    // Unbonding information
+    unbondingQueue, 
+    totalUnbonding, 
+    withdrawableAmount
+  } = useStakingMaster();
   const [isStaking, setIsStaking] = useState(false);
   const [isUnstaking, setIsUnstaking] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
   const [activeOperation, setActiveOperation] = useState<'stake' | 'unstake'>('stake');
   const [currentTime, setCurrentTime] = useState(Date.now());
+
+  // Update timer every second for countdown - MUST be called before any conditional returns
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   if (isPublicView) {
     return (
@@ -80,15 +89,6 @@ export function StakeTab({ stakingData, user, onDataUpdate, isPublicView = false
       </div>
     );
   }
-
-  // Update timer every second for countdown
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const handleClaimUnbondedTokens = async () => {
     setIsClaiming(true);

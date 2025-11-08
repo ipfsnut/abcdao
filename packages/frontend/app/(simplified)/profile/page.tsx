@@ -15,7 +15,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { BackNavigation } from '@/components/back-navigation';
 import { useUserProfileSystematic } from '@/hooks/useUsersCommitsSystematic';
-import { useStakingPosition } from '@/hooks/useStakingSystematic';
+import { useStakingMaster } from '@/hooks/useStakingMaster';
 import { ActivityFeed } from '@/components/activity-feed';
 import Image from 'next/image';
 
@@ -25,7 +25,7 @@ function ProfilePageContent() {
   
   // Get user data from systematic APIs
   const userProfile = useUserProfileSystematic(address || undefined);
-  const stakingPosition = useStakingPosition(address || undefined);
+  const { position: stakingPosition } = useStakingMaster();
   
   const [activeTab, setActiveTab] = useState<'overview' | 'activity' | 'staking'>('overview');
   const [farcasterAvatar, setFarcasterAvatar] = useState<string | null>(null);

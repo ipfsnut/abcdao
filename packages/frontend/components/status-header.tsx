@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useMembership } from '@/hooks/useMembership';
 import { useRewardsSystematic } from '@/hooks/useRewardsSystematic';
-import { useStakingPosition } from '@/hooks/useStakingSystematic';
+import { useStakingMaster } from '@/hooks/useStakingMaster';
 import { useTokenSystematic } from '@/hooks/useTokenSystematic';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -72,7 +72,7 @@ export function StatusHeader() {
   const { isConnected, address } = useAccount();
   const membership = useMembership();
   const { tokenData } = useTokenSystematic('ABC');
-  const stakingPosition = useStakingPosition();
+  const { position: stakingPosition } = useStakingMaster();
   const { userRewards } = useRewardsSystematic();
 
   // Determine GitHub status

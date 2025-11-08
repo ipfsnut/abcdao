@@ -6,7 +6,7 @@ import { useTreasurySystematic } from '@/hooks/useTreasurySystematic';
 import { useTreasuryUnified } from '@/hooks/useTreasuryUnified';
 import { useStaking } from '@/hooks/useStaking';
 import { useStakingSystematic } from '@/hooks/useStakingSystematic';
-import { useStakingUnified } from '@/hooks/useStakingUnified';
+import { useStakingMaster } from '@/hooks/useStakingMaster';
 
 /**
  * Systematic Data Architecture Demo
@@ -28,7 +28,7 @@ export function SystematicDataDemo() {
 
   // UNIFIED: Best of both worlds (production-ready)
   const unifiedTreasury = useTreasuryUnified();
-  const unifiedStaking = useStakingUnified();
+  const unifiedStaking = useStakingMaster();
 
   return (
     <div className="p-6 bg-black text-green-400 font-mono">
