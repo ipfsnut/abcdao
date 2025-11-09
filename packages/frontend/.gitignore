@@ -61,3 +61,9 @@ update-addresses.js
 # development and testing files
 launchtodo.txt
 TODO.txt
+
+# testing infrastructure
+__tests__/
+jest.config.js
+jest.setup.js
+.eslintrc.js

@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function RootPage() {
+  const router = useRouter();
+
   useEffect(() => {
-    window.location.replace('/home');
-  }, []);
+    router.replace('/home');
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono flex items-center justify-center">

@@ -174,6 +174,7 @@ export default function ConsolidatedDashboard() {
     addFarcasterIntegration 
   } = useWalletFirstAuth();
 
+
   // Get real statistics for hero section
   const systemStats = useUsersCommitsStatsSystematic();
   const [farcasterAvatar, setFarcasterAvatar] = useState<string | null>(null);
