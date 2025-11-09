@@ -34,9 +34,7 @@ interface WebhookInstructions {
 }
 
 export function WebhookSetupModal({ isOpen, onClose, repository, onWebhookConfigured }: WebhookSetupModalProps) {
-  // Early return guard BEFORE any hooks
-  if (!isOpen) return null;
-
+  // All hooks must be called before any conditional logic
   const { user: profile } = useFarcaster();
   const [instructions, setInstructions] = useState<WebhookInstructions | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -50,6 +48,9 @@ export function WebhookSetupModal({ isOpen, onClose, repository, onWebhookConfig
       fetchWebhookInstructions();
     }
   }, [profile?.fid, repository.id]);
+
+  // Early return AFTER all hooks are called
+  if (!isOpen) return null;
 
   const fetchWebhookInstructions = async () => {
     if (!profile?.fid) return;

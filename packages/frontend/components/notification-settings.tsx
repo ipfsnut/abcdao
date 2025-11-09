@@ -58,9 +58,7 @@ interface NotificationSettingsProps {
 }
 
 export function NotificationSettings({ user, onClose, isOpen }: NotificationSettingsProps) {
-  // Early return guard BEFORE any hooks
-  if (!isOpen) return null;
-
+  // All hooks must be called before any conditional logic
   const [settings, setSettings] = useState<NotificationSettings>({
     commitRewards: {
       enabled: true,
@@ -118,6 +116,9 @@ export function NotificationSettings({ user, onClose, isOpen }: NotificationSett
     // Load user's notification settings
     loadSettings();
   }, [user]);
+
+  // Early return AFTER all hooks are called
+  if (!isOpen) return null;
 
   const loadSettings = async () => {
     // In production, load from API

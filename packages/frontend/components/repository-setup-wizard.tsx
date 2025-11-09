@@ -33,9 +33,7 @@ interface RepositorySetupWizardProps {
 type WizardStep = 'welcome' | 'detection' | 'selection' | 'configuration' | 'confirmation';
 
 export function RepositorySetupWizard({ user, onComplete, onCancel, isOpen }: RepositorySetupWizardProps) {
-  // Early return guard BEFORE any hooks
-  if (!isOpen) return null;
-
+  // All hooks must be called before any conditional logic
   const [currentStep, setCurrentStep] = useState<WizardStep>('welcome');
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,6 +49,9 @@ export function RepositorySetupWizard({ user, onComplete, onCancel, isOpen }: Re
   useEffect(() => {
     setSelectedCount(repositories.filter(repo => repo.isSelected).length);
   }, [repositories]);
+
+  // Early return AFTER all hooks are called
+  if (!isOpen) return null;
 
   const runAutoDetection = async () => {
     setIsLoading(true);

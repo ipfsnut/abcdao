@@ -28,9 +28,7 @@ interface RealTimeNotificationsProps {
 }
 
 export function RealTimeNotifications({ user, isEnabled = true }: RealTimeNotificationsProps) {
-  // Early return guard BEFORE any hooks
-  if (!isEnabled) return null;
-
+  // All hooks must be called before any conditional logic
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -52,6 +50,9 @@ export function RealTimeNotifications({ user, isEnabled = true }: RealTimeNotifi
   useEffect(() => {
     setUnreadCount(notifications.filter(n => !n.isRead).length);
   }, [notifications]);
+
+  // Early return AFTER all hooks are called
+  if (!isEnabled) return null;
 
   const initializeNotifications = async () => {
     if (!user?.wallet_address) return;

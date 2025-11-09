@@ -11,9 +11,7 @@ interface BlogModalProps {
 }
 
 export function BlogModal({ isOpen, onClose, title, markdownPath }: BlogModalProps) {
-  // Early return guard BEFORE any hooks
-  if (!isOpen) return null;
-
+  // All hooks must be called before any conditional logic
   const [content, setContent] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
@@ -59,6 +57,9 @@ export function BlogModal({ isOpen, onClose, title, markdownPath }: BlogModalPro
       return () => document.removeEventListener('keydown', handleEscapeKey);
     }
   }, [isOpen, onClose]);
+
+  // Early return AFTER all hooks are called
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/95 z-50 overflow-auto">
