@@ -323,7 +323,7 @@ router.get('/discord/callback', async (req, res) => {
     }
 
     // Reconstruct redirect URI
-    const redirect_uri = `${req.protocol}://${req.get('host')}/api/auth/discord/callback`;
+    const redirect_uri = `${req.protocol}://${req.get('host')}/api/universal-auth/discord/callback`;
     
     // Exchange code for Discord data
     const discordData = await UniversalAuthService.exchangeDiscordCode(code, redirect_uri);
@@ -608,7 +608,7 @@ router.get('/discord/url', (req, res) => {
 
     const state = wallet_address || 'webapp';
     const scope = 'identify';
-    const redirect = redirect_uri || `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/auth/discord/callback`;
+    const redirect = redirect_uri || `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/universal-auth/discord/callback`;
     
     const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${client_id}&redirect_uri=${encodeURIComponent(redirect)}&response_type=code&scope=${scope}&state=${state}`;
     
@@ -663,7 +663,7 @@ router.post('/discord/url', (req, res) => {
     }
     
     const scope = 'identify';
-    const redirect = redirect_uri || `${process.env.BACKEND_URL || 'https://abcdao-production.up.railway.app'}/api/auth/discord/callback`;
+    const redirect = redirect_uri || `${process.env.BACKEND_URL || 'https://abcdao-production.up.railway.app'}/api/universal-auth/discord/callback`;
     
     const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${client_id}&redirect_uri=${encodeURIComponent(redirect)}&response_type=code&scope=${scope}&state=${encodeURIComponent(state)}`;
     
