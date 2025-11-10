@@ -35,6 +35,7 @@ interface UserProfile {
   discord_username?: string;
   farcaster_connected: boolean;
   farcaster_username?: string;
+  farcaster_fid?: number;
   
   // Features
   can_earn_rewards: boolean;
@@ -168,6 +169,7 @@ export function useWalletFirstAuth() {
           wallet_address: authData.user.wallet_address,
           display_name: authData.user.farcaster_username || authData.user.github_username || `Wallet ${authData.user.wallet_address.slice(0,6)}...`,
           farcaster_username: authData.user.farcaster_username,
+          farcaster_fid: authData.user.farcaster_fid,
           github_username: authData.user.github_username,
           github_connected: !!authData.user.github_username,
           farcaster_connected: !!authData.user.farcaster_fid,

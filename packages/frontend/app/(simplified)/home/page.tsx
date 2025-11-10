@@ -20,6 +20,7 @@ import { useWalletFirstAuth } from '@/hooks/useWalletFirstAuth';
 import { useUsersCommitsStatsSystematic } from '@/hooks/useUsersCommitsSystematic';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { config } from '@/lib/config';
 
 // Import consolidated components
 import { QuickActionsPanel } from '@/components/quick-actions-panel';
@@ -170,7 +171,6 @@ export default function ConsolidatedDashboard() {
     walletConnected,
     requiresMembership,
     addGitHubIntegration,
-    addDiscordIntegration,
     addFarcasterIntegration 
   } = useWalletFirstAuth();
 
@@ -219,6 +219,65 @@ export default function ConsolidatedDashboard() {
       fetchFarcasterAvatar();
     }
   }, [user, isLoading]);
+
+  // Handle Discord connection with proper OAuth flow
+  const handleDiscordConnect = async () => {
+    if (!user?.farcaster_fid) {
+      alert('Please connect your Farcaster account first');
+      return;
+    }
+
+    try {
+      // Get Discord OAuth URL from backend
+      const response = await fetch(`${config.backendUrl}/api/universal-auth/discord/url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          farcaster_fid: user.farcaster_fid,
+          farcaster_username: user.farcaster_username,
+          context: 'webapp'
+        }),
+      });
+
+      if (response.ok) {
+        const { auth_url } = await response.json();
+        
+        // Open Discord OAuth in new window
+        const discordWindow = window.open(auth_url, '_blank', 'width=600,height=700');
+        
+        // Poll for connection success
+        const pollForConnection = setInterval(async () => {
+          try {
+            const statusResponse = await fetch(`${config.backendUrl}/api/users/${user.farcaster_fid}/status`);
+            if (statusResponse.ok) {
+              const statusData = await statusResponse.json();
+              if (statusData.user?.discord_username) {
+                clearInterval(pollForConnection);
+                alert(`Discord account @${statusData.user.discord_username} connected successfully!`);
+                window.location.reload(); // Refresh to update UI
+                discordWindow?.close();
+              }
+            }
+          } catch (pollError) {
+            console.error('Error polling Discord auth status:', pollError);
+          }
+        }, 3000);
+        
+        // Stop polling after 2 minutes
+        setTimeout(() => {
+          clearInterval(pollForConnection);
+          discordWindow?.close();
+        }, 120000);
+        
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to initialize Discord authentication');
+      }
+    } catch (error) {
+      console.error('Discord connection error:', error);
+      alert('Failed to connect Discord. Please try again.');
+    }
+  };
 
   // Show different content based on authentication status
 
@@ -448,7 +507,7 @@ export default function ConsolidatedDashboard() {
               <NextStepsWizard 
                 steps={nextSteps}
                 onGitHubConnect={() => addGitHubIntegration()}
-                onDiscordConnect={() => addDiscordIntegration()}
+                onDiscordConnect={() => handleDiscordConnect()}
                 onFarcasterConnect={() => addFarcasterIntegration({})}
               />
             )}
