@@ -185,23 +185,11 @@ export default function ConsolidatedDashboard() {
   
   // Render appropriate view based on state, but keep same component structure
   // For Farcaster miniapp users, prioritize Farcaster authentication
-  console.log('🐛 Home page auth state:', {
-    farcasterLoading,
-    isLoading,
-    isInMiniApp,
-    farcasterAuthenticated,
-    farcasterUser,
-    isConnected,
-    currentView: 'calculating...'
-  });
-  
   const currentView = (farcasterLoading || isLoading) ? 'loading' :
                      (isInMiniApp && farcasterAuthenticated) ? 'dashboard' :
                      farcasterAuthenticated ? 'dashboard' :
                      !isConnected ? 'not_connected' : 
                      'dashboard';
-                     
-  console.log('🎯 Final currentView:', currentView);
 
   // Format large numbers for display
   const formatLargeNumber = (num: number) => {
@@ -330,7 +318,7 @@ export default function ConsolidatedDashboard() {
                         <div className="relative w-16 h-16">
                           <Image
                             src={farcasterAvatar}
-                            alt={`${user.farcaster_username || 'User'}'s profile`}
+                            alt={`${user?.farcaster_username || farcasterUser?.username || 'User'}'s profile`}
                             fill
                             className="rounded-full border-2 border-green-400/50 object-cover"
                             sizes="64px"

@@ -110,11 +110,6 @@ export function UnifiedFarcasterProvider({ children }: { children: ReactNode }) 
         };
 
         console.log('✅ Miniapp user authenticated:', miniAppUser);
-        console.log('🎭 Setting Farcaster user state:', {
-          user: miniAppUser,
-          isInMiniApp: true,
-          isAuthenticated: true
-        });
         setUser(miniAppUser);
         setIsInMiniApp(true);
         
