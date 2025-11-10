@@ -679,4 +679,218 @@ router.post('/discord/url', (req, res) => {
   }
 });
 
+// ============================================================================
+// NEW UNIVERSAL AUTH DISCORD ROUTES (For frontend)
+// ============================================================================
+
+/**
+ * Generate Discord OAuth URL for universal auth
+ * POST /api/universal-auth/discord/url
+ */
+router.post('/discord/url', (req, res) => {
+  try {
+    const { 
+      wallet_address, 
+      farcaster_fid, 
+      farcaster_username, 
+      context,
+      redirect_uri 
+    } = req.body;
+    
+    const client_id = process.env.DISCORD_CLIENT_ID;
+    if (!client_id) {
+      console.log('Discord OAuth check: DISCORD_CLIENT_ID not found in environment');
+      return res.status(500).json({ error: 'Discord OAuth not configured' });
+    }
+    console.log('Discord OAuth check: DISCORD_CLIENT_ID found, generating URL');
+
+    // Create state object with context information
+    let state;
+    if (farcaster_fid && farcaster_username) {
+      // Farcaster context - use FID and username
+      state = JSON.stringify({
+        type: 'farcaster',
+        fid: farcaster_fid,
+        username: farcaster_username,
+        context: context || 'webapp'
+      });
+    } else if (wallet_address) {
+      // Wallet context
+      state = JSON.stringify({
+        type: 'wallet',
+        wallet_address: wallet_address,
+        context: context || 'webapp'
+      });
+    } else {
+      state = 'webapp';
+    }
+    
+    const scope = 'identify';
+    const redirect = redirect_uri || `${process.env.BACKEND_URL || 'https://abcdao-production.up.railway.app'}/api/universal-auth/discord/callback`;
+    
+    const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${client_id}&redirect_uri=${encodeURIComponent(redirect)}&response_type=code&scope=${scope}&state=${encodeURIComponent(state)}`;
+    
+    res.json({
+      auth_url: authUrl,
+      state: state,
+      redirect_uri: redirect
+    });
+
+  } catch (error) {
+    console.error('Discord URL generation error:', error);
+    res.status(500).json({ error: 'Failed to generate Discord OAuth URL' });
+  }
+});
+
+/**
+ * Universal Discord OAuth callback
+ * GET /api/universal-auth/discord/callback
+ */
+router.get('/discord/callback', async (req, res) => {
+  try {
+    const { code, state } = req.query;
+    
+    if (!code) {
+      return res.status(400).json({ error: 'Discord OAuth code is required' });
+    }
+
+    console.log('🎮 Discord OAuth callback received:', { code: code.substring(0, 10) + '...', state });
+
+    // Reconstruct redirect URI
+    const redirect_uri = `${req.protocol}://${req.get('host')}/api/universal-auth/discord/callback`;
+    
+    try {
+      // Exchange code for Discord data
+      const discordData = await UniversalAuthService.exchangeDiscordCode(code, redirect_uri);
+      console.log('🎮 Discord data exchange successful:', { username: discordData.username, id: discordData.id });
+      
+      // Parse state to determine linking approach
+      let linkingResult = null;
+      
+      if (state) {
+        try {
+          // Try to parse as JSON first (new format)
+          const stateData = JSON.parse(state);
+          console.log('📋 Parsed state data:', stateData);
+          
+          if (stateData.type === 'farcaster' && stateData.fid) {
+            // Link to Farcaster user by FID
+            console.log(`🎭 Linking Discord to Farcaster user ${stateData.username} (FID: ${stateData.fid})`);
+            
+            // First, find the user by FID and link Discord
+            const pool = getPool();
+            const updateResult = await pool.query(`
+              UPDATE users 
+              SET 
+                discord_id = $2, 
+                discord_username = $3,
+                updated_at = NOW()
+              WHERE farcaster_fid = $1
+              RETURNING *
+            `, [stateData.fid, discordData.id, discordData.username]);
+            
+            if (updateResult.rows.length > 0) {
+              linkingResult = {
+                success: true,
+                user: updateResult.rows[0],
+                message: `Discord @${discordData.username} linked to Farcaster ${stateData.username} successfully!`
+              };
+            } else {
+              throw new Error(`Farcaster user not found for FID: ${stateData.fid}`);
+            }
+          } else if (stateData.type === 'wallet' && stateData.wallet_address) {
+            // Link to wallet address using universal auth service
+            console.log(`💰 Linking Discord to wallet ${stateData.wallet_address}`);
+            linkingResult = await UniversalAuthService.linkDiscordAccount(
+              stateData.wallet_address, 
+              discordData
+            );
+          }
+        } catch (parseError) {
+          console.log('📋 State parse failed, treating as legacy format:', parseError.message);
+          // Fallback: treat as plain wallet address or old format
+          if (state && state.startsWith('0x')) {
+            console.log(`💰 Linking Discord to wallet ${state} (legacy format)`);
+            linkingResult = await UniversalAuthService.linkDiscordAccount(state, discordData);
+          }
+        }
+      }
+      
+      if (linkingResult && linkingResult.success) {
+        // Successful automatic linking - close popup
+        return res.send(`
+          <html>
+            <head><title>Discord Connected</title></head>
+            <body>
+              <script>
+                window.opener?.postMessage({type: 'discord_auth_success', data: ${JSON.stringify(linkingResult)}}, '*');
+                window.close();
+              </script>
+              <div style="text-align: center; font-family: monospace; margin-top: 100px;">
+                <h2 style="color: green;">✅ Discord Connected!</h2>
+                <p>Discord account @${discordData.username} linked successfully!</p>
+                <p>This window will close automatically...</p>
+                <script>setTimeout(() => window.close(), 3000);</script>
+              </div>
+            </body>
+          </html>
+        `);
+      }
+      
+      // Otherwise, return Discord data for manual linking
+      res.send(`
+        <html>
+          <head><title>Discord OAuth Complete</title></head>
+          <body>
+            <script>
+              window.opener?.postMessage({
+                type: 'discord_auth_success', 
+                data: {
+                  success: true,
+                  discord_data: ${JSON.stringify(discordData)},
+                  message: 'Discord OAuth successful. Please complete linking in the main app.'
+                }
+              }, '*');
+              window.close();
+            </script>
+            <div style="text-align: center; font-family: monospace; margin-top: 100px;">
+              <h2 style="color: green;">Discord OAuth Complete</h2>
+              <p>This window will close automatically...</p>
+            </div>
+          </body>
+        </html>
+      `);
+
+    } catch (discordError) {
+      console.error('🎮 Discord OAuth exchange failed:', discordError);
+      
+      // Return user-friendly error in popup
+      const errorMessage = discordError.message || 'Unknown Discord OAuth error';
+      res.send(`
+        <html>
+          <head><title>Discord Connection Failed</title></head>
+          <body>
+            <script>
+              window.opener?.postMessage({
+                type: 'discord_auth_error', 
+                error: '${errorMessage}'
+              }, '*');
+              setTimeout(() => window.close(), 5000);
+            </script>
+            <div style="text-align: center; font-family: monospace; margin-top: 100px;">
+              <h2 style="color: red;">❌ Discord Connection Failed</h2>
+              <p>${errorMessage}</p>
+              <p>This window will close automatically...</p>
+            </div>
+          </body>
+        </html>
+      `);
+    }
+
+  } catch (error) {
+    console.error('Discord OAuth callback error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
 export default router;

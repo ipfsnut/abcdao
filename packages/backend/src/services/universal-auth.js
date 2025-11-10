@@ -261,6 +261,12 @@ export class UniversalAuthService {
 
       const tokenData = await tokenResponse.json();
       
+      // Check for HTTP errors
+      if (!tokenResponse.ok) {
+        console.error('Discord token response error:', tokenResponse.status, tokenData);
+        throw new Error(`Discord OAuth token error: ${tokenData.error_description || tokenData.error || 'HTTP ' + tokenResponse.status}`);
+      }
+      
       if (tokenData.error) {
         throw new Error(`Discord OAuth error: ${tokenData.error_description}`);
       }
@@ -273,6 +279,12 @@ export class UniversalAuthService {
       });
 
       const userData = await userResponse.json();
+      
+      // Check for HTTP errors
+      if (!userResponse.ok) {
+        console.error('Discord user response error:', userResponse.status, userData);
+        throw new Error(`Discord user API error: ${userData.message || 'HTTP ' + userResponse.status}`);
+      }
 
       if (userData.error) {
         throw new Error(`Discord API error: ${userData.message}`);
@@ -291,7 +303,17 @@ export class UniversalAuthService {
 
     } catch (error) {
       console.error('Discord OAuth exchange error:', error);
-      throw new Error(`Discord OAuth failed: ${error.message}`);
+      
+      // Properly extract Discord API error details
+      const discordError = error.response?.data?.error_description || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          'Unknown Discord API error';
+      
+      console.error('Discord API error details:', error.response?.data);
+      console.error('Discord token response status:', error.response?.status);
+      
+      throw new Error(`Discord OAuth failed: ${discordError}`);
     }
   }
 
