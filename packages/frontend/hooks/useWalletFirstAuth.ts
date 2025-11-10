@@ -177,7 +177,7 @@ export function useWalletFirstAuth() {
           github_username: authData.user.github_username,
           github_connected: !!authData.user.github_username,
           farcaster_connected: !!authData.user.farcaster_fid,
-          discord_connected: !!authData.user.discord_username,
+          discord_connected: !!authData.user.discord_username || !!authData.user.discord_id,
           discord_username: authData.user.discord_username,
           membership_status: authData.user.membership_status || 'free',
           is_member: authData.user.membership_status !== 'free',
@@ -187,7 +187,7 @@ export function useWalletFirstAuth() {
           social_features: !!authData.user.farcaster_fid,
           premium_features: authData.user.membership_status === 'paid',
           total_commits: authData.user.total_commits || 0,
-          total_earned_tokens: parseFloat(authData.user.total_abc_earned || '0'),
+          total_earned_tokens: parseFloat(authData.user.total_rewards_earned || authData.user.total_abc_earned || '0'),
           total_staked_tokens: 0, // Will fetch separately if wallet connected
           last_active_at: authData.user.updated_at || new Date().toISOString(),
           bio: authData.user.display_name,
@@ -746,6 +746,7 @@ export function useWalletFirstAuth() {
   // Stable refs to prevent conditional hook rendering
   const mountedRef = useRef(false);
   const authAttemptedRef = useRef(false);
+  const farcasterAuthAttemptedRef = useRef(false);
 
   // Update wallet connection state (stable hook)
   useEffect(() => {
@@ -776,14 +777,26 @@ export function useWalletFirstAuth() {
     // 1. Farcaster is authenticated and not loading
     // 2. We don't have a user authenticated yet
     // 3. No wallet is connected (wallet takes priority)
+    // 4. Haven't already attempted Farcaster auth for this user
     if (farcasterAuthenticated && !farcasterLoading && farcasterUser && 
-        !authState.isAuthenticated && !isConnected) {
+        !authState.isAuthenticated && !isConnected && 
+        !farcasterAuthAttemptedRef.current) {
+      
       console.log('🎭 Attempting Farcaster authentication for:', farcasterUser.username);
+      farcasterAuthAttemptedRef.current = true;
+      
       authenticateFarcaster(farcasterUser.fid, farcasterUser.username).catch(error => {
         console.error('Failed to authenticate with Farcaster:', error);
+        // Reset on error so we can retry
+        farcasterAuthAttemptedRef.current = false;
       });
     }
-  }, [farcasterAuthenticated, farcasterLoading, farcasterUser, authState.isAuthenticated, isConnected, authenticateFarcaster]);
+    
+    // Reset Farcaster auth attempt flag when user changes or disconnects
+    if (!farcasterUser || !farcasterAuthenticated) {
+      farcasterAuthAttemptedRef.current = false;
+    }
+  }, [farcasterAuthenticated, farcasterLoading, farcasterUser, authState.isAuthenticated, isConnected]);
 
   // Try to restore authentication from stored token on mount
   useEffect(() => {
