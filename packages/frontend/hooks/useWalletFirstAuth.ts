@@ -12,6 +12,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAccount } from 'wagmi';
 import { config } from '@/lib/config';
+import { useFarcaster } from '@/contexts/unified-farcaster-context';
 import { createPublicClient, http, formatEther } from 'viem';
 import { base } from 'viem/chains';
 import { CONTRACTS } from '@/lib/contracts';
@@ -113,6 +114,7 @@ const fetchUserStakedAmount = async (walletAddress: string): Promise<number> => 
 
 export function useWalletFirstAuth() {
   const { address, isConnected } = useAccount();
+  const { user: farcasterUser, isAuthenticated: farcasterAuthenticated, isLoading: farcasterLoading } = useFarcaster();
   
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
@@ -150,17 +152,167 @@ export function useWalletFirstAuth() {
   }, []);
 
   /**
+   * Authenticate with Farcaster FID
+   */
+  const authenticateFarcaster = useCallback(async (fid: number, username: string) => {
+    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+    
+    try {
+      // Use the universal auth identify endpoint with FID
+      const authResponse = await fetch(`${config.backendUrl}/api/auth/identify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: fid.toString() })
+      });
+      const authData = await authResponse.json();
+
+      if (authResponse.ok) {
+        if (authData.success && authData.user) {
+          // User authenticated successfully via Farcaster
+        const user = {
+          wallet_address: authData.user.wallet_address || '',
+          display_name: authData.user.farcaster_username || authData.user.github_username || `@${username}`,
+          farcaster_username: authData.user.farcaster_username,
+          farcaster_fid: authData.user.farcaster_fid,
+          github_username: authData.user.github_username,
+          github_connected: !!authData.user.github_username,
+          farcaster_connected: !!authData.user.farcaster_fid,
+          discord_connected: !!authData.user.discord_username,
+          discord_username: authData.user.discord_username,
+          membership_status: authData.user.membership_status || 'free',
+          is_member: authData.user.membership_status !== 'free',
+          membership_tier: authData.user.membership_status as 'free' | 'paid',
+          can_earn_rewards: !!authData.user.github_username && authData.user.membership_status === 'paid',
+          community_access: true,
+          social_features: !!authData.user.farcaster_fid,
+          premium_features: authData.user.membership_status === 'paid',
+          total_commits: authData.user.total_commits || 0,
+          total_earned_tokens: parseFloat(authData.user.total_abc_earned || '0'),
+          total_staked_tokens: 0, // Will fetch separately if wallet connected
+          last_active_at: authData.user.updated_at || new Date().toISOString(),
+          bio: authData.user.display_name,
+          avatar_url: undefined,
+          website_url: undefined
+        };
+
+        // Fetch staking data if wallet is connected
+        if (user.wallet_address) {
+          const stakedAmount = await fetchUserStakedAmount(user.wallet_address);
+          user.total_staked_tokens = stakedAmount;
+        }
+
+        const features = authData.features || {
+          token_operations: !!user.wallet_address,
+          earning_rewards: user.github_connected || false,
+          repository_management: user.github_connected || false,
+          community_access: true,
+          social_features: user.discord_connected || user.farcaster_connected || false,
+          premium_features: user.is_member || false,
+          staking: !!user.wallet_address,
+        };
+
+        const nextSteps = authData.next_steps || [];
+
+        setAuthState({
+          user,
+          token: authData.token || fid.toString(),
+          features,
+          nextSteps,
+          isLoading: false,
+          isAuthenticated: true,
+          error: null,
+          walletConnected: !!user.wallet_address,
+          walletAddress: user.wallet_address || null,
+          membershipStatus: user.is_member ? 'member' : 'non-member',
+          requiresMembership: !user.is_member
+        });
+
+          return { user, features, nextSteps };
+        } else if (authData.action === 'require_wallet_setup') {
+          // Farcaster user not found in database - create minimal auth state
+          const user = {
+          wallet_address: '',
+          display_name: `@${username}`,
+          farcaster_username: username,
+          farcaster_fid: fid,
+          github_username: undefined,
+          github_connected: false,
+          farcaster_connected: true,
+          discord_connected: false,
+          discord_username: undefined,
+          membership_status: 'free' as const,
+          is_member: false,
+          membership_tier: 'free' as const,
+          can_earn_rewards: false,
+          community_access: true,
+          social_features: true,
+          premium_features: false,
+          total_commits: 0,
+          total_earned_tokens: 0,
+          total_staked_tokens: 0,
+          last_active_at: new Date().toISOString(),
+          bio: undefined,
+          avatar_url: undefined,
+          website_url: undefined
+        };
+
+        setAuthState({
+          user,
+          token: fid.toString(),
+          features: {
+            token_operations: false,
+            earning_rewards: false,
+            repository_management: false,
+            community_access: true,
+            social_features: true,
+            premium_features: false,
+            staking: false,
+          },
+          nextSteps: [{
+            action: 'connect_wallet',
+            title: 'Connect Wallet',
+            description: 'Connect your wallet to access ABC DAO features',
+            benefits: ['Stake ABC tokens', 'Purchase membership', 'Full dashboard access'],
+            priority: 'high' as const
+          }],
+          isLoading: false,
+          isAuthenticated: true,
+          error: null,
+          walletConnected: false,
+          walletAddress: null,
+          membershipStatus: 'non-member',
+          requiresMembership: false
+        });
+
+          return { user, features: null, nextSteps: [] };
+        } else {
+          throw new Error(authData.error || 'Authentication failed');
+        }
+      }
+
+    } catch (error) {
+      console.error('Farcaster authentication error:', error);
+      setAuthState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Farcaster authentication failed'
+      }));
+      throw error;
+    }
+  }, []);
+
+  /**
    * Authenticate with wallet address
    */
   const authenticateWallet = useCallback(async (walletAddress: string, context?: any) => {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
-      // Authenticate wallet with new endpoint
-      const authResponse = await fetch(`${config.backendUrl}/api/auth/wallet`, {
+      // Use same identify endpoint for consistency
+      const authResponse = await fetch(`${config.backendUrl}/api/auth/identify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet_address: walletAddress })
+        body: JSON.stringify({ identifier: walletAddress })
       });
       const authData = await authResponse.json();
 
@@ -617,6 +769,21 @@ export function useWalletFirstAuth() {
       authAttemptedRef.current = false;
     }
   }, [isConnected, address, authState.isAuthenticated]); // Removed authenticateWallet dependency
+
+  // Separate effect for Farcaster authentication
+  useEffect(() => {
+    // Only attempt Farcaster authentication if:
+    // 1. Farcaster is authenticated and not loading
+    // 2. We don't have a user authenticated yet
+    // 3. No wallet is connected (wallet takes priority)
+    if (farcasterAuthenticated && !farcasterLoading && farcasterUser && 
+        !authState.isAuthenticated && !isConnected) {
+      console.log('🎭 Attempting Farcaster authentication for:', farcasterUser.username);
+      authenticateFarcaster(farcasterUser.fid, farcasterUser.username).catch(error => {
+        console.error('Failed to authenticate with Farcaster:', error);
+      });
+    }
+  }, [farcasterAuthenticated, farcasterLoading, farcasterUser, authState.isAuthenticated, isConnected, authenticateFarcaster]);
 
   // Try to restore authentication from stored token on mount
   useEffect(() => {
