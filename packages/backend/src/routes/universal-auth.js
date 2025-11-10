@@ -757,7 +757,8 @@ router.get('/discord/callback', async (req, res) => {
     console.log('🎮 Discord OAuth callback received:', { code: code.substring(0, 10) + '...', state });
 
     // Reconstruct redirect URI (must match exactly what was used in OAuth URL generation)
-    const redirect_uri = `${process.env.BACKEND_URL || 'https://abcdao-production.up.railway.app'}/api/universal-auth/discord/callback`;
+    // Force HTTPS since Railway may proxy HTTP internally but Discord expects HTTPS
+    const redirect_uri = `https://abcdao-production.up.railway.app/api/universal-auth/discord/callback`;
     
     try {
       // Exchange code for Discord data
