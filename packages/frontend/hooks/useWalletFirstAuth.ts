@@ -159,7 +159,7 @@ export function useWalletFirstAuth() {
     
     try {
       // Use the universal auth identify endpoint with FID
-      const authResponse = await fetch(`${config.backendUrl}/api/auth/identify`, {
+      const authResponse = await fetch(`${config.backendUrl}/api/universal-auth/identify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier: fid.toString() })
@@ -309,7 +309,7 @@ export function useWalletFirstAuth() {
     
     try {
       // Use same identify endpoint for consistency
-      const authResponse = await fetch(`${config.backendUrl}/api/auth/identify`, {
+      const authResponse = await fetch(`${config.backendUrl}/api/universal-auth/identify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier: walletAddress })
