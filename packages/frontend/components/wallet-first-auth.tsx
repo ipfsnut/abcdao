@@ -347,22 +347,32 @@ export function WalletFirstAuth() {
   };
 
   const initiateDiscordOAuth = async () => {
-    if (!user?.wallet_address) {
-      console.error('No wallet address available for Discord OAuth');
+    // Support both wallet and Farcaster users (match community/connect-tab.tsx pattern)
+    if (!user?.wallet_address && !user?.farcaster_fid) {
+      console.error('No wallet address or Farcaster FID available for Discord OAuth');
       return;
     }
 
     try {
       // Get Discord OAuth URL from backend (same pattern as community/connect-tab.tsx)
+      const requestBody: any = {
+        context: 'wallet_first_auth'
+      };
+
+      // Add user identifier (wallet or Farcaster)
+      if (user.wallet_address) {
+        requestBody.wallet_address = user.wallet_address;
+      } else if (user.farcaster_fid) {
+        requestBody.farcaster_fid = user.farcaster_fid;
+        requestBody.farcaster_username = user.farcaster_username;
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app'}/api/universal-auth/discord/url`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          wallet_address: user.wallet_address,
-          context: 'wallet_first_auth'
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
