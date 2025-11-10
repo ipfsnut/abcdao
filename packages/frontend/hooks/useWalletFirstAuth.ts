@@ -36,6 +36,9 @@ interface UserProfile {
   farcaster_connected: boolean;
   farcaster_username?: string;
   farcaster_fid?: number;
+  // Alternative naming from FarcasterUser context
+  fid?: number;
+  username?: string;
   
   // Features
   can_earn_rewards: boolean;
