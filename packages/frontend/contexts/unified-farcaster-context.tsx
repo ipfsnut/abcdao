@@ -110,6 +110,11 @@ export function UnifiedFarcasterProvider({ children }: { children: ReactNode }) 
         };
 
         console.log('✅ Miniapp user authenticated:', miniAppUser);
+        console.log('🎭 Setting Farcaster user state:', {
+          user: miniAppUser,
+          isInMiniApp: true,
+          isAuthenticated: true
+        });
         setUser(miniAppUser);
         setIsInMiniApp(true);
         
@@ -149,23 +154,6 @@ export function UnifiedFarcasterProvider({ children }: { children: ReactNode }) 
         setIsInMiniApp(false);
       } else {
         console.log('ℹ️ No stored user session');
-        
-        // Development fallback: Auto-authenticate with known user
-        // Always enable for epicdylan user (development/testing)
-        if (process.env.NODE_ENV === 'development' || window.location.hostname.includes('abc.epicdylan.com')) {
-          console.log('🔧 Development mode or epicdylan domain: Auto-authenticating with known user');
-          const fallbackUser: FarcasterUser = {
-            fid: 8573,
-            username: 'epicdylan',
-            displayName: 'epicdylan',
-            pfpUrl: ''
-          };
-          
-          setUser(fallbackUser);
-          setIsInMiniApp(true); // Treat as mini-app for proper auth flow
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(fallbackUser));
-          console.log('✅ Auto-authenticated with fallback user:', fallbackUser);
-        }
       }
     } catch (error) {
       console.error('Failed to restore user session:', error);

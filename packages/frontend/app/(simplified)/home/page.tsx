@@ -163,7 +163,7 @@ function LoadingDashboardView() {
 export default function ConsolidatedDashboard() {
   // ALL hooks must be called in every render
   const { isConnected } = useAccount();
-  const { user: farcasterUser, isInMiniApp, isAuthenticated: farcasterAuthenticated } = useFarcaster();
+  const { user: farcasterUser, isInMiniApp, isAuthenticated: farcasterAuthenticated, isLoading: farcasterLoading } = useFarcaster();
   const { 
     user, 
     features, 
@@ -185,10 +185,23 @@ export default function ConsolidatedDashboard() {
   
   // Render appropriate view based on state, but keep same component structure
   // For Farcaster miniapp users, prioritize Farcaster authentication
-  const currentView = (isInMiniApp && farcasterAuthenticated) ? 'dashboard' :
+  console.log('🐛 Home page auth state:', {
+    farcasterLoading,
+    isLoading,
+    isInMiniApp,
+    farcasterAuthenticated,
+    farcasterUser,
+    isConnected,
+    currentView: 'calculating...'
+  });
+  
+  const currentView = (farcasterLoading || isLoading) ? 'loading' :
+                     (isInMiniApp && farcasterAuthenticated) ? 'dashboard' :
+                     farcasterAuthenticated ? 'dashboard' :
                      !isConnected ? 'not_connected' : 
-                     isLoading ? 'loading' : 
                      'dashboard';
+                     
+  console.log('🎯 Final currentView:', currentView);
 
   // Format large numbers for display
   const formatLargeNumber = (num: number) => {
