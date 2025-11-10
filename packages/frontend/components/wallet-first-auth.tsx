@@ -346,14 +346,37 @@ export function WalletFirstAuth() {
     window.location.href = authUrl;
   };
 
-  const initiateDiscordOAuth = () => {
-    const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID;
-    const redirectUri = `${window.location.origin}/auth/discord/callback`;
-    const state = user?.wallet_address;
-    
-    const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=identify&state=${state}`;
-    
-    window.location.href = authUrl;
+  const initiateDiscordOAuth = async () => {
+    if (!user?.wallet_address) {
+      console.error('No wallet address available for Discord OAuth');
+      return;
+    }
+
+    try {
+      // Get Discord OAuth URL from backend (same pattern as community/connect-tab.tsx)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app'}/api/universal-auth/discord/url`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          wallet_address: user.wallet_address,
+          context: 'wallet_first_auth'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to get Discord OAuth URL: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Open Discord OAuth in current window
+      window.location.href = data.auth_url;
+    } catch (error) {
+      console.error('Discord OAuth error:', error);
+      // TODO: Show error to user
+    }
   };
 
   return null;
