@@ -222,7 +222,7 @@ export default function ConsolidatedDashboard() {
 
   // Handle Discord connection with proper OAuth flow
   const handleDiscordConnect = async () => {
-    if (!user?.farcaster_fid) {
+    if (!user?.farcaster_fid && !user?.fid) {
       alert('Please connect your Farcaster account first');
       return;
     }
@@ -233,8 +233,8 @@ export default function ConsolidatedDashboard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          farcaster_fid: user.farcaster_fid,
-          farcaster_username: user.farcaster_username,
+          farcaster_fid: user.farcaster_fid || user.fid,
+          farcaster_username: user.farcaster_username || user.username,
           context: 'webapp'
         }),
       });

@@ -23,7 +23,7 @@ export function ConnectTab({ user, communityData, onDataUpdate }: ConnectTabProp
   const handleDiscordConnect = async () => {
     setIsConnecting('discord');
     
-    if (!user?.farcaster_fid) {
+    if (!user?.farcaster_fid && !user?.fid) {
       alert('Please connect your Farcaster account first');
       setIsConnecting(null);
       return;
@@ -37,8 +37,8 @@ export function ConnectTab({ user, communityData, onDataUpdate }: ConnectTabProp
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          farcaster_fid: user.farcaster_fid,
-          farcaster_username: user.farcaster_username,
+          farcaster_fid: user.farcaster_fid || user.fid,
+          farcaster_username: user.farcaster_username || user.username,
           context: 'webapp'
         }),
       });
@@ -52,7 +52,7 @@ export function ConnectTab({ user, communityData, onDataUpdate }: ConnectTabProp
         // Poll for connection success
         const pollForConnection = setInterval(async () => {
           try {
-            const statusResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app'}/api/users/${user.farcaster_fid}/status`);
+            const statusResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app'}/api/users/${user.farcaster_fid || user.fid}/status`);
             if (statusResponse.ok) {
               const statusData = await statusResponse.json();
               if (statusData.user?.discord_username) {

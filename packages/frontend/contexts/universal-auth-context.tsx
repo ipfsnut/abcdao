@@ -13,9 +13,11 @@ export interface UniversalUser {
   // Authentication context
   entry_context: 'webapp' | 'farcaster';
   
-  // Social accounts
+  // Social accounts (support both naming conventions)
   farcaster_fid?: number;
   farcaster_username?: string;
+  fid?: number;          // Alternative naming from FarcasterUser
+  username?: string;     // Alternative naming from FarcasterUser
   github_username?: string;
   discord_username?: string;
   
