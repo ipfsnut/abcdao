@@ -244,6 +244,12 @@ export class UniversalAuthService {
    */
   static async exchangeDiscordCode(code, redirect_uri) {
     try {
+      console.log('🔍 Discord OAuth Exchange Details:');
+      console.log('  Code:', code.substring(0, 10) + '...');
+      console.log('  Redirect URI:', redirect_uri);
+      console.log('  Client ID:', process.env.DISCORD_CLIENT_ID);
+      console.log('  Client Secret length:', process.env.DISCORD_CLIENT_SECRET?.length || 'MISSING');
+      
       // Exchange code for access token
       const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
         method: 'POST',
