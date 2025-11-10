@@ -322,8 +322,8 @@ router.get('/discord/callback', async (req, res) => {
       return res.status(400).json({ error: 'Discord OAuth code is required' });
     }
 
-    // Reconstruct redirect URI
-    const redirect_uri = `${req.protocol}://${req.get('host')}/api/universal-auth/discord/callback`;
+    // Reconstruct redirect URI - Force HTTPS since Railway proxies HTTP internally
+    const redirect_uri = `https://abcdao-production.up.railway.app/api/universal-auth/discord/callback`;
     
     // Exchange code for Discord data
     const discordData = await UniversalAuthService.exchangeDiscordCode(code, redirect_uri);
