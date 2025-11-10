@@ -21,6 +21,7 @@ import { useUsersCommitsStatsSystematic } from '@/hooks/useUsersCommitsSystemati
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { config } from '@/lib/config';
+import { useFarcaster } from '@/contexts/unified-farcaster-context';
 
 // Import consolidated components
 import { QuickActionsPanel } from '@/components/quick-actions-panel';
@@ -162,6 +163,7 @@ function LoadingDashboardView() {
 export default function ConsolidatedDashboard() {
   // ALL hooks must be called in every render
   const { isConnected } = useAccount();
+  const { user: farcasterUser, isInMiniApp, isAuthenticated: farcasterAuthenticated } = useFarcaster();
   const { 
     user, 
     features, 
@@ -182,7 +184,9 @@ export default function ConsolidatedDashboard() {
   const [activeSection, setActiveSection] = useState<string>('overview');
   
   // Render appropriate view based on state, but keep same component structure
-  const currentView = !isConnected ? 'not_connected' : 
+  // For Farcaster miniapp users, prioritize Farcaster authentication
+  const currentView = (isInMiniApp && farcasterAuthenticated) ? 'dashboard' :
+                     !isConnected ? 'not_connected' : 
                      isLoading ? 'loading' : 
                      'dashboard';
 
@@ -200,12 +204,15 @@ export default function ConsolidatedDashboard() {
   // Fetch Farcaster profile picture
   useEffect(() => {
     const fetchFarcasterAvatar = async () => {
-      if (!user?.farcaster_username || !user?.farcaster_connected) return;
+      const username = user?.farcaster_username || farcasterUser?.username;
+      const connected = user?.farcaster_connected || farcasterAuthenticated;
+      
+      if (!username || !connected) return;
       
       setAvatarLoading(true);
       try {
         // Try farcaster.xyz profile URL pattern as primary method
-        const fallbackUrl = `https://farcaster.xyz/v2/user/${user.farcaster_username}/avatar`;
+        const fallbackUrl = `https://farcaster.xyz/v2/user/${username}/avatar`;
         setFarcasterAvatar(fallbackUrl);
       } catch (error) {
         console.log('Failed to fetch Farcaster avatar:', error);
@@ -215,14 +222,17 @@ export default function ConsolidatedDashboard() {
       }
     };
 
-    if (user && !isLoading) {
+    if ((user || farcasterUser) && !isLoading) {
       fetchFarcasterAvatar();
     }
-  }, [user, isLoading]);
+  }, [user, farcasterUser, farcasterAuthenticated, isLoading]);
 
   // Handle Discord connection with proper OAuth flow
   const handleDiscordConnect = async () => {
-    if (!user?.farcaster_fid && !user?.fid) {
+    const fid = user?.farcaster_fid || user?.fid || farcasterUser?.fid;
+    const username = user?.farcaster_username || user?.username || farcasterUser?.username;
+    
+    if (!fid) {
       alert('Please connect your Farcaster account first');
       return;
     }
@@ -233,8 +243,8 @@ export default function ConsolidatedDashboard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          farcaster_fid: user.farcaster_fid || user.fid,
-          farcaster_username: user.farcaster_username || user.username,
+          farcaster_fid: fid,
+          farcaster_username: username,
           context: 'webapp'
         }),
       });
@@ -248,7 +258,7 @@ export default function ConsolidatedDashboard() {
         // Poll for connection success
         const pollForConnection = setInterval(async () => {
           try {
-            const statusResponse = await fetch(`${config.backendUrl}/api/users/${user.farcaster_fid}/status`);
+            const statusResponse = await fetch(`${config.backendUrl}/api/users/${fid}/status`);
             if (statusResponse.ok) {
               const statusData = await statusResponse.json();
               if (statusData.user?.discord_username) {
@@ -283,7 +293,7 @@ export default function ConsolidatedDashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {currentView === 'not_connected' && (
+      {currentView === 'not_connected' && !farcasterAuthenticated && (
         <WalletNotConnectedView systemStats={systemStats} />
       )}
       
@@ -298,10 +308,10 @@ export default function ConsolidatedDashboard() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               {/* Profile Section - Different for authenticated vs public */}
-              {user ? (
+              {(user || (farcasterAuthenticated && farcasterUser)) ? (
                 <>
                   {/* Farcaster Profile Picture */}
-                  {user.farcaster_connected && (
+                  {(user?.farcaster_connected || (farcasterAuthenticated && farcasterUser)) && (
                     <div className="flex-shrink-0">
                       {farcasterAvatar ? (
                         <div className="relative w-16 h-16">
@@ -328,20 +338,27 @@ export default function ConsolidatedDashboard() {
                   
                   <div>
                     <h1 className="text-3xl font-bold text-green-400 matrix-glow">
-                      Welcome back, {user.display_name || 'Developer'}!
+                      Welcome back, {user?.display_name || farcasterUser?.displayName || 'Developer'}!
                     </h1>
                     <div className="space-y-1">
-                      <p className="text-green-600 font-mono text-sm">
-                        {user.wallet_address.slice(0, 6)}...{user.wallet_address.slice(-4)}
-                        {user.is_member && (
-                          <span className="ml-3 px-2 py-1 bg-green-900/50 text-green-400 rounded text-xs">
-                            MEMBER
-                          </span>
-                        )}
-                      </p>
-                      {user.farcaster_connected && user.farcaster_username && (
+                      {user?.wallet_address && (
+                        <p className="text-green-600 font-mono text-sm">
+                          {user.wallet_address.slice(0, 6)}...{user.wallet_address.slice(-4)}
+                          {user.is_member && (
+                            <span className="ml-3 px-2 py-1 bg-green-900/50 text-green-400 rounded text-xs">
+                              MEMBER
+                            </span>
+                          )}
+                        </p>
+                      )}
+                      {(user?.farcaster_connected || farcasterAuthenticated) && (user?.farcaster_username || farcasterUser?.username) && (
                         <p className="text-purple-400 font-mono text-sm">
-                          🎭 @{user.farcaster_username}
+                          🎭 @{user?.farcaster_username || farcasterUser?.username}
+                        </p>
+                      )}
+                      {farcasterAuthenticated && !user?.wallet_address && (
+                        <p className="text-yellow-400 font-mono text-sm">
+                          Connect wallet to unlock full features
                         </p>
                       )}
                     </div>
@@ -360,14 +377,14 @@ export default function ConsolidatedDashboard() {
             </div>
             
             {/* Quick Profile Status or Connect Button */}
-            {user && isAuthenticated ? (
+            {(user && isAuthenticated) || (farcasterAuthenticated && farcasterUser) ? (
               <div className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${user.github_connected ? 'bg-green-400' : 'bg-yellow-400'}`} 
-                     title={`GitHub: ${user.github_connected ? 'Connected' : 'Not connected'}`} />
-                <div className={`w-3 h-3 rounded-full ${user.discord_connected ? 'bg-blue-400' : 'bg-gray-400'}`}
-                     title={`Discord: ${user.discord_connected ? 'Connected' : 'Not connected'}`} />
-                <div className={`w-3 h-3 rounded-full ${user.farcaster_connected ? 'bg-purple-400' : 'bg-gray-400'}`}
-                     title={`Farcaster: ${user.farcaster_connected ? 'Connected' : 'Not connected'}`} />
+                <div className={`w-3 h-3 rounded-full ${user?.github_connected ? 'bg-green-400' : 'bg-yellow-400'}`} 
+                     title={`GitHub: ${user?.github_connected ? 'Connected' : 'Not connected'}`} />
+                <div className={`w-3 h-3 rounded-full ${user?.discord_connected ? 'bg-blue-400' : 'bg-gray-400'}`}
+                     title={`Discord: ${user?.discord_connected ? 'Connected' : 'Not connected'}`} />
+                <div className={`w-3 h-3 rounded-full ${(user?.farcaster_connected || farcasterAuthenticated) ? 'bg-purple-400' : 'bg-gray-400'}`}
+                     title={`Farcaster: ${(user?.farcaster_connected || farcasterAuthenticated) ? 'Connected' : 'Not connected'}`} />
               </div>
             ) : walletConnected && requiresMembership ? (
               <div className="text-center">
@@ -380,18 +397,18 @@ export default function ConsolidatedDashboard() {
           </div>
 
           {/* Integration Progress Bar - Only for authenticated users */}
-          {user && isAuthenticated && (
+          {((user && isAuthenticated) || (farcasterAuthenticated && farcasterUser)) && (
             <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-mono text-green-600">Profile Completion</span>
                 <span className="text-sm font-mono text-green-400">
-                  {getProfileCompletionPercentage(user)}%
+                  {getProfileCompletionPercentage(user || (farcasterAuthenticated ? { farcaster_connected: true, farcaster_username: farcasterUser?.username } : null))}%
                 </span>
               </div>
               <div className="w-full bg-green-950/30 rounded-full h-2">
                 <div 
                   className="bg-gradient-to-r from-green-600 to-green-400 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${getProfileCompletionPercentage(user)}%` }}
+                  style={{ width: `${getProfileCompletionPercentage(user || (farcasterAuthenticated ? { farcaster_connected: true, farcaster_username: farcasterUser?.username } : null))}%` }}
                 ></div>
               </div>
             </div>
@@ -406,7 +423,7 @@ export default function ConsolidatedDashboard() {
             <MetricsDashboard user={user} features={features} />
             
             {/* Quick Actions - Only for authenticated users */}
-            {user && isAuthenticated && (
+            {((user && isAuthenticated) || (farcasterAuthenticated && farcasterUser)) && (
               <QuickActionsPanel 
                 user={user} 
                 features={features}
@@ -415,12 +432,47 @@ export default function ConsolidatedDashboard() {
             )}
             
             {/* Activity Feed - Only for authenticated users */}
-            {user && isAuthenticated && (
+            {((user && isAuthenticated) || (farcasterAuthenticated && farcasterUser)) && user?.wallet_address && (
               <ActivityFeed walletAddress={user.wallet_address} />
             )}
             
+            {/* Special section for Farcaster-only users */}
+            {farcasterAuthenticated && !user?.wallet_address && (
+              <div className="bg-gradient-to-r from-purple-950/30 via-black/60 to-purple-950/30 border border-purple-900/30 rounded-xl p-8">
+                <h2 className="text-2xl font-bold text-purple-400 mb-6">
+                  🎭 Welcome, {farcasterUser?.displayName}!
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-green-400 mb-3">You're Connected via Farcaster</h3>
+                    <ul className="space-y-2 text-green-600">
+                      <li>• Browse community content</li>
+                      <li>• View public data and statistics</li>
+                      <li>• Connect with other developers</li>
+                      <li>• Access read-only features</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-blue-400 mb-3">Connect Wallet to Unlock</h3>
+                    <ul className="space-y-2 text-blue-600">
+                      <li>• Stake ABC tokens for ETH rewards</li>
+                      <li>• Purchase membership to earn from coding</li>
+                      <li>• Access your personal dashboard</li>
+                      <li>• Manage your ABC token portfolio</li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="mt-6 text-center">
+                  <p className="text-purple-500 font-mono text-sm mb-4">
+                    Connect your wallet to unlock the full ABC DAO experience
+                  </p>
+                  <ConnectButton />
+                </div>
+              </div>
+            )}
+            
             {/* Information for non-authenticated or non-member users */}
-            {(!isAuthenticated) && (
+            {(!isAuthenticated && !farcasterAuthenticated) && (
               <div className="bg-gradient-to-r from-green-950/30 via-black/60 to-green-950/30 border border-green-900/30 rounded-xl p-8">
                 {walletConnected && requiresMembership ? (
                   // Non-member wallet connected
