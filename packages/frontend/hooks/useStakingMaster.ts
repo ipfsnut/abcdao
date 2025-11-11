@@ -31,6 +31,8 @@ interface UnbondingInfo {
  */
 export function useStakingMaster() {
   const { address } = useAccount();
+  
+  console.log('🔍 useStakingMaster address from useAccount():', address);
   const [isApproving, setIsApproving] = useState(false);
   const [pendingStakeAmount, setPendingStakeAmount] = useState<string>('');
   

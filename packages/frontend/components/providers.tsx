@@ -60,6 +60,8 @@ const customMatrixTheme = {
 // Context-aware Wagmi provider that uses Farcaster wallet in mini-app
 function ContextAwareWagmiProvider({ children }: { children: React.ReactNode }) {
   const { isInMiniApp, isLoading } = useFarcaster();
+  
+  console.log('🔍 Provider context:', { isInMiniApp, isLoading });
   const configRef = useRef<any>(fallbackConfig);
   
   // Always render the same component structure to maintain consistent hook order
@@ -67,6 +69,11 @@ function ContextAwareWagmiProvider({ children }: { children: React.ReactNode }) 
     const selectedConfig = isInMiniApp ? config : fallbackConfig;
     configRef.current = selectedConfig;
     console.log(`🔗 Using ${isInMiniApp ? 'Farcaster miniapp' : 'standard'} wallet config`);
+    console.log('🔗 Config details:', { 
+      isInMiniApp, 
+      connectors: selectedConfig.connectors?.length,
+      connectorTypes: selectedConfig.connectors?.map(c => c.name)
+    });
   }, [isInMiniApp]);
 
   return (

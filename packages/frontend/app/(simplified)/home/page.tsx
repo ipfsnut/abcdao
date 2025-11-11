@@ -175,6 +175,12 @@ export default function ConsolidatedDashboard() {
     addGitHubIntegration,
     addFarcasterIntegration 
   } = useWalletFirstAuth();
+  
+  console.log('🔍 Home page auth state:', { 
+    userWallet: user?.wallet_address, 
+    walletConnected, 
+    isAuthenticated 
+  });
 
 
   // Get real statistics for hero section

@@ -203,7 +203,9 @@ export function useWalletFirstAuth() {
 
         // Fetch staking data if wallet is connected
         if (user.wallet_address) {
+          console.log('💰 Fetching staked amount for wallet:', user.wallet_address);
           const stakedAmount = await fetchUserStakedAmount(user.wallet_address);
+          console.log('💰 Staked amount result:', stakedAmount);
           user.total_staked_tokens = stakedAmount;
         }
 
