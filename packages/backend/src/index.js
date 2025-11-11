@@ -84,7 +84,11 @@ const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:3000',
   'https://warpcast.com',
   'https://client.warpcast.com',
-  'https://abcdao.vercel.app'
+  'https://abcdao.vercel.app',
+  // Farcaster mini-app origins
+  'https://client.farcaster.xyz',
+  'https://farcaster.xyz',
+  'https://app.farcaster.xyz'
 ].filter(Boolean);
 
 app.use(cors({
@@ -103,6 +107,11 @@ app.use(cors({
     
     // Allow Cloudflare Pages deployments
     if (origin.includes('.pages.dev')) {
+      return callback(null, true);
+    }
+    
+    // Allow any Farcaster-related domains for mini-app compatibility
+    if (origin.includes('farcaster.xyz') || origin.includes('warpcast.com')) {
       return callback(null, true);
     }
     
