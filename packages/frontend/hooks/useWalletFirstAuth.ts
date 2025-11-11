@@ -169,9 +169,16 @@ export function useWalletFirstAuth() {
       const authData = await authResponse.json();
 
       console.log('🔍 Farcaster auth response:', { status: authResponse.status, ok: authResponse.ok, data: authData });
+      console.log('🔍 Response structure check:', { 
+        hasSuccess: 'success' in authData, 
+        successValue: authData.success,
+        hasUser: 'user' in authData,
+        hasAction: 'action' in authData,
+        action: authData.action 
+      });
       
       if (authResponse.ok) {
-        if (authData.success && authData.user) {
+        if ((authData.success && authData.user) || (authData.action === 'authenticated' && authData.user)) {
           console.log('✅ Processing Farcaster user data:', authData.user);
           // User authenticated successfully via Farcaster
         const user = {
@@ -233,7 +240,7 @@ export function useWalletFirstAuth() {
         });
 
           return { user, features, nextSteps };
-        } else if (authData.action === 'require_wallet_setup') {
+        } else if (authData.action === 'require_wallet_setup' || authData.action === 'require_membership') {
           // Farcaster user not found in database - create minimal auth state
           const user = {
           wallet_address: '',
@@ -325,7 +332,7 @@ export function useWalletFirstAuth() {
       });
       const authData = await authResponse.json();
 
-      if (authResponse.ok && authData.success && authData.user) {
+      if (authResponse.ok && ((authData.success && authData.user) || (authData.action === 'authenticated' && authData.user))) {
         // User authenticated successfully (member wallet)
         const stakedAmount = await fetchUserStakedAmount(walletAddress);
         
@@ -382,7 +389,7 @@ export function useWalletFirstAuth() {
         });
 
         return { user, features, nextSteps };
-      } else if (authResponse.ok && authData.action === 'require_membership') {
+      } else if (authResponse.ok && (authData.action === 'require_membership' || authData.action === 'purchase_membership')) {
         // Non-member wallet connected - valid state, not an error
         setAuthState({
           user: null,
