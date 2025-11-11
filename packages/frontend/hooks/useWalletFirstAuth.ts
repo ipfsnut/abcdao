@@ -159,15 +159,20 @@ export function useWalletFirstAuth() {
     
     try {
       // Use the universal auth identify endpoint with FID
-      const authResponse = await fetch(`${config.backendUrl}/api/universal-auth/identify`, {
+      const authUrl = `${config.backendUrl}/api/universal-auth/identify`;
+      console.log('🌐 Calling auth URL:', authUrl, 'with FID:', fid);
+      const authResponse = await fetch(authUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier: fid.toString() })
       });
       const authData = await authResponse.json();
 
+      console.log('🔍 Farcaster auth response:', { status: authResponse.status, ok: authResponse.ok, data: authData });
+      
       if (authResponse.ok) {
         if (authData.success && authData.user) {
+          console.log('✅ Processing Farcaster user data:', authData.user);
           // User authenticated successfully via Farcaster
         const user = {
           wallet_address: authData.user.wallet_address || '',
@@ -286,8 +291,12 @@ export function useWalletFirstAuth() {
 
           return { user, features: null, nextSteps: [] };
         } else {
+          console.error('🚫 Auth response OK but no user data:', authData);
           throw new Error(authData.error || 'Authentication failed');
         }
+      } else {
+        console.error('🚫 Auth response failed:', { status: authResponse.status, data: authData });
+        throw new Error(authData.error || `HTTP ${authResponse.status}: Authentication failed`);
       }
 
     } catch (error) {
