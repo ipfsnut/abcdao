@@ -168,18 +168,12 @@ export function useWalletFirstAuth() {
       });
       const authData = await authResponse.json();
 
-      console.log('🔍 Farcaster auth response:', { status: authResponse.status, ok: authResponse.ok, data: authData });
-      console.log('🔍 Response structure check:', { 
-        hasSuccess: 'success' in authData, 
-        successValue: authData.success,
-        hasUser: 'user' in authData,
-        hasAction: 'action' in authData,
-        action: authData.action 
-      });
+      // console.log('🔍 Farcaster auth response:', { status: authResponse.status, ok: authResponse.ok, data: authData });
+      // console.log('🔍 Response structure check:', { hasSuccess: 'success' in authData, successValue: authData.success, hasUser: 'user' in authData, hasAction: 'action' in authData, action: authData.action });
       
       if (authResponse.ok) {
         if ((authData.success && authData.user) || (authData.action === 'authenticated' && authData.user)) {
-          console.log('✅ Processing Farcaster user data:', authData.user);
+          // console.log('✅ Processing Farcaster user data:', authData.user);
           // User authenticated successfully via Farcaster
         const user = {
           wallet_address: authData.user.wallet_address || '',
