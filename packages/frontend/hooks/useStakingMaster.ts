@@ -35,7 +35,7 @@ export function useStakingMaster() {
   const { user } = useWalletFirstAuth();
   
   // Use connected wallet address if available, otherwise use authenticated user's wallet address
-  const effectiveAddress = address || user?.wallet_address;
+  const effectiveAddress = (address || user?.wallet_address) as `0x${string}` | undefined;
   
   console.log('🔍 useStakingMaster addresses:', { 
     connectedWallet: address, 
