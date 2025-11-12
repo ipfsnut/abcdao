@@ -6,6 +6,7 @@ import { CONTRACTS, ERC20_ABI } from '@/lib/contracts';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { toast } from 'sonner';
 import useSWR from 'swr';
+import { useWalletFirstAuth } from './useWalletFirstAuth';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app';
 const fetcher = (url: string) => fetch(url).then(res => res.json());
@@ -31,8 +32,16 @@ interface UnbondingInfo {
  */
 export function useStakingMaster() {
   const { address } = useAccount();
+  const { user } = useWalletFirstAuth();
   
-  console.log('🔍 useStakingMaster address from useAccount():', address);
+  // Use connected wallet address if available, otherwise use authenticated user's wallet address
+  const effectiveAddress = address || user?.wallet_address;
+  
+  console.log('🔍 useStakingMaster addresses:', { 
+    connectedWallet: address, 
+    authWallet: user?.wallet_address,
+    effective: effectiveAddress 
+  });
   const [isApproving, setIsApproving] = useState(false);
   const [pendingStakeAmount, setPendingStakeAmount] = useState<string>('');
   
@@ -54,7 +63,7 @@ export function useStakingMaster() {
   );
 
   const { data: userPosition, error: positionError, isLoading: positionLoading, mutate: refreshPosition } = useSWR(
-    address ? `${BACKEND_URL}/api/staking/position/${address}` : null,
+    effectiveAddress ? `${BACKEND_URL}/api/staking/position/${effectiveAddress}` : null,
     fetcher,
     {
       refreshInterval: 15000,
@@ -86,9 +95,9 @@ export function useStakingMaster() {
     address: CONTRACTS.ABC_STAKING.address,
     abi: CONTRACTS.ABC_STAKING.abi,
     functionName: 'getStakeInfo',
-    args: address ? [address] : undefined,
+    args: effectiveAddress ? [effectiveAddress] : undefined,
     query: {
-      enabled: !!address,
+      enabled: !!effectiveAddress,
       staleTime: 30_000,
       gcTime: 60_000,
       retry: 1,
@@ -100,9 +109,9 @@ export function useStakingMaster() {
     address: CONTRACTS.ABC_TOKEN.address,
     abi: ERC20_ABI,
     functionName: 'balanceOf',
-    args: address ? [address] : undefined,
+    args: effectiveAddress ? [effectiveAddress] : undefined,
     query: {
-      enabled: !!address,
+      enabled: !!effectiveAddress,
       staleTime: 15_000,
       gcTime: 60_000,
       retry: 1,
@@ -114,9 +123,9 @@ export function useStakingMaster() {
     address: CONTRACTS.ABC_TOKEN.address,
     abi: ERC20_ABI,
     functionName: 'allowance',
-    args: address ? [address, CONTRACTS.ABC_STAKING.address] : undefined,
+    args: effectiveAddress ? [effectiveAddress, CONTRACTS.ABC_STAKING.address] : undefined,
     query: {
-      enabled: !!address,
+      enabled: !!effectiveAddress,
       staleTime: 10_000,
       gcTime: 60_000,
       retry: 1,
@@ -153,9 +162,9 @@ export function useStakingMaster() {
     address: CONTRACTS.ABC_STAKING.address,
     abi: CONTRACTS.ABC_STAKING.abi,
     functionName: 'getUnbondingInfo',
-    args: address ? [address] : undefined,
+    args: effectiveAddress ? [effectiveAddress] : undefined,
     query: {
-      enabled: !!address,
+      enabled: !!effectiveAddress,
       staleTime: 30_000,
       gcTime: 60_000,
       retry: 1,
@@ -167,9 +176,9 @@ export function useStakingMaster() {
     address: CONTRACTS.ABC_STAKING.address,
     abi: CONTRACTS.ABC_STAKING.abi,
     functionName: 'getWithdrawableAmount',
-    args: address ? [address] : undefined,
+    args: effectiveAddress ? [effectiveAddress] : undefined,
     query: {
-      enabled: !!address,
+      enabled: !!effectiveAddress,
       staleTime: 15_000,
       gcTime: 60_000,
       retry: 1,
@@ -481,12 +490,12 @@ export function useStakingMaster() {
     dataHealth: stakingStats?.dataHealth || { isHealthy: false },
     
     // User context
-    isConnected: !!address,
-    userAddress: address,
+    isConnected: !!effectiveAddress,
+    userAddress: effectiveAddress,
     
     // Backward compatibility helpers
     position: {
-      walletAddress: userPosition?.walletAddress || address,
+      walletAddress: userPosition?.walletAddress || effectiveAddress,
       stakedAmount: userPosition?.stakedAmount || '0',
       rewardsEarned: userPosition?.rewardsEarned || '0',
       pendingRewards: userPosition?.pendingRewards || '0',
