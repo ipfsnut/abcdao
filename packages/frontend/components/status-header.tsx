@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useMembership } from '@/hooks/useMembership';
 import { useRewardsSystematic } from '@/hooks/useRewardsSystematic';
-import { useStakingMaster } from '@/hooks/useStakingMaster';
 import { useTokenSystematic } from '@/hooks/useTokenSystematic';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -72,7 +71,6 @@ export function StatusHeader() {
   const { isConnected, address } = useAccount();
   const membership = useMembership();
   const { tokenData } = useTokenSystematic('ABC');
-  const { position: stakingPosition } = useStakingMaster();
   const { userRewards } = useRewardsSystematic();
 
   // Determine GitHub status
@@ -104,7 +102,6 @@ export function StatusHeader() {
 
   // Get user's total earned ABC from membership data
   const abcBalance = membership.totalEarned || 0;
-  const stakedBalance = stakingPosition?.stakedAmount || 0;
   const pendingRewards = userRewards?.summary?.totalClaimable || 0;
 
   return (
@@ -168,15 +165,6 @@ export function StatusHeader() {
         {/* Expanded mobile view */}
         {isExpanded && (
           <div className="mt-2 pt-2 border-t border-green-900/30 space-y-1">
-            {stakedBalance > 0 && (
-              <StatusItem
-                icon="🔒"
-                status="connected"
-                label="Staked"
-                value={formatBalance(stakedBalance)}
-                href="/staking/leaderboard"
-              />
-            )}
             <div className="flex justify-center pt-2">
               <ConnectButton.Custom>
                 {({ account, chain, openAccountModal, openConnectModal, mounted }) => {
@@ -253,15 +241,6 @@ export function StatusHeader() {
               label="ABC Balance"
               value={formatBalance(abcBalance)}
               href="/supply"
-            />
-          )}
-          {stakedBalance > 0 && (
-            <StatusItem
-              icon="🔒"
-              status="connected"
-              label="Staked"
-              value={formatBalance(stakedBalance)}
-              href="/staking/leaderboard"
             />
           )}
           {pendingRewards > 0 && (

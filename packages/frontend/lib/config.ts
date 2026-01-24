@@ -23,8 +23,11 @@ export const config = {
   // Check if running in production
   isProduction: process.env.NODE_ENV === 'production',
   
-  // Bot wallet address for payments
-  botWalletAddress: process.env.NEXT_PUBLIC_BOT_WALLET_ADDRESS || '0x48D87BE38677Ad764203b5516900691Cbd8C7042',
+  // Treasury address
+  treasuryAddress: process.env.NEXT_PUBLIC_TREASURY_ADDRESS || '0xc35c2dCdD084F1Df8a4dDbD374436E35136b4368',
+
+  // Bot wallet address for payments (legacy, now same as treasury)
+  botWalletAddress: process.env.NEXT_PUBLIC_BOT_WALLET_ADDRESS || '0xc35c2dCdD084F1Df8a4dDbD374436E35136b4368',
   
   // Check if we have all required environment variables
   isConfigured: () => {

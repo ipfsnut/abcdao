@@ -1,17 +1,15 @@
 /**
- * Unified Developer Hub Page (/developers)
- * 
- * Consolidates previous developer-related pages into single tabbed interface:
- * - Earning Tab: Repository setup, commit tracking, rewards
- * - Repositories Tab: Manage enabled repos, scoring, auto-detection
+ * Developer Hub Page (/developers)
+ *
+ * Developer contribution tracking for ABC DAO org:
+ * - Earning Tab: Contribution overview, rewards info
  * - History Tab: Commit history, reward transactions
  * - Analytics Tab: Performance metrics, earning trends
  */
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import useSWR from 'swr';
+import { useState } from 'react';
 import { useWalletFirstAuth } from '@/hooks/useWalletFirstAuth';
 import { useUsersCommitsStatsSystematic } from '@/hooks/useUsersCommitsSystematic';
 import { useUserStatsFixed } from '@/hooks/useUserStatsFixed';
@@ -19,11 +17,10 @@ import { BackNavigation } from '@/components/back-navigation';
 
 // Import tabbed components
 import { EarningTab } from '@/components/developers/earning-tab';
-import { RepositoriesTab } from '@/components/developers/repositories-tab';
 import { HistoryTab } from '@/components/developers/history-tab';
 import { AnalyticsTab } from '@/components/developers/analytics-tab';
 
-type TabId = 'earning' | 'repositories' | 'history' | 'analytics';
+type TabId = 'earning' | 'history' | 'analytics';
 
 export default function UnifiedDeveloperHub() {
   const { user, isAuthenticated, features } = useWalletFirstAuth();
@@ -33,69 +30,23 @@ export default function UnifiedDeveloperHub() {
   const userStats = useUserStatsFixed((user as any)?.farcaster_fid, (user as any)?.wallet_address);
   const systemStats = useUsersCommitsStatsSystematic();
   
-  // Get repositories data for active repo count - using same pattern as useUserStatsFixed
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://abcdao-production.up.railway.app';
-  const fetcher = (url: string) => fetch(url).then(res => res.json());
-  
-  const farcasterFid = (user as any)?.farcaster_fid;
-  const walletAddress = (user as any)?.wallet_address;
-  
-  console.log('🔍 Developer dashboard inputs:', { farcasterFid, walletAddress, user });
-  
-  // First, get FID from wallet if not provided - same as useUserStatsFixed
-  const { data: lookupData } = useSWR(
-    !farcasterFid && walletAddress ? `${BACKEND_URL}/api/users/lookup/wallet/${walletAddress}` : null,
-    fetcher
-  );
-  
-  const effectiveFid = farcasterFid || lookupData?.farcaster_fid;
-  console.log('🎯 Effective FID for repositories:', effectiveFid, 'from:', { farcasterFid, lookupFid: lookupData?.farcaster_fid });
-  
-  const { data: reposData, error: reposError } = useSWR(
-    effectiveFid ? `${BACKEND_URL}/api/repositories/${effectiveFid}/repositories` : null,
-    fetcher
-  );
-  
-  console.log('📊 Repository API response:', { reposData, reposError, effectiveFid });
-  
-  if (reposData?.repositories) {
-    console.log('🔍 Repository details:');
-    reposData.repositories.forEach((repo: any, index: number) => {
-      console.log(`  ${index + 1}. ${repo.repository_name} - status: ${repo.status}, webhook: ${repo.webhook_configured}`);
-    });
-  }
-  
-  const activeReposCount = reposData?.repositories?.filter((r: any) => r.status === 'active' && r.webhook_configured)?.length || 0;
-  console.log('🎯 Active repos count calculated:', activeReposCount, 'from', reposData?.repositories?.length, 'total repos');
-  
-  // Derive developer data from working API endpoint (same as home page)
+  // Derive developer data from working API endpoint
   const developerData = {
     totalEarned: userStats.totalRewardsEarnedFormatted,
     pendingRewards: '0',
-    activeRepos: activeReposCount,
     totalCommits: userStats.totalCommits,
     averageReward: userStats.totalCommits > 0 ? Math.round(userStats.totalRewardsEarned / userStats.totalCommits).toString() : '0',
     isLoading: userStats.isLoading || systemStats.isLoading
   };
-
-  // Average reward calculation now handled by unified hook
 
   const tabs = [
     {
       id: 'earning' as TabId,
       label: 'Earning',
       icon: '💰',
-      description: 'Setup repositories and start earning',
+      description: 'Contribution overview and rewards',
       count: user?.github_connected ? null : '!',
       priority: !user?.github_connected
-    },
-    {
-      id: 'repositories' as TabId,
-      label: 'Repositories',
-      icon: '📁',
-      description: 'Manage your earning repositories',
-      count: developerData.activeRepos > 0 ? developerData.activeRepos.toString() : null,
-      priority: false
     },
     {
       id: 'history' as TabId,
@@ -239,13 +190,13 @@ export default function UnifiedDeveloperHub() {
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
-      <BackNavigation title="Developer Hub" subtitle="Earn ABC • Manage Repos • Track Performance" />
+      <BackNavigation title="Developer Hub" subtitle="Earn ABC • Track Contributions • View Analytics" />
       
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Developer Overview Header */}
           <div className="mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-4">
                 <div className="text-sm font-mono text-green-600 mb-1">Total Earned</div>
                 <div className="text-2xl font-bold text-green-400">
@@ -253,15 +204,7 @@ export default function UnifiedDeveloperHub() {
                 </div>
                 <div className="text-xs text-green-700">$ABC tokens</div>
               </div>
-              
-              <div className="bg-blue-950/20 border border-blue-900/30 rounded-lg p-4">
-                <div className="text-sm font-mono text-blue-600 mb-1">Active Repos</div>
-                <div className="text-2xl font-bold text-blue-400">
-                  {developerData.isLoading ? '...' : developerData.activeRepos}
-                </div>
-                <div className="text-xs text-blue-700">Earning repositories</div>
-              </div>
-              
+
               <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-4">
                 <div className="text-sm font-mono text-yellow-600 mb-1">Total Commits</div>
                 <div className="text-2xl font-bold text-yellow-400">
@@ -269,7 +212,7 @@ export default function UnifiedDeveloperHub() {
                 </div>
                 <div className="text-xs text-yellow-700">Rewarded commits</div>
               </div>
-              
+
               <div className="bg-purple-950/20 border border-purple-900/30 rounded-lg p-4">
                 <div className="text-sm font-mono text-purple-600 mb-1">Avg. Reward</div>
                 <div className="text-2xl font-bold text-purple-400">
@@ -325,30 +268,22 @@ export default function UnifiedDeveloperHub() {
           {/* Tab Content */}
           <div className="min-h-[600px]">
             {activeTab === 'earning' && (
-              <EarningTab 
+              <EarningTab
                 developerData={developerData}
                 user={user}
                 onDataUpdate={() => userStats.refreshData()}
               />
             )}
-            
-            {activeTab === 'repositories' && (
-              <RepositoriesTab 
-                user={user}
-                activeRepos={developerData.activeRepos}
-                onRepoUpdate={() => userStats.refreshData()}
-              />
-            )}
-            
+
             {activeTab === 'history' && (
-              <HistoryTab 
+              <HistoryTab
                 user={user}
                 totalCommits={developerData.totalCommits}
               />
             )}
-            
+
             {activeTab === 'analytics' && (
-              <AnalyticsTab 
+              <AnalyticsTab
                 developerData={developerData}
                 user={user}
               />

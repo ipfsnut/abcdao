@@ -65,12 +65,10 @@ export function ContractAddressesFooter() {
   
   // Get addresses from environment variables and contracts
   const abcTokenAddress = process.env.NEXT_PUBLIC_ABC_TOKEN_ADDRESS || CONTRACTS.ABC_TOKEN?.address;
-  const stakingAddress = process.env.NEXT_PUBLIC_STAKING_CONTRACT_ADDRESS || CONTRACTS.ABC_STAKING?.address;
-  const rewardsAddress = process.env.NEXT_PUBLIC_REWARDS_CONTRACT_ADDRESS || CONTRACTS.ABC_REWARDS?.address;
-  const protocolWalletAddress = process.env.NEXT_PUBLIC_PROTOCOL_WALLET_ADDRESS;
-  
+  const treasuryAddress = process.env.NEXT_PUBLIC_TREASURY_ADDRESS || '0xc35c2dCdD084F1Df8a4dDbD374436E35136b4368';
+
   // Only show if we have at least one address
-  if (!abcTokenAddress && !stakingAddress && !rewardsAddress) {
+  if (!abcTokenAddress && !treasuryAddress) {
     return null;
   }
 
@@ -82,29 +80,29 @@ export function ContractAddressesFooter() {
           <div className="flex flex-col items-center space-y-4">
             {/* Main Navigation */}
             <nav className="flex flex-wrap justify-center gap-4 sm:gap-6">
-              <a 
-                href="/roster"
-                className="text-green-400 hover:text-green-300 font-mono text-sm transition-colors matrix-button"
-              >
-                👥 Roster
-              </a>
-              <a 
+              <a
                 href="/treasury"
                 className="text-green-400 hover:text-green-300 font-mono text-sm transition-colors matrix-button"
               >
                 💰 Treasury
               </a>
-              <a 
+              <a
+                href="/community"
+                className="text-green-400 hover:text-green-300 font-mono text-sm transition-colors matrix-button"
+              >
+                👥 Community
+              </a>
+              <a
                 href="/support"
                 className="text-green-400 hover:text-green-300 font-mono text-sm transition-colors matrix-button"
               >
                 💬 Support
               </a>
-              <a 
-                href="/privacy"
+              <a
+                href="/legal"
                 className="text-green-400 hover:text-green-300 font-mono text-sm transition-colors matrix-button"
               >
-                🔒 Privacy
+                📜 Legal
               </a>
             </nav>
             
@@ -144,29 +142,14 @@ export function ContractAddressesFooter() {
                 symbol={CONTRACTS.ABC_TOKEN?.symbol || 'ABC'}
               />
             )}
-            
-            {stakingAddress && (
+
+            {treasuryAddress && (
               <ContractAddress
-                label="ABC Staking"
-                address={stakingAddress}
+                label="Treasury"
+                address={treasuryAddress}
               />
             )}
-            
-            {rewardsAddress && (
-              <ContractAddress
-                label="ABC Rewards"
-                address={rewardsAddress}
-              />
-            )}
-            
-            
-            {protocolWalletAddress && (
-              <ContractAddress
-                label="Protocol Wallet"
-                address={protocolWalletAddress}
-              />
-            )}
-            
+
             <div className="text-center pt-2 border-t border-green-900/30">
               <p className="text-green-700 font-mono text-[10px]">
                 Click addresses to copy • Click 🔗 to view on Basescan

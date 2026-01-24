@@ -1,17 +1,16 @@
 /**
  * Simplified Navigation Component
- * 
- * Consolidated navigation for 10 essential pages:
+ *
+ * Navigation for essential pages:
  * 1. Home (dashboard)
- * 2. Join (onboarding) 
- * 3. Staking (unified with leaderboard)
- * 4. Developers (dev hub)
- * 5. Community (roster + profiles)
- * 6. Treasury (treasury + analytics)
- * 7. Docs (all documentation)
- * 8. Profile (dynamic)
- * 9. Legal
- * 10. Support
+ * 2. Join (onboarding)
+ * 3. Developers (dev hub)
+ * 4. Community (roster + profiles)
+ * 5. Treasury (treasury + analytics)
+ * 6. Docs (all documentation)
+ * 7. Profile (dynamic)
+ * 8. Legal
+ * 9. Support
  */
 
 'use client';
@@ -53,12 +52,6 @@ export function SimplifiedNavigation({ user, isAuthenticated }: SimplifiedNaviga
       icon: '🚀',
       description: 'Onboarding and setup',
       show: !isAuthenticated || !user?.is_member
-    },
-    {
-      href: '/staking',
-      label: 'Staking',
-      icon: '🏦',
-      description: 'Public staking • Earn ETH rewards'
     },
     {
       href: '/developers',
