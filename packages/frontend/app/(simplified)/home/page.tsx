@@ -1,649 +1,518 @@
 /**
- * Consolidated Dashboard Page (/home)
- * 
- * Single dashboard that replaces the previous scattered home page.
- * Features:
- * - Wallet-first authentication status
- * - Progressive integration progress
- * - Quick access to all major features  
- * - Personalized based on profile completeness
- * - Real-time activity feed
- * - Key metrics overview
+ * ABC DAO Landing Page
+ * Styled to match ArbMe aesthetic
  */
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
-import { useWalletFirstAuth } from '@/hooks/useWalletFirstAuth';
-import { useUsersCommitsStatsSystematic } from '@/hooks/useUsersCommitsSystematic';
-import { useAccount } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { config } from '@/lib/config';
-import { useFarcaster } from '@/contexts/unified-farcaster-context';
+import { useState, useEffect } from 'react';
 
-// Import consolidated components
-import { QuickActionsPanel } from '@/components/quick-actions-panel';
-import { IntegrationProgressCard } from '@/components/integration-progress-card';
-import { ActivityFeed } from '@/components/activity-feed';
-import { MetricsDashboard } from '@/components/metrics-dashboard';
-import { NextStepsWizard } from '@/components/next-steps-wizard';
+// Token contract addresses on Base
+const TOKENS = {
+  ABC: '0x5c0872b790bb73e2b3a9778db6e7704095624b07',
+  ARBME: '0xC647421C5Dc78D1c3960faA7A33f9aEFDF4B7B07',
+  RATCHET: '0x392bc5DeEa227043d69Af0e67BadCbBAeD511B07',
+};
 
-// Component for wallet not connected state
-function WalletNotConnectedView({ systemStats }: { systemStats: any }) {
-  // Format large numbers for display
-  const formatLargeNumber = (num: number) => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    }
-    if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
-    }
-    return num.toString();
-  };
-
-  return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="max-w-4xl mx-auto text-center">
-        <div className="mb-8">
-          <h1 className="text-5xl font-bold text-green-400 matrix-glow mb-6">
-            Welcome to ABC DAO
-          </h1>
-          <p className="text-2xl text-green-300 mb-4">
-            The future of developer rewards
-          </p>
-          <p className="text-lg text-green-600 font-mono mb-8">
-            Ship code → Earn crypto → Build community
-          </p>
-        </div>
-
-        {/* Hero Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6">
-            <div className="text-3xl font-bold text-green-400 mb-2">
-              {systemStats.isLoading ? '...' : systemStats.totalUsers.toLocaleString()}
-            </div>
-            <div className="text-sm text-green-600 font-mono">Active Developers</div>
-          </div>
-          <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6">
-            <div className="text-3xl font-bold text-green-400 mb-2">
-              {systemStats.isLoading ? '...' : formatLargeNumber(systemStats.totalRewardsDistributed)}
-            </div>
-            <div className="text-sm text-green-600 font-mono">$ABC Distributed</div>
-          </div>
-          <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6">
-            <div className="text-3xl font-bold text-green-400 mb-2">
-              {systemStats.isLoading ? '...' : formatLargeNumber(systemStats.totalCommits)}
-            </div>
-            <div className="text-sm text-green-600 font-mono">Commits Rewarded</div>
-          </div>
-        </div>
-
-        {/* Value Proposition */}
-        <div className="bg-gradient-to-r from-green-950/30 via-black/60 to-green-950/30 border border-green-900/30 rounded-2xl p-8 mb-8">
-          <h2 className="text-3xl font-bold text-green-400 mb-6">
-            Why ABC DAO?
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className="text-4xl mb-4">💰</div>
-              <h3 className="font-semibold text-green-400 mb-2">Instant Rewards</h3>
-              <p className="text-sm text-green-600">
-                Earn 50k-1M $ABC tokens for every commit you make
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-4xl mb-4">🔗</div>
-              <h3 className="font-semibold text-green-400 mb-2">Auto-Detection</h3>
-              <p className="text-sm text-green-600">
-                Connect GitHub once, we handle the rest automatically
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-4xl mb-4">🏦</div>
-              <h3 className="font-semibold text-green-400 mb-2">Stake & Earn</h3>
-              <p className="text-sm text-green-600">
-                Stake $ABC tokens to earn ETH rewards passively
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-4xl mb-4">🤝</div>
-              <h3 className="font-semibold text-green-400 mb-2">Community</h3>
-              <p className="text-sm text-green-600">
-                Join a thriving community of builders and creators
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Call to Action */}
-        <div className="bg-black/40 border border-green-900/30 rounded-xl p-8">
-          <h3 className="text-2xl font-bold text-green-400 mb-4">Ready to Start Earning?</h3>
-          <p className="text-green-600 font-mono mb-6">
-            Connect your wallet to begin your developer journey
-          </p>
-          <ConnectButton />
-          <p className="text-xs text-green-700 font-mono mt-4">
-            No signup required • Your wallet, your identity • Start earning immediately
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+interface TokenPrice {
+  price: string;
+  priceChange24h: number;
+  loading: boolean;
 }
 
-// Component for loading state
-function LoadingDashboardView() {
-  return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="max-w-6xl mx-auto">
-        <div className="animate-pulse">
-          <div className="h-8 bg-green-950/20 rounded mb-6"></div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <div className="h-48 bg-green-950/20 rounded-xl"></div>
-              <div className="h-64 bg-green-950/20 rounded-xl"></div>
-            </div>
-            <div className="space-y-6">
-              <div className="h-32 bg-green-950/20 rounded-xl"></div>
-              <div className="h-48 bg-green-950/20 rounded-xl"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function ConsolidatedDashboard() {
-  // ALL hooks must be called in every render
-  const { isConnected } = useAccount();
-  const { user: farcasterUser, isInMiniApp, isAuthenticated: farcasterAuthenticated, isLoading: farcasterLoading } = useFarcaster();
-  const { 
-    user, 
-    features, 
-    nextSteps, 
-    isLoading, 
-    isAuthenticated,
-    walletConnected,
-    requiresMembership,
-    addGitHubIntegration,
-    addFarcasterIntegration 
-  } = useWalletFirstAuth();
-  
-  console.log('🔍 Home page auth state:', { 
-    userWallet: user?.wallet_address, 
-    walletConnected, 
-    isAuthenticated 
+export default function HomePage() {
+  const [prices, setPrices] = useState<Record<string, TokenPrice>>({
+    ABC: { price: '-', priceChange24h: 0, loading: true },
+    ARBME: { price: '-', priceChange24h: 0, loading: true },
+    RATCHET: { price: '-', priceChange24h: 0, loading: true },
   });
 
-
-  // Get real statistics for hero section
-  const systemStats = useUsersCommitsStatsSystematic();
-  const [farcasterAvatar, setFarcasterAvatar] = useState<string | null>(null);
-  const [avatarLoading, setAvatarLoading] = useState(false);
-  const [activeSection, setActiveSection] = useState<string>('overview');
-  
-  // Render appropriate view based on state, but keep same component structure
-  // For Farcaster miniapp users, prioritize Farcaster authentication
-  const currentView = (farcasterLoading || isLoading) ? 'loading' :
-                     (isInMiniApp && farcasterAuthenticated) ? 'dashboard' :
-                     farcasterAuthenticated ? 'dashboard' :
-                     !isConnected ? 'not_connected' : 
-                     'dashboard';
-
-  // Format large numbers for display
-  const formatLargeNumber = (num: number) => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    }
-    if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
-    }
-    return num.toString();
-  };
-
-  // Fetch Farcaster profile picture
   useEffect(() => {
-    const fetchFarcasterAvatar = async () => {
-      const username = user?.farcaster_username || farcasterUser?.username;
-      const connected = user?.farcaster_connected || farcasterAuthenticated;
-      
-      if (!username || !connected) return;
-      
-      setAvatarLoading(true);
-      try {
-        // Try farcaster.xyz profile URL pattern as primary method
-        const fallbackUrl = `https://farcaster.xyz/v2/user/${username}/avatar`;
-        setFarcasterAvatar(fallbackUrl);
-      } catch (error) {
-        console.log('Failed to fetch Farcaster avatar:', error);
-        setFarcasterAvatar(null);
-      } finally {
-        setAvatarLoading(false);
-      }
-    };
+    async function fetchPrices() {
+      for (const [symbol, address] of Object.entries(TOKENS)) {
+        try {
+          const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${address}`);
+          const data = await res.json();
 
-    if ((user || farcasterUser) && !isLoading) {
-      fetchFarcasterAvatar();
-    }
-  }, [user, farcasterUser, farcasterAuthenticated, isLoading]);
+          // Get the pair with highest liquidity on Base
+          const basePairs = data.pairs?.filter((p: any) => p.chainId === 'base') || [];
+          const bestPair = basePairs.sort((a: any, b: any) =>
+            (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0)
+          )[0];
 
-  // Handle Discord connection with proper OAuth flow
-  const handleDiscordConnect = async () => {
-    const fid = user?.farcaster_fid || user?.fid || farcasterUser?.fid;
-    const username = user?.farcaster_username || user?.username || farcasterUser?.username;
-    
-    if (!fid) {
-      alert('Please connect your Farcaster account first');
-      return;
-    }
-
-    try {
-      // Get Discord OAuth URL from backend
-      const response = await fetch(`${config.backendUrl}/api/universal-auth/discord/url`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          farcaster_fid: fid,
-          farcaster_username: username,
-          context: 'webapp'
-        }),
-      });
-
-      if (response.ok) {
-        const { auth_url } = await response.json();
-        
-        // Open Discord OAuth in new window
-        const discordWindow = window.open(auth_url, '_blank', 'width=600,height=700');
-        
-        // Poll for connection success
-        const pollForConnection = setInterval(async () => {
-          try {
-            const statusResponse = await fetch(`${config.backendUrl}/api/users/${fid}/status`);
-            if (statusResponse.ok) {
-              const statusData = await statusResponse.json();
-              if (statusData.user?.discord_username) {
-                clearInterval(pollForConnection);
-                alert(`Discord account @${statusData.user.discord_username} connected successfully!`);
-                window.location.reload(); // Refresh to update UI
-                discordWindow?.close();
-              }
+          if (bestPair) {
+            const price = parseFloat(bestPair.priceUsd);
+            // Always use decimal format, never scientific notation
+            let formattedPrice: string;
+            if (price < 0.00000001) {
+              formattedPrice = `$${price.toFixed(12)}`;
+            } else if (price < 0.000001) {
+              formattedPrice = `$${price.toFixed(10)}`;
+            } else if (price < 0.0001) {
+              formattedPrice = `$${price.toFixed(8)}`;
+            } else if (price < 0.01) {
+              formattedPrice = `$${price.toFixed(6)}`;
+            } else if (price < 1) {
+              formattedPrice = `$${price.toFixed(4)}`;
+            } else {
+              formattedPrice = `$${price.toFixed(2)}`;
             }
-          } catch (pollError) {
-            console.error('Error polling Discord auth status:', pollError);
-          }
-        }, 3000);
-        
-        // Stop polling after 2 minutes
-        setTimeout(() => {
-          clearInterval(pollForConnection);
-          discordWindow?.close();
-        }, 120000);
-        
-      } else {
-        const errorData = await response.json();
-        alert(errorData.error || 'Failed to initialize Discord authentication');
-      }
-    } catch (error) {
-      console.error('Discord connection error:', error);
-      alert('Failed to connect Discord. Please try again.');
-    }
-  };
 
-  // Show different content based on authentication status
+            setPrices(prev => ({
+              ...prev,
+              [symbol]: {
+                price: formattedPrice,
+                priceChange24h: bestPair.priceChange?.h24 || 0,
+                loading: false,
+              }
+            }));
+          } else {
+            setPrices(prev => ({
+              ...prev,
+              [symbol]: { price: '-', priceChange24h: 0, loading: false }
+            }));
+          }
+        } catch (err) {
+          setPrices(prev => ({
+            ...prev,
+            [symbol]: { price: '-', priceChange24h: 0, loading: false }
+          }));
+        }
+      }
+    }
+
+    fetchPrices();
+    const interval = setInterval(fetchPrices, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {currentView === 'not_connected' && !farcasterAuthenticated && (
-        <WalletNotConnectedView systemStats={systemStats} />
-      )}
-      
-      {currentView === 'loading' && (
-        <LoadingDashboardView />
-      )}
-      
-      {currentView === 'dashboard' && (
-      <div className="max-w-7xl mx-auto">
-        {/* Welcome Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              {/* Profile Section - Different for authenticated vs public */}
-              {(user || (farcasterAuthenticated && farcasterUser)) ? (
-                <>
-                  {/* Farcaster Profile Picture */}
-                  {(user?.farcaster_connected || (farcasterAuthenticated && farcasterUser)) && (
-                    <div className="flex-shrink-0">
-                      {farcasterAvatar ? (
-                        <div className="relative w-16 h-16">
-                          <Image
-                            src={farcasterAvatar}
-                            alt={`${user?.farcaster_username || farcasterUser?.username || 'User'}'s profile`}
-                            fill
-                            className="rounded-full border-2 border-green-400/50 object-cover"
-                            sizes="64px"
-                            onError={() => setFarcasterAvatar(null)}
-                          />
-                        </div>
-                      ) : avatarLoading ? (
-                        <div className="w-16 h-16 rounded-full border-2 border-green-400/30 bg-green-950/20 animate-pulse flex items-center justify-center">
-                          <span className="text-green-600 text-xs">...</span>
-                        </div>
-                      ) : (
-                        <div className="w-16 h-16 rounded-full border-2 border-green-400/30 bg-green-950/20 flex items-center justify-center">
-                          <span className="text-2xl">🎭</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  <div>
-                    <h1 className="text-3xl font-bold text-green-400 matrix-glow">
-                      Welcome back, {user?.display_name || farcasterUser?.displayName || 'Developer'}!
-                    </h1>
-                    <div className="space-y-1">
-                      {user?.wallet_address && (
-                        <p className="text-green-600 font-mono text-sm">
-                          {user.wallet_address.slice(0, 6)}...{user.wallet_address.slice(-4)}
-                          {user.is_member && (
-                            <span className="ml-3 px-2 py-1 bg-green-900/50 text-green-400 rounded text-xs">
-                              MEMBER
-                            </span>
-                          )}
-                        </p>
-                      )}
-                      {(user?.farcaster_connected || farcasterAuthenticated) && (user?.farcaster_username || farcasterUser?.username) && (
-                        <p className="text-purple-400 font-mono text-sm">
-                          🎭 @{user?.farcaster_username || farcasterUser?.username}
-                        </p>
-                      )}
-                      {farcasterAuthenticated && !user?.wallet_address && (
-                        <p className="text-yellow-400 font-mono text-sm">
-                          Connect wallet to unlock full features
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div>
-                  <h1 className="text-3xl font-bold text-green-400 matrix-glow">
-                    ABC DAO Dashboard
-                  </h1>
-                  <p className="text-green-600 font-mono text-sm">
-                    Public staking data • Connect wallet for personal dashboard
-                  </p>
-                </div>
-              )}
-            </div>
-            
-            {/* Quick Profile Status or Connect Button */}
-            {(user && isAuthenticated) || (farcasterAuthenticated && farcasterUser) ? (
-              <div className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${user?.github_connected ? 'bg-green-400' : 'bg-yellow-400'}`} 
-                     title={`GitHub: ${user?.github_connected ? 'Connected' : 'Not connected'}`} />
-                <div className={`w-3 h-3 rounded-full ${user?.discord_connected ? 'bg-blue-400' : 'bg-gray-400'}`}
-                     title={`Discord: ${user?.discord_connected ? 'Connected' : 'Not connected'}`} />
-                <div className={`w-3 h-3 rounded-full ${(user?.farcaster_connected || farcasterAuthenticated) ? 'bg-purple-400' : 'bg-gray-400'}`}
-                     title={`Farcaster: ${(user?.farcaster_connected || farcasterAuthenticated) ? 'Connected' : 'Not connected'}`} />
-              </div>
-            ) : walletConnected && requiresMembership ? (
-              <div className="text-center">
-                <div className="text-sm text-yellow-400 font-mono mb-1">Non-Member Wallet</div>
-                <div className="text-xs text-green-600">Purchase membership to unlock features</div>
-              </div>
-            ) : (
-              <ConnectButton />
-            )}
-          </div>
+    <div className="min-h-screen" style={{ background: '#0a0a0f', color: '#e8e8f2' }}>
+      {/* Background glow effects */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse at 30% 20%, rgba(16,185,129,0.08) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(245,158,11,0.05) 0%, transparent 50%)'
+        }}
+      />
 
-          {/* Integration Progress Bar - Only for authenticated users */}
-          {((user && isAuthenticated) || (farcasterAuthenticated && farcasterUser)) && (
-            <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-mono text-green-600">Profile Completion</span>
-                <span className="text-sm font-mono text-green-400">
-                  {getProfileCompletionPercentage(user || (farcasterAuthenticated ? { farcaster_connected: true, farcaster_username: farcasterUser?.username } : null))}%
+      {/* Hero */}
+      <section className="min-h-screen flex flex-col items-center justify-center px-6 sm:px-8 relative">
+        <div className="relative z-10 text-center max-w-[900px] mx-auto">
+          <Image
+            src="/ABC_DAO_LOGO.png"
+            alt="ABC DAO"
+            width={80}
+            height={80}
+            className="mx-auto mb-8 opacity-90"
+          />
+
+          <h1
+            className="font-semibold tracking-tight mb-6"
+            style={{
+              fontFamily: 'var(--font-sans), system-ui, sans-serif',
+              fontSize: 'clamp(3rem, 10vw, 5rem)',
+              background: 'linear-gradient(135deg, #10b981 0%, #f59e0b 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            ABC DAO
+          </h1>
+
+          <p
+            className="text-xl md:text-2xl mb-4"
+            style={{
+              fontFamily: 'var(--font-mono), monospace',
+              color: '#10b981',
+              letterSpacing: '0.05em'
+            }}
+          >
+            Always. Be. Coding.
+          </p>
+
+          <p
+            className="max-w-xl mx-auto mb-12"
+            style={{
+              fontFamily: 'var(--font-sans), system-ui, sans-serif',
+              color: '#7a7a8f',
+              fontSize: '1.1rem',
+              lineHeight: '1.6'
+            }}
+          >
+            A developer collective building DeFi infrastructure for Farcaster.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <a
+              href="https://arbme.epicdylan.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center px-8 py-3 font-semibold rounded-lg transition-all duration-200"
+              style={{
+                fontFamily: 'var(--font-sans), system-ui, sans-serif',
+                background: '#10b981',
+                color: '#0a0a0f',
+                boxShadow: '0 0 30px rgba(16,185,129,0.3)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 0 40px rgba(16,185,129,0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 0 30px rgba(16,185,129,0.3)';
+              }}
+            >
+              Launch ArbMe
+            </a>
+            <a
+              href="https://discord.gg/Rrq6BXgVVV"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center px-8 py-3 font-semibold rounded-lg transition-all duration-200"
+              style={{
+                fontFamily: 'var(--font-sans), system-ui, sans-serif',
+                background: 'transparent',
+                color: '#10b981',
+                border: '1px solid #1f1f2f'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#10b981';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = '#1f1f2f';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              Join Discord
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Product */}
+      <section className="py-20 px-6 sm:px-8" style={{ borderTop: '1px solid #1f1f2f' }}>
+        <div className="max-w-[900px] mx-auto text-center">
+          <p
+            className="text-xs uppercase tracking-widest mb-3"
+            style={{ fontFamily: 'var(--font-mono), monospace', color: '#7a7a8f' }}
+          >
+            Product
+          </p>
+          <h2
+            className="font-semibold mb-6"
+            style={{
+              fontFamily: 'var(--font-sans), system-ui, sans-serif',
+              fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
+              color: '#e8e8f2'
+            }}
+          >
+            ArbMe
+          </h2>
+          <p
+            className="mb-10 max-w-2xl mx-auto"
+            style={{
+              fontFamily: 'var(--font-sans), system-ui, sans-serif',
+              color: '#7a7a8f',
+              fontSize: '1.05rem',
+              lineHeight: '1.6'
+            }}
+          >
+            A Farcaster miniapp for liquidity pool arbitrage. Simple interface, real yields, built for the Farcaster ecosystem.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+            {['One-click arbitrage', 'Farcaster native', 'Real-time yields'].map((item) => (
+              <div
+                key={item}
+                className="rounded-lg p-4 transition-all duration-200 text-center"
+                style={{
+                  background: '#0f0f18',
+                  border: '1px solid #1f1f2f'
+                }}
+              >
+                <span style={{ color: '#10b981', fontFamily: 'var(--font-mono), monospace' }}>→</span>
+                <span
+                  className="ml-2"
+                  style={{ fontFamily: 'var(--font-sans), system-ui, sans-serif', color: '#e8e8f2' }}
+                >
+                  {item}
                 </span>
               </div>
-              <div className="w-full bg-green-950/30 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-green-600 to-green-400 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${getProfileCompletionPercentage(user || (farcasterAuthenticated ? { farcaster_connected: true, farcaster_username: farcasterUser?.username } : null))}%` }}
-                ></div>
-              </div>
-            </div>
-          )}
-        </div>
+            ))}
+          </div>
 
-        {/* Main Dashboard Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left Column - Main Content */}
-          <div className="lg:col-span-3 space-y-6">
-            {/* Metrics Dashboard - Always visible with different content */}
-            <MetricsDashboard user={user} features={features} />
-            
-            {/* Quick Actions - Only for authenticated users */}
-            {((user && isAuthenticated) || (farcasterAuthenticated && farcasterUser)) && (
-              <QuickActionsPanel 
-                user={user} 
-                features={features}
-                onSectionChange={setActiveSection}
-              />
-            )}
-            
-            {/* Activity Feed - Only for authenticated users */}
-            {((user && isAuthenticated) || (farcasterAuthenticated && farcasterUser)) && user?.wallet_address && (
-              <ActivityFeed walletAddress={user.wallet_address} />
-            )}
-            
-            {/* Special section for Farcaster-only users */}
-            {farcasterAuthenticated && !user?.wallet_address && (
-              <div className="bg-gradient-to-r from-purple-950/30 via-black/60 to-purple-950/30 border border-purple-900/30 rounded-xl p-8">
-                <h2 className="text-2xl font-bold text-purple-400 mb-6">
-                  🎭 Welcome, {farcasterUser?.displayName}!
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-lg font-bold text-green-400 mb-3">You're Connected via Farcaster</h3>
-                    <ul className="space-y-2 text-green-600">
-                      <li>• Browse community content</li>
-                      <li>• View public data and statistics</li>
-                      <li>• Connect with other developers</li>
-                      <li>• Access read-only features</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-blue-400 mb-3">Connect Wallet to Unlock</h3>
-                    <ul className="space-y-2 text-blue-600">
-                      <li>• Stake ABC tokens for ETH rewards</li>
-                      <li>• Purchase membership to earn from coding</li>
-                      <li>• Access your personal dashboard</li>
-                      <li>• Manage your ABC token portfolio</li>
-                    </ul>
-                  </div>
+          <a
+            href="https://arbme.epicdylan.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 transition-colors duration-200"
+            style={{
+              fontFamily: 'var(--font-mono), monospace',
+              color: '#10b981',
+              fontSize: '0.9rem'
+            }}
+          >
+            Launch app <span>→</span>
+          </a>
+        </div>
+      </section>
+
+      {/* Mission */}
+      <section className="py-20 px-6 sm:px-8" style={{ borderTop: '1px solid #1f1f2f' }}>
+        <div className="max-w-[900px] mx-auto text-center">
+          <p
+            className="text-xs uppercase tracking-widest mb-3"
+            style={{ fontFamily: 'var(--font-mono), monospace', color: '#7a7a8f' }}
+          >
+            Mission
+          </p>
+          <h2
+            className="font-semibold mb-10"
+            style={{
+              fontFamily: 'var(--font-sans), system-ui, sans-serif',
+              fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
+              color: '#e8e8f2'
+            }}
+          >
+            The liquidity layer Farcaster needs.
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div
+              className="rounded-lg p-6 text-center"
+              style={{ background: '#0f0f18', border: '1px solid #1f1f2f' }}
+            >
+              <h3
+                className="font-semibold mb-3"
+                style={{ fontFamily: 'var(--font-sans), system-ui, sans-serif', color: '#10b981' }}
+              >
+                The Problem
+              </h3>
+              <p style={{ fontFamily: 'var(--font-sans), system-ui, sans-serif', color: '#7a7a8f', lineHeight: '1.6' }}>
+                DeFi tools are powerful but fragmented. Liquidity management requires juggling multiple interfaces and protocols.
+              </p>
+            </div>
+            <div
+              className="rounded-lg p-6 text-center"
+              style={{ background: '#0f0f18', border: '1px solid #1f1f2f' }}
+            >
+              <h3
+                className="font-semibold mb-3"
+                style={{ fontFamily: 'var(--font-sans), system-ui, sans-serif', color: '#f59e0b' }}
+              >
+                Our Approach
+              </h3>
+              <p style={{ fontFamily: 'var(--font-sans), system-ui, sans-serif', color: '#7a7a8f', lineHeight: '1.6' }}>
+                Native Farcaster apps that unify LP management. One interface, all the yields.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Join */}
+      <section className="py-20 px-6 sm:px-8" style={{ borderTop: '1px solid #1f1f2f' }}>
+        <div className="max-w-[900px] mx-auto text-center">
+          <p
+            className="text-xs uppercase tracking-widest mb-3"
+            style={{ fontFamily: 'var(--font-mono), monospace', color: '#7a7a8f' }}
+          >
+            Join
+          </p>
+          <h2
+            className="font-semibold mb-6"
+            style={{
+              fontFamily: 'var(--font-sans), system-ui, sans-serif',
+              fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
+              color: '#e8e8f2'
+            }}
+          >
+            Looking for builders.
+          </h2>
+          <p
+            className="mb-10 max-w-2xl mx-auto"
+            style={{
+              fontFamily: 'var(--font-sans), system-ui, sans-serif',
+              color: '#7a7a8f',
+              fontSize: '1.05rem',
+              lineHeight: '1.6'
+            }}
+          >
+            Small team. High standards. If you ship your own projects and want to build DeFi for Farcaster, reach out.
+          </p>
+
+          <div className="flex flex-wrap gap-4 justify-center">
+            {[
+              { label: 'Discord', href: 'https://discord.gg/Rrq6BXgVVV' },
+              { label: 'GitHub', href: 'https://github.com/AlwaysBeCoding-dev' },
+              { label: 'Farcaster', href: 'https://warpcast.com/abc-dao' },
+            ].map(({ label, href }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-2 rounded-lg transition-all duration-200"
+                style={{
+                  fontFamily: 'var(--font-sans), system-ui, sans-serif',
+                  background: 'transparent',
+                  color: '#10b981',
+                  border: '1px solid #1f1f2f'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#10b981';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#1f1f2f';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                {label}
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Tokens */}
+      <section className="py-20 px-6 sm:px-8" style={{ borderTop: '1px solid #1f1f2f' }}>
+        <div className="max-w-[900px] mx-auto text-center">
+          <p
+            className="text-xs uppercase tracking-widest mb-3"
+            style={{ fontFamily: 'var(--font-mono), monospace', color: '#7a7a8f' }}
+          >
+            Tokens
+          </p>
+          <h2
+            className="font-semibold mb-10"
+            style={{
+              fontFamily: 'var(--font-sans), system-ui, sans-serif',
+              fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
+              color: '#e8e8f2'
+            }}
+          >
+            Our Ecosystem
+          </h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+            {[
+              { symbol: 'ABC', desc: 'Ecosystem Governance Token', address: TOKENS.ABC },
+              { symbol: 'ARBME', desc: 'Ecosystem Value Token', address: TOKENS.ARBME },
+              { symbol: 'RATCHET', desc: 'Ecosystem Utility Token', address: TOKENS.RATCHET },
+            ].map(({ symbol, desc, address }) => (
+              <a
+                key={symbol}
+                href={`https://app.uniswap.org/swap?outputCurrency=${address}&chain=base`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-lg p-5 transition-all duration-200 block"
+                style={{ background: '#0f0f18', border: '1px solid #1f1f2f' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#10b981';
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#1f1f2f';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <div
+                  className="font-semibold mb-1"
+                  style={{ fontFamily: 'var(--font-sans), system-ui, sans-serif', color: '#10b981', fontSize: '1.25rem' }}
+                >
+                  ${symbol}
                 </div>
-                <div className="mt-6 text-center">
-                  <p className="text-purple-500 font-mono text-sm mb-4">
-                    Connect your wallet to unlock the full ABC DAO experience
-                  </p>
-                  <ConnectButton />
+                <div
+                  className="mb-3"
+                  style={{ fontFamily: 'var(--font-mono), monospace', color: '#7a7a8f', fontSize: '0.75rem' }}
+                >
+                  {desc}
                 </div>
-              </div>
-            )}
-            
-            {/* Information for non-authenticated or non-member users */}
-            {(!isAuthenticated && !farcasterAuthenticated) && (
-              <div className="bg-gradient-to-r from-green-950/30 via-black/60 to-green-950/30 border border-green-900/30 rounded-xl p-8">
-                {walletConnected && requiresMembership ? (
-                  // Non-member wallet connected
-                  <>
-                    <h2 className="text-2xl font-bold text-yellow-400 mb-6">
-                      👋 Welcome, Non-Member!
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h3 className="text-lg font-bold text-green-400 mb-3">What You Can Do Now</h3>
-                        <ul className="space-y-2 text-green-600">
-                          <li>• View your ABC token balance</li>
-                          <li>• Stake ABC tokens to earn ETH rewards</li>
-                          <li>• Access public staking and treasury data</li>
-                          <li>• Browse community content</li>
-                        </ul>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-blue-400 mb-3">Unlock with Membership</h3>
-                        <ul className="space-y-2 text-blue-600">
-                          <li>• Earn ABC tokens for code commits</li>
-                          <li>• Add repositories to ABC DAO</li>
-                          <li>• Access developer tools and APIs</li>
-                          <li>• Join exclusive developer community</li>
-                        </ul>
-                      </div>
-                    </div>
-                    <div className="mt-6 text-center">
-                      <p className="text-yellow-500 font-mono text-sm mb-4">
-                        You can stake ABC tokens now, or purchase membership for full features
-                      </p>
-                      <div className="flex gap-4 justify-center">
-                        <Link href="/staking" className="px-6 py-2 bg-green-900/50 text-green-400 rounded hover:bg-green-900/70 transition-colors">
-                          Start Staking
-                        </Link>
-                        <button className="px-6 py-2 bg-blue-900/50 text-blue-400 rounded hover:bg-blue-900/70 transition-colors">
-                          Purchase Membership
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  // No wallet connected (anonymous)
-                  <>
-                    <h2 className="text-2xl font-bold text-green-400 mb-6">
-                      🌟 Join ABC DAO
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h3 className="text-lg font-bold text-green-400 mb-3">For Developers (Members)</h3>
-                        <ul className="space-y-2 text-green-600">
-                          <li>• Earn ABC tokens for code commits</li>
-                          <li>• Get rewards for building features</li>
-                          <li>• Access developer tools and APIs</li>
-                          <li>• Join exclusive developer community</li>
-                        </ul>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-blue-400 mb-3">For Stakers (Everyone)</h3>
-                        <ul className="space-y-2 text-blue-600">
-                          <li>• Stake ABC tokens for ETH rewards</li>
-                          <li>• Earn passive income from protocol fees</li>
-                          <li>• No coding required, just hold and stake</li>
-                          <li>• Public staking data available below</li>
-                        </ul>
-                      </div>
-                    </div>
-                    <div className="mt-6 text-center">
-                      <p className="text-green-500 font-mono text-sm mb-4">
-                        Connect your wallet to get started
-                      </p>
-                      <ConnectButton />
-                    </div>
-                  </>
+                <div
+                  className="font-semibold"
+                  style={{ fontFamily: 'var(--font-mono), monospace', color: '#e8e8f2', fontSize: '1.1rem' }}
+                >
+                  {prices[symbol].loading ? (
+                    <span style={{ color: '#7a7a8f' }}>...</span>
+                  ) : (
+                    prices[symbol].price
+                  )}
+                </div>
+                {!prices[symbol].loading && prices[symbol].priceChange24h !== 0 && (
+                  <div
+                    className="text-sm mt-1"
+                    style={{
+                      fontFamily: 'var(--font-mono), monospace',
+                      color: prices[symbol].priceChange24h > 0 ? '#10b981' : '#ef4444',
+                      fontSize: '0.8rem'
+                    }}
+                  >
+                    {prices[symbol].priceChange24h > 0 ? '+' : ''}{prices[symbol].priceChange24h.toFixed(2)}% 24h
+                  </div>
                 )}
-              </div>
-            )}
+              </a>
+            ))}
           </div>
 
-          {/* Right Column - Sidebar */}
-          <div className="space-y-6">
-            {/* Next Steps */}
-            {nextSteps.length > 0 && (
-              <NextStepsWizard 
-                steps={nextSteps}
-                onGitHubConnect={() => addGitHubIntegration()}
-                onDiscordConnect={() => handleDiscordConnect()}
-                onFarcasterConnect={() => addFarcasterIntegration({})}
-              />
-            )}
-            
-            {/* Integration Progress */}
-            <IntegrationProgressCard user={user} features={features} />
-            
-            {/* Quick Links */}
-            <div className="bg-black/40 border border-green-900/30 rounded-xl p-4">
-              <h3 className="font-semibold text-green-400 mb-3">Quick Links</h3>
-              <div className="space-y-2">
-                <Link 
-                  href="/staking" 
-                  className="block p-2 rounded hover:bg-green-950/30 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span>🏦</span>
-                    <span className="text-sm font-mono text-green-600">Staking</span>
-                  </div>
-                </Link>
-                <Link 
-                  href="/developers" 
-                  className="block p-2 rounded hover:bg-green-950/30 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span>💻</span>
-                    <span className="text-sm font-mono text-green-600">Dev Tools</span>
-                  </div>
-                </Link>
-                <Link 
-                  href="/community" 
-                  className="block p-2 rounded hover:bg-green-950/30 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span>👥</span>
-                    <span className="text-sm font-mono text-green-600">Community</span>
-                  </div>
-                </Link>
-                <Link 
-                  href="/treasury" 
-                  className="block p-2 rounded hover:bg-green-950/30 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span>💰</span>
-                    <span className="text-sm font-mono text-green-600">Treasury</span>
-                  </div>
-                </Link>
-              </div>
-            </div>
+          <p
+            className="mb-6"
+            style={{ fontFamily: 'var(--font-mono), monospace', color: '#7a7a8f', fontSize: '0.85rem' }}
+          >
+            All tokens on Base Network
+          </p>
+
+          <a
+            href={`https://basescan.org/token/${TOKENS.ABC}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 transition-colors duration-200"
+            style={{
+              fontFamily: 'var(--font-mono), monospace',
+              color: '#10b981',
+              fontSize: '0.9rem'
+            }}
+          >
+            View contracts on Basescan <span>→</span>
+          </a>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-12 px-6 sm:px-8" style={{ borderTop: '1px solid #1f1f2f' }}>
+        <div className="max-w-[900px] mx-auto flex flex-col items-center justify-center gap-6 text-center">
+          <div className="flex items-center gap-3">
+            <Image src="/ABC_DAO_LOGO.png" alt="ABC DAO" width={24} height={24} />
+            <span style={{ fontFamily: 'var(--font-mono), monospace', color: '#7a7a8f', fontSize: '0.85rem' }}>
+              ABC DAO © 2025
+            </span>
+          </div>
+          <div className="flex gap-6">
+            {[
+              { label: 'Discord', href: 'https://discord.gg/Rrq6BXgVVV' },
+              { label: 'GitHub', href: 'https://github.com/AlwaysBeCoding-dev' },
+              { label: 'Farcaster', href: 'https://warpcast.com/abc-dao' },
+            ].map(({ label, href }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors duration-200"
+                style={{ fontFamily: 'var(--font-mono), monospace', color: '#7a7a8f', fontSize: '0.85rem' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#10b981'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#7a7a8f'}
+              >
+                {label}
+              </a>
+            ))}
           </div>
         </div>
-      </div>
-      )}
+      </footer>
     </div>
   );
-}
-
-/**
- * Calculate profile completion percentage based on integrations
- */
-function getProfileCompletionPercentage(user: any): number {
-  if (!user) return 0;
-  
-  let completed = 0;
-  let total = 4;
-  
-  // Wallet connected (always true if we're here)
-  completed += 1;
-  
-  // GitHub connected
-  if (user.github_connected) completed += 1;
-  
-  // Membership status
-  if (user.is_member || user.membership_status === 'paid') completed += 1;
-  
-  // Social connections (Discord or Farcaster)
-  if (user.discord_connected || user.farcaster_connected) completed += 1;
-  
-  return Math.round((completed / total) * 100);
 }

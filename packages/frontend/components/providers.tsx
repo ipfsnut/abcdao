@@ -1,11 +1,10 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
-import { config, fallbackConfig } from '@/lib/web3';
-import { UnifiedFarcasterProvider, useFarcaster } from '@/contexts/unified-farcaster-context';
+import { fallbackConfig } from '@/lib/web3';
+import { UnifiedFarcasterProvider } from '@/contexts/unified-farcaster-context';
 import '@rainbow-me/rainbowkit/styles.css';
 
 const queryClient = new QueryClient();
@@ -57,53 +56,18 @@ const customMatrixTheme = {
   },
 };
 
-// Context-aware Wagmi provider that uses Farcaster wallet in mini-app
-function ContextAwareWagmiProvider({ children }: { children: React.ReactNode }) {
-  const { isInMiniApp, isLoading } = useFarcaster();
-  
-  console.log('🔍 Provider context:', { isInMiniApp, isLoading });
-  const configRef = useRef<any>(fallbackConfig);
-  
-  // Always render the same component structure to maintain consistent hook order
-  useEffect(() => {
-    const selectedConfig = isInMiniApp ? config : fallbackConfig;
-    configRef.current = selectedConfig;
-    console.log(`🔗 Using ${isInMiniApp ? 'Farcaster miniapp' : 'standard'} wallet config`);
-    console.log('🔗 Config details:', { 
-      isInMiniApp, 
-      connectors: selectedConfig.connectors?.length,
-      connectorTypes: selectedConfig.connectors?.map(c => c.name)
-    });
-  }, [isInMiniApp]);
-
-  return (
-    <WagmiProvider config={configRef.current}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={customMatrixTheme}>
-          {/* ALWAYS render children to maintain consistent hook calls */}
-          <div className="min-h-screen bg-black text-green-400">
-            {isLoading && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center bg-black">
-                <div className="text-center font-mono">
-                  <div className="animate-pulse text-green-400 mb-2">🔗</div>
-                  <div>Initializing wallet context...</div>
-                </div>
-              </div>
-            )}
-            {children}
-          </div>
-        </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
-  );
-}
-
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <UnifiedFarcasterProvider>
-      <ContextAwareWagmiProvider>
-        {children}
-      </ContextAwareWagmiProvider>
+      <WagmiProvider config={fallbackConfig}>
+        <QueryClientProvider client={queryClient}>
+          <RainbowKitProvider theme={customMatrixTheme}>
+            <div className="min-h-screen bg-black text-green-400">
+              {children}
+            </div>
+          </RainbowKitProvider>
+        </QueryClientProvider>
+      </WagmiProvider>
     </UnifiedFarcasterProvider>
   );
 }
