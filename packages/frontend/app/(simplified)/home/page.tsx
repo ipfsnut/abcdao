@@ -169,7 +169,7 @@ export default function HomePage() {
               Launch ArbMe
             </a>
             <a
-              href="https://discord.gg/Rrq6BXgVVV"
+              href="https://discord.gg/km7RysdTeq"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center px-8 py-3 font-semibold rounded-lg transition-all duration-200"
@@ -347,8 +347,8 @@ export default function HomePage() {
 
           <div className="flex flex-wrap gap-4 justify-center">
             {[
-              { label: 'Discord', href: 'https://discord.gg/Rrq6BXgVVV' },
-              { label: 'GitHub', href: 'https://github.com/AlwaysBeCoding-dev' },
+              { label: 'Discord', href: 'https://discord.gg/km7RysdTeq' },
+              { label: 'GitHub', href: 'https://github.com/ABC-DAO' },
               { label: 'Farcaster', href: 'https://warpcast.com/abc-dao' },
             ].map(({ label, href }) => (
               <a
@@ -493,8 +493,8 @@ export default function HomePage() {
           </div>
           <div className="flex gap-6">
             {[
-              { label: 'Discord', href: 'https://discord.gg/Rrq6BXgVVV' },
-              { label: 'GitHub', href: 'https://github.com/AlwaysBeCoding-dev' },
+              { label: 'Discord', href: 'https://discord.gg/km7RysdTeq' },
+              { label: 'GitHub', href: 'https://github.com/ABC-DAO' },
               { label: 'Farcaster', href: 'https://warpcast.com/abc-dao' },
             ].map(({ label, href }) => (
               <a
