@@ -34,6 +34,7 @@ export default function UnifiedDeveloperHub() {
   const developerData = {
     totalEarned: userStats.totalRewardsEarnedFormatted,
     pendingRewards: '0',
+    activeRepos: 0,
     totalCommits: userStats.totalCommits,
     averageReward: userStats.totalCommits > 0 ? Math.round(userStats.totalRewardsEarned / userStats.totalCommits).toString() : '0',
     isLoading: userStats.isLoading || systemStats.isLoading

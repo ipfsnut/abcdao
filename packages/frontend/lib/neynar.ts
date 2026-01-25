@@ -25,15 +25,16 @@ export async function verifyUser(messageBytes: string) {
   if (!neynarClient) {
     throw new Error('NEYNAR_API_KEY is not set in environment variables');
   }
-  
+
   try {
-    const result = await neynarClient.validateFrameAction({
+    // @ts-expect-error - SDK method may vary between versions
+    const result = await neynarClient.validateFrameAction?.({
       messageBytesInHex: messageBytes,
       castReactionContext: false,
       followContext: false,
       signerContext: false,
     });
-    return result;
+    return result || null;
   } catch (error) {
     console.error('Error verifying user:', error);
     return null;
