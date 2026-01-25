@@ -505,89 +505,35 @@ async function processRewardDirectly(commitData) {
 
 // Direct Farcaster posting when queue is unavailable
 async function postCommitCast(castData) {
-  const { farcasterUsername, farcasterFid, repository, commitMessage, commitUrl, rewardAmount, commitHash, dailyLimitReached, userSettings, commitTags, finalPriority } = castData;
-  
+  const { farcasterUsername, repository, commitMessage, commitUrl, commitHash } = castData;
+
   try {
     console.log(`📢 Posting cast directly for ${farcasterUsername}'s commit`);
-    
+
     // Use ABC Commits bot for GitHub activity posts
     const commitsApiKey = process.env.ABC_COMMITS_API_KEY || process.env.NEYNAR_API_KEY;
     const commitsSignerUuid = process.env.ABC_COMMITS_SIGNER_UUID || process.env.NEYNAR_SIGNER_UUID;
-    
+
     if (!commitsApiKey || !commitsSignerUuid) {
       console.log(`⚠️ ABC Commits bot credentials not configured, skipping cast`);
       return;
     }
-    
+
     console.log(`📢 Posting from @abc-dao-commits bot (signer: ${commitsSignerUuid})`);
-    
+
     // Initialize Neynar client for commits bot
     const { NeynarAPIClient } = await import('@neynar/nodejs-sdk');
     const neynar = new NeynarAPIClient(commitsApiKey);
-    
+
     // Create cast message
     const repoName = repository.split('/').pop() || repository;
     const cleanMessage = commitMessage
       .replace(/^(feat|fix|docs|style|refactor|test|chore|build|ci|perf)(\(.+?\))?:\s*/i, '')
       .split('\n')[0]
-      .trim();
-    
-    // Apply user settings to cast content
-    const settings = userSettings || {
-      commit_casts: { enabled: true, tag_me: true, include_repo_name: true, include_commit_message: true, max_message_length: 100 },
-      daily_limit_casts: { enabled: true, tag_me: true, custom_message: null }
-    };
-    
-    // Check if user wants this type of cast
-    if (dailyLimitReached && !settings.daily_limit_casts?.enabled) {
-      console.log(`⏭️ User ${farcasterUsername} has daily limit casts disabled, skipping`);
-      return;
-    } else if (!dailyLimitReached && !settings.commit_casts?.enabled) {
-      console.log(`⏭️ User ${farcasterUsername} has commit casts disabled, skipping`);
-      return;
-    }
-    
-    // Create username mention based on settings
-    const usernameText = dailyLimitReached 
-      ? (settings.daily_limit_casts?.tag_me !== false ? `@${farcasterUsername}` : farcasterUsername)
-      : (settings.commit_casts?.tag_me !== false ? `@${farcasterUsername}` : farcasterUsername);
-    
-    // Create repo name based on settings
-    const repoText = (!dailyLimitReached && settings.commit_casts?.include_repo_name === false) 
-      ? 'their repo' : repoName;
-    
-    // Create commit message based on settings  
-    const maxLength = settings.commit_casts?.max_message_length || 100;
-    const messageText = (!dailyLimitReached && settings.commit_casts?.include_commit_message === false)
-      ? 'some awesome code'
-      : cleanMessage.substring(0, maxLength);
-    
-    // Create reward text with custom messages
-    let rewardText;
-    if (dailyLimitReached) {
-      rewardText = settings.daily_limit_casts?.custom_message || '🔴 MAX DAILY REWARDS REACHED (10/10)';
-    } else {
-      rewardText = `💰 Earned: ${rewardAmount.toLocaleString()} $ABC`;
-      
-      // Add priority indicators (only if actually applied)
-      if (finalPriority === 'high') {
-        rewardText += ' ⭐ (Priority)';
-      } else if (finalPriority === 'milestone') {
-        rewardText += ' 🎯 (Milestone)';
-      } else if (commitTags?.priority === 'experimental') {
-        rewardText += ' 🧪 (Experiment)';
-      }
-      
-      // Add limit exceeded indicator if priority was requested but denied
-      if ((commitTags?.priority === 'high' || commitTags?.priority === 'milestone') && finalPriority === 'normal') {
-        rewardText += ' ⚠️ (Priority limit reached)';
-      }
-    }
-    
-    // Add privacy indicator if commit is private
-    const privacyText = commitTags?.isPrivate ? ' 🔒' : '';
-    
-    const castText = `🚀 New commit!${privacyText}\n\n${usernameText} just pushed to ${repoText}:\n\n"${messageText}"\n\n${rewardText}\n\n🔗 ${commitUrl}\n\n📱 Want rewards? Add our miniapp:\nfarcaster.xyz/miniapps/S1edg9PycxZP/abcdao\n\n#ABCDAO #AlwaysBeCoding`;
+      .trim()
+      .substring(0, 100);
+
+    const castText = `🚀 New commit!\n\n@${farcasterUsername} pushed to ${repoName}:\n\n"${cleanMessage}"\n\n🔗 ${commitUrl}\n\n#ABCDAO`;
     
     // Post cast using ABC Commits bot
     const cast = await neynar.publishCast(
@@ -607,29 +553,6 @@ async function postCommitCast(castData) {
     `, [castHash, commitHash]);
     
     console.log(`✅ Posted cast: ${castHash}`);
-    
-    // Store commit data for digest analysis
-    try {
-      const { CommitDigestService } = await import('../services/commit-digest-service.js');
-      const digestService = new CommitDigestService();
-      
-      await digestService.storeCommitData({
-        repository: repository,
-        commitHash: commitHash,
-        authorFid: farcasterFid,
-        authorUsername: farcasterUsername,
-        authorGithubUsername: digestService.extractGithubUsername(repository, commitUrl),
-        commitMessage: commitMessage,
-        commitUrl: commitUrl,
-        rewardAmount: rewardAmount,
-        commitTags: commitTags,
-        priorityLevel: finalPriority,
-        isPrivate: commitTags?.isPrivate || false
-      });
-    } catch (digestError) {
-      console.error('⚠️ Failed to store commit data for digest:', digestError.message);
-      // Don't throw - digest storage failure shouldn't break cast posting
-    }
     
     return { success: true, castHash };
     
