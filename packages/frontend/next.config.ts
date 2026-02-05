@@ -27,6 +27,7 @@ const nextConfig: NextConfig = {
     webpackBuildWorker: false,
     optimizePackageImports: ['@rainbow-me/rainbowkit', 'wagmi', 'viem']
   },
+  turbopack: {},
   webpack: (config) => {
     // Disable webpack cache that causes issues with Cloudflare Pages
     config.cache = false;

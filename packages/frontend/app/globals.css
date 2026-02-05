@@ -1,28 +1,37 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&family=Outfit:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #000000;
-  --foreground: #00ff41;
-  --matrix-green: #00ff41;
-  --matrix-green-dim: #00cc33;
-  --matrix-green-dark: #008f11;
-  --matrix-black: #000000;
-  --matrix-gray: #0a0a0a;
-  --matrix-border: #00ff4120;
+  /* Meridian Terminal — Black & Green */
+  --background: #090B0A;
+  --foreground: #ECF0ED;
+  --matrix-green: #00FF9D;
+  --matrix-green-dim: #00E08A;
+  --matrix-green-dark: #1B211E;
+  --matrix-black: #090B0A;
+  --matrix-gray: #0F1210;
+  --matrix-border: rgba(0, 255, 157, 0.08);
+
+  /* Meridian type stack */
+  --font-display: 'Newsreader', 'Georgia', serif;
+  --font-body: 'Outfit', system-ui, sans-serif;
+  --font-code: 'Fira Code', 'Consolas', monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-family: var(--font-body);
   font-weight: 400;
   overflow-x: hidden;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Matrix rain animation background */
+/* Subtle gradient background */
 body::before {
   content: '';
   position: fixed;
@@ -30,27 +39,8 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(180deg, #000000 0%, #001100 100%);
+  background: linear-gradient(180deg, #090B0A 0%, #0C100E 100%);
   z-index: -2;
-}
-
-/* Subtle scan lines effect */
-body::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 255, 65, 0.01) 2px,
-    rgba(0, 255, 65, 0.01) 4px
-  );
-  z-index: -1;
-  pointer-events: none;
 }
 
 /* Custom scrollbar */
@@ -71,68 +61,69 @@ body::after {
   background: var(--matrix-green);
 }
 
-/* Glowing text effect */
+/* Accent text highlight */
 .matrix-glow {
-  text-shadow: 0 0 5px var(--matrix-green), 0 0 10px var(--matrix-green-dim);
+  color: var(--matrix-green);
 }
 
-/* Button hover effects */
+/* Button styles */
 .matrix-button {
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   border: 1px solid var(--matrix-green-dark);
-  background: rgba(0, 255, 65, 0.05);
+  background: rgba(0, 255, 157, 0.04);
+  font-family: var(--font-body);
 }
 
-/* Custom RainbowKit styling to match matrix theme */
+/* Custom RainbowKit styling — Meridian Terminal */
 [data-rk] button[data-testid="rk-connect-button"] {
-  background: rgba(5, 46, 22, 0.3) !important;
-  border: 1px solid #166534 !important;
-  color: #10B981 !important;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace !important;
+  background: rgba(0, 255, 157, 0.04) !important;
+  border: 1px solid #1B211E !important;
+  color: #00FF9D !important;
+  font-family: var(--font-body) !important;
   font-weight: 500 !important;
-  border-radius: 0.5rem !important;
-  transition: all 0.3s ease !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
   font-size: 0.875rem !important;
   padding: 0.5rem 1rem !important;
 }
 
 [data-rk] button[data-testid="rk-connect-button"]:hover {
-  background: rgba(6, 78, 59, 0.3) !important;
-  border-color: #059669 !important;
-  color: #34D399 !important;
-  text-shadow: 0 0 5px #10B981 !important;
+  background: rgba(0, 255, 157, 0.08) !important;
+  border-color: #00E08A !important;
+  color: #00FF9D !important;
 }
 
 [data-rk] button[data-testid="rk-account-button"] {
-  background: rgba(5, 46, 22, 0.3) !important;
-  border: 1px solid #166534 !important;
-  color: #10B981 !important;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace !important;
-  border-radius: 0.5rem !important;
+  background: rgba(0, 255, 157, 0.04) !important;
+  border: 1px solid #1B211E !important;
+  color: #00FF9D !important;
+  font-family: var(--font-body) !important;
+  border-radius: 6px !important;
   font-size: 0.875rem !important;
 }
 
 [data-rk] button[data-testid="rk-account-button"]:hover {
-  background: rgba(6, 78, 59, 0.3) !important;
-  border-color: #059669 !important;
+  background: rgba(0, 255, 157, 0.08) !important;
+  border-color: #00E08A !important;
 }
 
 .matrix-button:hover {
-  background: rgba(0, 255, 65, 0.1);
-  box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+  background: rgba(0, 255, 157, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 255, 157, 0.12);
   border-color: var(--matrix-green);
 }
 
 /* Input fields */
 .matrix-input {
-  background: rgba(0, 255, 65, 0.02);
+  background: rgba(0, 255, 157, 0.03);
   border: 1px solid var(--matrix-green-dark);
-  color: var(--matrix-green);
+  color: var(--foreground);
+  font-family: var(--font-body);
 }
 
 .matrix-input:focus {
   border-color: var(--matrix-green);
-  box-shadow: 0 0 0 2px rgba(0, 255, 65, 0.2);
+  box-shadow: 0 0 0 2px rgba(0, 255, 157, 0.15);
   outline: none;
 }
 
