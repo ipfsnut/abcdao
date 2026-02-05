@@ -1,0 +1,32 @@
+# ABC DAO
+
+> Green Hat Free Open Source Software Collective on Farcaster and Base. Community-governed DAO focused on building open tools for decentralized social and DeFi.
+
+## What ABC DAO Does
+
+ABC DAO is a community-run collective that builds open source software for Farcaster and Base. Members hold the $ABC token for governance. The DAO operates transparently with a multisig treasury and focuses on cooperation primitives — shared liquidity pools, routing infrastructure, and community tooling.
+
+## Key URLs
+
+- Homepage: https://abc.epicdylan.com
+- Docs: https://abc.epicdylan.com/docs
+- Whitepaper: https://abc.epicdylan.com/whitepaper.md
+- Mission Statement: https://abc.epicdylan.com/mission-statement.md
+
+## Token
+
+- Token: $ABC
+- Contract: 0x5c0872b790bb73e2b3a9778db6e7704095624b07
+- Chain: Base (8453)
+
+## Treasury
+
+- Multisig: 0xc35c2dCdD084F1Df8a4dDbD374436E35136b4368
+- BaseScan: https://basescan.org/address/0xc35c2dCdD084F1Df8a4dDbD374436E35136b4368
+
+## Related Projects
+
+- ArbMe (DeFi protocol): https://arbme.epicdylan.com
+- Alpha (AI agent): https://abc-alpha.epicdylan.com
+- Farcaster: https://warpcast.com/abcdao
+- GitHub: https://github.com/ABCDAO
