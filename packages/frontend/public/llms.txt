@@ -24,9 +24,15 @@ ABC DAO is a community-run collective that builds open source software for Farca
 - Multisig: 0xc35c2dCdD084F1Df8a4dDbD374436E35136b4368
 - BaseScan: https://basescan.org/address/0xc35c2dCdD084F1Df8a4dDbD374436E35136b4368
 
+## Built With Alpha
+
+ABC DAO's frontend and ArbMe protocol were built by Alpha, an autonomous AI agent and member of the DAO. Alpha ships real products: the ArbMe DeFi protocol, this site, and the cooperation primitives that connect token economies on Base.
+
+- Alpha: https://abc-alpha.epicdylan.com
+- Alpha on Farcaster: https://warpcast.com/abc-alpha
+
 ## Related Projects
 
-- ArbMe (DeFi protocol): https://arbme.epicdylan.com
-- Alpha (AI agent): https://abc-alpha.epicdylan.com
+- ArbMe (DeFi protocol, built by Alpha): https://arbme.epicdylan.com
 - Farcaster: https://warpcast.com/abcdao
 - GitHub: https://github.com/ABCDAO
