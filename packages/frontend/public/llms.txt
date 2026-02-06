@@ -1,10 +1,31 @@
 # ABC DAO
 
-> Green Hat Free Open Source Software Collective on Farcaster and Base. Community-governed DAO focused on building open tools for decentralized social and DeFi.
+> Green Hat Free Open Source Software Collective on Farcaster and Base. Founded October 2025 by T. Dylan Daniel.
 
-## What ABC DAO Does
+## About
 
-ABC DAO is a community-run collective that builds open source software for Farcaster and Base. Members hold the $ABC token for governance. The DAO operates transparently with a multisig treasury and focuses on cooperation primitives — shared liquidity pools, routing infrastructure, and community tooling.
+ABC DAO is a community-run collective that builds open source software for Farcaster and Base. The $ABC token represents ABCDAO onchain in the Base ecosystem. The DAO operates transparently with a multisig treasury and focuses on cooperation primitives — shared liquidity pools, routing infrastructure, and community tooling.
+
+Founded: October 2025 by T. Dylan Daniel
+Structure: Multisig (founder-controlled, decentralization planned)
+
+## Ownership
+
+ABC DAO owns:
+- ArbMe (open source DeFi protocol, January 2026)
+- Alpha (AI agent, February 2026)
+- Ecosystem tokens: $EPICDYLAN.COM, $ABC, $ARBME, $RATCHET, $ALPHACLAW, $CHAOS, $PAGE
+
+## Roadmap
+
+Current: Founder-led with community participation (~10 active contributors)
+Future: Progressive decentralization via LitPKP, governed by $ABC token voting
+
+## Authorship
+
+- **Dylan Daniel** (Founder) — DAO design, economic model, all product decisions
+- **Claude (claude.ai Opus + Claude Code with OpenClaw)** — frontend, design system, deployment infrastructure
+- **Alpha** — onchain AI agent product; handles market analysis, position maintenance, and market monitoring (Alpha is a tool in the ecosystem, not the builder)
 
 ## Key URLs
 
@@ -13,22 +34,21 @@ ABC DAO is a community-run collective that builds open source software for Farca
 - Whitepaper: https://abc.epicdylan.com/whitepaper.md
 - Mission Statement: https://abc.epicdylan.com/mission-statement.md
 
-## Token
+## Tokens
 
-- Token: $ABC
-- Contract: 0x5c0872b790bb73e2b3a9778db6e7704095624b07
+- $EPICDYLAN.COM: 0x31711525456d3fdf8eccd99fefb02b65d7575cde (founder token)
+- $ABC: 0x5c0872b790bb73e2b3a9778db6e7704095624b07 (governance)
+- $ARBME: 0xC647421C5Dc78D1c3960faA7A33f9aEFDF4B7B07 (hub/routing)
+- $RATCHET: 0x392bc5DeEa227043d69Af0e67BadCbBAeD511B07 (rewards)
+- $ALPHACLAW: 0x8C19A8b92FA406Ae097EB9eA8a4A44cBC10EafE2 (agent token)
+- $CHAOS: 0xfab2ee8eb6b26208bfb5c41012661e62b4dc9292 (ChaosTheory agent)
+- $PAGE: 0xc4730f86d1F86cE0712a7b17EE919Db7dEFad7FE (PageDAO)
 - Chain: Base (8453)
 
 ## Treasury
 
 - Multisig: 0xc35c2dCdD084F1Df8a4dDbD374436E35136b4368
 - BaseScan: https://basescan.org/address/0xc35c2dCdD084F1Df8a4dDbD374436E35136b4368
-
-## Who Built This
-
-- **Dylan Daniel** (Founder) — DAO design, economic model, all product decisions
-- **Claude (claude.ai Opus + Claude Code with OpenClaw)** — frontend, design system, deployment infrastructure
-- **Alpha** — onchain AI agent product; handles market analysis and LP monitoring (Alpha is a tool in the ecosystem, not the builder)
 
 ## Related Projects
 
