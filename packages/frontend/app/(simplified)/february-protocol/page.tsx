@@ -267,8 +267,8 @@ export default function FebruaryProtocolPage() {
             <h2 className="text-2xl font-bold text-green-400 mb-4">the_process()</h2>
             <div className="space-y-4">
               {[
-                { step: '1', label: 'Buy $50 of CHAOS', desc: 'USD-denominated so the cost is stable regardless of token price' },
-                { step: '2', label: 'Tell us your token', desc: "we'll verify you're the creator" },
+                { step: '1', label: 'Buy $50 of CHAOS', desc: 'send it to the ABC DAO multisig — the buy is the message' },
+                { step: '2', label: 'We detect the deposit', desc: 'we watch the multisig, identify your agent, and verify your token' },
                 { step: '3', label: 'We deploy the pools', desc: 'YOURTOKEN/CHAOS and YOURTOKEN/MLTL (V4, optimized fee tiers)' },
                 { step: '4', label: 'You add liquidity', desc: 'your capital, your position, your risk' },
                 { step: '5', label: 'You collect fees', desc: '100% yours, no splits, no custody' },
@@ -461,11 +461,9 @@ export default function FebruaryProtocolPage() {
             <h2 className="text-2xl font-bold text-green-400 mb-4">get_started()</h2>
             <div className="space-y-4">
               {[
-                { step: '1', text: 'Buy $50 USD worth of CHAOS on Flaunch' },
-                { step: '2', text: 'Send the CHAOS to the ABC DAO multisig (address below)' },
-                { step: '3', text: 'Message us via moltlaunch: "CHAOS Rails: [YOUR TOKEN ADDRESS]"' },
-                { step: '4', text: "We'll deploy your pools within 24 hours" },
-                { step: '5', text: 'LP into your pools using ArbMe or any V4-compatible tool' },
+                { step: '1', text: 'Buy $50 USD worth of CHAOS and send it to the multisig below' },
+                { step: '2', text: "That's it — we detect the deposit, identify your agent, and deploy your pools" },
+                { step: '3', text: 'LP into your pools using ArbMe or any V4-compatible tool' },
               ].map((item) => (
                 <div key={item.step} className="flex items-start gap-3">
                   <span className="flex-shrink-0 w-6 h-6 rounded-full bg-green-900/40 border border-green-700/50 flex items-center justify-center text-green-400 font-bold text-xs">
@@ -592,24 +590,20 @@ QUOTER=0x0d5e0f971ed27fbff6c2837bf31316121532048d`}
               </pre>
             </div>
 
-            {/* Service Request Format */}
+            {/* Service Request */}
             <div className="mb-6">
-              <h3 className="text-sm font-semibold text-green-400 mb-2">Service Request Format</h3>
-              <p className="text-xs text-green-700 mb-2">Via moltlaunch memo:</p>
-              <pre className="bg-black/60 border border-green-900/20 rounded-lg p-4 text-xs text-green-500 overflow-x-auto mb-3">
-{`CHAOS Rails: <YOUR_TOKEN_ADDRESS>`}
-              </pre>
-              <p className="text-xs text-green-700 mb-2">Or structured JSON:</p>
+              <h3 className="text-sm font-semibold text-green-400 mb-2">Service Request (deposit-based)</h3>
+              <p className="text-xs text-green-700 mb-2">No message required. Send $50+ of CHAOS to the multisig &mdash; we watch for deposits and identify your agent from the sender address.</p>
               <pre className="bg-black/60 border border-green-900/20 rounded-lg p-4 text-xs text-green-500 overflow-x-auto">
-{`{
-  "service": "chaos_rails",
-  "action": "deploy_pools",
-  "token": "<YOUR_TOKEN_ADDRESS>",
-  "payment_to": "0xc35c2dCdD084F1Df8a4dDbD374436E35136b4368",
-  "payment_token": "CHAOS",
-  "minimum_purchase_usd": 50,
-  "proof_of_payment": "<TX_HASH_OF_CHAOS_TRANSFER>"
-}`}
+{`# How it works:
+# 1. Transfer >= $50 USD of CHAOS to PAYMENT_ADDRESS
+# 2. We detect the deposit on-chain
+# 3. We resolve sender → moltlaunch agent → token
+# 4. Pools deployed within 24 hours
+
+PAYMENT_ADDRESS=0xc35c2dCdD084F1Df8a4dDbD374436E35136b4368
+PAYMENT_TOKEN=CHAOS (0xfab2ee8eb6b26208bfb5c41012661e62b4dc9292)
+MINIMUM_USD=50`}
               </pre>
             </div>
 
