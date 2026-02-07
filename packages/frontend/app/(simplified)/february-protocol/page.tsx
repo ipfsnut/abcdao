@@ -8,7 +8,7 @@
 
 import { useState, useEffect } from 'react';
 import { BackNavigation } from '@/components/back-navigation';
-import { PoolCard, PoolCardSkeleton, type PoolCardData, type CardState } from '@/components/pool-card';
+import { PoolCard, PoolCardSkeleton, type PoolCardData, type CardState, type DataSource } from '@/components/pool-card';
 
 const CHAOS_ADDRESS = '0xfab2ee8eb6b26208bfb5c41012661e62b4dc9292';
 const GECKO_API = 'https://api.geckoterminal.com/api/v2';
@@ -90,6 +90,7 @@ function matchGeckoToRegistry(
       const gp = geckoPools[geckoIdx];
       // GeckoTerminal has data with TVL > 0 → active (overrides registry)
       const resolvedState: CardState = gp.tvl > 0 ? 'active' : rp.cardState;
+      const source: DataSource = gp.tvl > 0 ? 'geckoterminal' : 'registry';
       result.push({
         id: rp.id,
         baseSymbol: rp.baseSymbol,
@@ -97,6 +98,8 @@ function matchGeckoToRegistry(
         fee: gp.fee || rp.fee,
         purpose: rp.purpose,
         cardState: resolvedState,
+        source,
+        poolId: rp.poolId,
         tvl: gp.tvl,
         volume24h: gp.volume24h,
         deployTxHash: rp.deployTxHash,
@@ -111,6 +114,8 @@ function matchGeckoToRegistry(
         fee: rp.fee,
         purpose: rp.purpose,
         cardState: rp.cardState,
+        source: 'registry',
+        poolId: rp.poolId,
         deployTxHash: rp.deployTxHash,
         notes: rp.notes,
       });
@@ -128,6 +133,7 @@ function matchGeckoToRegistry(
       fee: gp.fee,
       purpose: `Alliance (${otherSymbol})`,
       cardState: 'active',
+      source: 'geckoterminal',
       tvl: gp.tvl,
       volume24h: gp.volume24h,
     });
@@ -359,7 +365,17 @@ export default function FebruaryProtocolPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-green-400">live_pools()</h2>
               {!loading && (
-                <span className="text-xs text-green-700">live from GeckoTerminal + registry</span>
+                <span className="text-xs text-green-700">
+                  live data via GeckoTerminal &middot;{' '}
+                  <a
+                    href="/chaos-rails/pool-registry.json"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-green-700 hover:text-green-500 underline"
+                  >
+                    registry JSON
+                  </a>
+                </span>
               )}
             </div>
             {loading ? (
@@ -504,11 +520,15 @@ GET https://api.dexscreener.com/latest/dex/tokens/0xfab2ee8eb6b26208bfb5c4101266
 
             {/* Pool Registry */}
             <div className="mb-6">
-              <h3 className="text-sm font-semibold text-green-400 mb-2">Pool Registry</h3>
+              <h3 className="text-sm font-semibold text-green-400 mb-2">Pool Registry (machine-readable)</h3>
               <pre className="bg-black/60 border border-green-900/20 rounded-lg p-4 text-xs text-green-500 overflow-x-auto">
-{`CHAOS/flETH  fee=dynamic  pool=0xcbfbb74ca4f6d24e22bffa4a46cb35c295df4a0ee5c23af9712d427a6a896f52
+{`# Full registry with all pool states (active, created, pending)
+GET /chaos-rails/pool-registry.json
+
+# Known pools with on-chain IDs:
+CHAOS/flETH  fee=dynamic  pool=0xcbfbb74ca4f6d24e22bffa4a46cb35c295df4a0ee5c23af9712d427a6a896f52
 CHAOS/MLTL   fee=5%       pool=0x47e6f1cc60abbc8255ed42c2e1f59f465a92b53c7416b7cbf1f79c0f567cb92b
-CHAOS/USDC   fee=0.05%    pool=0x50cc0cfbd3f7b1793822302f559b2bbb58503c591f8ea82aa50b69793d4c44f7`}
+CHAOS/USDC   fee=0.05%    pool=0x50cc0cfbd3f7b1793822302f559b2bbb58503c591f8ea82aa50b69793d4c44f7  state=created`}
               </pre>
             </div>
 

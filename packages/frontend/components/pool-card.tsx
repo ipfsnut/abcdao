@@ -1,6 +1,7 @@
 'use client';
 
 export type CardState = 'active' | 'created' | 'pending';
+export type DataSource = 'geckoterminal' | 'registry';
 
 export interface PoolCardData {
   id: string;
@@ -9,6 +10,8 @@ export interface PoolCardData {
   fee: string;
   purpose: string;
   cardState: CardState;
+  source: DataSource;
+  poolId?: string | null;
   tvl?: number;
   volume24h?: number;
   deployTxHash?: string | null;
@@ -20,6 +23,10 @@ function formatUsd(n: number): string {
   if (n >= 1_000) return `$${(n / 1_000).toFixed(2)}K`;
   if (n >= 1) return `$${n.toFixed(2)}`;
   return `$${n.toFixed(2)}`;
+}
+
+function truncateHex(hex: string): string {
+  return `${hex.slice(0, 10)}...${hex.slice(-8)}`;
 }
 
 const STATE_STYLES: Record<CardState, { border: string; pairColor: string; textColor: string }> = {
@@ -40,6 +47,11 @@ const STATE_STYLES: Record<CardState, { border: string; pairColor: string; textC
   },
 };
 
+const SOURCE_LABELS: Record<DataSource, string> = {
+  geckoterminal: 'GeckoTerminal',
+  registry: 'registry',
+};
+
 export function PoolCard({ pool }: { pool: PoolCardData }) {
   const styles = STATE_STYLES[pool.cardState];
 
@@ -57,8 +69,13 @@ export function PoolCard({ pool }: { pool: PoolCardData }) {
         </span>
       </div>
 
-      {/* Purpose */}
-      <div className={`text-xs ${styles.textColor} mb-3`}>{pool.purpose}</div>
+      {/* Purpose + source */}
+      <div className="flex items-center justify-between mb-3">
+        <span className={`text-xs ${styles.textColor}`}>{pool.purpose}</span>
+        <span className="text-[10px] text-green-800">
+          via {SOURCE_LABELS[pool.source]}
+        </span>
+      </div>
 
       {/* State-specific content */}
       {pool.cardState === 'active' && (
@@ -79,21 +96,29 @@ export function PoolCard({ pool }: { pool: PoolCardData }) {
       )}
 
       {pool.cardState === 'created' && (
-        <div className="flex items-center gap-2 text-sm">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500" />
-          </span>
-          <span className="text-yellow-500/80 text-xs">Awaiting indexing</span>
-          {pool.deployTxHash && (
-            <a
-              href={`https://basescan.org/tx/${pool.deployTxHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-yellow-600/60 hover:text-yellow-400 text-xs underline ml-auto"
-            >
-              View TX
-            </a>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500" />
+            </span>
+            <span className="text-yellow-500/80 text-xs">Awaiting indexing</span>
+            {pool.deployTxHash && (
+              <a
+                href={`https://basescan.org/tx/${pool.deployTxHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-yellow-600/60 hover:text-yellow-400 text-xs underline ml-auto"
+              >
+                View TX
+              </a>
+            )}
+          </div>
+          {pool.poolId && (
+            <div className="text-xs">
+              <span className="text-green-800">Pool ID: </span>
+              <code className="text-yellow-600/60 break-all">{truncateHex(pool.poolId)}</code>
+            </div>
           )}
         </div>
       )}
