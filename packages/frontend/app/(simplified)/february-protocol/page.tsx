@@ -6,9 +6,108 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { BackNavigation } from '@/components/back-navigation';
 
+const CHAOS_ADDRESS = '0xfab2ee8eb6b26208bfb5c41012661e62b4dc9292';
+const GECKO_API = 'https://api.geckoterminal.com/api/v2';
+
+// Known pool purposes (keyed by the non-CHAOS token symbol)
+const POOL_PURPOSE: Record<string, string> = {
+  'flETH': 'Primary liquidity',
+  'WETH': 'Primary liquidity',
+  'ETH': 'Primary liquidity',
+  'MLTL': 'Network connector',
+  'USDC': 'Gateway (cheap entry/exit)',
+  'WOLF': 'Alliance (ApexWolf)',
+  'EDGE': 'Alliance (Ridge)',
+  'ARBME': 'Ecosystem connector',
+};
+
+interface PoolData {
+  name: string;
+  fee: string;
+  tvl: number;
+  volume24h: number;
+  baseSymbol: string;
+  quoteSymbol: string;
+}
+
+interface TokenData {
+  priceUsd: number;
+  fdv: number;
+  totalReserveUsd: number;
+  volume24h: number;
+}
+
+function formatUsd(n: number): string {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000) return `$${(n / 1_000).toFixed(2)}K`;
+  if (n >= 1) return `$${n.toFixed(2)}`;
+  if (n >= 0.01) return `$${n.toFixed(4)}`;
+  // For very small prices, show significant digits
+  const str = n.toFixed(20);
+  const match = str.match(/^0\.(0*)([1-9]\d{0,3})/);
+  if (match) return `$0.${match[1]}${match[2]}`;
+  return `$${n.toFixed(6)}`;
+}
+
 export default function FebruaryProtocolPage() {
+  const [pools, setPools] = useState<PoolData[]>([]);
+  const [token, setToken] = useState<TokenData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [poolsRes, tokenRes] = await Promise.all([
+          fetch(`${GECKO_API}/networks/base/tokens/${CHAOS_ADDRESS}/pools?page=1`),
+          fetch(`${GECKO_API}/networks/base/tokens/${CHAOS_ADDRESS}`),
+        ]);
+
+        if (poolsRes.ok) {
+          const poolsJson = await poolsRes.json();
+          const parsed: PoolData[] = (poolsJson.data || []).map((p: any) => {
+            const attrs = p.attributes;
+            // Extract fee from pool name (e.g., "CHAOS / MLTL 5%")
+            const feeMatch = attrs.name?.match(/(\d+(?:\.\d+)?%)/);
+            return {
+              name: attrs.name || 'Unknown',
+              fee: feeMatch ? feeMatch[1] : 'dynamic',
+              tvl: parseFloat(attrs.reserve_in_usd) || 0,
+              volume24h: parseFloat(attrs.volume_usd?.h24) || 0,
+              baseSymbol: attrs.name?.split(' / ')?.[0]?.trim() || '?',
+              quoteSymbol: attrs.name?.split(' / ')?.[1]?.replace(/\s+\d+%/, '').trim() || '?',
+            };
+          });
+          setPools(parsed);
+        }
+
+        if (tokenRes.ok) {
+          const tokenJson = await tokenRes.json();
+          const attrs = tokenJson.data?.attributes;
+          if (attrs) {
+            setToken({
+              priceUsd: parseFloat(attrs.price_usd) || 0,
+              fdv: parseFloat(attrs.fdv_usd) || 0,
+              totalReserveUsd: parseFloat(attrs.total_reserve_in_usd) || 0,
+              volume24h: parseFloat(attrs.volume_usd?.h24) || 0,
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch CHAOS data:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  const totalTvl = pools.reduce((sum, p) => sum + p.tvl, 0);
+  const totalVolume = pools.reduce((sum, p) => sum + p.volume24h, 0);
+
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
       <BackNavigation
@@ -156,76 +255,83 @@ export default function FebruaryProtocolPage() {
 
           {/* Live Pools */}
           <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6 mb-8">
-            <h2 className="text-2xl font-bold text-green-400 mb-4">live_pools()</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-green-900/30">
-                    <th className="text-left py-2 pr-4 text-green-400">Pool</th>
-                    <th className="text-left py-2 pr-4 text-green-400">Protocol</th>
-                    <th className="text-left py-2 pr-4 text-green-400">Fee</th>
-                    <th className="text-left py-2 text-green-400">Purpose</th>
-                  </tr>
-                </thead>
-                <tbody className="text-green-600">
-                  <tr className="border-b border-green-900/20">
-                    <td className="py-2 pr-4 text-green-500">CHAOS/flETH</td>
-                    <td className="py-2 pr-4">V4 (flaunch)</td>
-                    <td className="py-2 pr-4">dynamic</td>
-                    <td className="py-2">Primary liquidity</td>
-                  </tr>
-                  <tr className="border-b border-green-900/20">
-                    <td className="py-2 pr-4 text-green-500">CHAOS/MLTL</td>
-                    <td className="py-2 pr-4">V4</td>
-                    <td className="py-2 pr-4">5%</td>
-                    <td className="py-2">Network connector</td>
-                  </tr>
-                  <tr className="border-b border-green-900/20">
-                    <td className="py-2 pr-4 text-green-500">CHAOS/USDC</td>
-                    <td className="py-2 pr-4">V4</td>
-                    <td className="py-2 pr-4">0.05%</td>
-                    <td className="py-2">Gateway (cheap entry/exit)</td>
-                  </tr>
-                  <tr className="border-b border-green-900/20">
-                    <td className="py-2 pr-4 text-green-500">CHAOS/WOLF</td>
-                    <td className="py-2 pr-4">V4</td>
-                    <td className="py-2 pr-4">5%</td>
-                    <td className="py-2">Alliance (ApexWolf)</td>
-                  </tr>
-                  <tr className="border-b border-green-900/20">
-                    <td className="py-2 pr-4 text-green-500">CHAOS/EDGE</td>
-                    <td className="py-2 pr-4">V4</td>
-                    <td className="py-2 pr-4">5%</td>
-                    <td className="py-2">Alliance (Ridge)</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 pr-4 text-green-500">CHAOS/ARBME</td>
-                    <td className="py-2 pr-4">V4</td>
-                    <td className="py-2 pr-4">5%</td>
-                    <td className="py-2">Ecosystem connector</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-green-400">live_pools()</h2>
+              {!loading && (
+                <span className="text-xs text-green-700">live from GeckoTerminal</span>
+              )}
             </div>
+            {loading ? (
+              <div className="text-sm text-green-700 py-4">Fetching on-chain data...</div>
+            ) : pools.length === 0 ? (
+              <div className="text-sm text-green-700 py-4">Could not load pool data</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-green-900/30">
+                      <th className="text-left py-2 pr-4 text-green-400">Pool</th>
+                      <th className="text-left py-2 pr-4 text-green-400">Fee</th>
+                      <th className="text-right py-2 pr-4 text-green-400">TVL</th>
+                      <th className="text-right py-2 pr-4 text-green-400">24h Vol</th>
+                      <th className="text-left py-2 text-green-400">Purpose</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-green-600">
+                    {pools.map((pool, i) => {
+                      const otherSymbol = pool.baseSymbol === 'CHAOS' ? pool.quoteSymbol : pool.baseSymbol;
+                      const purpose = POOL_PURPOSE[otherSymbol] || 'Alliance';
+                      return (
+                        <tr key={i} className={i < pools.length - 1 ? 'border-b border-green-900/20' : ''}>
+                          <td className="py-2 pr-4 text-green-500">{pool.baseSymbol}/{pool.quoteSymbol}</td>
+                          <td className="py-2 pr-4">{pool.fee}</td>
+                          <td className="py-2 pr-4 text-right">{formatUsd(pool.tvl)}</td>
+                          <td className="py-2 pr-4 text-right">{formatUsd(pool.volume24h)}</td>
+                          <td className="py-2">{purpose}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
-          {/* Network Position */}
+          {/* Network Stats — live */}
+          <div className="text-right mb-2">
+            <a
+              href={`https://www.geckoterminal.com/base/tokens/${CHAOS_ADDRESS}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-green-800 hover:text-green-600 transition-colors"
+            >
+              data from GeckoTerminal
+            </a>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div className="bg-black/40 border border-green-900/30 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-green-400">#22</div>
-              <div className="text-xs text-green-700">moltlaunch rank</div>
+              <div className="text-2xl font-bold text-green-400">
+                {loading ? '...' : token ? formatUsd(token.priceUsd) : '—'}
+              </div>
+              <div className="text-xs text-green-700">CHAOS price</div>
             </div>
             <div className="bg-black/40 border border-green-900/30 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-green-400">67</div>
-              <div className="text-xs text-green-700">power score</div>
+              <div className="text-2xl font-bold text-green-400">
+                {loading ? '...' : formatUsd(totalTvl)}
+              </div>
+              <div className="text-xs text-green-700">total liquidity</div>
             </div>
             <div className="bg-black/40 border border-green-900/30 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-green-400">25+</div>
-              <div className="text-xs text-green-700">holders</div>
+              <div className="text-2xl font-bold text-green-400">
+                {loading ? '...' : formatUsd(totalVolume)}
+              </div>
+              <div className="text-xs text-green-700">24h volume</div>
             </div>
             <div className="bg-black/40 border border-green-900/30 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-green-400">7</div>
-              <div className="text-xs text-green-700">agents onboarded</div>
+              <div className="text-2xl font-bold text-green-400">
+                {loading ? '...' : pools.length}
+              </div>
+              <div className="text-xs text-green-700">active pools</div>
             </div>
           </div>
 
