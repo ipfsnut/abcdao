@@ -233,7 +233,7 @@ export default function FebruaryProtocolPage() {
             </p>
             <div className="border-t border-green-900/30 pt-6">
               <p className="text-green-600">
-                You buy CHAOS. We deploy your pools. You LP and keep all your fees.
+                $50 of CHAOS. We deploy your pools. You LP and keep all your fees.
               </p>
               <p className="text-green-700 text-sm mt-2">
                 That&apos;s it.
@@ -267,7 +267,7 @@ export default function FebruaryProtocolPage() {
             <h2 className="text-2xl font-bold text-green-400 mb-4">the_process()</h2>
             <div className="space-y-4">
               {[
-                { step: '1', label: 'Buy CHAOS', desc: '0.005+ ETH worth (skin in the game)' },
+                { step: '1', label: 'Buy $50 of CHAOS', desc: 'USD-denominated so the cost is stable regardless of token price' },
                 { step: '2', label: 'Tell us your token', desc: "we'll verify you're the creator" },
                 { step: '3', label: 'We deploy the pools', desc: 'YOURTOKEN/CHAOS and YOURTOKEN/MLTL (V4, optimized fee tiers)' },
                 { step: '4', label: 'You add liquidity', desc: 'your capital, your position, your risk' },
@@ -461,10 +461,10 @@ export default function FebruaryProtocolPage() {
             <h2 className="text-2xl font-bold text-green-400 mb-4">get_started()</h2>
             <div className="space-y-4">
               {[
-                { step: '1', text: 'Buy CHAOS on Flaunch' },
+                { step: '1', text: 'Buy $50 USD worth of CHAOS on Flaunch' },
                 { step: '2', text: 'Send a memo via moltlaunch: "CHAOS Rails: [YOUR TOKEN ADDRESS]"' },
                 { step: '3', text: "We'll deploy your pools within 24 hours" },
-                { step: '4', text: 'You LP and start earning' },
+                { step: '4', text: 'LP into your pools using ArbMe or any V4-compatible tool' },
               ].map((item) => (
                 <div key={item.step} className="flex items-start gap-3">
                   <span className="flex-shrink-0 w-6 h-6 rounded-full bg-green-900/40 border border-green-700/50 flex items-center justify-center text-green-400 font-bold text-xs">
@@ -473,6 +473,37 @@ export default function FebruaryProtocolPage() {
                   <span className="text-sm text-green-600">{item.text}</span>
                 </div>
               ))}
+            </div>
+
+            {/* ArbMe */}
+            <div className="border-t border-green-900/30 pt-4 mt-4">
+              <p className="text-sm text-green-600">
+                <a
+                  href="https://arbme.epicdylan.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-green-400 hover:text-green-300 underline"
+                >
+                  ArbMe
+                </a>
+                {' '}is our liquidity management tool &mdash; built for humans and machines alike. You can use it to add liquidity, manage positions, and find arbitrage opportunities across CHAOS pools. Advanced users can deploy pools themselves without our help.
+              </p>
+            </div>
+
+            {/* Service Status */}
+            <div className="border-t border-green-900/30 pt-4 mt-4">
+              <div className="flex items-start gap-2">
+                <span className="relative flex h-2 w-2 mt-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500" />
+                </span>
+                <div className="text-sm">
+                  <span className="text-yellow-500/80 font-semibold">Service launching soon</span>
+                  <p className="text-green-700 text-xs mt-1">
+                    Pool deployment as a service requires multisig (Gnosis Safe) infrastructure for secure key management. We&apos;re building this now. The pools shown above were deployed directly &mdash; the managed service will go live once the Safe is operational.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -555,7 +586,8 @@ QUOTER=0x0d5e0f971ed27fbff6c2837bf31316121532048d`}
   "service": "chaos_rails",
   "action": "deploy_pools",
   "token": "<YOUR_TOKEN_ADDRESS>",
-  "proof_of_purchase": "<TX_HASH_OF_CHAOS_BUY>"
+  "proof_of_purchase": "<TX_HASH_OF_CHAOS_BUY>",
+  "minimum_purchase_usd": 50
 }`}
               </pre>
             </div>
@@ -565,7 +597,8 @@ QUOTER=0x0d5e0f971ed27fbff6c2837bf31316121532048d`}
               <h3 className="text-sm font-semibold text-green-400 mb-2">Links</h3>
               <pre className="bg-black/60 border border-green-900/20 rounded-lg p-4 text-xs text-green-500 overflow-x-auto">
 {`FLAUNCH=https://flaunch.gg/base/coin/0xfab2ee8eb6b26208bfb5c41012661e62b4dc9292
-DEXSCREENER=https://dexscreener.com/base/0xcbfbb74ca4f6d24e22bffa4a46cb35c295df4a0ee5c23af9712d427a6a896f52`}
+DEXSCREENER=https://dexscreener.com/base/0xcbfbb74ca4f6d24e22bffa4a46cb35c295df4a0ee5c23af9712d427a6a896f52
+ARBME=https://arbme.epicdylan.com  # LP management tool (human + machine)`}
               </pre>
             </div>
           </div>
