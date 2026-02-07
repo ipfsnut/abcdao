@@ -462,9 +462,10 @@ export default function FebruaryProtocolPage() {
             <div className="space-y-4">
               {[
                 { step: '1', text: 'Buy $50 USD worth of CHAOS on Flaunch' },
-                { step: '2', text: 'Send a memo via moltlaunch: "CHAOS Rails: [YOUR TOKEN ADDRESS]"' },
-                { step: '3', text: "We'll deploy your pools within 24 hours" },
-                { step: '4', text: 'LP into your pools using ArbMe or any V4-compatible tool' },
+                { step: '2', text: 'Send the CHAOS to the ABC DAO multisig (address below)' },
+                { step: '3', text: 'Message us via moltlaunch: "CHAOS Rails: [YOUR TOKEN ADDRESS]"' },
+                { step: '4', text: "We'll deploy your pools within 24 hours" },
+                { step: '5', text: 'LP into your pools using ArbMe or any V4-compatible tool' },
               ].map((item) => (
                 <div key={item.step} className="flex items-start gap-3">
                   <span className="flex-shrink-0 w-6 h-6 rounded-full bg-green-900/40 border border-green-700/50 flex items-center justify-center text-green-400 font-bold text-xs">
@@ -473,6 +474,23 @@ export default function FebruaryProtocolPage() {
                   <span className="text-sm text-green-600">{item.text}</span>
                 </div>
               ))}
+            </div>
+
+            {/* Payment Address */}
+            <div className="border-t border-green-900/30 pt-4 mt-4">
+              <p className="text-xs text-green-700 mb-2">Send $50 of CHAOS to:</p>
+              <div className="bg-black/60 border border-green-900/20 rounded-lg p-3 flex items-center justify-between gap-2">
+                <code className="text-green-400 text-xs break-all">0xc35c2dCdD084F1Df8a4dDbD374436E35136b4368</code>
+                <a
+                  href="https://basescan.org/address/0xc35c2dCdD084F1Df8a4dDbD374436E35136b4368"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-green-700 hover:text-green-500 text-xs underline flex-shrink-0"
+                >
+                  Basescan
+                </a>
+              </div>
+              <p className="text-xs text-green-800 mt-1">ABC DAO multisig on Base &mdash; your payment funds pool deployment gas and seed liquidity.</p>
             </div>
 
             {/* ArbMe */}
@@ -533,7 +551,8 @@ export default function FebruaryProtocolPage() {
               <pre className="bg-black/60 border border-green-900/20 rounded-lg p-4 text-xs text-green-500 overflow-x-auto">
 {`CHAOS_TOKEN=0xfab2ee8eb6b26208bfb5c41012661e62b4dc9292
 CHAOS_CREATOR=0xa659f32De39b5DB4fe1C857cC6c86626b008C743
-PRIMARY_POOL=0xcbfbb74ca4f6d24e22bffa4a46cb35c295df4a0ee5c23af9712d427a6a896f52`}
+PRIMARY_POOL=0xcbfbb74ca4f6d24e22bffa4a46cb35c295df4a0ee5c23af9712d427a6a896f52
+PAYMENT_ADDRESS=0xc35c2dCdD084F1Df8a4dDbD374436E35136b4368  # ABC DAO multisig`}
               </pre>
             </div>
 
@@ -586,8 +605,10 @@ QUOTER=0x0d5e0f971ed27fbff6c2837bf31316121532048d`}
   "service": "chaos_rails",
   "action": "deploy_pools",
   "token": "<YOUR_TOKEN_ADDRESS>",
-  "proof_of_purchase": "<TX_HASH_OF_CHAOS_BUY>",
-  "minimum_purchase_usd": 50
+  "payment_to": "0xc35c2dCdD084F1Df8a4dDbD374436E35136b4368",
+  "payment_token": "CHAOS",
+  "minimum_purchase_usd": 50,
+  "proof_of_payment": "<TX_HASH_OF_CHAOS_TRANSFER>"
 }`}
               </pre>
             </div>
