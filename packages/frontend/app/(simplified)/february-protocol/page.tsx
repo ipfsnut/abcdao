@@ -8,29 +8,36 @@
 
 import { useState, useEffect } from 'react';
 import { BackNavigation } from '@/components/back-navigation';
+import { PoolCard, PoolCardSkeleton, type PoolCardData, type CardState } from '@/components/pool-card';
 
 const CHAOS_ADDRESS = '0xfab2ee8eb6b26208bfb5c41012661e62b4dc9292';
 const GECKO_API = 'https://api.geckoterminal.com/api/v2';
 
-// Known pool purposes (keyed by the non-CHAOS token symbol)
-const POOL_PURPOSE: Record<string, string> = {
-  'flETH': 'Primary liquidity',
-  'WETH': 'Primary liquidity',
-  'ETH': 'Primary liquidity',
-  'MLTL': 'Network connector',
-  'USDC': 'Gateway (cheap entry/exit)',
-  'WOLF': 'Alliance (ApexWolf)',
-  'EDGE': 'Alliance (Ridge)',
-  'ARBME': 'Ecosystem connector',
-};
-
-interface PoolData {
+interface GeckoPool {
   name: string;
   fee: string;
   tvl: number;
   volume24h: number;
   baseSymbol: string;
   quoteSymbol: string;
+}
+
+interface RegistryPool {
+  id: string;
+  poolId: string | null;
+  baseSymbol: string;
+  quoteSymbol: string;
+  fee: string;
+  purpose: string;
+  cardState: CardState;
+  deployTxHash: string | null;
+  notes: string | null;
+}
+
+interface Registry {
+  version: number;
+  updatedAt: string;
+  pools: RegistryPool[];
 }
 
 interface TokenData {
@@ -52,24 +59,111 @@ function formatUsd(n: number): string {
   return `$${n.toFixed(6)}`;
 }
 
+function normalizeSymbol(s: string): string {
+  return s.toUpperCase().replace(/^FL/, 'FL');
+}
+
+function matchGeckoToRegistry(
+  geckoPools: GeckoPool[],
+  registry: Registry | null,
+): PoolCardData[] {
+  const registryPools = registry?.pools || [];
+  const matched = new Set<number>(); // indices of matched gecko pools
+  const result: PoolCardData[] = [];
+
+  for (const rp of registryPools) {
+    // Find matching gecko pool by symbol pair
+    const geckoIdx = geckoPools.findIndex((gp, idx) => {
+      if (matched.has(idx)) return false;
+      const gpBase = normalizeSymbol(gp.baseSymbol);
+      const gpQuote = normalizeSymbol(gp.quoteSymbol);
+      const rpBase = normalizeSymbol(rp.baseSymbol);
+      const rpQuote = normalizeSymbol(rp.quoteSymbol);
+      return (
+        (gpBase === rpBase && gpQuote === rpQuote) ||
+        (gpBase === rpQuote && gpQuote === rpBase)
+      );
+    });
+
+    if (geckoIdx !== -1) {
+      matched.add(geckoIdx);
+      const gp = geckoPools[geckoIdx];
+      // GeckoTerminal has data with TVL > 0 → active (overrides registry)
+      const resolvedState: CardState = gp.tvl > 0 ? 'active' : rp.cardState;
+      result.push({
+        id: rp.id,
+        baseSymbol: rp.baseSymbol,
+        quoteSymbol: rp.quoteSymbol,
+        fee: gp.fee || rp.fee,
+        purpose: rp.purpose,
+        cardState: resolvedState,
+        tvl: gp.tvl,
+        volume24h: gp.volume24h,
+        deployTxHash: rp.deployTxHash,
+        notes: rp.notes,
+      });
+    } else {
+      // Registry pool not found in gecko — use registry state as-is
+      result.push({
+        id: rp.id,
+        baseSymbol: rp.baseSymbol,
+        quoteSymbol: rp.quoteSymbol,
+        fee: rp.fee,
+        purpose: rp.purpose,
+        cardState: rp.cardState,
+        deployTxHash: rp.deployTxHash,
+        notes: rp.notes,
+      });
+    }
+  }
+
+  // Any GeckoTerminal pools not in registry get synthetic "active" entries
+  geckoPools.forEach((gp, idx) => {
+    if (matched.has(idx)) return;
+    const otherSymbol = gp.baseSymbol === 'CHAOS' ? gp.quoteSymbol : gp.baseSymbol;
+    result.push({
+      id: `unregistered-${idx}`,
+      baseSymbol: gp.baseSymbol,
+      quoteSymbol: gp.quoteSymbol,
+      fee: gp.fee,
+      purpose: `Alliance (${otherSymbol})`,
+      cardState: 'active',
+      tvl: gp.tvl,
+      volume24h: gp.volume24h,
+    });
+  });
+
+  // Sort: active (by TVL desc) → created → pending
+  const stateOrder: Record<CardState, number> = { active: 0, created: 1, pending: 2 };
+  result.sort((a, b) => {
+    const so = stateOrder[a.cardState] - stateOrder[b.cardState];
+    if (so !== 0) return so;
+    if (a.cardState === 'active') return (b.tvl || 0) - (a.tvl || 0);
+    return 0;
+  });
+
+  return result;
+}
+
 export default function FebruaryProtocolPage() {
-  const [pools, setPools] = useState<PoolData[]>([]);
+  const [geckoPools, setGeckoPools] = useState<GeckoPool[]>([]);
+  const [registry, setRegistry] = useState<Registry | null>(null);
   const [token, setToken] = useState<TokenData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [poolsRes, tokenRes] = await Promise.all([
+        const [poolsRes, tokenRes, registryRes] = await Promise.all([
           fetch(`${GECKO_API}/networks/base/tokens/${CHAOS_ADDRESS}/pools?page=1`),
           fetch(`${GECKO_API}/networks/base/tokens/${CHAOS_ADDRESS}`),
+          fetch('/chaos-rails/pool-registry.json'),
         ]);
 
         if (poolsRes.ok) {
           const poolsJson = await poolsRes.json();
-          const parsed: PoolData[] = (poolsJson.data || []).map((p: any) => {
+          const parsed: GeckoPool[] = (poolsJson.data || []).map((p: any) => {
             const attrs = p.attributes;
-            // Extract fee from pool name (e.g., "CHAOS / MLTL 5%")
             const feeMatch = attrs.name?.match(/(\d+(?:\.\d+)?%)/);
             return {
               name: attrs.name || 'Unknown',
@@ -80,7 +174,12 @@ export default function FebruaryProtocolPage() {
               quoteSymbol: attrs.name?.split(' / ')?.[1]?.replace(/\s+\d+%/, '').trim() || '?',
             };
           });
-          setPools(parsed);
+          setGeckoPools(parsed);
+        }
+
+        if (registryRes.ok) {
+          const registryJson: Registry = await registryRes.json();
+          setRegistry(registryJson);
         }
 
         if (tokenRes.ok) {
@@ -105,8 +204,10 @@ export default function FebruaryProtocolPage() {
     fetchData();
   }, []);
 
-  const totalTvl = pools.reduce((sum, p) => sum + p.tvl, 0);
-  const totalVolume = pools.reduce((sum, p) => sum + p.volume24h, 0);
+  const poolCards = matchGeckoToRegistry(geckoPools, registry);
+  const activePools = poolCards.filter((p) => p.cardState === 'active');
+  const totalTvl = activePools.reduce((sum, p) => sum + (p.tvl || 0), 0);
+  const totalVolume = activePools.reduce((sum, p) => sum + (p.volume24h || 0), 0);
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono">
@@ -253,46 +354,27 @@ export default function FebruaryProtocolPage() {
             </div>
           </div>
 
-          {/* Live Pools */}
-          <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6 mb-8">
+          {/* Pool Cards */}
+          <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-green-400">live_pools()</h2>
               {!loading && (
-                <span className="text-xs text-green-700">live from GeckoTerminal</span>
+                <span className="text-xs text-green-700">live from GeckoTerminal + registry</span>
               )}
             </div>
             {loading ? (
-              <div className="text-sm text-green-700 py-4">Fetching on-chain data...</div>
-            ) : pools.length === 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <PoolCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : poolCards.length === 0 ? (
               <div className="text-sm text-green-700 py-4">Could not load pool data</div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-green-900/30">
-                      <th className="text-left py-2 pr-4 text-green-400">Pool</th>
-                      <th className="text-left py-2 pr-4 text-green-400">Fee</th>
-                      <th className="text-right py-2 pr-4 text-green-400">TVL</th>
-                      <th className="text-right py-2 pr-4 text-green-400">24h Vol</th>
-                      <th className="text-left py-2 text-green-400">Purpose</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-green-600">
-                    {pools.map((pool, i) => {
-                      const otherSymbol = pool.baseSymbol === 'CHAOS' ? pool.quoteSymbol : pool.baseSymbol;
-                      const purpose = POOL_PURPOSE[otherSymbol] || 'Alliance';
-                      return (
-                        <tr key={i} className={i < pools.length - 1 ? 'border-b border-green-900/20' : ''}>
-                          <td className="py-2 pr-4 text-green-500">{pool.baseSymbol}/{pool.quoteSymbol}</td>
-                          <td className="py-2 pr-4">{pool.fee}</td>
-                          <td className="py-2 pr-4 text-right">{formatUsd(pool.tvl)}</td>
-                          <td className="py-2 pr-4 text-right">{formatUsd(pool.volume24h)}</td>
-                          <td className="py-2">{purpose}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {poolCards.map((pool) => (
+                  <PoolCard key={pool.id} pool={pool} />
+                ))}
               </div>
             )}
           </div>
@@ -329,9 +411,9 @@ export default function FebruaryProtocolPage() {
             </div>
             <div className="bg-black/40 border border-green-900/30 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-green-400">
-                {loading ? '...' : pools.length}
+                {loading ? '...' : `${activePools.length} / ${poolCards.length}`}
               </div>
-              <div className="text-xs text-green-700">active pools</div>
+              <div className="text-xs text-green-700">active / total pools</div>
             </div>
           </div>
 

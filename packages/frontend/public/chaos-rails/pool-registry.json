@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "updatedAt": "2026-02-07T00:00:00Z",
+  "pools": [
+    {
+      "id": "chaos-fleth",
+      "poolId": "0xcbfbb74ca4f6d24e22bffa4a46cb35c295df4a0ee5c23af9712d427a6a896f52",
+      "baseSymbol": "CHAOS",
+      "quoteSymbol": "flETH",
+      "fee": "dynamic",
+      "purpose": "Primary liquidity",
+      "cardState": "active",
+      "deployTxHash": null,
+      "notes": null
+    },
+    {
+      "id": "chaos-mltl",
+      "poolId": "0x47e6f1cc60abbc8255ed42c2e1f59f465a92b53c7416b7cbf1f79c0f567cb92b",
+      "baseSymbol": "CHAOS",
+      "quoteSymbol": "MLTL",
+      "fee": "5%",
+      "purpose": "Network connector",
+      "cardState": "active",
+      "deployTxHash": null,
+      "notes": null
+    },
+    {
+      "id": "chaos-edge",
+      "poolId": null,
+      "baseSymbol": "CHAOS",
+      "quoteSymbol": "EDGE",
+      "fee": "dynamic",
+      "purpose": "Alliance (Ridge)",
+      "cardState": "active",
+      "deployTxHash": null,
+      "notes": null
+    },
+    {
+      "id": "chaos-arbme",
+      "poolId": null,
+      "baseSymbol": "CHAOS",
+      "quoteSymbol": "ARBME",
+      "fee": "dynamic",
+      "purpose": "Ecosystem connector",
+      "cardState": "active",
+      "deployTxHash": null,
+      "notes": null
+    },
+    {
+      "id": "chaos-weth",
+      "poolId": null,
+      "baseSymbol": "CHAOS",
+      "quoteSymbol": "WETH",
+      "fee": "dynamic",
+      "purpose": "Primary liquidity",
+      "cardState": "active",
+      "deployTxHash": null,
+      "notes": null
+    },
+    {
+      "id": "chaos-usdc",
+      "poolId": "0x50cc0cfbd3f7b1793822302f559b2bbb58503c591f8ea82aa50b69793d4c44f7",
+      "baseSymbol": "CHAOS",
+      "quoteSymbol": "USDC",
+      "fee": "0.05%",
+      "purpose": "Gateway (cheap entry/exit)",
+      "cardState": "created",
+      "deployTxHash": null,
+      "notes": "Deployed, awaiting GeckoTerminal indexing"
+    },
+    {
+      "id": "chaos-wolf",
+      "poolId": null,
+      "baseSymbol": "CHAOS",
+      "quoteSymbol": "WOLF",
+      "fee": "dynamic",
+      "purpose": "Alliance (ApexWolf)",
+      "cardState": "pending",
+      "deployTxHash": null,
+      "notes": "In deployment queue"
+    }
+  ]
+}
