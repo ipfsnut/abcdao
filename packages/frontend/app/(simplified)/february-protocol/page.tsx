@@ -393,6 +393,81 @@ export default function FebruaryProtocolPage() {
             </div>
           </div>
 
+          {/* Agent Interface */}
+          <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-6 mb-8">
+            <h2 className="text-2xl font-bold text-green-400 mb-2">agent_interface()</h2>
+            <p className="text-sm text-green-700 mb-6">Machine-readable data for autonomous agents.</p>
+
+            {/* Contracts */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-green-400 mb-2">Contracts (Base L2, Chain ID: 8453)</h3>
+              <pre className="bg-black/60 border border-green-900/20 rounded-lg p-4 text-xs text-green-500 overflow-x-auto">
+{`CHAOS_TOKEN=0xfab2ee8eb6b26208bfb5c41012661e62b4dc9292
+CHAOS_CREATOR=0xa659f32De39b5DB4fe1C857cC6c86626b008C743
+PRIMARY_POOL=0xcbfbb74ca4f6d24e22bffa4a46cb35c295df4a0ee5c23af9712d427a6a896f52`}
+              </pre>
+            </div>
+
+            {/* API Endpoints */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-green-400 mb-2">API Endpoints</h3>
+              <pre className="bg-black/60 border border-green-900/20 rounded-lg p-4 text-xs text-green-500 overflow-x-auto">
+{`# GeckoTerminal - Token Data
+GET https://api.geckoterminal.com/api/v2/networks/base/tokens/0xfab2ee8eb6b26208bfb5c41012661e62b4dc9292
+
+# DexScreener - Token Data
+GET https://api.dexscreener.com/latest/dex/tokens/0xfab2ee8eb6b26208bfb5c41012661e62b4dc9292`}
+              </pre>
+            </div>
+
+            {/* Pool Registry */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-green-400 mb-2">Pool Registry</h3>
+              <pre className="bg-black/60 border border-green-900/20 rounded-lg p-4 text-xs text-green-500 overflow-x-auto">
+{`CHAOS/flETH  fee=dynamic  pool=0xcbfbb74ca4f6d24e22bffa4a46cb35c295df4a0ee5c23af9712d427a6a896f52
+CHAOS/MLTL   fee=5%       pool=0x47e6f1cc60abbc8255ed42c2e1f59f465a92b53c7416b7cbf1f79c0f567cb92b
+CHAOS/USDC   fee=0.05%    pool=0x50cc0cfbd3f7b1793822302f559b2bbb58503c591f8ea82aa50b69793d4c44f7`}
+              </pre>
+            </div>
+
+            {/* Protocol Addresses */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-green-400 mb-2">Protocol Addresses (Uniswap V4)</h3>
+              <pre className="bg-black/60 border border-green-900/20 rounded-lg p-4 text-xs text-green-500 overflow-x-auto">
+{`POOL_MANAGER=0x498581ff718922c3f8e6a244956af099b2652b2b
+UNIVERSAL_ROUTER=0x6ff5693b99212da76ad316178a184ab56d299b43
+QUOTER=0x0d5e0f971ed27fbff6c2837bf31316121532048d`}
+              </pre>
+            </div>
+
+            {/* Service Request Format */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-green-400 mb-2">Service Request Format</h3>
+              <p className="text-xs text-green-700 mb-2">Via moltlaunch memo:</p>
+              <pre className="bg-black/60 border border-green-900/20 rounded-lg p-4 text-xs text-green-500 overflow-x-auto mb-3">
+{`CHAOS Rails: <YOUR_TOKEN_ADDRESS>`}
+              </pre>
+              <p className="text-xs text-green-700 mb-2">Or structured JSON:</p>
+              <pre className="bg-black/60 border border-green-900/20 rounded-lg p-4 text-xs text-green-500 overflow-x-auto">
+{`{
+  "service": "chaos_rails",
+  "action": "deploy_pools",
+  "token": "<YOUR_TOKEN_ADDRESS>",
+  "proof_of_purchase": "<TX_HASH_OF_CHAOS_BUY>"
+}`}
+              </pre>
+            </div>
+
+            {/* Links */}
+            <div>
+              <h3 className="text-sm font-semibold text-green-400 mb-2">Links</h3>
+              <pre className="bg-black/60 border border-green-900/20 rounded-lg p-4 text-xs text-green-500 overflow-x-auto">
+{`FLAUNCH=https://flaunch.gg/base/coin/0xfab2ee8eb6b26208bfb5c41012661e62b4dc9292
+DEXSCREENER=https://dexscreener.com/base/0xcbfbb74ca4f6d24e22bffa4a46cb35c295df4a0ee5c23af9712d427a6a896f52`}
+              </pre>
+            </div>
+          </div>
+
           {/* Disclaimer */}
           <p className="text-xs text-green-800 text-center mb-8">
             CHAOS Rails is infrastructure, not financial advice. LP at your own risk. We deploy pools &mdash; you manage positions.
